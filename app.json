@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Goveling",
+    "slug": "goveling",
+    "scheme": "goveling",
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.goveling.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.goveling.app",
+      "googleServicesFile": "./android/app/google-services.json",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    }
+  }
+}
