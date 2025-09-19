@@ -38,19 +38,21 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
 
 function fmtHM(s?:string){ return s||''; }
 
-function ModeBars({ summary }:{ summary?: Record<string, number> }){
-  const total = Object.values(summary||{}).reduce((a,b)=>a+b,0) || 0;
-  const modes:(keyof typeof summary)[] = ['walking','bicycling','driving','transit'] as any;
+export default function SmartRoute() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  
+  const [places, setPlaces] = React.useState<Place[]>([]);
+  const [pairIdx, setPairIdx] = React.useState(0);
+  const [mode, setMode] = React.useState<Mode>('walking');
+  const [tab, setTab] = React.useState<'itinerary'|'map'|'analytics'>('itinerary');
+  const [showMiniMaps, setShowMiniMaps] = React.useState(false);
+  const [summaryModes, setSummaryModes] = React.useState<Record<string, number>>({});
+  const [cached, setCached] = React.useState<any>(null);
+  
+  const { result, loading, error, fetchDirections } = useDirections();
 
-  return (
-    <View style={{ gap:6 }}>
-      {modes.map(m=> (
-        <View key={String(m)} style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
-          <View style={{ width:60 }}><Text>{String(m)}</Text></View>
-          <View style={{ flex:1, height:8, backgroundColor:'#eee', borderRadius:4, overflow:'hidden' }}>
-            <View style={{ width: `${total? ((summary?.[m]||0)/total*100):0}%`, height:8, backgroundColor: m==='walking'? '#34c759' : m==='bicycling'? '#16a085' : m==='driving'? '#007aff' : '#8e44ad' }} />
-          </View>
-          <Text style={{ width:40, textAlign:'right' }}>{summary?.[m]||0}</Text>
   // Day selection
   const [day, setDay] = React.useState<Date>(new Date()); // defaults to today; could be trip start by fetching metadata
   const dayISO = React.useMemo(()=> day.toISOString().slice(0,10), [day]);
@@ -358,23 +360,23 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
 
       {tab==='map' && (
         <View style={{ height:360, borderRadius:12, overflow:'hidden', marginTop:8 }}>
-          <MapLibreGL.MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-            <MapLibreGL.Camera zoomLevel={12} centerCoordinate={center} />
+          <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
+            <Camera zoomLevel={12} centerCoordinate={center} />
             {/* markers for all places */}
-            {places.map((p,i)=>(<MapLibreGL.PointAnnotation key={String(p.id)} id={String(p.id)} coordinate={[p.lng, p.lat]} />))}
+            {places.map((p,i)=>(<PointAnnotation key={String(p.id)} id={String(p.id)} coordinate={[p.lng, p.lat]} />))}
             {/* full-day polyline */}
             {allResults && allResults.map((seg, i)=> (
               seg.result?.overview_polyline ? (
-                <MapLibreGL.ShapeSource key={`seg-${i}`} id={`route-seg-${i}`} shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: seg.result.overview_polyline } }}>
-                  <MapLibreGL.LineLayer id={`route-seg-line-${i}`} style={{ lineWidth:4, lineColor: modeColor[seg.segMode]||'#333' }} />
-                </MapLibreGL.ShapeSource>
+                <ShapeSource key={`seg-${i}`} id={`route-seg-${i}`} shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: seg.result.overview_polyline } }}>
+                  <LineLayer id={`route-seg-line-${i}`} style={{ lineWidth:4, lineColor: modeColor[seg.segMode]||'#333' }} />
+                </ShapeSource>
               ) : null
             ))}
             {/* fallback single pair polyline */}
             {!overviewCoordinates && (result?.overview_polyline) && (
-              <MapLibreGL.ShapeSource id="route" shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: result.overview_polyline } }}>
-                <MapLibreGL.LineLayer id="route-line" style={{ lineWidth:4 }} />
-              </MapLibreGL.ShapeSource>
+              <ShapeSource id="route" shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: result.overview_polyline } }}>
+                <LineLayer id="route-line" style={{ lineWidth:4 }} />
+              </ShapeSource>
             )}
           
             {/* Legend */}
@@ -387,7 +389,7 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
               ))}
             </View>
 
-          </MapLibreGL.MapView>
+          </MapView>
         </View>
       )}
 
