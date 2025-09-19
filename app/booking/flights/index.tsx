@@ -30,19 +30,12 @@ export default function Flights(){
   ] as const;
 
   async function openAffiliate(){
-  }
-  const { t } = useTranslation();
-
-  const toast = useToast();
-  const { colors, spacing } = useTheme();
-  const [loading, setLoading] = React.useState(false);
-
     const p = Number(pax) || 1;
     toast.show('Abriendo vuelos…');
     const url = affiliates.flights.buildUrl({ from, to, depart, return: ret || undefined, pax: p, cabin });
     affiliates.flights.open({ from, to, depart, return: ret || undefined, pax: p, cabin }).then(()=> toast.show('Redirigido')).catch(()=>{
       toast.show('Error al abrir'); /*Alert.alert('Error','No se pudo abrir el afiliado');
-    });
+    */});
     console.log('Flights deeplink:', url);
   }
 
