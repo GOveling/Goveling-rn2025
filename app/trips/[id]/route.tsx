@@ -281,7 +281,8 @@ export default function SmartRouteTabs(){
       </View>
 
       {(loading || buildingAll) && <View style={{ paddingVertical:16, alignItems:'center' }}><ActivityIndicator/></View>}
-      {error && <Text style={{ color:'#ff3b30' }}>{{t('auto.Agrega al menos 2 lugares al trip.')}Text style={{ opacity:0.7, marginTop:8 }}>Agrega al menos 2 lugares al trip.</Text>}
+      {error && <Text style={{ color:'#ff3b30' }}>{t('auto.Agrega al menos 2 lugares al trip.')}</Text>}
+      <Text style={{ opacity:0.7, marginTop:8 }}>Agrega al menos 2 lugares al trip.</Text>
 
       {tab==='itinerary' && (
         (()=>{
