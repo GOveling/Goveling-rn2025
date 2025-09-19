@@ -30,6 +30,7 @@ export default function Flights(){
   ] as const;
 
   async function openAffiliate(){
+  }
   const { t } = useTranslation();
 
   const toast = useToast();
@@ -72,4 +73,8 @@ export default function Flights(){
       <Button title="Buscar en afiliado" onPress={openAffiliate} />
     </ScrollView>
   );
+}
+
+    }
+    )
 }
