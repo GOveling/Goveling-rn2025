@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, Text } from 'react-native';
 
-// Web-compatible icons
-const HomeIcon = () => <span style={{ fontSize: 20 }}>🏠</span>;
-const ExploreIcon = () => <span style={{ fontSize: 20 }}>🔍</span>;
-const TripsIcon = () => <span style={{ fontSize: 20 }}>✈️</span>;
-const BookingIcon = () => <span style={{ fontSize: 20 }}>📅</span>;
-const ProfileIcon = () => <span style={{ fontSize: 20 }}>👤</span>;
+// Cross-platform compatible icons
+const HomeIcon = () => <Text style={{ fontSize: 20 }}>🏠</Text>;
+const ExploreIcon = () => <Text style={{ fontSize: 20 }}>🔍</Text>;
+const TripsIcon = () => <Text style={{ fontSize: 20 }}>✈️</Text>;
+const BookingIcon = () => <Text style={{ fontSize: 20 }}>📅</Text>;
+const ProfileIcon = () => <Text style={{ fontSize: 20 }}>👤</Text>;
 
 export default function TabLayout() {
   const { t } = useTranslation();

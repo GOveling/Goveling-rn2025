@@ -4,7 +4,7 @@
     "slug": "goveling",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/branding-zeppeling.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "web": {
       "output": "static",
@@ -59,7 +59,7 @@
         "WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/branding-zeppeling.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
