@@ -1,2 +1,33 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
+.env.local
+.env.production
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+ios/
+android/
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+*.log
+*.tmp
+*.temp

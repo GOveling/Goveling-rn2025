@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Text, Switch, FlatList } from 'react-native';
-import MapLibreGL from 'react-native-maplibre-gl';
+import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
 import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { useTravel } from '~/lib/travelStore';
 import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
@@ -9,7 +9,12 @@ import * as Notifications from 'expo-notifications';
 import { supabase } from '~/lib/supabase';
 import { sendPush } from '~/lib/push_send';
 
-export default function NearbyAlerts({ tripId }:{ tripId?: string }){
+interface NearbyAlertsProps {
+  tripId?: string;
+}
+
+const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsProps) {
+  const { t } = useTranslation();
   const { enabled, setEnabled } = useTravel();
   const [pos, setPos] = React.useState<{lat:number;lng:number}|null>(null);
   const [list, setList] = React.useState<any[]>([]);
@@ -68,7 +73,8 @@ export default function NearbyAlerts({ tripId }:{ tripId?: string }){
 
   return (
     <View style={{ borderWidth:1, borderColor:'#eee', borderRadius:12, padding:14, gap:12 }}>
-      <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center{t('auto.Nearby Alerts')}tyle={{ fontWeight:'800' }}>Nearby Alerts</Text>
+      <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center' }}>
+        <Text style={{ fontWeight:'800' }}>{t('Nearby Alerts')}</Text>
         <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
           <Text style={{ opacity:0.7 }}>{enabled ? 'ON':'OFF'}</Text>
           <Switch value={enabled} onValueChange={setEnabled} />
@@ -78,16 +84,16 @@ export default function NearbyAlerts({ tripId }:{ tripId?: string }){
       {enabled && (
         <>
           <View style={{ height:220, borderRadius:12, overflow:'hidden' }}>
-            <MapLibreGL.MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-              <MapLibreGL.Camera zoomLevel={13} centerCoordinate={pos ? [pos.lng, pos.lat] : [-70.6483, -33.4569]} />
-              <MapLibreGL.UserLocation visible={true} />
-              <MapLibreGL.ShapeSource id="nearby" shape={{
+            <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
+              <Camera zoomLevel={13} centerCoordinate={pos ? [pos.lng, pos.lat] : [-70.6483, -33.4569]} />
+              <UserLocation visible={true} />
+              <ShapeSource id="nearby" shape={{
                 type:'FeatureCollection',
                 features: list.map((p, idx)=>({ type:'Feature', geometry:{ type:'Point', coordinates:[p.lng, p.lat] }, properties:{ idx: idx+1 } }))
               }}>
-                <MapLibreGL.SymbolLayer id="nearby-symbol" style={{ textField:['to-string',['get','idx']], textSize:14, textColor:'#fff', textHaloColor:'#007aff', textHaloWidth:2, textAllowOverlap:true, iconImage:['literal','marker-15'] }} />
-              </MapLibreGL.ShapeSource>
-            </MapLibreGL.MapView>
+                <SymbolLayer id="nearby-symbol" style={{ textField:['to-string',['get','idx']], textSize:14, textColor:'#fff', textHaloColor:'#007aff', textHaloWidth:2, textAllowOverlap:true, iconImage:['literal','marker-15'] }} />
+              </ShapeSource>
+            </MapView>
           </View>
 
           <FlatList
@@ -104,4 +110,6 @@ export default function NearbyAlerts({ tripId }:{ tripId?: string }){
       )}
     </View>
   );
-}
+});
+
+export default NearbyAlerts;

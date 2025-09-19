@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Sheet } from '../../../src/components/ui/BottomSheet';
+import { Sheet } from '../~/components/ui/BottomSheet';
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -35,15 +35,15 @@ export default function ManageTeam(){
   };
 
   return (
-    <View style={{ f{t('auto.Manage Team')}gap:12 }}>
-      <Text style={{ fontSize:22, fontWeight:'800' }}>Manage Team</Text>
+    <View style={{ flex:1, padding:16, gap:12 }}>
+      <Text style={{ fontSize:22, fontWeight:'800' }}>{t('Manage Team')}</Text>
       <View style={{ flexDirection:'row', gap:8 }}>
         <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={{ flex:1, borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
         <TouchableOpacity onPress={()=>setRole(r=>r==='viewer'?'editor':'viewer')} style={{ paddingHorizontal:12, justifyContent:'center', borderWidth:1, borderColor:'#ddd', borderRadius:8 }}>
           <Text>{role}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={invite} style={{ paddingHorizontal:12, justifyContent:'center', backgroundColor:'#007{t('auto.Invitar')}ius:8 }}>
-          <Text style={{ color:'#fff', fontWeight:'800' }}>Invitar</Text>
+        <TouchableOpacity onPress={invite} style={{ paddingHorizontal:12, justifyContent:'center', backgroundColor:'#007aff', borderRadius:8 }}>
+          <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Invitar')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -56,12 +56,12 @@ export default function ManageTeam(){
               <Text style={{ fontWeight:'700' }}>{item.profiles?.display_name || item.profiles?.email || item.user_id}</Text>
               <Text style={{ opacity:0.7 }}>{item.role}</Text>
             </View>
-            <TouchableOpacity {t('auto.Eliminar')}ove(item.user_id)}>
-              <Text style={{ color:'#ff3b30' }}>Eliminar</Text>
+            <TouchableOpacity onPress={()=>remove(item.user_id)}>
+              <Text style={{ color:'#ff3b30' }}>{t('Eliminar')}</Text>
             </TouchableOpacity>
           </View>
         )}
-        {t('auto.No hay colaboradores')}yle={{ textAlign:'center', opacity:0.6, marginTop:12 }}>No hay colaboradores</Text>}
+        ListEmptyComponent={<Text style={{ textAlign:'center', opacity:0.6, marginTop:12 }}>{t('No hay colaboradores')}</Text>}
       />
     </View>
   );

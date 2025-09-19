@@ -2,31 +2,65 @@
   "expo": {
     "name": "Goveling",
     "slug": "goveling",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/branding-zeppeling.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/branding-zeppeling.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "scheme": "goveling",
+    "platforms": ["ios", "android"],
     "plugins": [
       "expo-router",
-      "expo-notifications",
+      "expo-localization",
+      "expo-notifications", 
+      "expo-location",
+      "expo-image-picker",
+      "expo-document-picker",
+      "expo-file-system",
       "@react-native-firebase/app",
       "@react-native-firebase/messaging"
     ],
     "ios": {
       "bundleIdentifier": "com.goveling.app",
       "supportsTablet": false,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": [
           "location",
           "fetch",
           "remote-notification"
-        ]
+        ],
+        "NSLocationWhenInUseUsageDescription": "Esta app necesita acceso a tu ubicación para mostrar lugares cercanos y direcciones.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Esta app necesita acceso a tu ubicación para mostrar lugares cercanos y direcciones.",
+        "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para tomar fotos.",
+        "NSPhotoLibraryUsageDescription": "Esta app necesita acceso a tus fotos para seleccionar imágenes."
       }
     },
     "android": {
       "package": "com.goveling.app",
-      "googleServicesFile": "./android/app/google-services.json",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ]
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/branding-zeppeling.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

@@ -21,9 +21,9 @@ export default function Settings(){
 
   return (
     <View style={{ flex:1, padding:12, gap:12 }}>
-      <Text style={{ fontSize:22, fontWeight:'900' }}{t('auto.Configuración')}
+      <Text style={{ fontSize:22, fontWeight:'900' }}>Configuración</Text>
 
-      <Text{t('auto.Idioma')}
+      <Text>Idioma</Text>
       <View style={{ flexDirection:'row', gap:8, flexWrap:'wrap' }}>
         {['en','es','pt','fr','it','zh','ja'].map(l=> (
           <TouchableOpacity key={l} onPress={()=>setLang(l)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: lang===l ? '#007aff':'#ddd' }}>
@@ -32,13 +32,19 @@ export default function Settings(){
         ))}
       </View>
 
-      <Text style={{ marginTop:8 }}{t('auto.Tema')}
+      <Text style={{ marginTop:8 }}>Tema</Text>
       <View style={{ flexDirection:'row', gap:8 }}>
-        <TouchableOpacity onPress={()=>setDark(false)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: !dark ? '#007aff':'#ddd' }}><Text{t('auto.Claro')}</TouchableOpacity>
-        <TouchableOpacity onPress={()=>setDark(true)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: dark ? '#007aff':'#ddd' }}><Text{t('auto.Oscuro')}</TouchableOpacity>
+        <TouchableOpacity onPress={()=>setDark(false)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: !dark ? '#007aff':'#ddd' }}>
+          <Text>Claro</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={()=>setDark(true)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: dark ? '#007aff':'#ddd' }}>
+          <Text>Oscuro</Text>
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', padding:12, borderRadius:8, marginTop:12 }}><Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}{t('auto.Guardar')}</TouchableOpacity>
+      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', padding:12, borderRadius:8, marginTop:12 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text>
+      </TouchableOpacity>
     </View>
   );
 }

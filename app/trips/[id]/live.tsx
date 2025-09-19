@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
 import { sendPush } from '~/lib/push_send';
-import MapLibreGL from 'react-native-maplibre-gl';
+import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
 import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '~/lib/supabase';

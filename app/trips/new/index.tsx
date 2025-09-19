@@ -26,19 +26,20 @@ export default function NewTrip(){
   };
 
   return (
-    <View style={{ f{t('auto.Nuevo Trip')} gap:12 }}>
-      <Text style={{ fontSize:22, fontWeight:'800' }}>Nuevo Trip</Text>
-      <TextInput placeholder="Nombre del viaje" value={name} onChangeText={setName} style={t('auto.Fecha inicio')}rderColor:'#ddd', padding:12, borderRadius:8 }} />
+    <View style={{ flex:1, padding:16, gap:12 }}>
+      <Text style={{ fontSize:22, fontWeight:'800' }}>{t('Nuevo Trip')}</Text>
+      <TextInput placeholder="Nombre del viaje" value={name} onChangeText={setName} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
 
-      <Text>Fecha inicio</Text>
-      <DateTimePicker value={start||new Date()} mode="date" display={Platform.{t('auto.Fecha fin')}ct':'default'} onChange={(e, d)=> d && setStart(d)} />
-      <Text>Fecha fin</Text>
-      <DateTimePicker value={end||new Date()} mode="date" display={Platform{t('auto.Zona horaria')}':'default'} onChange={(e, d)=> d && setEnd(d)} />
+      <Text>{t('Fecha inicio')}</Text>
+      <DateTimePicker value={start||new Date()} mode="date" display={Platform.OS==='ios'?'compact':'default'} onChange={(e, d)=> d && setStart(d)} />
+      <Text>{t('Fecha fin')}</Text>
+      <DateTimePicker value={end||new Date()} mode="date" display={Platform.OS==='ios'?'compact':'default'} onChange={(e, d)=> d && setEnd(d)} />
 
-      <Text>Zona horaria</Text>
+      <Text>{t('Zona horaria')}</Text>
       <TextInput placeholder="Ej. America/Santiago" value={tz} onChangeText={setTz} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
 
-      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius{t('auto.Crear')}  <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Crear</Text>
+      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Crear')}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -4,7 +4,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, ScrollView, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import MapLibreGL from 'react-native-maplibre-gl';
+import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
 import MiniMap from '~/components/MiniMap';
 import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { supabase } from '~/lib/supabase';
@@ -178,15 +178,15 @@ export default function SmartRouteTabs(){
   })();
 
   return (
-    <View style={{ {t('auto.AI Smart Route')}p:8 }}>
-      <Text style={{ fontSize:22, fontWeight:'800' }}>AI Smart Route</Text>
+    <View style={{ flex:1, padding:8 }}>
+      <Text style={{ fontSize:22, fontWeight:'800' }}>{t('AI Smart Route')}</Text>
 
       {/* Day picker */}
-      <View style={{ flexDirection:'row', alig{t('auto.Día')}ter', gap:12, marginTop:4 }}>
+      <View style={{ flexDirection:'row', alignItems:'center', gap:12, marginTop:4 }}>
         <Text style={{ fontWeight:'700' }}>Día</Text>
         <DateTimePicker value={day} mode="date" display={Platform.OS==='ios'?'compact':'default'} onChange={(e,d)=> d && setDay(d)} />
-        <TouchableOpacity onPress={saveDay} style={{ marginLeft:'auto', paddingHorizontal:12, paddingVertical:6, borderRadius:8, backg{t('auto.Guardar día')}' }}>
-          <Text style={{ color:'#fff', fontWeight:'800' }}>Guardar día</Text>
+        <TouchableOpacity onPress={saveDay} style={{ marginLeft:'auto', paddingHorizontal:12, paddingVertical:6, borderRadius:8, backgroundColor:'#007aff' }}>
+          <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Guardar día')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -240,42 +240,38 @@ export default function SmartRouteTabs(){
         }catch(e:any){
           Alert.alert('Error', e.message||'No se pudo planificar con IA');
         }
-      }} style={{ backgroundColor:'#8e44ad', paddingHorizontal:12, paddingVert{t('auto.Planificar con IA')}>
-        <Text style={{ color:'#fff', fontWeight:'800' }}>Planificar con IA</Text>
+      }} style={{ backgroundColor:'#8e44ad', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+        <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Planificar con IA')}</Text>
       </TouchableOpacity>
 
-          <Text style={{ color:'#fff', fontWeight:'800' }}>{buildingAll ? 'Calculando…' : 'Ruta completa'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={()=>router.push(`/trips/${id}/live`)} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, paddingVertic{t('auto.Iniciar Travel Mode')}        <Text style={{ color:'#fff', fontWeight:'800' }}>Iniciar Travel Mode</Text>
-        </TouchableOpacity>
+      <TouchableOpacity onPress={buildAllDirections} style={{ backgroundColor:'#007aff', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+        <Text style={{ color:'#fff', fontWeight:'800' }}>{buildingAll ? 'Calculando…' : 'Ruta completa'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={()=>router.push(`/trips/${id}/live`)} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+        <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Iniciar Travel Mode')}</Text>
+      </TouchableOpacity>
       </View>
 
-      {/* Pair selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom:6 }}>
+      {/* Controls */}
+      <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <View style={{ flexDirection:'row', gap:8 }}>
-        <View style={{ marginLeft:'auto', flexDirection{t('auto.Mostrar minimapas')}r', gap:8 }}>
-          <Text style={{ fontWeight:'700' }}>Mostrar minimapas</Text>
-          <TouchableOpacity onPress={()=>setShowMiniMaps(v=>!v)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: showMiniMaps ? '#34c759':'#ddd', backgroundColor: showMiniMaps ? '#e7f9ee':'#fff' }}>
-            <Text>{showMiniMaps ? 'ON':'OFF'}</Text>
-          </TouchableOpacity>
-        </View>
-    
           {places.slice(0, Math.max(0, places.length-1)).map((p, i) => (
             <TouchableOpacity key={String(i)} onPress={()=>setPairIdx(i)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:12, borderWidth:1, borderColor: pairIdx===i ? '#007aff':'#ddd' }}>
               <Text>{i+1}→{i+2}</Text>
             </TouchableOpacity>
           ))}
         </View>
-      </ScrollView>
-
-      {/* Tabs */}
-      <View style={{ flexDirection:'row', gap:8 }}>
-        <View style={{ marginLeft:'auto', flexDirection{t('auto.Mostrar minimapas')}r', gap:8 }}>
-          <Text style={{ fontWeight:'700' }}>Mostrar minimapas</Text>
+        
+        <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
+          <Text style={{ fontWeight:'700' }}>{t('Mostrar minimapas')}</Text>
           <TouchableOpacity onPress={()=>setShowMiniMaps(v=>!v)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: showMiniMaps ? '#34c759':'#ddd', backgroundColor: showMiniMaps ? '#e7f9ee':'#fff' }}>
             <Text>{showMiniMaps ? 'ON':'OFF'}</Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={{ flexDirection:'row', gap:8 }}>
     
         {(['itinerary','map','analytics'] as const).map(t => (
           <TouchableOpacity key={t} onPress={()=>setTab(t)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:20, borderWidth:1, borderColor: tab===t ? '#007aff':'#ddd' }}>
@@ -299,12 +295,12 @@ export default function SmartRouteTabs(){
                 keyExtractor={(_,i)=>String(i)}
                 renderItem={({ item, index }) => (
                   item.type==='free_block' ? (
-                    <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2', bac{t('auto.🕒 Free time')}fb' }}>
+                    <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2', backgroundColor:'#f8f8fb' }}>
                       <Text style={{ fontWeight:'700' }}>🕒 Free time</Text>
                       <Text style={{ opacity:0.7 }}>{fmtHM(item.eta)}–{fmtHM(item.etd)} {item.note? '• '+item.note : ''}</Text>
                     </View>
                   ) : item.type==='transfer_block' ? (
-                    <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2', bac{t('auto.↔︎ Transfer')}fe' }}>
+                    <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2', backgroundColor:'#f8f8fe' }}>
                       <Text style={{ fontWeight:'700' }}>↔︎ Transfer</Text>
                       <Text style={{ opacity:0.7 }}>{fmtHM(item.eta)}–{fmtHM(item.etd)} {item.note? '• '+item.note : ''}</Text>
                     </View>
@@ -318,7 +314,7 @@ export default function SmartRouteTabs(){
                     </View>
                   )
                 )}
-                Lis{t('auto.Plan (ML)')}{<View style={{ paddingVertical:6 }}><Text style={{ opacity:0.7 }}>Plan (ML)</Text></View>}
+                ListEmptyComponent={<View style={{ paddingVertical:6 }}><Text style={{ opacity:0.7 }}>Plan (ML)</Text></View>}
               />
             );
           }
@@ -340,7 +336,7 @@ export default function SmartRouteTabs(){
                       {step.transit ? (
                         <Text>{step.transit.departure_stop} → {step.transit.arrival_stop} • {step.transit.num_stops||0} stops • {step.transit.headsign||''} ({step.transit?.line?.agency||''})</Text>
                       ) : (
-    {t('auto./g,'')}')}     <Text numberOfLines={3}>{(step.instruction||'').replace(/<[^>]+>/g,'')}</Text>
+                        <Text numberOfLines={3}>{(step.instruction||'').replace(/<[^>]+>/g,'')}</Text>
                       )}
                       <Text style={{ opacity:0.7 }}>{Math.round((step.duration_s||0)/60)} min • {((step.distance_m||0)/1000).toFixed(2)} km</Text>
                     </View>
@@ -348,7 +344,11 @@ export default function SmartRouteTabs(){
                 </View>
               </View>
             )}
-            Lis{t('auto.Resumen del día {dayISO}: {Math.round(totals.dur/60)} min • {(totals.dist/1000).toFixed(2)} km')}ayISO}: {Math.round(totals.dur/60)} min • {(totals.dist/1000).toFixed(2)} km</Text></View>}
+            ListFooterComponent={() => (
+              <View style={{ padding:12 }}>
+                <Text style={{ opacity:0.7 }}>Resumen del día {dayISO}: {Math.round(totals.dur/60)} min • {(totals.dist/1000).toFixed(2)} km</Text>
+              </View>
+            )}
           />
         ) : (
           result && (

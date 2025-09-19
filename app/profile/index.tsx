@@ -54,8 +54,8 @@ export default function ProfileScreen(){
   };
 
   return (
-    <View style={{ f{t('auto.Perfil')}:16, gap:12 }}>
-      <Text style={{ fontSize:24, fontWeight:'900' }}>Perfil</Text>
+    <View style={{ flex:1, padding:16, gap:12 }}>
+      <Text style={{ fontSize:24, fontWeight:'900' }}>{t('Perfil')}</Text>
       <TouchableOpacity onPress={pickAvatar} style={{ alignSelf:'flex-start' }}>
         <Image source={ avatarUrl ? { uri: avatarUrl } : require('~/assets/avatar-placeholder.png') } style={{ width:80, height:80, borderRadius:40, backgroundColor:'#eee' }} />
       </TouchableOpacity>
@@ -63,20 +63,34 @@ export default function ProfileScreen(){
       <TextInput placeholder="Código país (ej. CL)" value={countryCode} onChangeText={setCountryCode} autoCapitalize="characters" style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
       <TextInput placeholder="Teléfono" value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
 
-      <View style={{ flexDirecti{t('auto.Push')}p:8, alignItems:'center' }}>
-        <Text style={{ fontWeight:'700' }}>Push</Text>
-        <TouchableOpacity onPress={()=>setNotifPush(v=>!v)} style={{ paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: notifPush ? '#34c759':'#ddd', backgroundColor: notifPush ? '#e7f9ee':'#fff' }}><Text>{notifPush?'ON':'OFF'}<{t('auto.Email')}ableOpacity>
-        <Text style={{ fontWeight:'700', marginLeft:12 }}>Email</Text>
-        <TouchableOpacity onPress={()=>setNotifEmail(v=>!v)} style={{ paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: notifEmail ? '#34c759':'#ddd', backgroundColor: notifEmail ? '#e7f9ee':'#fff' }}><Text>{notifEmail?'ON':'OFF'}</Text></TouchableOpacity>
+      <View style={{ flexDirection:'row', gap:8, alignItems:'center' }}>
+        <Text style={{ fontWeight:'700' }}>{t('Push')}</Text>
+        <TouchableOpacity onPress={()=>setNotifPush(v=>!v)} style={{ paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: notifPush ? '#34c759':'#ddd', backgroundColor: notifPush ? '#e7f9ee':'#fff' }}>
+          <Text>{notifPush?'ON':'OFF'}</Text>
+        </TouchableOpacity>
+        <Text style={{ fontWeight:'700', marginLeft:12 }}>{t('Email')}</Text>
+        <TouchableOpacity onPress={()=>setNotifEmail(v=>!v)} style={{ paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: notifEmail ? '#34c759':'#ddd', backgroundColor: notifEmail ? '#e7f9ee':'#fff' }}>
+          <Text>{notifEmail?'ON':'OFF'}</Text>
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', padding:12, bor{t('auto.Guardar')}<Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text></TouchableOpacity>
+      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', padding:12, borderRadius:8 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Guardar')}</Text>
+      </TouchableOpacity>
 
       <View style={{ marginTop:'auto' }} />
-      <TouchableOpacity onPress={signOut} style={{ backgroundColor:'#ff3b30', padding:12, bor{t('auto.Cerrar sesión')}style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Cerrar sesión</Text></TouchableOpacity>
-          <TouchableOpacity onPress={()=>router.push('/profile/documents{t('auto.Documentos cifrados')}rderWidth:1, borderColor:'#eee', borderRadius:8 }}><Text>Documentos cifrados</Text></TouchableOpacity>
-      <TouchableOpacity onPress={()=>router.push('/profile/achievements{t('auto.Estadísticas y Logros')}erWidth:1, borderColor:'#eee', borderRadius:8 }}><Text>Estadísticas y Logros</Text></TouchableOpacity>
-      <TouchableOpacity onPress={()=>router.push('/settings{t('auto.Configuración')}12, borderWidth:1, borderColor:'#eee', borderRadius:8 }}><Text>Configuración</Text></TouchableOpacity>
+      <TouchableOpacity onPress={signOut} style={{ backgroundColor:'#ff3b30', padding:12, borderRadius:8 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Cerrar sesión')}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={()=>router.push('/profile/documents')} style={{ padding:12, borderWidth:1, borderColor:'#eee', borderRadius:8 }}>
+        <Text>{t('Documentos cifrados')}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={()=>router.push('/profile/achievements')} style={{ padding:12, borderWidth:1, borderColor:'#eee', borderRadius:8 }}>
+        <Text>{t('Estadísticas y Logros')}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={()=>router.push('/settings')} style={{ padding:12, borderWidth:1, borderColor:'#eee', borderRadius:8 }}>
+        <Text>{t('Configuración')}</Text>
+      </TouchableOpacity>
     </View>
   );
 }

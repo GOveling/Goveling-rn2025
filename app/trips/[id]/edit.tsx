@@ -31,14 +31,15 @@ export default function EditTrip(){
   };
 
   return (
-    <View style={{ f{t('auto.Editar Trip')}gap:12 }}>
-      <Text style={{ fontSize:22, fontWeight:'800' }}>Editar Trip</Text>
-      <TextInput placeholder="Nombre del viaje" value={name} onChangeText={setName} style{t('auto.Fecha inicio')}orderColor:'#ddd', padding:12, borderRadius:8 }} />
-      <Text>Fecha inicio</Text>
-      <DateTimePicker value={start||new Date()} mode="date" display={Platfo{t('auto.Fecha fin')}mpact':'default'} onChange={(e,d)=> d&&setStart(d)} />
-      <Text>Fecha fin</Text>
+    <View style={{ flex:1, padding:16, gap:12 }}>
+      <Text style={{ fontSize:22, fontWeight:'800' }}>{t('Editar Trip')}</Text>
+      <TextInput placeholder="Nombre del viaje" value={name} onChangeText={setName} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
+      <Text>{t('Fecha inicio')}</Text>
+      <DateTimePicker value={start||new Date()} mode="date" display={Platform.OS==='ios'?'compact':'default'} onChange={(e,d)=> d&&setStart(d)} />
+      <Text>{t('Fecha fin')}</Text>
       <DateTimePicker value={end||new Date()} mode="date" display={Platform.OS==='ios'?'compact':'default'} onChange={(e,d)=> d&&setEnd(d)} />
-      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius{t('auto.Guardar')}<Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text>
+      <TouchableOpacity onPress={save} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Guardar')}</Text>
       </TouchableOpacity>
     </View>
   );

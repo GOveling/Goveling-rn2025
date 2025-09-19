@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Sheet } from '../../src/components/ui/BottomSheet';
+import { Sheet } from '~/components/ui/BottomSheet';
 import React from 'react';
 import { View, Text, TouchableOpacity, Alert, TextInput, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -48,11 +48,10 @@ export default function AddToTripFromExplore(){
   };
 
   return (
-    <View style={{ f{t('auto.Agregar a Trip')}:12 }}>
+    <View style={{ flex:1, padding:12 }}>
       <Text style={{ fontSize:22, fontWeight:'800' }}>Agregar a Trip</Text>
-      <Text style={{ {t('auto.Elige un viaje')}/Text>
-
       <Text style={{ marginTop:8, fontWeight:'700' }}>Elige un viaje</Text>
+      
       <FlatList
         data={trips}
         keyExtractor={(i)=>i.id}
@@ -60,15 +59,31 @@ export default function AddToTripFromExplore(){
           <TouchableOpacity onPress={()=>setTripId(item.id)} style={{ paddingVertical:10, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
             <Text style={{ fontWeight:'700', color: tripId===item.id ? '#007aff':'#111' }}>{item.name}</Text>
             <Text style={{ opacity:0.6 }}>{item.start_date || '—'} → {item.end_date || '—'}</Text>
-          </Tou{t('auto.No hay trips aún')}}
+          </TouchableOpacity>
+        )}
         ListEmptyComponent={<Text style={{ opacity:0.6 }}>No hay trips aún</Text>}
-        style={t('auto.…o crea uno nuevo')} />
+        style={{ maxHeight:200, marginTop:8 }}
+      />
 
-      <Text style={{ marginTop:8, fontWeight:'700' }}>…o crea uno nuevo</Text>
-      <TextInput placeholder="Nombre del viaje" value={newTripName} onChangeText={setNewTripName} style={{ borderWidth:1, borderColor:'#ddd', padd{t('auto.Fecha tentativa (opcional, ML decidirá el día real)')}p:8, fontWeight:'700' }}>Fecha tentativa (opcional, ML decidirá el día real)</Text>
-      <TextInput placeholder="YYYY-MM-DD (opcional)" value={tentativeDate} onChangeText={setTentativeDate} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
+      <Text style={{ marginTop:16, fontWeight:'700' }}>…o crea uno nuevo</Text>
+      
+      <TextInput 
+        placeholder="Nombre del viaje" 
+        value={newTripName} 
+        onChangeText={setNewTripName} 
+        style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8, marginTop:8 }} 
+      />
+      
+      <Text style={{ marginTop:8, fontWeight:'700' }}>Fecha tentativa (opcional, ML decidirá el día real)</Text>
+      <TextInput 
+        placeholder="YYYY-MM-DD (opcional)" 
+        value={tentativeDate} 
+        onChangeText={setTentativeDate} 
+        style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8, marginTop:4 }} 
+      />
 
-      <TouchableOpacity onPress={add} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8, marginTop{t('auto.Guardar')}<Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text>
+      <TouchableOpacity onPress={add} style={{ backgroundColor:'#007aff', paddingVertical:12, borderRadius:8, marginTop:16 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text>
       </TouchableOpacity>
     </View>
   );

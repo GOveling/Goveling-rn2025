@@ -20,7 +20,7 @@ export default function PlaceReviews(){
   React.useEffect(()=>{ load(); }, [place_id]);
 
   return (
-    <View st{t('auto.Reseñas')}padding:12 }}>
+    <View style={{ flex:1, padding:12 }}>
       <Text style={{ fontSize:22, fontWeight:'900' }}>Reseñas</Text>
       <FlatList
         refreshing={loading}
@@ -28,10 +28,13 @@ export default function PlaceReviews(){
         data={items}
         keyExtractor={(i)=>String(i.id)}
         renderItem={({ item })=> (
-          <View style={{ paddingVertical:10, borderBott{t('auto.★ {item.rating} — {item.place_name||''}')}  <Text style={{ fontWeight:'700' }}>★ {item.rating} — {item.place_name||''}</Text>
+          <View style={{ paddingVertical:10, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
+            <Text style={{ fontWeight:'700' }}>★ {item.rating} — {item.place_name||''}</Text>
             <Text style={{ opacity:0.8 }}>{item.text||''}</Text>
             <Text style={{ opacity:0.5, fontSize:12 }}>{new Date(item.created_at).toLocaleString()}</Text>
-          </View>{t('auto.Sin reseñas aún')}tEmptyComponent={<Text style={{ opacity:0.6, marginTop:12 }}>Sin reseñas aún</Text>}
+          </View>
+        )}
+        ListEmptyComponent={<Text style={{ opacity:0.6, marginTop:12 }}>Sin reseñas aún</Text>}
       />
     </View>
   );

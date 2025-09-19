@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { Skeleton } from '../../../src/components/ui/Skeleton';
-import { useTheme } from '../../../src/lib/theme';
-import { useToast } from '../../../src/components/ui/Toast';
+import { Skeleton } from '../~/components/ui/Skeleton';
+import { useTheme } from '../~/lib/theme';
+import { useToast } from '../~/components/ui/Toast';
 
 import React from 'react';
 import { View, Text, Button, ScrollView, Alert } from 'react-native';
 import { LabeledInput } from '../components/FiltersRow';
-import { affiliates } from '../../../src/lib/affiliates';
+import { affiliates } from '../~/lib/affiliates';
 
 export default function Hotels(){
   const { t } = useTranslation();
@@ -16,8 +16,8 @@ export default function Hotels(){
   const [loading, setLoading] = React.useState(false);
 
   const [city, setCity] = React.useState('Santiago');
-  const [checkin, setCheckin] = React.useState(new Date().toISOString().slice(0,10));*/
-  const [checkout, setCheckout] = React.useState(new Date(Date.now()+86400000).toISOString().slice(0,10));*/
+  const [checkin, setCheckin] = React.useState(new Date().toISOString().slice(0,10));
+  const [checkout, setCheckout] = React.useState(new Date(Date.now()+86400000).toISOString().slice(0,10));
   const [guests, setGuests] = React.useState('2');
   const [rooms, setRooms] = React.useState('1');
 
@@ -42,13 +42,11 @@ export default function Hotels(){
       checkout,
       guests: Number(guests)||1,
       rooms: Number(rooms)||1
-    }).then(()=> toast.show('Redirigido')).catch(()=> toast.show('Error al abrir'); /*Alert.alert('Error','No se pudo abrir el afiliado'));*/
+    }).then(()=> toast.show('Redirigido')).catch(()=> toast.show('Error al abrir'));
     console.log('Hotels deeplink:', url);
   }
 
   return (
-    <> {loading ? <Skeleton height={18} style={{ margin:8 }} /> : null} </>
-  
     <ScrollView accessibilityRole='scrollbar' style={{ padding:16 }}>
       <Text accessibilityRole='header' style={{ fontWeight:'800', fontSize:18, marginBottom:12 }}>{t('booking.hotels')}</Text>
       <View style={{ flexDirection:'row', gap:12 }}>

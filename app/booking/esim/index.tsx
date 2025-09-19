@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { Skeleton } from '../../../src/components/ui/Skeleton';
-import { useTheme } from '../../../src/lib/theme';
-import { useToast } from '../../../src/components/ui/Toast';
+import { Skeleton } from '../~/components/ui/Skeleton';
+import { useTheme } from '../~/lib/theme';
+import { useToast } from '../~/components/ui/Toast';
 
 import React from 'react';
 import { View, Text, Button, ScrollView, Alert } from 'react-native';
 import { LabeledInput, Chip } from '../components/FiltersRow';
-import { affiliates } from '../../../src/lib/affiliates';
+import { affiliates } from '../~/lib/affiliates';
 
 export default function Esim(){
   const { t } = useTranslation();
@@ -41,13 +41,11 @@ export default function Esim(){
       countryCode,
       days: Number(days)||7,
       dataGB: Number(dataGB)||5
-    }).then(()=> toast.show('Redirigido')).catch(()=> toast.show('Error al abrir'); /*Alert.alert('Error','No se pudo abrir el afiliado'));*/
+    }).then(()=> toast.show('Redirigido')).catch(()=> toast.show('Error al abrir'));
     console.log('eSIM deeplink:', url);
   }
 
   return (
-    <> {loading ? <Skeleton height={18} style={{ margin:8 }} /> : null} </>
-  
     <ScrollView accessibilityRole='scrollbar' style={{ padding:16 }}>
       <Text accessibilityRole='header' style={{ fontWeight:'800', fontSize:18, marginBottom:12 }}>{t('booking.esim')}</Text>
       <View style={{ flexDirection:'row', gap:12 }}>

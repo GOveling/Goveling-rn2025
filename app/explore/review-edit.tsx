@@ -41,17 +41,25 @@ export default function ReviewEditor(){
 
   return (
     <View style={{ flex:1, padding:12, gap:10 }}>
-  {t('auto.Rating')}e={{ fontSize:22, fontWeight:'900' }}>{place_name}</Text>
+      <Text style={{ fontSize:22, fontWeight:'900' }}>{place_name}</Text>
       <Text>Rating</Text>
       <View style={{ flexDirection:'row', gap:8 }}>
         {[1,2,3,4,5].map(n=> (
-          <TouchableOpacity key={n} onPress={()=>setRating(n)} style={{ paddingHorizontal:10, paddingVertical:6, {t('auto.★ {n}')}, borderColor: rating===n ? '#007aff':'#ddd', borderRadiu{t('auto.Reseña')}★ {n}</Text></TouchableOpacity>
+          <TouchableOpacity key={n} onPress={()=>setRating(n)} style={{ paddingHorizontal:10, paddingVertical:6, borderWidth:1, borderColor: rating===n ? '#007aff':'#ddd', borderRadius:8 }}>
+            <Text>★ {n}</Text>
+          </TouchableOpacity>
         ))}
       </View>
       <Text>Reseña</Text>
       <TextInput multiline numberOfLines={6} value={text} onChangeText={setText} placeholder="Escribe tu reseña…" style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8, minHeight:120 }} />
-      <TouchableOpacity onPress={save} style={{ backgroundColor:'#34c759', padding:12, bor{t('auto.Guardar')}<Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text></TouchableOpacity>
-      {review_id ? <TouchableOpacity onPress={del} style={{ backgroundColor:'#ff3b30', padding:12, bor{t('auto.Eliminar')}Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Eliminar</Text></TouchableOpacity> : null}
+      <TouchableOpacity onPress={save} style={{ backgroundColor:'#34c759', padding:12, borderRadius:8 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Guardar</Text>
+      </TouchableOpacity>
+      {review_id ? (
+        <TouchableOpacity onPress={del} style={{ backgroundColor:'#ff3b30', padding:12, borderRadius:8 }}>
+          <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Eliminar</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }

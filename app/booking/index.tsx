@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 export const options = { headerLargeTitle: true, headerTitle: 'Booking', headerTransparent: true };
-import { useTheme } from '../../src/lib/theme';
+import { useTheme } from '~/lib/theme';
 
 import React from 'react';
 import { View, Text } from 'react-native';

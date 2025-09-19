@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { Skeleton } from '../../../src/components/ui/Skeleton';
-import { useTheme } from '../../../src/lib/theme';
-import { useToast } from '../../../src/components/ui/Toast';
+import { Skeleton } from '../~/components/ui/Skeleton';
+import { useTheme } from '../~/lib/theme';
+import { useToast } from '../~/components/ui/Toast';
 
 import React from 'react';
 import { View, Text, Button, ScrollView, Alert } from 'react-native';
 import { LabeledInput, Chip } from '../components/FiltersRow';
-import { affiliates } from '../../../src/lib/affiliates';
+import { affiliates } from '../~/lib/affiliates';
 
 export default function Flights(){
   const { t } = useTranslation();

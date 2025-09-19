@@ -5,9 +5,9 @@ import { useRouter } from 'expo-router';
 import { SkeletonLine } from '~/components/ui/Skeleton';
 import { Trip, getActiveOrNextTrip } from '~/lib/home';
 
-function daysDiff(a:Date, b:Date){ return Math.ceil((a.getTime()-b.getTime())/(1000*60*60*24)); }
+const daysDiff = (a: Date, b: Date): number => Math.ceil((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
 
-export default function CurrentTripCard(){
+const CurrentTripCard = React.memo(function CurrentTripCard() {
   const { t } = useTranslation();
 
   const router = useRouter();
@@ -40,29 +40,40 @@ export default function CurrentTripCard(){
   );
 
   if (!trip) return (
-    <View style={{ borderWidth:1, borderColor:'#ee{t('auto.No tienes viajes')}ding:14, gap:8 }}>
-      <Text style{t('auto.Crea tu primer trip para comenzar')}/Text>
-      <Text style={{ opacity:0.7 }}>Crea tu primer trip para comenzar</Text>
-      <TouchableOpacity onPress={()=>router.push('/trips/new')} style={{ marginTop:6, backgroundColor:'#007aff', paddingVertical:10, borderRadius{t('auto.+ New Trip')}xt style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>+ New Trip</Text>
+    <View style={{ borderWidth:1, borderColor:'#eee', padding:14, gap:8 }}>
+      <Text style={{ fontWeight:'800' }}>{t('No tienes viajes')}</Text>
+      <Text style={{ opacity:0.7 }}>{t('Crea tu primer trip para comenzar')}</Text>
+      <TouchableOpacity onPress={()=>router.push('/trips/new')} style={{ marginTop:6, backgroundColor:'#007aff', paddingVertical:10, borderRadius:8 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('+ New Trip')}</Text>
       </TouchableOpacity>
     </View>
   );
 
-  const flag = '🏳️'; // Placeholder: puedes derivar del primer lugar del trip
-  const title = mode==='active' ? 'Trip activo' : `Próximo trip en ${countdown} días`;
 
-  return (
-    <View style={{ borderWidth:1, borderColor:'#eee', borderRadius:12, padding:14, gap:8 }}>
-      <Text style={{ fontWeight:'800' }}>{title}</Text>
-      <Text style={{ opacity:0.7 }}>{flag} {trip.name}</Text>
-      <View style={{ flexDirection:'row', gap:8 }}>
-        <TouchableOpacity onPress={()=>router.push(`/trips/${trip.id}/places`)} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8, flex:1{t('auto.Ver lugares del trip')}{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Ver lugares del trip</Text>
-        </TouchableOpacity>
-        {mode==='active' ? (
-          <TouchableOpacity onPress={()=>router.push(`/trips/${trip.id}/live`)} style={{ backgroundColor:'#34c759', paddingVertical:10, borderRadius:8, flex:1 }{t('auto.Modo Travel')}t style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Modo Travel</Text>
+
+  const memoizedContent = React.useMemo(() => {
+    const flag = '🏳️'; // Placeholder: puedes derivar del primer lugar del trip
+    const title = mode === 'active' ? 'Trip activo' : `Próximo trip en ${countdown} días`;
+
+    return (
+      <View style={{ borderWidth:1, borderColor:'#eee', borderRadius:12, padding:14, gap:8 }}>
+        <Text style={{ fontWeight:'800' }}>{title}</Text>
+        <Text style={{ opacity:0.7 }}>{flag} {trip.name}</Text>
+        <View style={{ flexDirection:'row', gap:8 }}>
+          <TouchableOpacity onPress={()=>router.push(`/trips/${trip.id}/places`)} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8, flex:1 }}>
+            <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Ver lugares del trip')}</Text>
           </TouchableOpacity>
-        ) : null}
+          {mode==='active' ? (
+            <TouchableOpacity onPress={()=>router.push(`/trips/${trip.id}/live`)} style={{ backgroundColor:'#34c759', paddingVertical:10, borderRadius:8, flex:1 }}>
+              <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Modo Travel')}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
-    </View>
-  );
-}
+    );
+  }, [trip, mode, countdown, router, t]);
+
+  return memoizedContent;
+});
+
+export default CurrentTripCard;

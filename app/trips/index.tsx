@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 export const options = { headerLargeTitle: true, headerTitle: 'My Trips', headerTransparent: true };
-import { EmptyState } from '../../src/components/ui/EmptyState';
-import { useTheme } from '../../src/lib/theme';
+import { EmptyState } from '~/components/ui/EmptyState';
+import { useTheme } from '~/lib/theme';
 import React from 'react';
 import { View, Text, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -37,14 +37,10 @@ export default function TripsIndex(){
       <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <Text style={{ fontSize:22, fontWeight:'600' }}>{t('trips.title')}</Text>
         <TouchableOpacity onPress={()=>router.push('/trips/new')} style={{ backgroundColor:'#007aff', paddingVertical:8, paddingHorizontal:12, borderRadius:8 }}>
-          <Text style={{ color:'#fff', fontWeight:'600' }}{t('auto.+ New Trip')}
+          <Text style={{ color:'#fff', fontWeight:'600' }}>{t('+ New Trip')}</Text>
         </TouchableOpacity>
-      
-{/* v153 Empty state fallback */}
-{(Array.isArray(items) && items.length===0) ? (
-  <EmptyState title="Sin viajes aún" subtitle="Crea tu primer viaje desde + New Trip" />
-): null}
-</View>
+      </View>
+
       <FlatList
         data={list}
         keyExtractor={(i)=>i.id}
@@ -53,12 +49,16 @@ export default function TripsIndex(){
             <Text style={{ fontWeight:'700' }}>{item.name}</Text>
             <Text style={{ opacity:0.7 }}>{item.start_date || '—'} → {item.end_date || '—'}</Text>
             <View style={{ flexDirection:'row', gap:12, marginTop:6 }}>
-              <TouchableOpacity onPress={()=>router.push(`/trips/${item.id}/edit`)}><Text style={{ color:'#007aff' }}{t('auto.Editar')}</TouchableOpacity>
-              <TouchableOpacity onPress={()=>del(item.id)}><Text style={{ color:'#ff3b30' }}{t('auto.Eliminar')}</TouchableOpacity>
+              <TouchableOpacity onPress={()=>router.push(`/trips/${item.id}/edit`)}>
+                <Text style={{ color:'#007aff' }}>{t('Editar')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={()=>del(item.id)}>
+                <Text style={{ color:'#ff3b30' }}>{t('Eliminar')}</Text>
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={{ textAlign:'center', opacity:0.6, marginTop:16 }}{t('auto.No tienes trips')}}
+        ListEmptyComponent={<Text style={{ textAlign:'center', opacity:0.6, marginTop:16 }}>{t('No tienes trips')}</Text>}
       />
     </View>
   );

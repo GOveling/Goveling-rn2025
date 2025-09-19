@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 export const options = { headerLargeTitle: true, headerTitle: 'Profile', headerTransparent: true };
-import { EmptyState } from '../../src/components/ui/EmptyState';
-import { useTheme } from '../../src/lib/theme';
+import { EmptyState } from '~/components/ui/EmptyState';
+import { useTheme } from '~/lib/theme';
 import React from 'react';
 import { View, Text, FlatList } from 'react-native';
 import { supabase } from '~/lib/supabase';
@@ -24,24 +24,22 @@ export default function Achievements(){
   })(); }, []);
 
   const earned = (code:string, threshold:number)=>{
-    const v = (stats?.countries_count||0) if code=='globetrotter' else (stats?.cities_count||0) if code=='cityhopper' else (stats?.places_count||0);
+    const v = code === 'globetrotter' ? (stats?.countries_count||0) : 
+              code === 'cityhopper' ? (stats?.cities_count||0) : 
+              (stats?.places_count||0);
     return v >= threshold;
   };
 
   return (
     <View style={{ flex:1, padding:12, gap:8 }}>
-      <Text style={{ fontSize:22, fontWeight:'900' }}{t('auto.Estadísticas de viaje')}
+      <Text style={{ fontSize:22, fontWeight:'900' }}>Estadísticas de viaje</Text>
       <View style={{ flexDirection:'row', gap:12 }}>
         <Stat label="Países" value={stats?.countries_count||0} />
         <Stat label="Ciudades" value={stats?.cities_count||0} />
         <Stat label="Lugares" value={stats?.places_count||0} />
-      
-{/* v153 Empty state fallback */}
-{(Array.isArray(items) && items.length===0) ? (
-  <EmptyState title="Aún sin logros" subtitle="Activa Travel Mode y empieza a sumar" />
-): null}
-</View>
-      <Text style={{ marginTop:12, fontWeight:'700' }}{t('auto.Logros')}
+      </View>
+
+      <Text style={{ marginTop:12, fontWeight:'700' }}>Logros</Text>
       <FlatList
         data={badges}
         keyExtractor={(i)=>String(i.id)}

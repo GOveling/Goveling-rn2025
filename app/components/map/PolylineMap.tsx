@@ -21,8 +21,11 @@ function computeBounds(coords:Coord[]){
 export default function PolylineMap({ coords, origin, dest, refitKey }:{ coords: Coord[]; origin?:Coord; dest?:Coord; refitKey?: any }){
   const height = 300;
   if (!MapboxGL){
-    return (<View style={{ height, backgroundColor:'#eef2ff', borderRadius:12, alignItems:'center', justifyContent:{t('auto.Instala @rnmapbox/maps para visualizar la ruta.')}a @rnmapbox/maps para visualizar la ruta.</Text>
-    </View>);
+    return (
+      <View style={{ height, backgroundColor:'#eef2ff', borderRadius:12, alignItems:'center', justifyContent:'center' }}>
+        <Text>Instala @rnmapbox/maps para visualizar la ruta.</Text>
+      </View>
+    );
   }
   const line = coords?.map(c=> [c.lng, c.lat]) || [];
   const bounds = computeBounds([...(coords||[]), ...(origin?[origin]:[]), ...(dest?[dest]:[])]);

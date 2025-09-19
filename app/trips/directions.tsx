@@ -60,7 +60,8 @@ export default function Directions(){
         keyExtractor={(_,i)=> String(i)}
         renderItem={({item, index})=> (
           <View style={{ paddingVertical:8, borderBottomWidth:1, borderBottomColor:'#eee' }}>
-            <Text style={{fontWeight:'700'}}>{index+1}. {stri{t('auto.~{Math.round((item.duration_s||0)/60)} min, {(item.distance_m||0)} m')}y:0.7}}>~{Math.round((item.duration_s||0)/60)} min, {(item.distance_m||0)} m</Text>
+            <Text style={{fontWeight:'700'}}>{index+1}. {stripHtml(item.instruction||'')}</Text>
+            <Text style={{ opacity:0.7 }}>~{Math.round((item.duration_s||0)/60)} min, {(item.distance_m||0)} m</Text>
           </View>
         )}
         style={{ flex:1 }}

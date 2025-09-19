@@ -1,12 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { EmptyState } from '../../src/components/ui/EmptyState';
+import { EmptyState } from '~/components/ui/EmptyState';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
-
-import { supabase } from '../../src/lib/supabase';
-import { useRouter } from 'expo-router';
-import { TouchableOpacity, View, Text, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { supabase } from '~/lib/supabase';
 
 function ActionButton({ title, onPress }:{title:string; onPress:()=>void}){
   return (<TouchableOpacity onPress={onPress} style={{ backgroundColor:'#111827', paddingVertical:8, paddingHorizontal:12, borderRadius:8, marginRight:8 }}>
@@ -58,7 +55,7 @@ async function DeclineInvite(n:any){
   Alert.alert('Invitación','Has declinado la invitación.');
 }
 
-import { supabase } from '~/lib/supabase';
+
 
 type Item = { id:number; title:string; body:string; data?:any; created_at:string; read_at?:string|null };
 
@@ -83,8 +80,8 @@ export default function Inbox(){
   };
 
   return (
-    <View st{t('auto.Inbox')}, padding:16 }}>
-      <Text style={{ fontSize:22, fontWeight:'800' }}>Inbox</Text>
+    <View style={{ flex:1, padding:16 }}>
+      <Text style={{ fontSize:22, fontWeight:'800' }}>{t('Inbox')}</Text>
       <FlatList
         data={list}
         keyExtractor={(i)=>String(i.id)}
@@ -96,7 +93,7 @@ export default function Inbox(){
             <Text style={{ opacity:0.6, fontSize:12 }}>{new Date(item.created_at).toLocaleString()}</Text>
           </TouchableOpacity>
         )}
-        {t('auto.No tienes notificaciones')}{{ textAlign:'center', opacity:0.6, marginTop:16 }}>No tienes notificaciones</Text>}
+        ListEmptyComponent={<Text style={{ textAlign:'center', opacity:0.6, marginTop:16 }}>{t('No tienes notificaciones')}</Text>}
       />
     </View>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import MapLibreGL from 'react-native-maplibre-gl';
+import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
 import { DEFAULT_STYLE_URL } from '~/lib/map';
 
 type Props = { lat:number; lng:number; height?:number };

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 export const options = { headerLargeTitle: true, headerTitle: 'Home', headerTransparent: true };
-import { useTheme } from '../../src/lib/theme';
+import { useTheme } from '~/lib/theme';
 import React from 'react';
 import HomeDaySummary from '~/components/home/HomeDaySummary';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';

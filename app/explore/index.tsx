@@ -2,10 +2,10 @@ import { Platform, TextInput, View as RNView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 export const options = { headerLargeTitle: true, headerTitle: 'Explore', headerTransparent: true };
-import { Sheet } from '../../src/components/ui/BottomSheet';
-import { Segmented } from '../../src/components/ui/Segmented';
-import { EmptyState } from '../../src/components/ui/EmptyState';
-import { useTheme } from '../../src/lib/theme';
+import { Sheet } from '~/components/ui/BottomSheet';
+import { Segmented } from '~/components/ui/Segmented';
+import { EmptyState } from '~/components/ui/EmptyState';
+import { useTheme } from '~/lib/theme';
 
 // === Enhanced filters (categories, open_now, rating, order, radius chips) ===
 import React from 'react';
@@ -89,19 +89,7 @@ export default function Explore(){
   }
 
   return (
-    <View
-      /*ANDROID_SEARCH_FALLBACK*/>{/*SEGMENTED*/
-      {Platform.OS==='android' ? (
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder='Search places'
-          style={{ marginTop:8, marginBottom:8, borderWidth:1, borderColor:'#E5E7EB', borderRadius:12, paddingHorizontal:12, paddingVertical:10 }}
-        />
-      ) : null}
-}
-      <Segmented values={categories} selectedIndex={segIndex} onChange={setSegIndex} />
- style={{padding:16, gap:8}}>
+    <View style={{padding:16, gap:8}}>
       <Text style={{fontSize:18, fontWeight:'800'}}>{t('explore.title')}</Text>
       <TextInput placeholder="Buscar…" value={q} onChangeText={setQ} style={{borderWidth:1, borderColor:'#ddd', borderRadius:8, padding:10}} />
       <View style={{flexDirection:'row', gap:8}}>
@@ -137,7 +125,7 @@ export default function Explore(){
           <Text style={{ color: openNow?'#fff':'#111827' }}>{openNow? 'Open now ✓':'Open now'}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={()=> setMinRating(r=> (r>=4.5?0:(r+0.5)))} style={{ paddingVertical:6, paddingHorizontal:10, borderRadius:999, marginRight:8, backgroundColor: '#e5e7eb' }}>
-          <Text style={{ color:'#111827' }}{t('auto.min ★ {minRating.toFixed(1)}')}
+          <Text style={{ color:'#111827' }}>min ★ {minRating.toFixed(1)}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -148,7 +136,7 @@ export default function Explore(){
           <View style={{paddingVertical:10, borderBottomWidth:1, borderBottomColor:'#eee'}}>
             <Text style={{fontWeight:'700'}}>{item.name}</Text>
             <Text style={{opacity:0.7}}>{item.vicinity || item.formatted_address}</Text>
-            {item.rating ? <Text{t('auto.★ {item.rating}')} : null}
+            {item.rating ? <Text>★ {item.rating}</Text> : null}
           </View>
         )}
       />

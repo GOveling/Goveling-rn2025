@@ -35,17 +35,18 @@ export default function Accommodation(){
   };
 
   return (
-    <View st{t('auto.Accommodation')}g:16 }}>
-      <Text style={{ fontSize:22, fontWeight:'800' }}>Accommodation</Text>
+    <View style={{ flex:1, padding:16 }}>
+      <Text style={{ fontSize:22, fontWeight:'800' }}>{t('Accommodation')}</Text>
       <TextInput placeholder="Nombre" value={name} onChangeText={setName} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8, marginTop:8 }} />
-      <TextInput placeholder="Dirección" value={address} onChangeText={setAddress} style={t('auto.Check-in')}, borderColor:'#ddd', padding:12, borderRadius:8 }} />
+      <TextInput placeholder="Dirección" value={address} onChangeText={setAddress} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
 
-      <Text>Check-in</Text>
-      <DateTimePicker value={{t('auto.Check-out')}()} mode="date" onChange={(e,d)=> d&&setCheckin(d)} />
-      <Text>Check-out</Text>
+      <Text>{t('Check-in')}</Text>
+      <DateTimePicker value={checkin||new Date()} mode="date" onChange={(e,d)=> d&&setCheckin(d)} />
+      <Text>{t('Check-out')}</Text>
       <DateTimePicker value={checkout||new Date()} mode="date" onChange={(e,d)=> d&&setCheckout(d)} />
 
-      <TouchableOpacity onPress={add} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8, marginTop{t('auto.Agregar')}<Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>Agregar</Text>
+      <TouchableOpacity onPress={add} style={{ backgroundColor:'#007aff', paddingVertical:10, borderRadius:8, marginTop:12 }}>
+        <Text style={{ color:'#fff', textAlign:'center', fontWeight:'800' }}>{t('Agregar')}</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -58,10 +59,12 @@ export default function Accommodation(){
               <Text style={{ opacity:0.7 }}>{item.address || '—'}</Text>
               <Text style={{ opacity:0.7 }}>{item.checkin_date} → {item.checkout_date}</Text>
             </View>
-       {t('auto.Eliminar')}pacity onPress={()=>del(item.id)}><Text style={{ color:'#ff3b30' }}>Eliminar</Text></TouchableOpacity>
+            <TouchableOpacity onPress={()=>del(item.id)}>
+              <Text style={{ color:'#ff3b30' }}>{t('Eliminar')}</Text>
+            </TouchableOpacity>
           </View>
         )}
-        {t('auto.No hay alojamientos')}tyle={{ textAlign:'center', opacity:0.6, marginTop:16 }}>No hay alojamientos</Text>}
+        ListEmptyComponent={<Text style={{ textAlign:'center', opacity:0.6, marginTop:16 }}>{t('No hay alojamientos')}</Text>}
       />
     </View>
   );
