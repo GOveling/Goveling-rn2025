@@ -38,6 +38,7 @@ export default function TabLayout() {
         options={{
           title: t('explore.title') || 'Explore',
           tabBarIcon: () => <ExploreIcon />,
+          headerShown: true,
         }}
       />
       <Tabs.Screen

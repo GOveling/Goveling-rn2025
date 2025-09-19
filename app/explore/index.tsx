@@ -1,5 +1,4 @@
-import { Platform, TextInput, View as RNView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { Platform, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 export const options = { headerLargeTitle: true, headerTitle: 'Explore', headerTransparent: true };
 import { Sheet } from '~/components/ui/BottomSheet';
@@ -17,8 +16,6 @@ const ORDERS = ['relevance','distance','rating'];
 
 export default function Explore(){
   const [search, setSearch] = React.useState('');
-
-  const navigation = useNavigation();
 
   const { t } = useTranslation();
 
@@ -120,19 +117,3 @@ export default function Explore(){
       />
     </View>
   );
-}
-
-// v154: Filtros en BottomSheet
-// <Sheet><Text{t('auto.Controles de filtro aquí (abierto ahora, rating, radio, etc.)')}</Sheet>
-
-// v156: connect native search bar
-React.useEffect(()=>{
-  navigation.setOptions({
-    headerSearchBarOptions: {
-      placeholder: 'Search places',
-      hideWhenScrolling: false,
-      autoFocus: false,
-      onChangeText: ({ nativeEvent }) => setSearch(nativeEvent.text || '')
-    }
-  });
-}, [navigation]);
