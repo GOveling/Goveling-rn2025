@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { Skeleton } from '../~/components/ui/Skeleton';
-import { useTheme } from '../~/lib/theme';
-import { useToast } from '../~/components/ui/Toast';
+import { Skeleton } from '~/components/ui/Skeleton';
+import { useTheme } from '~/lib/theme';
+import { useToast } from '~/components/ui/Toast';
 
 import React from 'react';
 import { View, Text, Button, ScrollView, Alert } from 'react-native';
 import { LabeledInput } from '../components/FiltersRow';
-import { affiliates } from '../~/lib/affiliates';
+import { affiliates } from '~/lib/affiliates';
 
 export default function Hotels(){
   const { t } = useTranslation();
@@ -22,11 +22,7 @@ export default function Hotels(){
   const [rooms, setRooms] = React.useState('1');
 
   async function openAffiliate(){
-  const { t } = useTranslation();
 
-  const toast = useToast();
-  const { colors, spacing } = useTheme();
-  const [loading, setLoading] = React.useState(false);
 
     toast.show('Abriendo hoteles…');
     const url = affiliates.hotels.buildUrl({

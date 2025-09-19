@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { Skeleton } from '../~/components/ui/Skeleton';
-import { useTheme } from '../~/lib/theme';
-import { useToast } from '../~/components/ui/Toast';
+import { Skeleton } from '~/components/ui/Skeleton';
+import { useTheme } from '~/lib/theme';
+import { useToast } from '~/components/ui/Toast';
 
 import React from 'react';
 import { View, Text, Button, ScrollView, Alert } from 'react-native';
 import { LabeledInput, Chip } from '../components/FiltersRow';
-import { affiliates } from '../~/lib/affiliates';
+import { affiliates } from '~/lib/affiliates';
 
 export default function Flights(){
   const { t } = useTranslation();
@@ -40,9 +40,9 @@ export default function Flights(){
   }
 
   return (
-    <> {loading ? <Skeleton height={18} style={{ margin:8 }} /> : null}
-  
-    <ScrollView accessibilityRole='scrollbar' style={{ padding:16 }}>
+    <>
+      {loading ? <Skeleton height={18} style={{ margin:8 }} /> : null}
+      <ScrollView accessibilityRole='scrollbar' style={{ padding:16 }}>
       <Text accessibilityRole='header' style={{ fontWeight:'800', fontSize:18, marginBottom:12 }}>{t('booking.flights')}</Text>
       <View style={{ flexDirection:'row', gap:12 }}>
         <LabeledInput label="From (IATA)" value={from} onChangeText={setFrom} placeholder="SCL" />
@@ -64,7 +64,7 @@ export default function Flights(){
         ))}
       </ScrollView>
       <Button title="Buscar en afiliado" onPress={openAffiliate} />
-    </ScrollView>
+      </ScrollView>
     </>
   );
 }
