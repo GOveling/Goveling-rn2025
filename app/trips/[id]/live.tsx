@@ -209,22 +209,25 @@ export default function TravelGuided(){
         const now = new Date();
         const etaDt = parseHM(dayISO, eta); const etdDt = parseHM(dayISO, etd);
         const tooEarly = etaDt && now < etaDt; const tooLate = etdDt && now > etdDt;
-        if (tooEarly) return (<View style={{ padding:10, backgroundColor:'#{t('auto.⏳ Demasiado pronto para este lugar (ETA {eta}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}')}TA {eta}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}</Text></View>);
-        if (tooLate) return (<View style={{ padding:10, backgroundColor:'#{t('auto.⏰ Ya pasó la ventana sugerida (ETD {etd}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}')}TD {etd}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}</Text></View>);
-        return (<View style={{ padding:10, backgroundColor:'#{t('auto.✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.')}Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.</Text></View>);
+        if (tooEarly) return (<View style={{ padding:10, backgroundColor:'#fff3cd' }}><Text>{t(\'auto.⏳ Demasiado pronto para este lugar (ETA {eta}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}', { eta })}</Text></View>);
+        if (tooLate) return (<View style={{ padding:10, backgroundColor:'#f8d7da' }}><Text>{t(\'auto.⏰ Ya pasó la ventana sugerida (ETD {etd}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}', { etd })}</Text></View>);
+        return (<View style={{ padding:10, backgroundColor:'#d4edda' }}><Text>{t(\'auto.✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.')}</Text></View>);
       })()}
 
 
       {target ? (
-{t('auto.Siguiente destino:')}ginTop:8 }}>
-          <Text style={{ fontWeight:'700' }}>Siguiente destino:</Text>
-          <Text>{target.name}</T{t('auto.No hay destinos pendientes hoy 🎉')} <Text style={{ marginTop:8, opacity:0.7 }}>No hay destinos pendientes hoy 🎉</Text>
+        <View style={{ marginTop:8 }}>
+          <Text style={{ fontWeight:'700' }}>{t('auto.Siguiente destino:')}</Text>
+          <Text>{target.name}</Text>
+        </View>
+      ) : (
+        <Text style={{ marginTop:8, opacity:0.7 }}>{t('auto.No hay destinos pendientes hoy 🎉')}</Text>
       )}
 
 
       {/* Auto-siguiente toggle */}
-      <View style={{ flexDirection:'row', ali{t('auto.Auto‑siguiente')}8, marginTop:8 }}>
-        <Text style={{ fontWeight:'700' }}>Auto‑siguiente</Text>
+      <View style={{ flexDirection:'row', alignItems:'center', marginTop:8 }}>
+        <Text style={{ fontWeight:'700' }}>{t('auto.Auto‑siguiente')}</Text>
         <TouchableOpacity onPress={()=>setAutoNext(v=>!v)} style={{ marginLeft:8, paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor: autoNext ? '#34c759':'#ddd', backgroundColor: autoNext ? '#e7f9ee':'#fff' }}>
           <Text>{autoNext ? 'ON' : 'OFF'}</Text>
         </TouchableOpacity>
@@ -232,28 +235,31 @@ export default function TravelGuided(){
 
 
       <View style={{ height:320, borderRadius:12, overflow:'hidden', marginTop:8 }}>
-        <MapLibreGL.MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-          <MapLibreGL.Camera zoomLevel={13} centerCoordinate={center} />
-          <MapLibreGL.UserLocation visible={true} />
-          {pos && <MapLibreGL.PointAnnotation id="pos" coordinate={[pos.lng, pos.lat]} />}
-          {target && <MapLibreGL.PointAnnotation id="tgt" coordinate={[target.lng, target.lat]} />}
+        <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
+          <Camera zoomLevel={13} centerCoordinate={center} />
+          <UserLocation visible={true} />
+          {pos && <PointAnnotation id="pos" coordinate={[pos.lng, pos.lat]} />}
+          {target && <PointAnnotation id="tgt" coordinate={[target.lng, target.lat]} />}
           {result?.overview_polyline && (
-            <MapLibreGL.ShapeSource id="route" shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: result.overview_polyline } }}>
-              <MapLibreGL.LineLayer id="route-line" style={{ lineWidth:4, lineColor: modeColor[segMode]||'#333' }} />
-            </MapLibreGL.ShapeSource>
+            <ShapeSource id="route" shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: result.overview_polyline } }}>
+              <LineLayer id="route-line" style={{ lineWidth:4, lineColor: modeColor[segMode]||'#333' }} />
+            </ShapeSource>
           )}
-        </MapLibreGL.MapView>
+        </MapView>
       </View>
 
       <View style={{ flexDirection:'row', gap:8, marginTop:8 }}>
-        <TouchableOpacity onPress={prev} style={{ paddingHorizonta{t('auto.◀︎ Anterior')}al:8, borderRadius:8, borderWidth:1, borderColor:'#ddd' }}><Text>◀︎ Anterior</Text></TouchableOpacity>
-        <TouchableOpacity onPress={next} style={{ paddingHorizonta{t('auto.Siguiente ▶︎')}l:8, borderRadius:8, borderWidth:1, borderColor:'#ddd' }}><Text>Siguiente ▶︎</Text></TouchableOpacity>
-        {arrived && <TouchableOpacity onPress={confirmArrival} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, pa{t('auto.Marcar visitado')}Radius:8 }}><Text style={{ color:'#fff', fontWeight:'800' }}>Marcar visitado</Text></TouchableOpacity>}
-      </View{t('auto.Pasos')}w style={{ marginTop:12 }}>
-        <Text style={{ fontWeight:'700' }}>Pasos</Text>
+        <TouchableOpacity onPress={prev} style={{ paddingHorizontal:12, paddingVertical:8, borderRadius:8, borderWidth:1, borderColor:'#ddd' }}><Text>{t('auto.◀︎ Anterior')}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={next} style={{ paddingHorizontal:12, paddingVertical:8, borderRadius:8, borderWidth:1, borderColor:'#ddd' }}><Text>{t('auto.Siguiente ▶︎')}</Text></TouchableOpacity>
+        {arrived && <TouchableOpacity onPress={confirmArrival} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, paddingVertical:8, borderRadius:8 }}><Text style={{ color:'#fff', fontWeight:'800' }}>{t('auto.Marcar visitado')}</Text></TouchableOpacity>}
+      </View>
+
+      <View style={{ marginTop:12 }}>
+        <Text style={{ fontWeight:'700' }}>{t('auto.Pasos')}</Text>
         {(result?.steps||[]).map((s, i)=>(
           <View key={i} style={{ paddingVertical:6, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
-            <Text style={{ fontWeight:'600' }}>{s.transit?.line?.short_name ? `[${s.transit.line.short_name}] `:''}{s.transit?.line?.name || (s.travel_mode||'{t('auto./g,'')}')}        <Text numberOfLines={3}>{(s.instruction||'').replace(/<[^>]+>/g,'')}</Text>
+            <Text style={{ fontWeight:'600' }}>{s.transit?.line?.short_name ? `[${s.transit.line.short_name}] `:''}{s.transit?.line?.name || (s.travel_mode||'\').replace(/[A-Z]/g,' $&').trim()}</Text>
+            <Text numberOfLines={3}>{(s.instruction||'').replace(/<[^>]+>/g,'')}</Text>
           </View>
         ))}
       </View>
