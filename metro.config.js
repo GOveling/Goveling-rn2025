@@ -22,7 +22,6 @@ config.transformer.minifierConfig = {
 // Bundle splitting configuration
 config.serializer = {
   ...config.serializer,
-  customSerializer: require('@expo/metro-config/build/serializer/esbuild'),
 };
 
 // Resolver optimizations
