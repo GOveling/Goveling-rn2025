@@ -40,7 +40,7 @@ export default function Flights(){
   }
 
   return (
-    <> {loading ? <Skeleton height={18} style={{ margin:8 }} /> : null} </>
+    <> {loading ? <Skeleton height={18} style={{ margin:8 }} /> : null}
   
     <ScrollView accessibilityRole='scrollbar' style={{ padding:16 }}>
       <Text accessibilityRole='header' style={{ fontWeight:'800', fontSize:18, marginBottom:12 }}>{t('booking.flights')}</Text>
@@ -65,9 +65,6 @@ export default function Flights(){
       </ScrollView>
       <Button title="Buscar en afiliado" onPress={openAffiliate} />
     </ScrollView>
+    </>
   );
-}
-
-    }
-    )
 }
