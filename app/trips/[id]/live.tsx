@@ -4,8 +4,6 @@ import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
 import { sendPush } from '~/lib/push_send';
-import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
-import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '~/lib/supabase';
 import { loadRouteCache } from '~/lib/routes';
@@ -235,17 +233,26 @@ export default function TravelGuided(){
 
 
       <View style={{ height:320, borderRadius:12, overflow:'hidden', marginTop:8 }}>
-        <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-          <Camera zoomLevel={13} centerCoordinate={center} />
-          <UserLocation visible={true} />
-          {pos && <PointAnnotation id="pos" coordinate={[pos.lng, pos.lat]} />}
-          {target && <PointAnnotation id="tgt" coordinate={[target.lng, target.lat]} />}
-          {result?.overview_polyline && (
-            <ShapeSource id="route" shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: result.overview_polyline } }}>
-              <LineLayer id="route-line" style={{ lineWidth:4, lineColor: modeColor[segMode]||'#333' }} />
-            </ShapeSource>
+        <View style={{ 
+          flex: 1, 
+          backgroundColor: '#f0f0f0', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: '#ddd'
+        }}>
+          <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+            Travel Mode Map
+          </Text>
+          <Text style={{ fontSize: 12, color: '#666' }}>
+            Mode: {segMode}
+          </Text>
+          {target && (
+            <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
+              Target: {target.name}
+            </Text>
           )}
-        </MapView>
+        </View>
       </View>
 
       <View style={{ flexDirection:'row', gap:8, marginTop:8 }}>
