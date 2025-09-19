@@ -209,9 +209,9 @@ export default function TravelGuided(){
         const now = new Date();
         const etaDt = parseHM(dayISO, eta); const etdDt = parseHM(dayISO, etd);
         const tooEarly = etaDt && now < etaDt; const tooLate = etdDt && now > etdDt;
-        if (tooEarly) return (<View style={{ padding:10, backgroundColor:'#fff3cd' }}><Text>{t(\'auto.⏳ Demasiado pronto para este lugar (ETA {eta}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}', { eta })}</Text></View>);
-        if (tooLate) return (<View style={{ padding:10, backgroundColor:'#f8d7da' }}><Text>{t(\'auto.⏰ Ya pasó la ventana sugerida (ETD {etd}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}', { etd })}</Text></View>);
-        return (<View style={{ padding:10, backgroundColor:'#d4edda' }}><Text>{t(\'auto.✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.')}</Text></View>);
+        if (tooEarly) return (<View style={{ padding:10, backgroundColor:'#fff3cd' }}><Text>{t(`auto.⏳ Demasiado pronto para este lugar (ETA {eta}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}`, { eta })}</Text></View>);
+        if (tooLate) return (<View style={{ padding:10, backgroundColor:'#f8d7da' }}><Text>{t(`auto.⏰ Ya pasó la ventana sugerida (ETD {etd}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}`, { etd })}</Text></View>);
+        return (<View style={{ padding:10, backgroundColor:'#d4edda' }}><Text>{t(`auto.✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.`)}</Text></View>);
       })()}
 
 
