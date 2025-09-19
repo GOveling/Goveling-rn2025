@@ -2,29 +2,7 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Performance optimizations
-config.transformer.minifierConfig = {
-  mangle: {
-    keep_fnames: true,
-  },
-  output: {
-    ascii_only: true,
-    quote_keys: true,
-    wrap_iife: true,
-  },
-  sourceMap: {
-    includeSources: false,
-  },
-  toplevel: false,
-  warnings: false,
-};
-
-// Bundle splitting configuration
-config.serializer = {
-  ...config.serializer,
-};
-
-// Resolver optimizations
+// Resolver optimizations for path aliases
 config.resolver = {
   ...config.resolver,
   alias: {
@@ -33,11 +11,33 @@ config.resolver = {
   },
 };
 
-// Transformer optimizations
-config.transformer = {
-  ...config.transformer,
-  allowOptionalDependencies: true,
-  babelTransformerPath: require.resolve('metro-react-native-babel-transformer'),
-};
+// Performance optimizations (compatible with Bolt)
+if (process.env.NODE_ENV === 'production') {
+  config.transformer.minifierConfig = {
+    mangle: {
+      keep_fnames: true,
+    },
+    output: {
+      ascii_only: true,
+      quote_keys: true,
+      wrap_iife: true,
+    },
+    sourceMap: {
+      includeSources: false,
+    },
+    toplevel: false,
+    warnings: false,
+  };
+
+  // Use esbuild serializer for production builds only
+  try {
+    config.serializer = {
+      ...config.serializer,
+      customSerializer: require('@rnx-kit/metro-serializer-esbuild'),
+    };
+  } catch (error) {
+    console.warn('ESBuild serializer not available, using default serializer');
+  }
+}
 
 module.exports = config;
