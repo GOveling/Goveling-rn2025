@@ -258,7 +258,7 @@ export default function TravelGuided(){
         <Text style={{ fontWeight:'700' }}>{t('auto.Pasos')}</Text>
         {(result?.steps||[]).map((s, i)=>(
           <View key={i} style={{ paddingVertical:6, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
-            <Text style={{ fontWeight:'600' }}>{s.transit?.line?.short_name ? `[${s.transit.line.short_name}] `:''}{s.transit?.line?.name || (s.travel_mode||'').replace(/[A-Z]/g,\' $&').trim()}</Text>
+            <Text style={{ fontWeight:'600' }}>{s.transit?.line?.short_name ? `[${s.transit.line.short_name}] `:''}{s.transit?.line?.name || (s.travel_mode||'').replace(/[A-Z]/g,' $&').trim()}</Text>
             <Text numberOfLines={3}>{(s.instruction||'').replace(/<[^>]+>/g,'')}</Text>
           </View>
         ))}
