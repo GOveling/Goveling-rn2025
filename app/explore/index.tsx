@@ -45,34 +45,12 @@ export default function Explore(){
   }
 
   async function nearMe(){
-  const [search, setSearch] = React.useState('');
-
-  const navigation = useNavigation();
-
-  const { t } = useTranslation();
-
-  const [segIndex, setSegIndex] = React.useState(0);
-  const categories = ['All','Attractions','Food','Shopping','Museums'];
-
-  const { colors, spacing } = useTheme();
-
     navigator.geolocation.getCurrentPosition(({coords})=>{
       setLat(coords.latitude); setLng(coords.longitude);
     });
   }
 
-  async function search(){
-  const [search, setSearch] = React.useState('');
-
-  const navigation = useNavigation();
-
-  const { t } = useTranslation();
-
-  const [segIndex, setSegIndex] = React.useState(0);
-  const categories = ['All','Attractions','Food','Shopping','Museums'];
-
-  const { colors, spacing } = useTheme();
-
+  async function performSearch(){
     setLoading(true);
     const url = process.env.EXPO_PUBLIC_PLACES_API || '/functions/v1/places-search';
     const res = await fetch(url, {
@@ -94,7 +72,7 @@ export default function Explore(){
       <TextInput placeholder="Buscar…" value={q} onChangeText={setQ} style={{borderWidth:1, borderColor:'#ddd', borderRadius:8, padding:10}} />
       <View style={{flexDirection:'row', gap:8}}>
         <Button title="Near me" onPress={nearMe} />
-        <Button title={loading ? 'Buscando…' : 'Buscar'} onPress={search} />
+        <Button title={loading ? 'Buscando…' : 'Buscar'} onPress={performSearch} />
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
