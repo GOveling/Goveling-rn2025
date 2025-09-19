@@ -57,7 +57,7 @@ export default function ProfileScreen(){
     <View style={{ flex:1, padding:16, gap:12 }}>
       <Text style={{ fontSize:24, fontWeight:'900' }}>{t('Perfil')}</Text>
       <TouchableOpacity onPress={pickAvatar} style={{ alignSelf:'flex-start' }}>
-        <Image source={ avatarUrl ? { uri: avatarUrl } : require('~/assets/avatar-placeholder.png') } style={{ width:80, height:80, borderRadius:40, backgroundColor:'#eee' }} />
+        <Image source={ avatarUrl ? { uri: avatarUrl } : undefined } style={{ width:80, height:80, borderRadius:40, backgroundColor:'#eee' }} />
       </TouchableOpacity>
       <TextInput placeholder="Nombre completo" value={fullName} onChangeText={setFullName} style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
       <TextInput placeholder="Código país (ej. CL)" value={countryCode} onChangeText={setCountryCode} autoCapitalize="characters" style={{ borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8 }} />
