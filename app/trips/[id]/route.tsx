@@ -362,7 +362,8 @@ export default function SmartRouteTabs(){
                   <Text style={{ fontWeight:'700' }}>{index+1}. {item.transit?.line?.short_name ? `[${item.transit.line.short_name}] `: ''}{item.transit?.line?.name || (item.travel_mode || '')}</Text>
                   {item.transit ? (
                     <Text>{item.transit.departure_stop} → {item.transit.arrival_stop} • {item.transit.num_stops||0} stops • {item.transit.headsign||''} ({item.transit?.line?.agency||''})</Text>
-                  ){t('auto./g,'')||''}')}      <Text numberOfLines={3}>{item.instruction?.replace(/<[^>]+>/g,'')||''}</Text>
+                  ) : (
+                    <Text numberOfLines={3}>{item.instruction?.replace(/<[^>]+>/g,'')||''}</Text>
                   )}
                   <Text style={{ opacity:0.7 }}>{((item.distance_m||0)/1000).toFixed(2)} km • {Math.round((item.duration_s||0)/60)} min</Text>
                 </View>
