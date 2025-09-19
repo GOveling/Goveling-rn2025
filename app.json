@@ -6,6 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/branding-zeppeling.png",
     "userInterfaceStyle": "automatic",
+    "web": {
+      "output": "static",
+      "bundler": "metro"
+    },
     "splash": {
       "image": "./assets/branding-zeppeling.png",
       "resizeMode": "contain",
@@ -15,7 +19,7 @@
       "**/*"
     ],
     "scheme": "goveling",
-    "platforms": ["ios", "android"],
+    "platforms": ["ios", "android", "web"],
     "plugins": [
       "expo-router",
       "expo-localization",
