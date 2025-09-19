@@ -25,7 +25,7 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
     <View style={{ gap:6 }}>
       {modes.map(m=> (
         <View key={String(m)} style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
-          <View style={{ width:60 }}><Text>{String(m)}</Text>
+          <View style={{ width:60 }}><Text>{String(m)}</Text></View>
           <View style={{ flex:1, height:8, backgroundColor:'#eee', borderRadius:4, overflow:'hidden' }}>
             <View style={{ width: `${total? ((summary?.[m]||0)/total*100):0}%`, height:8, backgroundColor: m==='walking'? '#34c759' : m==='bicycling'? '#16a085' : m==='driving'? '#007aff' : '#8e44ad' }} />
           </View>
@@ -37,9 +37,6 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
 }
 
 function fmtHM(s?:string){ return s||''; }
-
-  const [routeCoords, setRouteCoords] = React.useState<Array<{lat:number;lng:number}>>([]);
-  const [refitKey, setRefitKey] = React.useState(0);
 
 export default function SmartRouteTabs(){
   const { t } = useTranslation();
@@ -61,6 +58,9 @@ export default function SmartRouteTabs(){
   // Full-day state
   const [buildingAll, setBuildingAll] = React.useState(false);
   const [allResults, setAllResults] = React.useState<{ pair:[Place,Place], result:any, segMode:'walking'|'driving'|'bicycling'|'transit' }[] | null>(null);
+
+  const [routeCoords, setRouteCoords] = React.useState<Array<{lat:number;lng:number}>>([]);
+  const [refitKey, setRefitKey] = React.useState(0);
 
   const pair = React.useMemo(()=>{
     if (places.length < 2) return null;
@@ -101,7 +101,7 @@ export default function SmartRouteTabs(){
     setBuildingAll(true);
     const currentSummaryModes: Record<string, number> = {};
     try{
-      const out: { pair:[Place,Place], result:any }[] = [];
+      const out: { pair:[Place,Place], result:any, segMode:'walking'|'driving'|'bicycling'|'transit' }[] = [];
       for (let i=0;i<places.length-1;i++){
         const a = places[i], b = places[i+1];
         const best = await fetchBestMode({ lat:a.lat, lng:a.lng }, { lat:b.lat, lng:b.lng }, ['transit','walking','bicycling','driving']);
@@ -182,55 +182,55 @@ export default function SmartRouteTabs(){
           <Text style={{ color:'#fff', fontWeight:'800' }}>{buildingAll ? 'Calculando…' : 'Ruta completa'}</Text>
         </TouchableOpacity>
 
-      {/* Planificar con IA (ML externa con doble fallback) */}
-      <TouchableOpacity onPress={async ()=>{
-        try{
-          // Collect trip metadata
-          const { data: trip } = await supabase.from('trips').select('id, start_date, end_date').eq('id', id).single();
-          const { data: acc } = await supabase.from('accommodations').select('lat, lng, name').eq('trip_id', id);
-          const { data: rawPlaces } = await supabase.from('trip_places').select('place_id, name, lat, lng, priority').eq('trip_id', id);
+        {/* Planificar con IA (ML externa con doble fallback) */}
+        <TouchableOpacity onPress={async ()=>{
+          try{
+            // Collect trip metadata
+            const { data: trip } = await supabase.from('trips').select('id, start_date, end_date').eq('id', id).single();
+            const { data: acc } = await supabase.from('accommodations').select('lat, lng, name').eq('trip_id', id);
+            const { data: rawPlaces } = await supabase.from('trip_places').select('place_id, name, lat, lng, priority').eq('trip_id', id);
 
-          const req = {
-            trip_id: id,
-            start_date: trip?.start_date || dayISO,
-            end_date: trip?.end_date || dayISO,
-            mode: (mode as any),
-            daily_window: { start: '09:00', end: '18:00' },
-            accommodations: (acc||[]).filter((a:any)=> a?.lat && a?.lng),
-            places: (rawPlaces||[]).filter((p:any)=> p.lat && p.lng).map((p:any)=> ({
-              id: String(p.place_id || p.id), name: p.name, lat: p.lat, lng: p.lng, priority: p.priority || 0
-            }))
-          };
+            const req = {
+              trip_id: id,
+              start_date: trip?.start_date || dayISO,
+              end_date: trip?.end_date || dayISO,
+              mode: (mode as any),
+              daily_window: { start: '09:00', end: '18:00' },
+              accommodations: (acc||[]).filter((a:any)=> a?.lat && a?.lng),
+              places: (rawPlaces||[]).filter((p:any)=> p.lat && p.lng).map((p:any)=> ({
+                id: String(p.place_id || p.id), name: p.name, lat: p.lat, lng: p.lng, priority: p.priority || 0
+              }))
+            };
 
-          const ml = await generateHybridItineraryV2(req as any);
-          if (!ml?.ok || !ml.days?.length) throw new Error(ml?.error || 'ML no devolvió plan');
+            const ml = await generateHybridItineraryV2(req as any);
+            if (!ml?.ok || !ml.days?.length) throw new Error(ml?.error || 'ML no devolvió plan');
 
-          // Persist each day's order in route_cache
-          for (const dayPlan of ml.days){
-            const ordered = dayPlan.places.map(p=> ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, eta: p.eta, etd: p.etd, type: p.type||'place', note: p.note }));
-            await saveRouteCache(id!, dayPlan.date, ordered, { metrics: dayPlan.metrics, version: ml.version });
+            // Persist each day's order in route_cache
+            for (const dayPlan of ml.days){
+              const ordered = dayPlan.places.map(p=> ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, eta: p.eta, etd: p.etd, type: p.type||'place', note: p.note }));
+              await saveRouteCache(id!, dayPlan.date, ordered, { metrics: dayPlan.metrics, version: ml.version });
+            }
+
+            Alert.alert('Itinerario listo', `Se planificó con IA (${ml.version}). Abre el día para ver la ruta.`);
+            // Update UI to current day if it exists in plan
+            const todayPlan = ml.days.find(d => d.date === dayISO);
+            if (todayPlan){
+              setPlaces(todayPlan.places as any);
+              setAllResults(null); // reset full-day results to rebuild con Directions si quieres
+            }
+          }catch(e:any){
+            Alert.alert('Error', e.message||'No se pudo planificar con IA');
           }
+        }} style={{ backgroundColor:'#8e44ad', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+          <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Planificar con IA')}</Text>
+        </TouchableOpacity>
 
-          Alert.alert('Itinerario listo', `Se planificó con IA (${ml.version}). Abre el día para ver la ruta.`);
-          // Update UI to current day if it exists in plan
-          const todayPlan = ml.days.find(d => d.date === dayISO);
-          if (todayPlan){
-            setPlaces(todayPlan.places as any);
-            setAllResults(null); // reset full-day results to rebuild con Directions si quieres
-          }
-        }catch(e:any){
-          Alert.alert('Error', e.message||'No se pudo planificar con IA');
-        }
-      }} style={{ backgroundColor:'#8e44ad', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
-        <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Planificar con IA')}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={buildAll} style={{ backgroundColor:'#007aff', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
-        <Text style={{ color:'#fff', fontWeight:'800' }}>{buildingAll ? 'Calculando…' : 'Ruta completa'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={()=>router.push(`/trips/${id}/live`)} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
-        <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Iniciar Travel Mode')}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={buildAll} style={{ backgroundColor:'#007aff', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+          <Text style={{ color:'#fff', fontWeight:'800' }}>{buildingAll ? 'Calculando…' : 'Ruta completa'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={()=>router.push(`/trips/${id}/live`)} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+          <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Iniciar Travel Mode')}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Controls */}
@@ -253,7 +253,6 @@ export default function SmartRouteTabs(){
 
       {/* Tabs */}
       <View style={{ flexDirection:'row', gap:8 }}>
-    
         {(['itinerary','map','analytics'] as const).map(t => (
           <TouchableOpacity key={t} onPress={()=>setTab(t)} style={{ paddingHorizontal:10, paddingVertical:6, borderRadius:20, borderWidth:1, borderColor: tab===t ? '#007aff':'#ddd' }}>
             <Text>{t}</Text>
@@ -304,55 +303,57 @@ export default function SmartRouteTabs(){
           return (
             allResults ? (
               <FlatList
-            style={{ marginTop:8 }}
-            data={allResults}
-            keyExtractor={(_,i)=>String(i)}
-            renderItem={({ item, index }) => (
-              <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
-                <Text style={{ fontWeight:'700' }}>{index+1}. {item.pair[0].name} → {item.pair[1].name}</Text>
-                <Text style={{ opacity:0.7 }}>{(item.result?.summary || '').toString()} • {Math.round((item.result?.duration_s||0)/60)} min • {(item.result?.distance_m||0/1000).toFixed(2)} km</Text>
-                <View style={{ marginTop:6 }}>
-                  {(item.result?.steps||[]).map((step:any, si:number)=> (
-                    <View key={si} style={{ marginBottom:6 }}>
-                      <Text style={{ fontWeight:'600' }}>{step.transit?.line?.short_name ? `[${step.transit.line.short_name}] `:''}{step.transit?.line?.name || (step.travel_mode||'')}</Text>
-                      {step.transit ? (
-                        <Text>{step.transit.departure_stop} → {step.transit.arrival_stop} • {step.transit.num_stops||0} stops • {step.transit.headsign||''} ({step.transit?.line?.agency||''})</Text>
-                      ) : (
-                        <Text numberOfLines={3}>{(step.instruction||'').replace(/<[^>]+>/g,'')}</Text>
-                      )}
-                      <Text style={{ opacity:0.7 }}>{Math.round((step.duration_s||0)/60)} min • {((step.distance_m||0)/1000).toFixed(2)} km</Text>
+                style={{ marginTop:8 }}
+                data={allResults}
+                keyExtractor={(_,i)=>String(i)}
+                renderItem={({ item, index }) => (
+                  <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
+                    <Text style={{ fontWeight:'700' }}>{index+1}. {item.pair[0].name} → {item.pair[1].name}</Text>
+                    <Text style={{ opacity:0.7 }}>{(item.result?.summary || '').toString()} • {Math.round((item.result?.duration_s||0)/60)} min • {((item.result?.distance_m||0)/1000).toFixed(2)} km</Text>
+                    <View style={{ marginTop:6 }}>
+                      {(item.result?.steps||[]).map((step:any, si:number)=> (
+                        <View key={si} style={{ marginBottom:6 }}>
+                          <Text style={{ fontWeight:'600' }}>{step.transit?.line?.short_name ? `[${step.transit.line.short_name}] `:''}{step.transit?.line?.name || (step.travel_mode||'')}</Text>
+                          {step.transit ? (
+                            <Text>{step.transit.departure_stop} → {step.transit.arrival_stop} • {step.transit.num_stops||0} stops • {step.transit.headsign||''} ({step.transit?.line?.agency||''})</Text>
+                          ) : (
+                            <Text numberOfLines={3}>{(step.instruction||'').replace(/<[^>]+>/g,'')}</Text>
+                          )}
+                          <Text style={{ opacity:0.7 }}>{Math.round((step.duration_s||0)/60)} min • {((step.distance_m||0)/1000).toFixed(2)} km</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
-              </View>
-            )}
-            ListFooterComponent={() => (
-              <View style={{ padding:12 }}>
-                <Text style={{ opacity:0.7 }}>Resumen del día {dayISO}: {Math.round(totals.dur/60)} min • {(totals.dist/1000).toFixed(2)} km</Text>
-              </View>
-            )}
-          />
-        ) : (
-          result && (
-            <FlatList
-              style={{ marginTop:8 }}
-              data={result.steps}
-              keyExtractor={(_,i)=>String(i)}
-              renderItem={({ item, index }) => (
-                <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
-                  <Text style={{ fontWeight:'700' }}>{index+1}. {item.transit?.line?.short_name ? `[${item.transit.line.short_name}] `: ''}{item.transit?.line?.name || (item.travel_mode || '')}</Text>
-                  {item.transit ? (
-                    <Text>{item.transit.departure_stop} → {item.transit.arrival_stop} • {item.transit.num_stops||0} stops • {item.transit.headsign||''} ({item.transit?.line?.agency||''})</Text>
-                  ) : (
-                    <Text numberOfLines={3}>{item.instruction?.replace(/<[^>]+>/g,'')||''}</Text>
+                  </View>
+                )}
+                ListFooterComponent={() => (
+                  <View style={{ padding:12 }}>
+                    <Text style={{ opacity:0.7 }}>Resumen del día {dayISO}: {Math.round(totals.dur/60)} min • {(totals.dist/1000).toFixed(2)} km</Text>
+                  </View>
+                )}
+              />
+            ) : (
+              result && (
+                <FlatList
+                  style={{ marginTop:8 }}
+                  data={result.steps}
+                  keyExtractor={(_,i)=>String(i)}
+                  renderItem={({ item, index }) => (
+                    <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
+                      <Text style={{ fontWeight:'700' }}>{index+1}. {item.transit?.line?.short_name ? `[${item.transit.line.short_name}] `: ''}{item.transit?.line?.name || (item.travel_mode || '')}</Text>
+                      {item.transit ? (
+                        <Text>{item.transit.departure_stop} → {item.transit.arrival_stop} • {item.transit.num_stops||0} stops • {item.transit.headsign||''} ({item.transit?.line?.agency||''})</Text>
+                      ) : (
+                        <Text numberOfLines={3}>{item.instruction?.replace(/<[^>]+>/g,'')||''}</Text>
+                      )}
+                      <Text style={{ opacity:0.7 }}>{((item.distance_m||0)/1000).toFixed(2)} km • {Math.round((item.duration_s||0)/60)} min</Text>
+                    </View>
                   )}
-                  <Text style={{ opacity:0.7 }}>{((item.distance_m||0)/1000).toFixed(2)} km • {Math.round((item.duration_s||0)/60)} min</Text>
-                </View>
-              )}
-              ListHeaderComponent={<View style={{ paddingVertical:6 }}><Text style={{ opacity:0.7 }}>{(result.summary? ' — '+result.summary : '')}</Text></View>}
-            />
-          )
-        )
+                  ListHeaderComponent={<View style={{ paddingVertical:6 }}><Text style={{ opacity:0.7 }}>{(result.summary? ' — '+result.summary : '')}</Text></View>}
+                />
+              )
+            )
+          );
+        })()
       )}
 
       {tab==='map' && (
@@ -376,17 +377,17 @@ export default function SmartRouteTabs(){
               </MapLibreGL.ShapeSource>
             )}
           
-          {/* Legend */}
-          <View style={{ position:'absolute', right:10, top:10, backgroundColor:'rgba(255,255,255,0.9)', borderRadius:8, padding:8, gap:4 }}>
-            {(['walking','bicycling','driving','transit'] as const).map(m => (
-              <View key={m} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
-                <View style={{ width:14, height:4, backgroundColor: modeColor[m] }} />
-                <Text style={{ fontSize:12 }}>{m}</Text>
-              </View>
-            ))}
-          </View>
+            {/* Legend */}
+            <View style={{ position:'absolute', right:10, top:10, backgroundColor:'rgba(255,255,255,0.9)', borderRadius:8, padding:8, gap:4 }}>
+              {(['walking','bicycling','driving','transit'] as const).map(m => (
+                <View key={m} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+                  <View style={{ width:14, height:4, backgroundColor: modeColor[m] }} />
+                  <Text style={{ fontSize:12 }}>{m}</Text>
+                </View>
+              ))}
+            </View>
 
-        </MapLibreGL.MapView>
+          </MapLibreGL.MapView>
         </View>
       )}
 
@@ -403,7 +404,7 @@ export default function SmartRouteTabs(){
               renderItem={({ item, index }) => (
                 <View style={{ paddingVertical:6, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
                   <Text>{index+1}. {item.pair[0].name} → {item.pair[1].name}</Text>
-                  <Text style={{ opacity:0.7 }}>{Math.round((item.result?.duration_s||0)/60)} min • {(item.result?.distance_m||0/1000).toFixed(2)} km</Text>
+                  <Text style={{ opacity:0.7 }}>{Math.round((item.result?.duration_s||0)/60)} min • {((item.result?.distance_m||0)/1000).toFixed(2)} km</Text>
                 </View>
               )}
             />
