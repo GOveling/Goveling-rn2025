@@ -48,6 +48,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@react-native/metro-babel-transformer": "^0.81.1",
+    "@rnx-kit/metro-serializer-esbuild": "^0.2.4",
     "@types/react": "~18.2.45",
     "@types/react-native": "~0.70.6",
     "metro-react-native-babel-transformer": "^0.77.0",
