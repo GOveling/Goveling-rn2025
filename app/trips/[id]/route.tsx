@@ -38,19 +38,19 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
 
 function fmtHM(s?:string){ return s||''; }
 
-export default function SmartRouteTabs(){
-  const { t } = useTranslation();
+function ModeBars({ summary }:{ summary?: Record<string, number> }){
+  const total = Object.values(summary||{}).reduce((a,b)=>a+b,0) || 0;
+  const modes:(keyof typeof summary)[] = ['walking','bicycling','driving','transit'] as any;
 
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id:string }>();
-  const [tab, setTab] = React.useState<'itinerary'|'map'|'analytics'>('itinerary');
-  const [showMiniMaps, setShowMiniMaps] = React.useState<boolean>(true);
-  const [mode, setMode] = React.useState<Mode>('walking');
-  const [places, setPlaces] = React.useState<Place[]>([]);
-  const [pairIdx, setPairIdx] = React.useState(0); // active pair index
-  const { loading, error, result, cached, fetchDirections } = useDirections();
-  const [summaryModes, setSummaryModes] = React.useState<Record<string, number>>({});
-
+  return (
+    <View style={{ gap:6 }}>
+      {modes.map(m=> (
+        <View key={String(m)} style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
+          <View style={{ width:60 }}><Text>{String(m)}</Text></View>
+          <View style={{ flex:1, height:8, backgroundColor:'#eee', borderRadius:4, overflow:'hidden' }}>
+            <View style={{ width: `${total? ((summary?.[m]||0)/total*100):0}%`, height:8, backgroundColor: m==='walking'? '#34c759' : m==='bicycling'? '#16a085' : m==='driving'? '#007aff' : '#8e44ad' }} />
+          </View>
+          <Text style={{ width:40, textAlign:'right' }}>{summary?.[m]||0}</Text>
   // Day selection
   const [day, setDay] = React.useState<Date>(new Date()); // defaults to today; could be trip start by fetching metadata
   const dayISO = React.useMemo(()=> day.toISOString().slice(0,10), [day]);

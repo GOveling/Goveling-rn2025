@@ -48,13 +48,17 @@ export default function Directions(){
   }, [origin, dlat, dlng, mode]);
 
   return (
-    {t('auto.Direcciones')}ing:16, gap:8, flex:1 }}>
-      <Text style={{fontWeight:'800'}}>Direcciones</Text>
+    <View style={{ padding:16, gap:8, flex:1 }}>
+      <Text style={{fontWeight:'800'}}>{t('auto.Direcciones')}</Text>
       <View style={{ flexDirection:'row', gap:8, flexWrap:'wrap' }}>
         {(['walking','driving','transit','bicycling'] as const).map(m => (
-          <Button key={m} title={m} onPress={()=> set{t('auto.ETA: {eta ? Math.round(eta/60)+' min' : '—'} | Distancia: {dist ? Math.round(dist/1000)+' km' : '—'}')}ta/60)+' min' : '—'} | Distancia: {dist ? Math.round(dist/1000)+' km' : '—'}</Text>}
-      <PolylineMap coords={coords} origin={or{t('auto.Pasos')}ed} dest={dest} />
-      <Text style={{fontWeight:'700', marginTop:8}}>Pasos</Text>
+          <Button key={m} title={m} onPress={()=> setMode(m)} />
+        ))}
+      </View>
+      {loading && <ActivityIndicator />}
+      <Text>ETA: {eta ? Math.round(eta/60)+' min' : '—'} | Distancia: {dist ? Math.round(dist/1000)+' km' : '—'}</Text>
+      <PolylineMap coords={coords} origin={origin} dest={dest} />
+      <Text style={{fontWeight:'700', marginTop:8}}>{t('auto.Pasos')}</Text>
       <FlatList
         data={steps}
         keyExtractor={(_,i)=> String(i)}
