@@ -9,7 +9,7 @@ import { useTheme } from '~/lib/theme';
 
 // === Enhanced filters (categories, open_now, rating, order, radius chips) ===
 import React from 'react';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Button, FlatList, TouchableOpacity, ScrollView } from 'react-native';
 
 const CATS = ['restaurant','cafe','museum','park','bar','shopping_mall','airport'];
 const RADII = [500,1000,2000];
