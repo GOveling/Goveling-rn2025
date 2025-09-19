@@ -17,7 +17,7 @@ export default function Flights(){
 
   const [from, setFrom] = React.useState('SCL');
   const [to, setTo] = React.useState('LIM');
-  const [depart, setDepart] = React.useState(new Date().toISOString().slice(0,10));*/
+  const [depart, setDepart] = React.useState(new Date().toISOString().slice(0,10));
   const [ret, setRet] = React.useState('');
   const [pax, setPax] = React.useState('1');
   const [cabin, setCabin] = React.useState<'eco'|'prem'|'bus'|'first'>('eco');
