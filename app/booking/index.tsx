@@ -6,7 +6,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BookingCard } from './components/BookingCard';
-import { typography } from '~/src/lib/theme';
+import { typography } from '~/lib/theme';
 
 export default function Booking(){
   const { t } = useTranslation();
