@@ -78,12 +78,12 @@ export default function Explore(){
             <Text style={{ color: cats.includes(c)?'#fff':'#111827' }}>{c}</Text>
           </TouchableOpacity>
         ))}
+      </ScrollView>
       
 {/* v153 Empty state fallback */}
 {(Array.isArray(items) && items.length===0) ? (
   <EmptyState title="No hay resultados" subtitle="Prueba con otro término o ajusta filtros" />
 ): null}
-</ScrollView>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:8}}>
         {RADII.map(r=> (
@@ -117,3 +117,4 @@ export default function Explore(){
       />
     </View>
   );
+}
