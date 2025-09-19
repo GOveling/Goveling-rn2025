@@ -197,7 +197,7 @@ export default function TravelGuided(){
   const center = pos ? [pos.lng, pos.lat] : (target ? [target.lng, target.lat] : [-70.6483, -33.4569]);
 
   return (
-    <View st{t('auto.Travel Mode (Guiado)')}>
+    <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize:20, fontWeight:'800' }}>Travel Mode (Guiado)</Text>
       <Text style={{ opacity:0.7 }}>{dayISO}</Text>
 
