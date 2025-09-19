@@ -17,6 +17,7 @@ type Place = { id:string|number; name:string; lat:number; lng:number };
 const MODES = ['walking','driving','bicycling','transit'] as const;
 type Mode = typeof MODES[number];
 
+type AllResultsSegment = { pair:[Place,Place], result:any, segMode:'walking'|'driving'|'bicycling'|'transit' };
 function ModeBars({ summary }:{ summary?: Record<string, number> }){
   const total = Object.values(summary||{}).reduce((a,b)=>a+b,0) || 0;
   const modes:(keyof typeof summary)[] = ['walking','bicycling','driving','transit'] as any;
@@ -59,7 +60,7 @@ export default function SmartRoute() {
 
   // Full-day state
   const [buildingAll, setBuildingAll] = React.useState(false);
-  const [allResults, setAllResults] = React.useState<{ pair:[Place,Place], result:any, segMode:'walking'|'driving'|'bicycling'|'transit' }[] | null>(null);
+  const [allResults, setAllResults] = React.useState<AllResultsSegment[] | null>(null);
 
   const [routeCoords, setRouteCoords] = React.useState<Array<{lat:number;lng:number}>>([]);
   const [refitKey, setRefitKey] = React.useState(0);
@@ -103,7 +104,7 @@ export default function SmartRoute() {
     setBuildingAll(true);
     const currentSummaryModes: Record<string, number> = {};
     try{
-      const out: { pair:[Place,Place], result:any, segMode:'walking'|'driving'|'bicycling'|'transit' }[] = [];
+      const out: AllResultsSegment[] = [];
       for (let i=0;i<places.length-1;i++){
         const a = places[i], b = places[i+1];
         const best = await fetchBestMode({ lat:a.lat, lng:a.lng }, { lat:b.lat, lng:b.lng }, ['transit','walking','bicycling','driving']);
