@@ -60,7 +60,7 @@ export async function fetchBestMode(origin:{lat:number;lng:number}, destination:
       if (!best || dur < (best.result?.duration_s ?? 1e12)){
         best = j; bestMode = m;
       }
-    }catch: pass
+    }catch(e){}
   }
   if (!best) throw new Error('no_route_any_mode');
   return { mode: bestMode, result: best.result };
