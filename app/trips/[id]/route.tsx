@@ -20,32 +20,12 @@ type Mode = typeof MODES[number];
 function ModeBars({ summary }:{ summary?: Record<string, number> }){
   const total = Object.values(summary||{}).reduce((a,b)=>a+b,0) || 0;
   const modes:(keyof typeof summary)[] = ['walking','bicycling','driving','transit'] as any;
-  
-  async function buildPolylineFromPlaces(places:any[]){
-    const coords:any[] = [];
-    for (let i=0;i<places.length-1;i++){
-      const a = { lat: places[i].lat, lng: places[i].lng };
-      const b = { lat: places[i+1].lat, lng: places[i+1].lng };
-      if (a.lat && a.lng && b.lat && b.lng){
-        const j = await fetchDirections(a,b,'walking');
-        if (j?.coords?.length) coords.push(...j.coords);
-      }
-    }
-    setRouteCoords(coords);
-    setRefitKey(x=> x+1);
-  }
 
   return (
     <View style={{ gap:6 }}>
       {modes.map(m=> (
         <View key={String(m)} style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
           <View style={{ width:60 }}><Text>{String(m)}</Text>
-      <PolylineMap coords={routeCoords} refitKey={refitKey} />
-      <View style={{flexDirection:'row', gap:8, marginTop:8}}>
-        <Button title="Ajustar cámara" onPress={()=> setRefitKey(x=> x+1)} />
-      </View>
-
-    </View>
           <View style={{ flex:1, height:8, backgroundColor:'#eee', borderRadius:4, overflow:'hidden' }}>
             <View style={{ width: `${total? ((summary?.[m]||0)/total*100):0}%`, height:8, backgroundColor: m==='walking'? '#34c759' : m==='bicycling'? '#16a085' : m==='driving'? '#007aff' : '#8e44ad' }} />
           </View>
@@ -56,13 +36,11 @@ function ModeBars({ summary }:{ summary?: Record<string, number> }){
   );
 }
 
-
 function fmtHM(s?:string){ return s||''; }
-
-
 
   const [routeCoords, setRouteCoords] = React.useState<Array<{lat:number;lng:number}>>([]);
   const [refitKey, setRefitKey] = React.useState(0);
+
 export default function SmartRouteTabs(){
   const { t } = useTranslation();
 
@@ -74,6 +52,7 @@ export default function SmartRouteTabs(){
   const [places, setPlaces] = React.useState<Place[]>([]);
   const [pairIdx, setPairIdx] = React.useState(0); // active pair index
   const { loading, error, result, cached, fetchDirections } = useDirections();
+  const [summaryModes, setSummaryModes] = React.useState<Record<string, number>>({});
 
   // Day selection
   const [day, setDay] = React.useState<Date>(new Date()); // defaults to today; could be trip start by fetching metadata
@@ -120,17 +99,19 @@ export default function SmartRouteTabs(){
   const buildAll = async ()=>{
     if (places.length < 2) return Alert.alert('Agrega al menos 2 lugares');
     setBuildingAll(true);
+    const currentSummaryModes: Record<string, number> = {};
     try{
       const out: { pair:[Place,Place], result:any }[] = [];
       for (let i=0;i<places.length-1;i++){
         const a = places[i], b = places[i+1];
         const best = await fetchBestMode({ lat:a.lat, lng:a.lng }, { lat:b.lat, lng:b.lng }, ['transit','walking','bicycling','driving']);
         out.push({ pair:[a,b], result: best.result, segMode: best.mode });
-        summaryModes[best.mode] = (summaryModes[best.mode]||0)+1;
+        currentSummaryModes[best.mode] = (currentSummaryModes[best.mode]||0)+1;
       }
       setAllResults(out);
+      setSummaryModes(currentSummaryModes);
       // persist histogram in route_cache.summary
-      try{ await saveRouteCache(id!, dayISO, places, { ...(cached?.summary||{}), modes: summaryModes, version: (cached?.summary?.version)||'segments' }); }catch{}
+      try{ await saveRouteCache(id!, dayISO, places, { ...(cached?.summary||{}), modes: currentSummaryModes, version: (cached?.summary?.version)||'segments' }); }catch{}
     }catch(e:any){
       Alert.alert('Error', e.message||'Error al calcular la ruta completa');
     }finally{
@@ -244,7 +225,7 @@ export default function SmartRouteTabs(){
         <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Planificar con IA')}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={buildAllDirections} style={{ backgroundColor:'#007aff', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
+      <TouchableOpacity onPress={buildAll} style={{ backgroundColor:'#007aff', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
         <Text style={{ color:'#fff', fontWeight:'800' }}>{buildingAll ? 'Calculando…' : 'Ruta completa'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={()=>router.push(`/trips/${id}/live`)} style={{ marginLeft:'auto', backgroundColor:'#34c759', paddingHorizontal:12, paddingVertical:6, borderRadius:8 }}>
@@ -411,11 +392,11 @@ export default function SmartRouteTabs(){
 
       {tab==='analytics' && (
         allResults ? (
-          <{t('auto.Resumen día {dayISO}')}ap:8 }}>
-         {t('auto.Distancia total: {(totals.dist/1000).toFixed(2)} km')}/Text>
-           {t('auto.Duración total: {Math.round(totals.dur/60)} min')} km</Text>
-            <Text>Duración total: {Math.round(tot{t('auto.Segmentos')}/Text>
-            <Text style={{ fontWeight:'700', marginTop:8 }}>Segmentos</Text>
+          <View style={{ marginTop:8 }}>
+            <Text style={{ fontWeight:'700' }}>{t('auto.Resumen día')} {dayISO}</Text>
+            <Text>{t('auto.Distancia total')}: {(totals.dist/1000).toFixed(2)} km</Text>
+            <Text>{t('auto.Duración total')}: {Math.round(totals.dur/60)} min</Text>
+            <Text style={{ fontWeight:'700', marginTop:8 }}>{t('auto.Segmentos')}</Text>
             <FlatList
               data={allResults}
               keyExtractor={(_,i)=>String(i)}
@@ -429,10 +410,10 @@ export default function SmartRouteTabs(){
           </View>
         ) : (
           result && (
-            <Vi{t('auto.Resumen tramo {pairIdx+1}')}>
-              <Tex{t('auto.Distancia: {(result.distance_m||0/1000).toFixed(2)} km')}>
-              <Tex{t('auto.Duración: {Math.round((result.duration_s||0)/60)} min')}t>
-              <Text>Duración: {Math.round((result.duration_s||0)/60)} min</Text>
+            <View style={{ marginTop:8 }}>
+              <Text style={{ fontWeight:'700' }}>{t('auto.Resumen tramo')} {pairIdx+1}</Text>
+              <Text>{t('auto.Distancia')}: {((result.distance_m||0)/1000).toFixed(2)} km</Text>
+              <Text>{t('auto.Duración')}: {Math.round((result.duration_s||0)/60)} min</Text>
             </View>
           )
         )
