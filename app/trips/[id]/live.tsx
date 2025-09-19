@@ -209,9 +209,9 @@ export default function TravelGuided(){
         const now = new Date();
         const etaDt = parseHM(dayISO, eta); const etdDt = parseHM(dayISO, etd);
         const tooEarly = etaDt && now < etaDt; const tooLate = etdDt && now > etdDt;
-        if (tooEarly) return (<View style={{ padding:10, backgroundColor:'#fff3cd' }}><Text>{t(`auto.⏳ Demasiado pronto para este lugar (ETA {eta}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}`, { eta })}</Text></View>);
-        if (tooLate) return (<View style={{ padding:10, backgroundColor:'#f8d7da' }}><Text>{t(`auto.⏰ Ya pasó la ventana sugerida (ETD {etd}). {autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}`, { etd })}</Text></View>);
-        return (<View style={{ padding:10, backgroundColor:'#d4edda' }}><Text>{t(`auto.✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.`)}</Text></View>);
+        if (tooEarly) return (<View style={{ padding:10, backgroundColor:'#fff3cd' }}><Text>{t(`auto.⏳ Demasiado pronto para este lugar (ETA ${eta}). ${autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}`)}</Text></View>);
+        if (tooLate) return (<View style={{ padding:10, backgroundColor:'#f8d7da' }}><Text>{t(`auto.⏰ Ya pasó la ventana sugerida (ETD ${etd}). ${autoSkip? 'Saltando al siguiente…':'Puedes saltar manualmente.'}`)}</Text></View>);
+        return (<View style={{ padding:10, backgroundColor:'#d4edda' }}><Text>{t(`auto.✅ Dentro de la ventana sugerida ${eta? 'desde '+eta:''}${etd? ' hasta '+etd:''}.`)}</Text></View>);
       })()}
 
 
@@ -258,7 +258,7 @@ export default function TravelGuided(){
         <Text style={{ fontWeight:'700' }}>{t('auto.Pasos')}</Text>
         {(result?.steps||[]).map((s, i)=>(
           <View key={i} style={{ paddingVertical:6, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
-            <Text style={{ fontWeight:'600' }}>{s.transit?.line?.short_name ? `[${s.transit.line.short_name}] `:''}{s.transit?.line?.name || (s.travel_mode||'\').replace(/[A-Z]/g,' $&').trim()}</Text>
+            <Text style={{ fontWeight:'600' }}>{s.transit?.line?.short_name ? `[${s.transit.line.short_name}] `:''}{s.transit?.line?.name || (s.travel_mode||'').replace(/[A-Z]/g,\' $&').trim()}</Text>
             <Text numberOfLines={3}>{(s.instruction||'').replace(/<[^>]+>/g,'')}</Text>
           </View>
         ))}
