@@ -28,17 +28,6 @@ if (process.env.NODE_ENV === 'production') {
     toplevel: false,
     warnings: false,
   };
-
-  // Use esbuild serializer for production builds only
-  try {
-    const { createSerializer } = require('@rnx-kit/metro-serializer-esbuild');
-    config.serializer = {
-      ...config.serializer,
-      customSerializer: createSerializer(),
-    };
-  } catch (error) {
-    console.warn('ESBuild serializer not available, using default serializer');
-  }
 }
 
 module.exports = config;
