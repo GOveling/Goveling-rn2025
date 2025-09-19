@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "web": {
-      "output": "static",
+      "output": "server",
       "bundler": "metro"
     },
     "splash": {

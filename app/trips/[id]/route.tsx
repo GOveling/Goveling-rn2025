@@ -4,9 +4,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, ScrollView, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
 import MiniMap from '~/components/MiniMap';
-import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { supabase } from '~/lib/supabase';
 import { useDirections, Step, fetchBestMode } from '~/lib/useDirections';
 import { loadRouteCache, saveRouteCache } from '~/lib/routes';
@@ -361,27 +359,21 @@ export default function SmartRoute() {
 
       {tab==='map' && (
         <View style={{ height:360, borderRadius:12, overflow:'hidden', marginTop:8 }}>
-          <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-            <Camera zoomLevel={12} centerCoordinate={center} />
-            {/* markers for all places */}
-            {places.map((p,i)=>(<PointAnnotation key={String(p.id)} id={String(p.id)} coordinate={[p.lng, p.lat]} />))}
-            {/* full-day polyline */}
-            {allResults && allResults.map((seg, i)=> (
-              seg.result?.overview_polyline ? (
-                <ShapeSource key={`seg-${i}`} id={`route-seg-${i}`} shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: seg.result.overview_polyline } }}>
-                  <LineLayer id={`route-seg-line-${i}`} style={{ lineWidth:4, lineColor: modeColor[seg.segMode]||'#333' }} />
-                </ShapeSource>
-              ) : null
-            ))}
-            {/* fallback single pair polyline */}
-            {!overviewCoordinates && (result?.overview_polyline) && (
-              <ShapeSource id="route" shape={{ type:'Feature', geometry:{ type:'LineString', coordinates: result.overview_polyline } }}>
-                <LineLayer id="route-line" style={{ lineWidth:4 }} />
-              </ShapeSource>
-            )}
-          
-            {/* Legend */}
-            <View style={{ position:'absolute', right:10, top:10, backgroundColor:'rgba(255,255,255,0.9)', borderRadius:8, padding:8, gap:4 }}>
+          <View style={{ 
+            flex: 1, 
+            backgroundColor: '#f0f0f0', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: '#ddd'
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+              Route Map Preview
+            </Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>
+              {places.length} places
+            </Text>
+            <View style={{ marginTop: 8, gap: 4 }}>
               {(['walking','bicycling','driving','transit'] as const).map(m => (
                 <View key={m} style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
                   <View style={{ width:14, height:4, backgroundColor: modeColor[m] }} />
@@ -389,8 +381,7 @@ export default function SmartRoute() {
                 </View>
               ))}
             </View>
-
-          </MapView>
+          </View>
         </View>
       )}
 

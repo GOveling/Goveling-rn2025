@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
-import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function PlaceSheet(){
@@ -15,12 +13,21 @@ export default function PlaceSheet(){
     <View style={{ flex:1, padding:12, gap:8 }}>
       <Text style={{ fontSize:22, fontWeight:'900' }}>{name}</Text>
       <View style={{ height:180, borderRadius:10, overflow:'hidden' }}>
-        <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-          <Camera zoomLevel={14} centerCoordinate={center} />
-          <PointAnnotation id={"p"} coordinate={center}>
-            <View style={{ width:20, height:20, backgroundColor:'#007aff', borderRadius:10 }} />
-          </PointAnnotation>
-        </MapView>
+        <View style={{ 
+          flex: 1, 
+          backgroundColor: '#f0f0f0', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: '#ddd'
+        }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
+            Place Location
+          </Text>
+          <Text style={{ fontSize: 10, color: '#666' }}>
+            {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
+          </Text>
+        </View>
       </View>
       
       <TouchableOpacity onPress={()=> router.push({ pathname:'/trips/directions', params:{ dlat: lat, dlng: lng } })} style={{ backgroundColor:'#0ea5e9', padding:12, borderRadius:8 }}>
