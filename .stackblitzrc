@@ -1,0 +1,7 @@
+{
+  "installDependencies": true,
+  "startCommand": "expo start --web",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
