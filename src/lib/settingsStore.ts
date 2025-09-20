@@ -50,16 +50,36 @@ const getStorage = () => {
   return AsyncStorage;
 };
 
-export const useSettingsStore = create<State>()(persist((set)=>({
-  language: null,
-  units: 'c',
-  theme: 'system',
-  mapStyleUrl: null,
-  setLanguage: (language)=> set({ language }),
-  setUnits: (units)=> set({ units }),
-  setTheme: (theme)=> set({ theme }),
-  setMapStyleUrl: (mapStyleUrl)=> set({ mapStyleUrl })
-}), { 
-  name: 'settings', 
-  storage: createJSONStorage(() => getStorage())
-}));
+// Ensure process.env is available before creating the store
+const safeCreateStore = () => {
+  try {
+    return create<State>()(persist((set)=>({
+      language: null,
+      units: 'c',
+      theme: 'system',
+      mapStyleUrl: null,
+      setLanguage: (language)=> set({ language }),
+      setUnits: (units)=> set({ units }),
+      setTheme: (theme)=> set({ theme }),
+      setMapStyleUrl: (mapStyleUrl)=> set({ mapStyleUrl })
+    }), { 
+      name: 'settings', 
+      storage: createJSONStorage(() => getStorage())
+    }));
+  } catch (error) {
+    console.warn('Failed to create persisted store, creating basic store:', error);
+    // Fallback to basic store without persistence
+    return create<State>()((set) => ({
+      language: null,
+      units: 'c',
+      theme: 'system',
+      mapStyleUrl: null,
+      setLanguage: (language)=> set({ language }),
+      setUnits: (units)=> set({ units }),
+      setTheme: (theme)=> set({ theme }),
+      setMapStyleUrl: (mapStyleUrl)=> set({ mapStyleUrl })
+    }));
+  }
+};
+
+export const useSettingsStore = safeCreateStore();
