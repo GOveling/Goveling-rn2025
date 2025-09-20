@@ -1,157 +1,169 @@
-import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useTheme } from '~/lib/theme';
+import { useRouter } from 'expo-router';
 
 export default function BookingTab() {
-  const { t } = useTranslation();
   const { colors, spacing } = useTheme();
+  const router = useRouter();
 
   const bookingOptions = [
     {
       title: 'Vuelos',
       icon: '✈️',
-      description: 'Encuentra y compara vuelos',
-      color: colors.primary
+      description: 'Encuentra las mejores ofertas',
+      color: '#007AFF',
+      route: '/booking/flights'
     },
     {
       title: 'Hoteles',
       icon: '🏨',
-      description: 'Reserva alojamiento',
-      color: '#10B981'
+      description: 'Estadías cómodas',
+      color: '#34C759',
+      route: '/booking/hotels'
     },
     {
-      title: 'eSIM',
+      title: 'Transporte',
+      icon: '�',
+      description: 'Múltiples opciones de viaje',
+      color: '#8B5CF6',
+      route: '/booking/transport'
+    },
+    {
+      title: 'Tours y Actividades',
+      icon: '📍',
+      description: 'Experiencias guiadas',
+      color: '#FF9500',
+      route: '/booking/tours'
+    },
+    {
+      title: 'eSIMs',
       icon: '📱',
-      description: 'Conectividad internacional',
-      color: '#8B5CF6'
+      description: 'Mantente conectado',
+      color: '#EC4899',
+      route: '/booking/esim'
+    },
+    {
+      title: 'Restaurantes',
+      icon: '🍴',
+      description: 'Reservar mesas',
+      color: '#DC2626',
+      route: '/booking/restaurants'
     }
   ];
 
+  const handleBookingPress = (option: any) => {
+    // Navigate to specific booking section
+    router.push(option.route);
+  };
+
   return (
-    <ScrollView 
-      style={{ 
-        flex: 1, 
-        backgroundColor: colors.background,
-        paddingTop: Platform.OS === 'web' ? 20 : 0
-      }}
-      contentContainerStyle={{ 
-        padding: spacing(2), 
-        gap: spacing(1.5) 
-      }}
-    >
-      <Text style={{ 
-        fontSize: 28, 
-        fontWeight: '900', 
-        color: colors.text,
-        marginBottom: spacing(1)
-      }}>
-        {t('booking.title')}
-      </Text>
+    <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+      <ScrollView 
+        style={{ flex: 1 }}
+        contentContainerStyle={{ 
+          padding: 16,
+          paddingTop: Platform.OS === 'ios' ? 60 : 20
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={{ marginBottom: 32 }}>
+          <Text style={{ 
+            fontSize: 32, 
+            fontWeight: '900', 
+            color: '#1A1A1A',
+            marginBottom: 8
+          }}>
+            Reservas
+          </Text>
+          <Text style={{ 
+            fontSize: 16,
+            color: '#666666',
+            fontWeight: '500'
+          }}>
+            Reserva lo esencial para tu viaje
+          </Text>
+        </View>
 
-      <Text style={{ 
-        fontSize: 16, 
-        color: colors.textMuted,
-        marginBottom: spacing(2)
-      }}>
-        Reserva todos los servicios para tu viaje en un solo lugar
-      </Text>
-
-      <View style={{ gap: spacing(1.5) }}>
-        {bookingOptions.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={{
-              backgroundColor: colors.card,
-              padding: spacing(2),
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-              flexDirection: 'row',
-              alignItems: 'center'
-            }}
-          >
-            <View style={{
-              width: 60,
-              height: 60,
-              backgroundColor: option.color,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: spacing(1.5)
-            }}>
-              <Text style={{ fontSize: 24 }}>{option.icon}</Text>
-            </View>
-            
-            <View style={{ flex: 1 }}>
+        {/* Booking Options Grid */}
+        <View style={{ 
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          gap: 16
+        }}>
+          {bookingOptions.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleBookingPress(option)}
+              style={{
+                width: '47%', // This ensures 2 columns with proper spacing
+                backgroundColor: '#FFFFFF',
+                borderRadius: 24,
+                padding: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 160,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                elevation: 4,
+                borderWidth: 1,
+                borderColor: 'rgba(0,0,0,0.05)'
+              }}
+            >
+              {/* Icon Circle */}
+              <View style={{
+                width: 64,
+                height: 64,
+                backgroundColor: option.color,
+                borderRadius: 32,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+                shadowColor: option.color,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 4
+              }}>
+                <Text style={{ 
+                  fontSize: 28,
+                  color: '#FFFFFF'
+                }}>
+                  {option.icon}
+                </Text>
+              </View>
+              
+              {/* Title */}
               <Text style={{ 
                 fontSize: 18, 
                 fontWeight: '700', 
-                color: colors.text,
-                marginBottom: 4
+                color: '#1A1A1A',
+                marginBottom: 8,
+                textAlign: 'center'
               }}>
                 {option.title}
               </Text>
+              
+              {/* Description */}
               <Text style={{ 
                 fontSize: 14, 
-                color: colors.textMuted 
+                color: '#666666',
+                textAlign: 'center',
+                lineHeight: 20
               }}>
                 {option.description}
               </Text>
-            </View>
-            
-            <Text style={{ 
-              fontSize: 18, 
-              color: colors.textMuted 
-            }}>
-              →
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={{ 
-        backgroundColor: colors.card, 
-        padding: spacing(2), 
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: colors.border
-      }}>
-        <Text style={{ 
-          fontSize: 18, 
-          fontWeight: '700', 
-          color: colors.text,
-          marginBottom: spacing(1)
-        }}>
-          Ventajas de Reservar con Goveling
-        </Text>
-        <View style={{ gap: spacing(0.75) }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, marginRight: spacing(1) }}>💰</Text>
-            <Text style={{ color: colors.textMuted, flex: 1 }}>
-              Mejores precios garantizados
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, marginRight: spacing(1) }}>🔒</Text>
-            <Text style={{ color: colors.textMuted, flex: 1 }}>
-              Reservas seguras y protegidas
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, marginRight: spacing(1) }}>📞</Text>
-            <Text style={{ color: colors.textMuted, flex: 1 }}>
-              Soporte 24/7 en tu idioma
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, marginRight: spacing(1) }}>🎯</Text>
-            <Text style={{ color: colors.textMuted, flex: 1 }}>
-              Integración con tu itinerario
-            </Text>
-          </View>
+            </TouchableOpacity>
+          ))}
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Bottom spacing */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
   );
 }

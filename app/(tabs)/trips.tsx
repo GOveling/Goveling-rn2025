@@ -1,171 +1,623 @@
-import { useTranslation } from 'react-i18next';
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
+import { useRouter } from 'expo-router';
+import { supabase } from '~/lib/supabase';
 
 export default function TripsTab() {
-  const { t } = useTranslation();
   const { colors, spacing } = useTheme();
+  const router = useRouter();
+
+  // Stats data - these would come from your database
+  const [stats, setStats] = useState({
+    totalTrips: 3,
+    upcomingTrips: 0,
+    groupTrips: 1
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  // Load trip statistics from database
+  const loadTripStats = async () => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) return;
+
+      // Get total trips count
+      const { count: totalTrips } = await supabase
+        .from('trips')
+        .select('*', { count: 'exact', head: true })
+        .or(`owner_id.eq.${user.user.id},trip_collaborators.user_id.eq.${user.user.id}`);
+
+      // Get upcoming trips (start date is in the future)
+      const { count: upcomingTrips } = await supabase
+        .from('trips')
+        .select('*', { count: 'exact', head: true })
+        .or(`owner_id.eq.${user.user.id},trip_collaborators.user_id.eq.${user.user.id}`)
+        .gt('start_date', new Date().toISOString());
+
+      // Get group trips (trips with collaborators)
+      const { data: groupTripsData } = await supabase
+        .from('trips')
+        .select(`
+          id,
+          trip_collaborators(count)
+        `)
+        .or(`owner_id.eq.${user.user.id},trip_collaborators.user_id.eq.${user.user.id}`);
+
+      const groupTrips = groupTripsData?.filter(trip => 
+        trip.trip_collaborators && trip.trip_collaborators.length > 0
+      ).length || 0;
+
+      setStats({
+        totalTrips: totalTrips || 0,
+        upcomingTrips: upcomingTrips || 0,
+        groupTrips: groupTrips
+      });
+    } catch (error) {
+      console.error('Error loading trip stats:', error);
+      // Keep default values if there's an error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTripStats();
+  }, []);
 
   return (
-    <ScrollView 
-      style={{ 
-        flex: 1, 
-        backgroundColor: colors.background,
-        paddingTop: Platform.OS === 'web' ? 20 : 0
-      }}
-      contentContainerStyle={{ 
-        padding: spacing(2), 
-        gap: spacing(1.5) 
-      }}
-    >
-      <View style={{ 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: spacing(1)
-      }}>
-        <Text style={{ 
-          fontSize: 28, 
-          fontWeight: '900', 
-          color: colors.text
-        }}>
-          {t('trips.title')}
-        </Text>
+    <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+      <ScrollView 
+        style={{ flex: 1 }}
+        contentContainerStyle={{ 
+          padding: 16,
+          paddingTop: Platform.OS === 'ios' ? 60 : 20
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={{ marginBottom: 24 }}>
+          <Text style={{ 
+            fontSize: 32, 
+            fontWeight: '900', 
+            color: '#1A1A1A',
+            marginBottom: 8
+          }}>
+            Mis Viajes
+          </Text>
+          <Text style={{ 
+            fontSize: 16,
+            color: '#666666',
+            fontWeight: '500'
+          }}>
+            Planea y gestiona tus aventuras
+          </Text>
+        </View>
+
+        {/* Vista de Mapa Button */}
         <TouchableOpacity
+          onPress={() => router.push('/trips/map')}
           style={{
-            backgroundColor: colors.primary,
-            paddingHorizontal: spacing(1.5),
-            paddingVertical: spacing(1),
-            borderRadius: 12
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 16,
+            borderWidth: 2,
+            borderColor: '#007AFF',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3
           }}
         >
           <Text style={{ 
-            color: colors.primaryText, 
-            fontWeight: '700' 
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#007AFF',
+            marginRight: 8
           }}>
-            + Nuevo Viaje
+            🗺️
+          </Text>
+          <Text style={{ 
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#007AFF'
+          }}>
+            Vista de Mapa
           </Text>
         </TouchableOpacity>
-      </View>
 
-      <View style={{ gap: spacing(1.5) }}>
-        {[
-          {
-            name: 'Viaje a Europa',
-            dates: '15 Mar - 30 Mar 2024',
-            status: 'Próximo',
-            places: 8
-          },
-          {
-            name: 'Escapada de Fin de Semana',
-            dates: '2 Feb - 4 Feb 2024',
-            status: 'Completado',
-            places: 5
-          }
-        ].map((trip, index) => (
-          <View key={index} style={{
-            backgroundColor: colors.card,
-            padding: spacing(2),
+        {/* Nuevo Viaje Button */}
+        <TouchableOpacity
+          onPress={() => router.push('/trips/new')}
+          style={{
             borderRadius: 16,
-            borderWidth: 1,
-            borderColor: colors.border
+            padding: 18,
+            marginBottom: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 5
+          }}
+        >
+          <LinearGradient
+            colors={['#8B5CF6', '#EC4899']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              borderRadius: 16,
+              padding: 18,
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Text style={{ 
+              color: '#FFFFFF', 
+              fontWeight: '700',
+              fontSize: 18
+            }}>
+              + Nuevo Viaje
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Stats Cards */}
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between',
+          marginBottom: 24,
+          gap: 12
+        }}>
+          <View style={{
+            flex: 1,
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 16,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            elevation: 3
           }}>
-            <View style={{ 
-              flexDirection: 'row', 
-              justifyContent: 'space-between', 
+            <Text style={{
+              fontSize: 32,
+              fontWeight: '900',
+              color: '#007AFF',
+              marginBottom: 4
+            }}>
+              {stats.totalTrips}
+            </Text>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#666666',
+              textAlign: 'center'
+            }}>
+              Total de Viajes
+            </Text>
+          </View>
+
+          <View style={{
+            flex: 1,
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 16,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            elevation: 3
+          }}>
+            <Text style={{
+              fontSize: 32,
+              fontWeight: '900',
+              color: '#34C759',
+              marginBottom: 4
+            }}>
+              {stats.upcomingTrips}
+            </Text>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#666666',
+              textAlign: 'center'
+            }}>
+              Próximos
+            </Text>
+          </View>
+
+          <View style={{
+            flex: 1,
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 16,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            elevation: 3
+          }}>
+            <Text style={{
+              fontSize: 32,
+              fontWeight: '900',
+              color: '#FF9500',
+              marginBottom: 4
+            }}>
+              {stats.groupTrips}
+            </Text>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#666666',
+              textAlign: 'center'
+            }}>
+              Viajes Grupales
+            </Text>
+          </View>
+        </View>
+
+        {/* Trip Card - Test SA */}
+        <View style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 24,
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+          elevation: 6
+        }}>
+          {/* Chile Image Header */}
+          <View style={{
+            width: '100%',
+            height: 150,
+            backgroundColor: '#E8D5B7',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row'
+          }}>
+            {/* Chile themed illustration mockup */}
+            <View style={{
+              backgroundColor: '#D32F2F',
+              width: 60,
+              height: 40,
+              borderRadius: 8,
+              marginRight: 20,
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Text style={{ fontSize: 20 }}>🇨🇱</Text>
+            </View>
+            <Text style={{
+              fontSize: 48,
+              fontWeight: '900',
+              color: '#8B4513',
+              textShadowColor: '#000',
+              textShadowOffset: { width: 2, height: 2 },
+              textShadowRadius: 4
+            }}>
+              CHILE
+            </Text>
+            <View style={{
+              marginLeft: 20,
+              alignItems: 'center'
+            }}>
+              <Text style={{ fontSize: 24 }}>🦅</Text>
+              <Text style={{ fontSize: 20 }}>🌲</Text>
+            </View>
+          </View>
+          
+          {/* Trip Content */}
+          <View style={{ padding: 20 }}>
+            {/* Trip Title and Status */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
               alignItems: 'flex-start',
-              marginBottom: spacing(1)
+              marginBottom: 16
             }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ 
-                  fontSize: 18, 
-                  fontWeight: '700', 
-                  color: colors.text,
+                <Text style={{
+                  fontSize: 24,
+                  fontWeight: '800',
+                  color: '#1A1A1A',
                   marginBottom: 4
                 }}>
-                  {trip.name}
+                  Test SA
                 </Text>
-                <Text style={{ 
-                  fontSize: 14, 
-                  color: colors.textMuted 
+                <Text style={{
+                  fontSize: 16,
+                  color: '#666666',
+                  fontWeight: '500'
                 }}>
-                  {trip.dates}
+                  Viajando
                 </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginTop: 4
+                }}>
+                  <Text style={{ fontSize: 16, color: '#8B5CF6', marginRight: 8 }}>👥</Text>
+                  <Text style={{
+                    fontSize: 16,
+                    color: '#8B5CF6',
+                    fontWeight: '600'
+                  }}>
+                    Grupo
+                  </Text>
+                </View>
               </View>
+            </View>
+
+            {/* Destinations */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 16
+            }}>
+              <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
               <View style={{
-                backgroundColor: trip.status === 'Próximo' ? colors.primary : colors.border,
-                paddingHorizontal: spacing(1),
-                paddingVertical: spacing(0.5),
-                borderRadius: 8
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: 8
               }}>
-                <Text style={{ 
-                  color: trip.status === 'Próximo' ? colors.primaryText : colors.textMuted,
-                  fontSize: 12,
-                  fontWeight: '600'
+                <View style={{
+                  backgroundColor: '#EBF4FF',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#007AFF'
                 }}>
-                  {trip.status}
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#007AFF'
+                  }}>
+                    🌍 Chile
+                  </Text>
+                </View>
+                <View style={{
+                  backgroundColor: '#EBF4FF',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#007AFF'
+                }}>
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#007AFF'
+                  }}>
+                    🇫🇷 France
+                  </Text>
+                </View>
+                <View style={{
+                  backgroundColor: '#EBF4FF',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#007AFF'
+                }}>
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#007AFF'
+                  }}>
+                    🇯🇵 Japan
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Dates */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 16
+            }}>
+              <Text style={{ fontSize: 16, marginRight: 8 }}>📅</Text>
+              <Text style={{
+                fontSize: 16,
+                color: '#1A1A1A',
+                fontWeight: '500'
+              }}>
+                Sep 16, 2025 - Sep 20, 2025
+              </Text>
+            </View>
+
+            {/* Travelers */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 24
+            }}>
+              <Text style={{ fontSize: 16, marginRight: 8 }}>👥</Text>
+              <Text style={{
+                fontSize: 16,
+                color: '#1A1A1A',
+                fontWeight: '500'
+              }}>
+                2 viajeros
+              </Text>
+            </View>
+
+            {/* Team Member */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 24
+            }}>
+              <Text style={{
+                fontSize: 14,
+                color: '#666666',
+                fontWeight: '500',
+                marginRight: 8
+              }}>
+                Equipo:
+              </Text>
+              <View style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: '#8B5CF6',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Text style={{
+                  color: '#FFFFFF',
+                  fontWeight: '700',
+                  fontSize: 14
+                }}>
+                  SA
                 </Text>
               </View>
             </View>
-            
-            <View style={{ 
-              flexDirection: 'row', 
-              justifyContent: 'space-between',
-              alignItems: 'center'
+
+            {/* Action Buttons */}
+            <View style={{
+              flexDirection: 'row',
+              gap: 12,
+              marginBottom: 16
             }}>
-              <Text style={{ 
-                fontSize: 14, 
-                color: colors.textMuted 
-              }}>
-                {trip.places} lugares planificados
-              </Text>
               <TouchableOpacity
+                onPress={() => router.push(`/trips/test-sa`)}
                 style={{
-                  backgroundColor: colors.background,
-                  paddingHorizontal: spacing(1.5),
-                  paddingVertical: spacing(0.75),
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: colors.border
+                  flex: 1,
+                  borderRadius: 16,
+                  padding: 16,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 6,
+                  elevation: 3
                 }}
               >
-                <Text style={{ 
-                  color: colors.text, 
-                  fontWeight: '600',
-                  fontSize: 14
+                <LinearGradient
+                  colors={['#8B5CF6', '#EC4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    borderRadius: 16,
+                    padding: 16,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Text style={{
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 16
+                  }}>
+                    Ver Detalles
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push('/trips/test-sa/places')}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 16,
+                  padding: 16,
+                  borderWidth: 1,
+                  borderColor: '#FF3B30',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 6,
+                  elevation: 3
+                }}
+              >
+                <Text style={{
+                  color: '#FF3B30',
+                  fontWeight: '700',
+                  fontSize: 16
                 }}>
-                  Ver Detalles
+                  ❤️ Ver Mis lugares
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{
+              flexDirection: 'row',
+              gap: 12
+            }}>
+              <TouchableOpacity
+                onPress={() => router.push('/trips/test-sa/ai-route')}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 16,
+                  padding: 16,
+                  borderWidth: 1,
+                  borderColor: '#007AFF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 6,
+                  elevation: 3
+                }}
+              >
+                <Text style={{
+                  color: '#007AFF',
+                  fontWeight: '700',
+                  fontSize: 16
+                }}>
+                  🧠 Ruta Inteligente IA
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push('/trips/test-sa/accommodation')}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 16,
+                  padding: 16,
+                  borderWidth: 1,
+                  borderColor: '#34C759',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 6,
+                  elevation: 3
+                }}
+              >
+                <Text style={{
+                  color: '#34C759',
+                  fontWeight: '700',
+                  fontSize: 16
+                }}>
+                  🏠 Estadía
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
-        ))}
-      </View>
-
-      <View style={{ 
-        backgroundColor: colors.card, 
-        padding: spacing(2), 
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: colors.border,
-        alignItems: 'center'
-      }}>
-        <Text style={{ 
-          fontSize: 18, 
-          fontWeight: '700', 
-          color: colors.text,
-          marginBottom: spacing(1)
-        }}>
-          Funciones de Viaje
-        </Text>
-        <View style={{ gap: spacing(0.5), alignItems: 'center' }}>
-          <Text style={{ color: colors.textMuted }}>🤖 Planificación inteligente con IA</Text>
-          <Text style={{ color: colors.textMuted }}>🗺️ Rutas optimizadas automáticamente</Text>
-          <Text style={{ color: colors.textMuted }}>👥 Colaboración en tiempo real</Text>
-          <Text style={{ color: colors.textMuted }}>📱 Modo viaje con navegación</Text>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Bottom padding */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
   );
 }
