@@ -6,13 +6,48 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover">
   <title>Goveling</title>
   
-  <!-- Comprehensive import.meta polyfill - MUST load first -->
+  <!-- Essential polyfills - MUST load first -->
   <script>
-    // Comprehensive import.meta polyfill for all environments
+    // Process.env polyfill for web environments
     (function() {
       'use strict';
       
-      // Define import.meta object
+      if (typeof process === 'undefined') {
+        var processEnv = {
+          NODE_ENV: 'development',
+          BABEL_ENV: 'development',
+          EXPO_PUBLIC_SUPABASE_URL: '',
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: '',
+          EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_IOS: '',
+          EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ANDROID: '',
+          EXPO_PUBLIC_PLACES_API: '',
+          EXPO_PUBLIC_RESEND_API_URL: '',
+          EXPO_PUBLIC_ML_API_BASE: '',
+          EXPO_PUBLIC_ML_PRIMARY_VERSION: '',
+          EXPO_PUBLIC_I18N_EDGE: ''
+        };
+
+        var processObj = {
+          env: processEnv,
+          platform: 'web',
+          version: '18.0.0',
+          versions: { node: '18.0.0' },
+          browser: true
+        };
+
+        // Set on all contexts
+        if (typeof globalThis !== 'undefined') globalThis.process = processObj;
+        if (typeof window !== 'undefined') window.process = processObj;
+        if (typeof global !== 'undefined') global.process = processObj;
+        
+        console.log('✅ process.env polyfill loaded');
+      }
+    })();
+
+    // Import.meta polyfill for web environments
+    (function() {
+      'use strict';
+      
       var importMeta = {
         env: {
           NODE_ENV: 'development',
@@ -40,39 +75,32 @@
       }
 
       // Override any existing import.meta references
-      if (typeof Object !== 'undefined' && Object.defineProperty) {
-        try {
-          // Define import.meta on window
-          if (!window.hasOwnProperty('import')) {
-            Object.defineProperty(window, 'import', {
-              value: { meta: importMeta },
-              writable: false,
-              enumerable: false,
-              configurable: true
-            });
-          }
-          
-          // Define import.meta on globalThis
-          if (typeof globalThis !== 'undefined' && !globalThis.hasOwnProperty('import')) {
-            Object.defineProperty(globalThis, 'import', {
-              value: { meta: importMeta },
-              writable: false,
-              enumerable: false,
-              configurable: true
-            });
-          }
-        } catch (e) {
-          // Fallback if we can't define the property
-          console.warn('Could not define import.meta polyfill:', e.message);
-          window['import'] = { meta: importMeta };
-          if (typeof globalThis !== 'undefined') {
-            globalThis['import'] = { meta: importMeta };
-          }
+      try {
+        if (!window.hasOwnProperty('import')) {
+          Object.defineProperty(window, 'import', {
+            value: { meta: importMeta },
+            writable: false,
+            enumerable: false,
+            configurable: true
+          });
+        }
+        
+        if (typeof globalThis !== 'undefined' && !globalThis.hasOwnProperty('import')) {
+          Object.defineProperty(globalThis, 'import', {
+            value: { meta: importMeta },
+            writable: false,
+            enumerable: false,
+            configurable: true
+          });
+        }
+      } catch (e) {
+        window['import'] = { meta: importMeta };
+        if (typeof globalThis !== 'undefined') {
+          globalThis['import'] = { meta: importMeta };
         }
       }
       
-      // Log success
-      console.log('✅ import.meta polyfill loaded successfully');
+      console.log('✅ import.meta polyfill loaded');
     })();
   </script>
 </head>

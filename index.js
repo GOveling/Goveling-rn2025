@@ -1,4 +1,5 @@
-// Entry point with import.meta polyfill
+// Entry point with polyfills for web compatibility
+import './src/polyfills/process-env.js';
 import './src/polyfills/import-meta.js';
 
 // Re-export everything from expo-router/entry
