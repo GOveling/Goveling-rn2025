@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Text, Switch, FlatList } from 'react-native';
-import {MapView, Camera, PointAnnotation, ShapeSource, LineLayer, SymbolLayer, UserLocation} from '@maplibre/maplibre-react-native';
-import { DEFAULT_STYLE_URL } from '~/lib/map';
 import { useTravel } from '~/lib/travelStore';
 import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
 import * as Notifications from 'expo-notifications';
@@ -84,16 +82,26 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
       {enabled && (
         <>
           <View style={{ height:220, borderRadius:12, overflow:'hidden' }}>
-            <MapView style={{ flex:1 }} styleURL={DEFAULT_STYLE_URL}>
-              <Camera zoomLevel={13} centerCoordinate={pos ? [pos.lng, pos.lat] : [-70.6483, -33.4569]} />
-              <UserLocation visible={true} />
-              <ShapeSource id="nearby" shape={{
-                type:'FeatureCollection',
-                features: list.map((p, idx)=>({ type:'Feature', geometry:{ type:'Point', coordinates:[p.lng, p.lat] }, properties:{ idx: idx+1 } }))
-              }}>
-                <SymbolLayer id="nearby-symbol" style={{ textField:['to-string',['get','idx']], textSize:14, textColor:'#fff', textHaloColor:'#007aff', textHaloWidth:2, textAllowOverlap:true, iconImage:['literal','marker-15'] }} />
-              </ShapeSource>
-            </MapView>
+            <View style={{ 
+              flex: 1, 
+              backgroundColor: '#f0f0f0', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: '#ddd'
+            }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+                Nearby Places Map
+              </Text>
+              <Text style={{ fontSize: 12, color: '#666' }}>
+                {list.length} places found
+              </Text>
+              {pos && (
+                <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
+                  Your location: {pos.lat.toFixed(4)}, {pos.lng.toFixed(4)}
+                </Text>
+              )}
+            </View>
           </View>
 
           <FlatList
