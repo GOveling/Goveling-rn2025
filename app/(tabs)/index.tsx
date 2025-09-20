@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Text, ScrollView, Platform } from 'react-native';
 import { useTheme } from '~/lib/theme';
+import { typography } from '~/lib/theme';
 
 export default function HomeTab() {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export default function HomeTab() {
         borderColor: colors.border
       }}>
         <Text style={{ 
-          fontSize: 28, 
+          fontSize: typography.sizes.title, 
           fontWeight: '900', 
           color: colors.text,
           marginBottom: spacing(1)

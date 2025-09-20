@@ -57,7 +57,7 @@ export const palettes = {
 const ThemeCtx = createContext<AppTheme | null>(null);
 
 export function ThemeProvider({ children }:{ children: React.ReactNode }){
-  const scheme: ColorSchemeName = typeof window !== 'undefined' ? Appearance.getColorScheme() : 'light';
+  const scheme: ColorSchemeName = Appearance.getColorScheme() || 'light';
   const mode = scheme === 'dark' ? 'dark' : 'light';
   const p = mode === 'dark' ? palettes.dark : palettes.light;
   const value: AppTheme = {
