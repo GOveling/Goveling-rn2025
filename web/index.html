@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta httpEquiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover">
+  <title>Goveling</title>
+  
+  <!-- Polyfill for import.meta -->
+  <script>
+    // Define import.meta before any modules are loaded
+    if (typeof globalThis !== 'undefined' && !globalThis.importMeta) {
+      globalThis.importMeta = {
+        env: {
+          NODE_ENV: 'development',
+          MODE: 'development'
+        },
+        url: window.location.href
+      };
+    }
+    
+    // Also define it on window for broader compatibility
+    if (typeof window !== 'undefined') {
+      window.importMeta = globalThis.importMeta;
+    }
+    
+    // Override import.meta syntax specifically
+    Object.defineProperty(window, 'import', {
+      value: {
+        meta: globalThis.importMeta
+      },
+      writable: false,
+      configurable: false
+    });
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.js"></script>
+</body>
+</html>

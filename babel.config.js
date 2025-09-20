@@ -11,6 +11,13 @@ module.exports = function(api) {
           '@': './src'
         }
       }]
-    ]
+    ],
+    env: {
+      web: {
+        plugins: [
+          ['@babel/plugin-syntax-import-meta']
+        ]
+      }
+    }
   };
 };
