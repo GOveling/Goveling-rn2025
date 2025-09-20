@@ -17,13 +17,13 @@ if (!SERVICE_ROLE_KEY) {
 // Orden de las migraciones
 const migrationOrder = [
   '20250918_p0_minimal.sql',
-  '20250918_v141_base_consolidated.sql',
   '20250918_p1.sql',
+  '20250918_v141_base_consolidated.sql',
   '20250918_p2_visits_stats.sql',
   '20250918_trips_pulido.sql',
-  '20250918_trip_place_visits.sql',
   '20250918_directions_cache.sql',
   '20250918_route_cache_summary.sql',
+  '20250918_trip_place_visits.sql',
   '20250918_email_otps.sql',
   '20250918_notifications_push.sql',
   '20250919_v142_storage_policies_triggers.sql',
