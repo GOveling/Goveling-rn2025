@@ -10,7 +10,9 @@ module.exports = function(api) {
           '~': './src',
           '@': './src'
         }
-      }]
+      }],
+      // Transform import.meta for all platforms
+      './babel-plugin-transform-import-meta-custom.js'
     ],
     env: {
       web: {

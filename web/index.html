@@ -6,32 +6,74 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover">
   <title>Goveling</title>
   
-  <!-- Polyfill for import.meta -->
+  <!-- Comprehensive import.meta polyfill - MUST load first -->
   <script>
-    // Define import.meta before any modules are loaded
-    if (typeof globalThis !== 'undefined' && !globalThis.importMeta) {
-      globalThis.importMeta = {
+    // Comprehensive import.meta polyfill for all environments
+    (function() {
+      'use strict';
+      
+      // Define import.meta object
+      var importMeta = {
         env: {
           NODE_ENV: 'development',
-          MODE: 'development'
+          MODE: 'development',
+          DEV: true,
+          PROD: false
         },
         url: window.location.href
       };
-    }
-    
-    // Also define it on window for broader compatibility
-    if (typeof window !== 'undefined') {
-      window.importMeta = globalThis.importMeta;
-    }
-    
-    // Override import.meta syntax specifically
-    Object.defineProperty(window, 'import', {
-      value: {
-        meta: globalThis.importMeta
-      },
-      writable: false,
-      configurable: false
-    });
+
+      // Set on globalThis
+      if (typeof globalThis !== 'undefined') {
+        globalThis.importMeta = importMeta;
+        if (!globalThis['import']) {
+          globalThis['import'] = { meta: importMeta };
+        }
+      }
+
+      // Set on window
+      if (typeof window !== 'undefined') {
+        window.importMeta = importMeta;
+        if (!window['import']) {
+          window['import'] = { meta: importMeta };
+        }
+      }
+
+      // Override any existing import.meta references
+      if (typeof Object !== 'undefined' && Object.defineProperty) {
+        try {
+          // Define import.meta on window
+          if (!window.hasOwnProperty('import')) {
+            Object.defineProperty(window, 'import', {
+              value: { meta: importMeta },
+              writable: false,
+              enumerable: false,
+              configurable: true
+            });
+          }
+          
+          // Define import.meta on globalThis
+          if (typeof globalThis !== 'undefined' && !globalThis.hasOwnProperty('import')) {
+            Object.defineProperty(globalThis, 'import', {
+              value: { meta: importMeta },
+              writable: false,
+              enumerable: false,
+              configurable: true
+            });
+          }
+        } catch (e) {
+          // Fallback if we can't define the property
+          console.warn('Could not define import.meta polyfill:', e.message);
+          window['import'] = { meta: importMeta };
+          if (typeof globalThis !== 'undefined') {
+            globalThis['import'] = { meta: importMeta };
+          }
+        }
+      }
+      
+      // Log success
+      console.log('✅ import.meta polyfill loaded successfully');
+    })();
   </script>
 </head>
 <body>
