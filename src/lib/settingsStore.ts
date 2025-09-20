@@ -1,8 +1,6 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
 type Units = 'c'|'f';
 type ThemeMode = 'system'|'light'|'dark';
@@ -18,6 +16,11 @@ type State = {
   setMapStyleUrl: (u:string|null)=>void;
 };
 
+// Safe platform detection without requiring process.env
+const isWeb = () => {
+  return typeof window !== 'undefined' && typeof document !== 'undefined';
+};
+
 // Manual state management for web to avoid process.env issues
 let webState: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyleUrl'> = {
   language: null,
@@ -27,7 +30,7 @@ let webState: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyle
 };
 
 // Load from localStorage if available
-if (typeof window !== 'undefined' && window.localStorage) {
+if (isWeb() && window.localStorage) {
   try {
     const stored = localStorage.getItem('goveling-settings');
     if (stored) {
@@ -40,7 +43,7 @@ if (typeof window !== 'undefined' && window.localStorage) {
 
 // Save to localStorage
 const saveWebState = () => {
-  if (typeof window !== 'undefined' && window.localStorage) {
+  if (isWeb() && window.localStorage) {
     try {
       localStorage.setItem('goveling-settings', JSON.stringify(webState));
     } catch (e) {
@@ -51,7 +54,7 @@ const saveWebState = () => {
 
 // Web-safe store creation
 const createWebSafeStore = () => {
-  if (Platform.OS === 'web') {
+  if (isWeb()) {
     // For web, use simple store with manual persistence
     return create<State>((set) => ({
       ...webState,
@@ -78,6 +81,9 @@ const createWebSafeStore = () => {
     }));
   } else {
     // For native, use normal persist middleware
+    // Import AsyncStorage dynamically for native platforms only
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    
     return create<State>()(persist((set) => ({
       language: null,
       units: 'c',
