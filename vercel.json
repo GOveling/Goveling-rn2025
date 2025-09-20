@@ -1,0 +1,21 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run web:build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "env": {
+    "EXPO_PUBLIC_SUPABASE_URL": "@expo_public_supabase_url",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@expo_public_supabase_anon_key"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "app/**": {
+      "maxDuration": 30
+    }
+  }
+}

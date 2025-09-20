@@ -5,10 +5,13 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "dev": "npx @expo/cli start --web --offline",
+    "dev": "expo start --web",
+    "dev:tunnel": "expo start --tunnel",
+    "dev:offline": "npx @expo/cli start --web --offline",
     "android": "expo run:android",
-    "ios": "expo run:ios",
+    "ios": "expo run:ios", 
     "web": "expo start --web",
+    "web:build": "expo export --platform web",
     "setup": "echo 'run supabase db push && supabase functions deploy'",
     "prebuild": "expo prebuild",
     "pods": "npx pod-install"
@@ -59,6 +62,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@expo/cli": "latest",
+    "@expo/webpack-config": "^0.17.0",
     "@react-native/metro-babel-transformer": "^0.75.4",
     "@rnx-kit/metro-serializer-esbuild": "^0.2.4",
     "@types/react": "~19.1.10",
