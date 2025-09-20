@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, Switch, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTravel } from '~/lib/travelStore';
 import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
 import * as Notifications from 'expo-notifications';
@@ -70,51 +70,76 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
   }, [enabled, pos, list]);
 
   return (
-    <View style={{ borderWidth:1, borderColor:'#eee', borderRadius:12, padding:14, gap:12 }}>
-      <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center' }}>
-        <Text style={{ fontWeight:'800' }}>{t('Nearby Alerts')}</Text>
-        <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
-          <Text style={{ opacity:0.7 }}>{enabled ? 'ON':'OFF'}</Text>
-          <Switch value={enabled} onValueChange={setEnabled} />
+    <View style={{
+      backgroundColor: '#FEF3C7',
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+        <View style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: '#F59E0B',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12
+        }}>
+          <Text style={{ fontSize: 20 }}>🎯</Text>
+        </View>
+        
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#92400E', marginBottom: 4 }}>
+            Alertas Cercanas
+          </Text>
+          <Text style={{ fontSize: 14, color: '#A16207' }}>
+            Activa el Modo Viaje para ver lugares guardados cercanos
+          </Text>
         </View>
       </View>
 
-      {enabled && (
-        <>
-          <View style={{ height:220, borderRadius:12, overflow:'hidden' }}>
-            <View style={{ 
-              flex: 1, 
-              backgroundColor: '#f0f0f0', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              borderWidth: 1,
-              borderColor: '#ddd'
+      <TouchableOpacity
+        style={{
+          backgroundColor: '#F59E0B',
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          borderRadius: 12,
+          alignItems: 'center'
+        }}
+        onPress={() => setEnabled(!enabled)}
+      >
+        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+          {enabled ? 'Desactivar' : 'Activar'}
+        </Text>
+      </TouchableOpacity>
+
+      {enabled && list.length > 0 && (
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ fontSize: 14, color: '#92400E', marginBottom: 8 }}>
+            {list.length} lugares encontrados cerca
+          </Text>
+          {list.slice(0, 3).map((item, index) => (
+            <View key={item.id || item.place_id} style={{ 
+              flexDirection: 'row', 
+              justifyContent: 'space-between', 
+              paddingVertical: 4 
             }}>
-              <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
-                Nearby Places Map
+              <Text style={{ fontSize: 14, color: '#92400E', flex: 1 }}>
+                {index + 1}. {item.name}
               </Text>
-              <Text style={{ fontSize: 12, color: '#666' }}>
-                {list.length} places found
-              </Text>
-              {pos && (
-                <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
-                  Your location: {pos.lat.toFixed(4)}, {pos.lng.toFixed(4)}
+              {typeof item.distance_m === 'number' && (
+                <Text style={{ fontSize: 12, color: '#A16207' }}>
+                  {(item.distance_m / 1000).toFixed(2)} km
                 </Text>
               )}
             </View>
-          </View>
-
-          <FlatList
-            data={list}
-            keyExtractor={(i)=>String(i.id||i.place_id)}
-            renderItem={({ item, index }) => (
-              <View style={{ paddingVertical:8, borderBottomWidth:1, borderColor:'#f2f2f2' }}>
-                <Text style={{ fontWeight:'700' }}>{index+1}. {item.name}</Text>
-                {typeof item.distance_m === 'number' ? <Text style={{ opacity:0.7 }}>{(item.distance_m/1000).toFixed(2)} km</Text> : null}
-              </View>
-            )}
-          />
-        </>
+          ))}
+        </View>
       )}
     </View>
   );
