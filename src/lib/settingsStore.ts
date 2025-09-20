@@ -18,68 +18,80 @@ type State = {
   setMapStyleUrl: (u:string|null)=>void;
 };
 
-// Web-compatible storage fallback
-const getStorage = () => {
-  if (Platform.OS === 'web') {
-    return {
-      getItem: (key: string) => {
-        try {
-          return Promise.resolve(localStorage.getItem(key));
-        } catch {
-          return Promise.resolve(null);
-        }
-      },
-      setItem: (key: string, value: string) => {
-        try {
-          localStorage.setItem(key, value);
-          return Promise.resolve();
-        } catch {
-          return Promise.resolve();
-        }
-      },
-      removeItem: (key: string) => {
-        try {
-          localStorage.removeItem(key);
-          return Promise.resolve();
-        } catch {
-          return Promise.resolve();
-        }
-      }
-    };
-  }
-  return AsyncStorage;
+// Manual state management for web to avoid process.env issues
+let webState: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyleUrl'> = {
+  language: null,
+  units: 'c',
+  theme: 'system',
+  mapStyleUrl: null
 };
 
-// Ensure process.env is available before creating the store
-const safeCreateStore = () => {
+// Load from localStorage if available
+if (typeof window !== 'undefined' && window.localStorage) {
   try {
-    return create<State>()(persist((set)=>({
-      language: null,
-      units: 'c',
-      theme: 'system',
-      mapStyleUrl: null,
-      setLanguage: (language)=> set({ language }),
-      setUnits: (units)=> set({ units }),
-      setTheme: (theme)=> set({ theme }),
-      setMapStyleUrl: (mapStyleUrl)=> set({ mapStyleUrl })
-    }), { 
-      name: 'settings', 
-      storage: createJSONStorage(() => getStorage())
+    const stored = localStorage.getItem('goveling-settings');
+    if (stored) {
+      webState = { ...webState, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.warn('Failed to load settings from localStorage:', e);
+  }
+}
+
+// Save to localStorage
+const saveWebState = () => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem('goveling-settings', JSON.stringify(webState));
+    } catch (e) {
+      console.warn('Failed to save settings to localStorage:', e);
+    }
+  }
+};
+
+// Web-safe store creation
+const createWebSafeStore = () => {
+  if (Platform.OS === 'web') {
+    // For web, use simple store with manual persistence
+    return create<State>((set) => ({
+      ...webState,
+      setLanguage: (language) => {
+        webState.language = language;
+        saveWebState();
+        set({ language });
+      },
+      setUnits: (units) => {
+        webState.units = units;
+        saveWebState();
+        set({ units });
+      },
+      setTheme: (theme) => {
+        webState.theme = theme;
+        saveWebState();
+        set({ theme });
+      },
+      setMapStyleUrl: (mapStyleUrl) => {
+        webState.mapStyleUrl = mapStyleUrl;
+        saveWebState();
+        set({ mapStyleUrl });
+      }
     }));
-  } catch (error) {
-    console.warn('Failed to create persisted store, creating basic store:', error);
-    // Fallback to basic store without persistence
-    return create<State>()((set) => ({
+  } else {
+    // For native, use normal persist middleware
+    return create<State>()(persist((set) => ({
       language: null,
       units: 'c',
       theme: 'system',
       mapStyleUrl: null,
-      setLanguage: (language)=> set({ language }),
-      setUnits: (units)=> set({ units }),
-      setTheme: (theme)=> set({ theme }),
-      setMapStyleUrl: (mapStyleUrl)=> set({ mapStyleUrl })
+      setLanguage: (language) => set({ language }),
+      setUnits: (units) => set({ units }),
+      setTheme: (theme) => set({ theme }),
+      setMapStyleUrl: (mapStyleUrl) => set({ mapStyleUrl })
+    }), {
+      name: 'settings',
+      storage: createJSONStorage(() => AsyncStorage)
     }));
   }
 };
 
-export const useSettingsStore = safeCreateStore();
+export const useSettingsStore = createWebSafeStore();
