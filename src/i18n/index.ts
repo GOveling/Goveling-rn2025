@@ -1,5 +1,8 @@
 
 // src/i18n/index.ts
+// Import polyfill for Intl.PluralRules if not available
+import 'intl-pluralrules';
+
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
@@ -27,7 +30,7 @@ export async function setLanguage(lang:string){
 }
 
 const fallback = 'en';
-const deviceLang = (Localization.locale || 'en').split('-')[0];
+const deviceLang = (Localization.getLocales()?.[0]?.languageTag || 'en').split('-')[0];
 
 i18n
   .use(initReactI18next)
@@ -35,7 +38,9 @@ i18n
     resources,
     lng: fallback,
     fallbackLng: fallback,
-    interpolation: { escapeValue: false }
+    interpolation: { escapeValue: false },
+    // Add compatibility for older environments
+    compatibilityJSON: 'v3'
   });
 
 getSavedLanguage().then(saved => {
