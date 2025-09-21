@@ -44,7 +44,7 @@ export default function ProfileScreen(){
         .from('profiles')
         .select('*')
         .eq('id', user.user.id)
-        .single();
+        .maybeSingle();
       
       if (profile) {
         setProfileData(prev => ({

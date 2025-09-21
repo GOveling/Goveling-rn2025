@@ -43,7 +43,7 @@ export default function ProfileTab(){
         .from('profiles')
         .select('*')
         .eq('id', user.user.id)
-        .single();
+        .maybeSingle();
       
       if (profile) {
         setProfileData(prev => ({
