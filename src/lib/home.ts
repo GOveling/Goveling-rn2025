@@ -89,6 +89,16 @@ export async function reverseCity(lat:number, lng:number){
     const arr = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
     const c = arr?.[0];
     if (!c) return null;
-    return `${c.city || c.subregion || c.region || ''}, ${c.country || ''}`.replace(/^,\s+|,\s+$/g,'');
+    // Build location string with available data
+    const parts = [];
+    if (c.city) parts.push(c.city);
+    else if (c.subregion) parts.push(c.subregion);
+    else if (c.region) parts.push(c.region);
+    else if (c.district) parts.push(c.district);
+    
+    if (c.country) parts.push(c.country);
+    else if (c.isoCountryCode) parts.push(c.isoCountryCode);
+    
+    return parts.length > 0 ? parts.join(', ') : 'Ubicación desconocida';
   } catch { return null; }
 }

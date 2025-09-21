@@ -36,7 +36,13 @@ export default function Home(){
       if (p){ 
         setPos(p); 
         const c = await reverseCity(p.lat, p.lng); 
-        if (c) setCity(c); 
+        if (c) {
+          console.log('🌍 Location found:', c);
+          setCity(c);
+        } else {
+          console.log('⚠️ Could not get city name, using coordinates');
+          setCity(`${p.lat.toFixed(3)}, ${p.lng.toFixed(3)}`);
+        }
       }
     })();
   }, []);
