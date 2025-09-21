@@ -1,3 +1,7 @@
+// Ensure global.process exists for Metro bundling
+global.process = global.process || {};
+global.process.env = global.process.env || {};
+
 // Ensure process and process.env are available globally for Metro bundling
 if (typeof global !== 'undefined') {
   if (typeof global.process === 'undefined') {
