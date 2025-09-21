@@ -1,5 +1,5 @@
 
-import { create } from 'zustand';
+import { useState, useEffect } from 'react';
 
 type Units = 'c'|'f';
 type ThemeMode = 'system'|'light'|'dark';
@@ -15,91 +15,143 @@ type State = {
   setMapStyleUrl: (u:string|null)=>void;
 };
 
-// Safe platform detection without requiring process.env
-const isWeb = () => {
-  return typeof window !== 'undefined' && typeof document !== 'undefined';
+// Safe environment detection that works in all contexts
+const isBrowser = () => {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 };
 
-// Universal state object for both web and native
-let universalState: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyleUrl'> = {
-  language: null,
-  units: 'c',
-  theme: 'system',
-  mapStyleUrl: null
+const isNative = () => {
+  return !isBrowser() && typeof require !== 'undefined';
 };
 
-// Load initial state from storage
-const loadInitialState = async () => {
-  try {
-    if (isWeb()) {
-      // Web: use localStorage
-      if (window.localStorage) {
+// State management without any external dependencies
+class SettingsStore {
+  private state: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyleUrl'> = {
+    language: null,
+    units: 'c',
+    theme: 'system',
+    mapStyleUrl: null
+  };
+
+  private listeners: Set<() => void> = new Set();
+  private initialized = false;
+
+  constructor() {
+    this.loadInitialState();
+  }
+
+  private async loadInitialState() {
+    if (this.initialized) return;
+    
+    try {
+      if (isBrowser()) {
+        // Browser environment
         const stored = localStorage.getItem('goveling-settings');
         if (stored) {
-          universalState = { ...universalState, ...JSON.parse(stored) };
+          this.state = { ...this.state, ...JSON.parse(stored) };
+        }
+      } else if (isNative()) {
+        // React Native environment
+        try {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          const stored = await AsyncStorage.getItem('goveling-settings');
+          if (stored) {
+            this.state = { ...this.state, ...JSON.parse(stored) };
+          }
+        } catch (e) {
+          // AsyncStorage not available, continue with defaults
         }
       }
-    } else {
-      // Native: use AsyncStorage
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      const stored = await AsyncStorage.getItem('goveling-settings');
-      if (stored) {
-        universalState = { ...universalState, ...JSON.parse(stored) };
-      }
+      this.initialized = true;
+      this.notifyListeners();
+    } catch (e) {
+      console.warn('Failed to load settings from storage:', e);
+      this.initialized = true;
     }
-  } catch (e) {
-    console.warn('Failed to load settings from storage:', e);
   }
-};
 
-// Save state to storage
-const saveState = async () => {
-  try {
-    const stateToSave = JSON.stringify(universalState);
-    
-    if (isWeb()) {
-      // Web: use localStorage
-      if (window.localStorage) {
+  private async saveState() {
+    try {
+      const stateToSave = JSON.stringify(this.state);
+      
+      if (isBrowser()) {
         localStorage.setItem('goveling-settings', stateToSave);
+      } else if (isNative()) {
+        try {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          await AsyncStorage.setItem('goveling-settings', stateToSave);
+        } catch (e) {
+          // AsyncStorage not available, continue without saving
+        }
       }
-    } else {
-      // Native: use AsyncStorage
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      await AsyncStorage.setItem('goveling-settings', stateToSave);
+    } catch (e) {
+      console.warn('Failed to save settings to storage:', e);
     }
-  } catch (e) {
-    console.warn('Failed to save settings to storage:', e);
   }
+
+  private notifyListeners() {
+    this.listeners.forEach(listener => listener());
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  getState(): State {
+    return {
+      ...this.state,
+      setLanguage: this.setLanguage.bind(this),
+      setUnits: this.setUnits.bind(this),
+      setTheme: this.setTheme.bind(this),
+      setMapStyleUrl: this.setMapStyleUrl.bind(this)
+    };
+  }
+
+  setLanguage(language: string | null) {
+    this.state.language = language;
+    this.saveState();
+    this.notifyListeners();
+  }
+
+  setUnits(units: Units) {
+    this.state.units = units;
+    this.saveState();
+    this.notifyListeners();
+  }
+
+  setTheme(theme: ThemeMode) {
+    this.state.theme = theme;
+    this.saveState();
+    this.notifyListeners();
+  }
+
+  setMapStyleUrl(mapStyleUrl: string | null) {
+    this.state.mapStyleUrl = mapStyleUrl;
+    this.saveState();
+    this.notifyListeners();
+  }
+}
+
+// Create store instance
+const settingsStore = new SettingsStore();
+
+// Hook for React components
+export const useSettingsStore = () => {
+  const [state, setState] = useState(settingsStore.getState());
+
+  useEffect(() => {
+    const unsubscribe = settingsStore.subscribe(() => {
+      setState(settingsStore.getState());
+    });
+    
+    // Update state in case it was loaded after component mount
+    setState(settingsStore.getState());
+    
+    return unsubscribe;
+  }, []);
+
+  return state;
 };
-
-// Load initial state immediately
-loadInitialState();
-
-// Create store without any middleware that might access process.env
-const createUniversalStore = () => {
-  return create<State>((set) => ({
-    ...universalState,
-    setLanguage: (language) => {
-      universalState.language = language;
-      saveState();
-      set({ language });
-    },
-    setUnits: (units) => {
-      universalState.units = units;
-      saveState();
-      set({ units });
-    },
-    setTheme: (theme) => {
-      universalState.theme = theme;
-      saveState();
-      set({ theme });
-    },
-    setMapStyleUrl: (mapStyleUrl) => {
-      universalState.mapStyleUrl = mapStyleUrl;
-      saveState();
-      set({ mapStyleUrl });
-    }
-  }));
-};
-
-export const useSettingsStore = createUniversalStore();
