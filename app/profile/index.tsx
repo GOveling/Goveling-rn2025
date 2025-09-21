@@ -67,7 +67,7 @@ export default function ProfileScreen(){
         .from('travel_stats')
         .select('*')
         .eq('user_id', user.user.id)
-        .single();
+        .maybeSingle();
 
       // Si no existe travel_stats, calcular desde trip_place_visits
       if (!travelStats) {
@@ -79,7 +79,7 @@ export default function ProfileScreen(){
         // Obtener trips únicos para contar países/ciudades visitadas  
         const { data: trips } = await supabase
           .from('trips')
-          .select('id, title, locations')
+          .select('id, title')
           .in('id', visits?.map(v => v.trip_id) || []);
 
         const uniqueCountries = new Set();
@@ -87,12 +87,9 @@ export default function ProfileScreen(){
         
         // Simular conteo de países y ciudades desde los trips
         trips?.forEach(trip => {
-          if (trip.locations) {
-            // Aquí podrías extraer países/ciudades desde trip.locations
-            // Por ahora usamos datos de ejemplo
-            uniqueCountries.add('Chile'); // Ejemplo
-            uniqueCities.add('Santiago'); // Ejemplo
-          }
+          // Simular datos de ejemplo ya que no tenemos columna locations
+          uniqueCountries.add('Chile'); // Ejemplo
+          uniqueCities.add('Santiago'); // Ejemplo
         });
 
         setProfileData(prev => ({
