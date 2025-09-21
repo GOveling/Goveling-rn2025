@@ -147,7 +147,13 @@ export default function AuthScreen(){
         style={styles.gradient}
       >
         {/* Theme Toggle */}
-        <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
+        <TouchableOpacity 
+          style={[
+            styles.themeToggle, 
+            { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)' }
+          ]} 
+          onPress={toggleTheme}
+        >
           <Ionicons 
             name={isDark ? 'sunny' : 'moon'} 
             size={24} 
@@ -355,7 +361,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
