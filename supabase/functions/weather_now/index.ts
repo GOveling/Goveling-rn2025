@@ -1,31 +1,55 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-
-async function json(d, s=200){ return new Response(JSON.stringify(d), { status:s, headers:{ "Content-Type":"application/json" }}); }
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, accept',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
-serve(async (req) => {
+async function json(d: any, s = 200) { 
+  return new Response(JSON.stringify(d), { 
+    status: s, 
+    headers: { 
+      "Content-Type": "application/json",
+      ...corsHeaders
+    }
+  }); 
+}
+
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  const { lat, lng, units } = await req.json();
-  if (typeof lat !== 'number' || typeof lng !== 'number') return json({ error: 'Missing lat/lng' }, 400);
-  const tempUnit = units === 'f' ? 'fahrenheit' : 'celsius';
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&temperature_unit=${tempUnit}`;
-  const r = await fetch(url);
-  if (!r.ok) return json({ error:'weather_failed' }, 500);
-  const j = await r.json();
-  return new Response(JSON.stringify({ ok:true, temperature: j?.current?.temperature_2m, code: j?.current?.weather_code }), { 
-    headers: { 
-      "Content-Type":"application/json",
-      ...corsHeaders
-    } 
-  });
+  try {
+    if (req.method !== 'POST') {
+      return json({ error: 'Method not allowed' }, 405);
+    }
+
+    const body = await req.json();
+    const { lat, lng, units } = body;
+    
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return json({ error: 'Invalid lat/lng parameters' }, 400);
+    }
+    
+    const tempUnit = units === 'f' ? 'fahrenheit' : 'celsius';
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&temperature_unit=${tempUnit}`;
+    
+    const weatherResponse = await fetch(weatherUrl);
+    if (!weatherResponse.ok) {
+      return json({ error: 'Weather API request failed' }, 500);
+    }
+    
+    const weatherData = await weatherResponse.json();
+    
+    return json({ 
+      ok: true, 
+      temperature: weatherData?.current?.temperature_2m, 
+      code: weatherData?.current?.weather_code 
+    });
+  } catch (error) {
+    console.error('Weather function error:', error);
+    return json({ error: 'Internal server error' }, 500);
+  }
 });
