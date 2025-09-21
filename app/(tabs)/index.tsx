@@ -35,14 +35,8 @@ export default function HomeTab(){
       const p = await getCurrentPosition();
       if (p){ 
         setPos(p); 
-        const c = await reverseCity(p.lat, p.lng); 
-        if (c) {
-          console.log('🌍 Location found:', c);
-          setCity(c);
-        } else {
-          console.log('⚠️ Could not get city name, using coordinates');
-          setCity(`${p.lat.toFixed(3)}, ${p.lng.toFixed(3)}`);
-        }
+        // Don't set city here, let the weather API effect handle it
+        console.log('🌍 Position obtained:', p.lat, p.lng);
       }
     })();
   }, []);
@@ -52,8 +46,18 @@ export default function HomeTab(){
       if (!pos) return;
       try{ 
         const w = await getWeather(pos.lat, pos.lng, units); 
-        setTemp(w.temp); 
-      } catch{}
+        if(w) {
+          setTemp(w.temp);
+          
+          // Use location data from Weather API if available
+          if(w.location && w.location.city) {
+            console.log('🌍 Using weather API location:', w.location.city);
+            setCity(w.location.city);
+          }
+        }
+      } catch(error){
+        console.error('🌡️ Weather/location error:', error);
+      }
     })();
   }, [pos, units]);
 

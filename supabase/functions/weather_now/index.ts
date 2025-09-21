@@ -34,6 +34,8 @@ Deno.serve(async (req: Request) => {
     }
     
     const tempUnit = units === 'f' ? 'fahrenheit' : 'celsius';
+    
+    // Get weather data from Open-Meteo
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&temperature_unit=${tempUnit}`;
     
     const weatherResponse = await fetch(weatherUrl);
@@ -43,10 +45,32 @@ Deno.serve(async (req: Request) => {
     
     const weatherData = await weatherResponse.json();
     
+    // Get location data from reverse geocoding API
+    let locationData: { name: string; country: string; region: string; } | null = null;
+    try {
+      const geocodeUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=es`;
+      const geocodeResponse = await fetch(geocodeUrl);
+      
+      if (geocodeResponse.ok) {
+        const geocodeData = await geocodeResponse.json();
+        console.log('🌍 Geocode API response:', geocodeData);
+        
+        locationData = {
+          name: geocodeData.city || geocodeData.locality || geocodeData.principalSubdivision || geocodeData.countryName || 'Ubicación desconocida',
+          country: geocodeData.countryName || '',
+          region: geocodeData.principalSubdivision || ''
+        };
+      }
+    } catch (geocodeError) {
+      console.error('🌍 Geocode error:', geocodeError);
+      // Continue without location data
+    }
+    
     return json({ 
       ok: true, 
       temperature: weatherData?.current?.temperature_2m, 
-      code: weatherData?.current?.weather_code 
+      code: weatherData?.current?.weather_code,
+      location: locationData
     });
   } catch (error) {
     console.error('Weather function error:', error);
