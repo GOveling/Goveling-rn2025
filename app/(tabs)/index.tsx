@@ -89,7 +89,7 @@ export default function HomeTab(){
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                 <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>📍 {city}</Text>
-                <Text style={{ fontSize: 16, color: 'white', marginLeft: 8 }}>• Sep 20</Text>
+                <Text style={{ fontSize: 16, color: 'white', marginLeft: 8 }}>• {new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}</Text>
               </View>
             </View>
             
@@ -97,7 +97,7 @@ export default function HomeTab(){
               <TouchableOpacity onPress={toggleUnits} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
                 <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
                 <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
-                  {typeof temp === 'number' ? Math.round(temp) : '—'}°{units.toUpperCase()}
+                  {typeof temp === 'number' ? Math.round(temp) : '—'}°{units === 'c' ? 'C' : 'F'}
                 </Text>
               </TouchableOpacity>
               
