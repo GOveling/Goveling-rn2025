@@ -107,24 +107,21 @@ export default function AuthScreen(){
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      // For now, we'll show an alert since Google OAuth requires additional setup
-      Alert.alert(
-        'Google OAuth',
-        'La funcionalidad de Google OAuth requiere configuración adicional en Supabase. Por ahora, usa el registro con email.',
-        [{ text: 'OK' }]
-      );
-      
-      // Uncomment when Google OAuth is properly configured:
-      /*
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${process.env.EXPO_PUBLIC_SITE_URL}://auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       });
 
       if (error) throw error;
-      */
+      
+      // The OAuth flow will redirect to Google and back
+      // The AuthProvider will handle the session once the user returns
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Error con Google OAuth');
     } finally {
