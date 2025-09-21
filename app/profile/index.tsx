@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { supabase } from '~/lib/supabase';
+import { useAuth } from '~/contexts/AuthContext';
 import { 
   Ionicons, 
   MaterialIcons, 
@@ -16,6 +17,12 @@ const { width } = Dimensions.get('window');
 
 export default function ProfileScreen(){
   const { t } = useTranslation();
+  const { user, signOut: authSignOut } = useAuth();
+  
+  React.useEffect(() => {
+    console.log('📱 ProfileScreen rendered');
+    console.log('👤 Current user:', user?.email);
+  }, [user]);
   
   const [profileData, setProfileData] = React.useState({
     fullName: 'Sebastian Araos',
@@ -140,22 +147,48 @@ export default function ProfileScreen(){
     return points;
   };
 
-  const signOut = async () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro que deseas cerrar sesión?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Cerrar Sesión', 
-          style: 'destructive',
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/auth');
+  const handleSignOut = async () => {
+    console.log('🚪 HandleSignOut function called');
+    
+    try {
+      Alert.alert(
+        'Cerrar Sesión',
+        '¿Estás seguro que deseas cerrar sesión?',
+        [
+          { 
+            text: 'Cancelar', 
+            style: 'cancel',
+            onPress: () => console.log('🚪 SignOut cancelled')
+          },
+          { 
+            text: 'Cerrar Sesión', 
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                console.log('🚪 Starting sign out process with AuthContext...');
+                
+                // Use AuthContext signOut (this will handle navigation automatically)
+                await authSignOut();
+                
+                console.log('🚪 AuthContext signOut completed');
+              } catch (error) {
+                console.error('🚪 AuthContext signOut error:', error);
+                Alert.alert('Error', 'Ocurrió un error al cerrar sesión');
+              }
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error('🚪 Alert creation error:', error);
+      // Fallback: try to sign out directly using AuthContext
+      try {
+        console.log('🚪 Fallback: Using AuthContext signOut directly');
+        await authSignOut();
+      } catch (fallbackError) {
+        console.error('🚪 Fallback signOut error:', fallbackError);
+      }
+    }
   };
 
   const MenuSection = ({ icon, title, subtitle, onPress, iconColor = '#666', iconLib = 'Ionicons' }) => {
@@ -313,8 +346,25 @@ export default function ProfileScreen(){
       {/* Prueba de Email */}
       <EmailTester />
 
+      {/* Botón de Prueba para Debug */}
+      <TouchableOpacity 
+        style={[styles.signOutButton, { backgroundColor: '#E3F2FD', borderColor: '#2196F3', marginBottom: 10 }]}
+        onPress={() => {
+          console.log('🧪 Test button pressed');
+          Alert.alert('Test', 'El botón de prueba funciona correctamente');
+        }}
+      >
+        <Text style={[styles.signOutText, { color: '#2196F3' }]}>🧪 Botón de Prueba</Text>
+      </TouchableOpacity>
+
       {/* Botón Cerrar Sesión */}
-      <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
+      <TouchableOpacity 
+        style={styles.signOutButton} 
+        onPress={handleSignOut}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        testID="signout-button"
+      >
         <Feather name="log-out" size={20} color="#FF3B30" />
         <Text style={styles.signOutText}>Cerrar Sesión</Text>
       </TouchableOpacity>
