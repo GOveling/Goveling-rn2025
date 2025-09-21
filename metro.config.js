@@ -1,3 +1,11 @@
+// Ensure process is available globally for Metro bundling
+if (typeof global !== 'undefined' && typeof global.process === 'undefined') {
+  global.process = require('process');
+}
+if (typeof process === 'undefined') {
+  global.process = require('process');
+}
+
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
