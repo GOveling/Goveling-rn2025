@@ -5,6 +5,40 @@
   <meta httpEquiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover">
   <title>Goveling</title>
+  <script>
+    // Critical polyfills that must execute immediately
+    if (typeof process === 'undefined') {
+      globalThis.process = {
+        env: {
+          NODE_ENV: 'development',
+          BABEL_ENV: 'development',
+          EXPO_PUBLIC_SUPABASE_URL: 'https://iwsuyrlrbmnbfyfkqowl.supabase.co',
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3c3V5cmxyYm1uYmZ5Zmtxb3dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNjM4NTcsImV4cCI6MjA3MzgzOTg1N30.qC14nN1H4JcsubN31he9Y9VUWa3Dl1sDY28iAyKcIPg',
+          EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_IOS: 'your_ios_client_id',
+          EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ANDROID: 'your_android_client_id',
+          EXPO_PUBLIC_PLACES_API: '/functions/v1/places-search',
+          EXPO_PUBLIC_RESEND_API_URL: '/functions/v1/resend-otp',
+          EXPO_PUBLIC_ML_API_BASE: 'https://goveling-ml.onrender.com/api',
+          EXPO_PUBLIC_ML_PRIMARY_VERSION: 'v2',
+          EXPO_PUBLIC_I18N_EDGE: 'your_i18n_edge_url'
+        },
+        platform: 'web',
+        version: '18.0.0',
+        versions: { node: '18.0.0' },
+        browser: true
+      };
+      window.process = globalThis.process;
+    }
+    
+    if (!globalThis['import']) {
+      const importMeta = {
+        env: { NODE_ENV: 'development', MODE: 'development', DEV: true, PROD: false },
+        url: window.location.href
+      };
+      globalThis['import'] = { meta: importMeta };
+      window['import'] = { meta: importMeta };
+    }
+  </script>
 </head>
 <body>
   <div id="root"></div>
