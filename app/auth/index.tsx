@@ -110,7 +110,7 @@ export default function AuthScreen(){
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: 'http://localhost:8081/auth/callback',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
