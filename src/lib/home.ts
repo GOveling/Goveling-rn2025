@@ -86,7 +86,9 @@ export async function getCurrentPosition(){
 
 export async function reverseCity(lat:number, lng:number){
   try {
+    console.log('🌍 Reverse geocoding for:', lat, lng);
     const arr = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+    console.log('🌍 Reverse geocode response:', arr);
     const c = arr?.[0];
     if (!c) return null;
     // Build location string with available data
@@ -95,10 +97,14 @@ export async function reverseCity(lat:number, lng:number){
     else if (c.subregion) parts.push(c.subregion);
     else if (c.region) parts.push(c.region);
     else if (c.district) parts.push(c.district);
+    else if (c.name) parts.push(c.name);
+    else if (c.street) parts.push(c.street);
     
     if (c.country) parts.push(c.country);
     else if (c.isoCountryCode) parts.push(c.isoCountryCode);
     
-    return parts.length > 0 ? parts.join(', ') : 'Ubicación desconocida';
+    const result = parts.length > 0 ? parts.join(', ') : null;
+    console.log('🌍 Final location string:', result);
+    return result;
   } catch { return null; }
 }

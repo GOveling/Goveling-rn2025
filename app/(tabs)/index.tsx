@@ -103,7 +103,7 @@ export default function HomeTab(){
               <TouchableOpacity onPress={toggleUnits} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
                 <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
                 <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
-                  {typeof temp === 'number' ? Math.round(temp) : '—'}°{units === 'c' ? 'C' : 'F'}
+                  {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°{units === 'c' ? 'C' : 'F'}
                 </Text>
               </TouchableOpacity>
               

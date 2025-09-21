@@ -26,11 +26,14 @@ export async function getWeather(lat:number, lng:number, units:'c'|'f'){
     }
     
     const j = await res.json();
-    return { temp: j.temperature, code: j.code };
+    console.log('🌡️ Weather API response:', j);
+    const temperature = typeof j.temperature === 'number' ? j.temperature : null;
+    return { temp: temperature, code: j.code };
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       throw new Error('Network error: Unable to connect to weather service. Please check your internet connection.');
     }
+    console.error('🌡️ Weather API error:', error);
     throw error;
   }
 }
