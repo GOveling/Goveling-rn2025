@@ -1,6 +1,5 @@
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 type Units = 'c'|'f';
 type ThemeMode = 'system'|'light'|'dark';
@@ -21,83 +20,86 @@ const isWeb = () => {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 };
 
-// Manual state management for web to avoid process.env issues
-let webState: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyleUrl'> = {
+// Universal state object for both web and native
+let universalState: Omit<State, 'setLanguage' | 'setUnits' | 'setTheme' | 'setMapStyleUrl'> = {
   language: null,
   units: 'c',
   theme: 'system',
   mapStyleUrl: null
 };
 
-// Load from localStorage if available
-if (isWeb() && window.localStorage) {
+// Load initial state from storage
+const loadInitialState = async () => {
   try {
-    const stored = localStorage.getItem('goveling-settings');
-    if (stored) {
-      webState = { ...webState, ...JSON.parse(stored) };
+    if (isWeb()) {
+      // Web: use localStorage
+      if (window.localStorage) {
+        const stored = localStorage.getItem('goveling-settings');
+        if (stored) {
+          universalState = { ...universalState, ...JSON.parse(stored) };
+        }
+      }
+    } else {
+      // Native: use AsyncStorage
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const stored = await AsyncStorage.getItem('goveling-settings');
+      if (stored) {
+        universalState = { ...universalState, ...JSON.parse(stored) };
+      }
     }
   } catch (e) {
-    console.warn('Failed to load settings from localStorage:', e);
-  }
-}
-
-// Save to localStorage
-const saveWebState = () => {
-  if (isWeb() && window.localStorage) {
-    try {
-      localStorage.setItem('goveling-settings', JSON.stringify(webState));
-    } catch (e) {
-      console.warn('Failed to save settings to localStorage:', e);
-    }
+    console.warn('Failed to load settings from storage:', e);
   }
 };
 
-// Web-safe store creation
-const createWebSafeStore = () => {
-  if (isWeb()) {
-    // For web, use simple store with manual persistence
-    return create<State>((set) => ({
-      ...webState,
-      setLanguage: (language) => {
-        webState.language = language;
-        saveWebState();
-        set({ language });
-      },
-      setUnits: (units) => {
-        webState.units = units;
-        saveWebState();
-        set({ units });
-      },
-      setTheme: (theme) => {
-        webState.theme = theme;
-        saveWebState();
-        set({ theme });
-      },
-      setMapStyleUrl: (mapStyleUrl) => {
-        webState.mapStyleUrl = mapStyleUrl;
-        saveWebState();
-        set({ mapStyleUrl });
-      }
-    }));
-  } else {
-    // For native, use normal persist middleware
-    // Import AsyncStorage dynamically for native platforms only
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+// Save state to storage
+const saveState = async () => {
+  try {
+    const stateToSave = JSON.stringify(universalState);
     
-    return create<State>()(persist((set) => ({
-      language: null,
-      units: 'c',
-      theme: 'system',
-      mapStyleUrl: null,
-      setLanguage: (language) => set({ language }),
-      setUnits: (units) => set({ units }),
-      setTheme: (theme) => set({ theme }),
-      setMapStyleUrl: (mapStyleUrl) => set({ mapStyleUrl })
-    }), {
-      name: 'settings',
-      storage: createJSONStorage(() => AsyncStorage)
-    }));
+    if (isWeb()) {
+      // Web: use localStorage
+      if (window.localStorage) {
+        localStorage.setItem('goveling-settings', stateToSave);
+      }
+    } else {
+      // Native: use AsyncStorage
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.setItem('goveling-settings', stateToSave);
+    }
+  } catch (e) {
+    console.warn('Failed to save settings to storage:', e);
   }
 };
 
-export const useSettingsStore = createWebSafeStore();
+// Load initial state immediately
+loadInitialState();
+
+// Create store without any middleware that might access process.env
+const createUniversalStore = () => {
+  return create<State>((set) => ({
+    ...universalState,
+    setLanguage: (language) => {
+      universalState.language = language;
+      saveState();
+      set({ language });
+    },
+    setUnits: (units) => {
+      universalState.units = units;
+      saveState();
+      set({ units });
+    },
+    setTheme: (theme) => {
+      universalState.theme = theme;
+      saveState();
+      set({ theme });
+    },
+    setMapStyleUrl: (mapStyleUrl) => {
+      universalState.mapStyleUrl = mapStyleUrl;
+      saveState();
+      set({ mapStyleUrl });
+    }
+  }));
+};
+
+export const useSettingsStore = createUniversalStore();
