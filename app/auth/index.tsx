@@ -18,6 +18,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
 import { router } from 'expo-router';
+import { getRedirectUrl } from '~/lib/oauth-config';
+import { getOAuthConfig, getPlatformInfo } from '~/lib/google-oauth';
+import OAuthDebug from '../../components/OAuthDebug';
+import SupabaseConfig from '../../components/SupabaseConfig';
+import AuthDebugger from '../../components/AuthDebugger';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,6 +37,7 @@ export default function AuthScreen(){
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isDark, setIsDark] = useState(Appearance.getColorScheme() === 'dark');
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Listen to system theme changes
   React.useEffect(() => {
@@ -39,6 +45,42 @@ export default function AuthScreen(){
       setIsDark(colorScheme === 'dark');
     });
     return () => subscription?.remove();
+  }, []);
+
+  // Check for OAuth errors in URL params
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      const description = urlParams.get('description');
+      
+      if (error) {
+        let errorMessage = 'Error de autenticación';
+        switch (error) {
+          case 'oauth_failed':
+            errorMessage = 'Error al iniciar sesión con Google';
+            break;
+          case 'session_failed':
+            errorMessage = 'No se pudo crear la sesión';
+            break;
+          case 'callback_failed':
+            errorMessage = 'Error en el callback de autenticación';
+            break;
+          case 'no_session_created':
+            errorMessage = 'No se pudo crear la sesión después del login';
+            break;
+          case 'access_denied':
+            errorMessage = 'Acceso denegado por el usuario';
+            break;
+          default:
+            errorMessage = description || error;
+        }
+        setAuthError(errorMessage);
+        
+        // Clear the error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -107,23 +149,55 @@ export default function AuthScreen(){
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
+      const oauthConfig = getOAuthConfig();
+      const platformInfo = getPlatformInfo();
+      
+      console.log('🔍 OAuth Config:', oauthConfig);
+      console.log('� Platform Info:', platformInfo);
+      console.log('🌐 Current window location:', typeof window !== 'undefined' ? window.location.href : 'Native app');
+      
+      // Configuración específica para web con puerto explícito
+      const redirectTo = typeof window !== 'undefined' 
+        ? `http://localhost:8081/auth/callback`
+        : 'com.goveling.app://auth/callback';
+        
+      console.log('📍 Redirect URL:', redirectTo);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'http://localhost:8081/auth/callback',
+          redirectTo,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'select_account',
+            hd: undefined, // Allow any domain
           },
+          scopes: 'openid email profile',
+          // Force the correct site URL
+          skipBrowserRedirect: false
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ OAuth setup error:', error);
+        throw error;
+      }
       
-      // The OAuth flow will redirect to Google and back
-      // The AuthProvider will handle the session once the user returns
+      console.log('✅ OAuth initiated successfully:', data);
+      console.log('🔗 OAuth URL generated, redirecting...');
+      
+      // En web, la redirección es automática
+      // En móvil, necesitamos manejar la respuesta
+      if (data?.url) {
+        console.log('🚀 Redirecting to OAuth URL:', data.url);
+      }
+      
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Error con Google OAuth');
+      console.error('💥 Google OAuth Error:', error);
+      Alert.alert(
+        'Error de autenticación', 
+        error.message || 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
@@ -162,6 +236,24 @@ export default function AuthScreen(){
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Debug Components - Remove in production */}
+          <SupabaseConfig />
+          <OAuthDebug />
+          <AuthDebugger />
+          
+          {/* Error Message */}
+          {authError && (
+            <View style={[styles.errorContainer, { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' }]}>
+              <Ionicons name="alert-circle" size={20} color={isDark ? '#FCA5A5' : '#DC2626'} />
+              <Text style={[styles.errorText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>
+                {authError}
+              </Text>
+              <TouchableOpacity onPress={() => setAuthError(null)}>
+                <Ionicons name="close" size={20} color={isDark ? '#FCA5A5' : '#DC2626'} />
+              </TouchableOpacity>
+            </View>
+          )}
+          
           {/* Card Container */}
           <View style={[styles.card, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' }]}>
             
@@ -507,5 +599,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 8,
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(220,38,38,0.3)',
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

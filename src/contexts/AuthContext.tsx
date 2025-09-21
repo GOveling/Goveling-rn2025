@@ -33,30 +33,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔍 Initial session check:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Redirect based on auth state
-      if (session?.user) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/auth');
-      }
+      // Don't auto-redirect during initial load to avoid conflicts with OAuth flow
+      // Let individual screens handle their own routing logic
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state change:', event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
+      // Only handle specific events to avoid interfering with OAuth flow
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ User signed in, redirecting to main app');
         router.replace('/(tabs)');
       } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User signed out, redirecting to auth');
         router.replace('/auth');
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('🔄 Token refreshed');
       }
     });
 

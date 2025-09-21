@@ -10,6 +10,7 @@ import {
   Feather, 
   AntDesign 
 } from '@expo/vector-icons';
+import EmailTester from '../../components/EmailTester';
 
 const { width } = Dimensions.get('window');
 
@@ -308,6 +309,9 @@ export default function ProfileScreen(){
           onPress={() => router.push('/settings')}
         />
       </View>
+
+      {/* Prueba de Email */}
+      <EmailTester />
 
       {/* Botón Cerrar Sesión */}
       <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
