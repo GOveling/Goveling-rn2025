@@ -23,9 +23,14 @@ export async function getActiveOrNextTrip(): Promise<Trip|null>{
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
   if (!uid) return null;
-  const { data: own } = await supabase.from('trips').select('id,name,start_date,end_date').eq('owner_id', uid);
-  const { data: collab } = await supabase.from('trip_collaborators').select('trip_id, trips ( id, name, start_date, end_date )').eq('user_id', uid);
-  const trips: Trip[] = [ ...(own||[]), ...((collab||[]).map((c:any)=>c.trips).filter(Boolean)) ];
+  const { data: own } = await supabase.from('trips').select('id,title,start_date,end_date').eq('user_id', uid);
+  const { data: collabIds } = await supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid);
+  const tripIds = (collabIds || []).map(c => c.trip_id);
+  const { data: collabTrips } = tripIds.length > 0 ? await supabase.from('trips').select('id,title,start_date,end_date').in('id', tripIds) : { data: [] };
+  const trips: Trip[] = [ 
+    ...((own||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date }))), 
+    ...((collabTrips||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date })))
+  ];
   if (!trips.length) return null;
   // active first
   const active = trips.find(isActiveTrip);
@@ -45,7 +50,19 @@ export async function getSavedPlaces(){
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
   if (!uid) return [];
-  const { data, error } = await supabase.from('saved_places').select('id, place_id, name, lat, lng, address, photo_url');
+  
+  // Get all trip IDs where user is owner or collaborator
+  const { data: ownTrips } = await supabase.from('trips').select('id').eq('user_id', uid);
+  const { data: collabTrips } = await supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid);
+  
+  const tripIds = [
+    ...((ownTrips || []).map(t => t.id)),
+    ...((collabTrips || []).map(c => c.trip_id))
+  ];
+  
+  if (tripIds.length === 0) return [];
+  
+  const { data, error } = await supabase.from('trip_places').select('id, place_id, name, lat, lng, address').in('trip_id', tripIds);
   if (error) return [];
   return data || [];
 }
