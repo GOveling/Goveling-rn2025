@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 export const options = { headerShown: false };
 import { useTheme } from '~/lib/theme';
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
 import { getCurrentPosition, reverseCity, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
@@ -111,7 +111,7 @@ export default function HomeTab(){
                 </Text>
               </TouchableOpacity>
               
-              <TouchableOpacity onPress={() => router.push('/home/inbox')} style={{ position: 'relative' }}>
+              <TouchableOpacity onPress={() => Alert.alert('Notificaciones', 'Funcionalidad de inbox próximamente disponible')} style={{ position: 'relative' }}>
                 <Text style={{ fontSize: 24 }}>🔔</Text>
                 <View style={{ 
                   position: 'absolute', 
@@ -136,7 +136,7 @@ export default function HomeTab(){
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <TouchableOpacity 
               style={{ flex: 1 }}
-              onPress={() => router.push('/explore')}
+              onPress={() => router.push('/(tabs)/explore')}
             >
               <LinearGradient
                 colors={['#8B5CF6', '#A855F7']}
@@ -160,7 +160,7 @@ export default function HomeTab(){
 
             <TouchableOpacity 
               style={{ flex: 1 }}
-              onPress={() => router.push('/trips')}
+              onPress={() => router.push('/(tabs)/trips')}
             >
               <LinearGradient
                 colors={['#F97316', '#EA580C']}
@@ -261,7 +261,7 @@ export default function HomeTab(){
                 borderColor: '#E5E7EB',
                 marginBottom: 12
               }}
-              onPress={() => currentTrip && router.push(`/trips/${currentTrip.id}`)}
+              onPress={() => currentTrip && Alert.alert('Trip Details', 'Funcionalidad de detalles del trip próximamente disponible')}
             >
               <Text style={{ color: '#374151', fontSize: 16, fontWeight: '500' }}>
                 Ver Detalles
@@ -269,7 +269,7 @@ export default function HomeTab(){
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => currentTrip && router.push(`/trips/${currentTrip.id}/route`)}
+              onPress={() => currentTrip && Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible')}
             >
               <LinearGradient
                 colors={['#3B82F6', '#1D4ED8']}
@@ -330,7 +330,7 @@ export default function HomeTab(){
                 borderRadius: 12,
                 padding: 12
               }}
-              onPress={() => router.push('/explore/place?id=santorini')}
+              onPress={() => Alert.alert('Santorini', 'Funcionalidad de lugares específicos próximamente disponible')}
             >
               <View style={{
                 width: 60,

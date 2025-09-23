@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
 import { useRouter } from 'expo-router';
@@ -98,7 +98,7 @@ export default function TripsTab() {
 
         {/* Vista de Mapa Button */}
         <TouchableOpacity
-          onPress={() => router.push('/trips/map')}
+          onPress={() => Alert.alert('Mapa', 'Funcionalidad de mapa de trips próximamente disponible')}
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: 16,
@@ -135,7 +135,7 @@ export default function TripsTab() {
 
         {/* Nuevo Viaje Button */}
         <TouchableOpacity
-          onPress={() => router.push('/trips/new')}
+          onPress={() => Alert.alert('Nuevo Trip', 'Funcionalidad de crear trips próximamente disponible')}
           style={{
             borderRadius: 16,
             padding: 18,
@@ -493,7 +493,7 @@ export default function TripsTab() {
               marginBottom: 16
             }}>
               <TouchableOpacity
-                onPress={() => router.push(`/trips/test-sa`)}
+                onPress={() => Alert.alert('Trip Details', 'Funcionalidad de detalles del trip próximamente disponible')}
                 style={{
                   flex: 1,
                   borderRadius: 16,
@@ -527,7 +527,7 @@ export default function TripsTab() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => router.push('/trips/test-sa/places')}
+                onPress={() => Alert.alert('Lugares', 'Funcionalidad de lugares del trip próximamente disponible')}
                 style={{
                   flex: 1,
                   backgroundColor: '#FFFFFF',
@@ -559,7 +559,7 @@ export default function TripsTab() {
               gap: 12
             }}>
               <TouchableOpacity
-                onPress={() => router.push('/trips/test-sa/ai-route')}
+                onPress={() => Alert.alert('AI Route', 'Funcionalidad de rutas con IA próximamente disponible')}
                 style={{
                   flex: 1,
                   backgroundColor: '#FFFFFF',
@@ -586,7 +586,7 @@ export default function TripsTab() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => router.push('/trips/test-sa/accommodation')}
+                onPress={() => Alert.alert('Alojamiento', 'Funcionalidad de alojamiento próximamente disponible')}
                 style={{
                   flex: 1,
                   backgroundColor: '#FFFFFF',

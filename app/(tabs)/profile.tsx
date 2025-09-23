@@ -1,20 +1,28 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions, Pressable, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { supabase } from '~/lib/supabase';
+import { useAuth } from '~/contexts/AuthContext';
 import { 
   Ionicons, 
   MaterialIcons, 
   Feather, 
   AntDesign 
 } from '@expo/vector-icons';
+import EmailTester from '../../components/EmailTester';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfileTab(){
   const { t } = useTranslation();
+  const { user, signOut: authSignOut } = useAuth();
+  
+  React.useEffect(() => {
+    console.log('📱 ProfileTab rendered');
+    console.log('👤 Current user:', user?.email);
+  }, [user]);
   
   const [profileData, setProfileData] = React.useState({
     fullName: 'Sebastian Araos',
@@ -139,23 +147,7 @@ export default function ProfileTab(){
     return points;
   };
 
-  const signOut = async () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro que deseas cerrar sesión?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Cerrar Sesión', 
-          style: 'destructive',
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/auth');
-          }
-        }
-      ]
-    );
-  };
+
 
   const MenuSection = ({ icon, title, subtitle, onPress, iconColor = '#666', iconLib = 'Ionicons' }) => {
     const IconComponent = iconLib === 'MaterialIcons' ? MaterialIcons : 
@@ -176,6 +168,103 @@ export default function ProfileTab(){
         <Feather name="chevron-right" size={20} color="#666" />
       </TouchableOpacity>
     );
+  };
+
+  // Sign out function with comprehensive debug logging
+  const handleSignOut = async () => {
+    try {
+      console.log('🚪 Starting sign out process...');
+      console.log('🚪 Current platform:', Platform.OS);
+      console.log('🚪 User email:', user?.email);
+      console.log('🚪 AuthSignOut function:', typeof authSignOut, !!authSignOut);
+      
+      // Check if we're on web - use different alert approach
+      const isWeb = typeof window !== 'undefined' && window.document;
+      console.log('🚪 Is web environment:', isWeb);
+      
+      if (isWeb) {
+        // Use web-compatible confirm dialog
+        console.log('🚪 Showing web confirmation dialog...');
+        const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
+        console.log('🚪 User confirmation result:', confirmed);
+        
+        if (!confirmed) {
+          console.log('🚪 Sign out cancelled by user');
+          return;
+        }
+        
+        console.log('🚪 User confirmed sign out, proceeding...');
+        
+        if (!authSignOut) {
+          console.error('🚪 ERROR: authSignOut function not available from AuthContext');
+          window.alert('No se pudo cerrar sesión. Función no disponible.');
+          return;
+        }
+
+        console.log('🚪 Calling AuthContext authSignOut...');
+        try {
+          await authSignOut();
+          console.log('🚪 ✅ AuthContext signOut completed successfully');
+        } catch (signOutError) {
+          console.error('🚪 ❌ Error during authSignOut:', signOutError);
+          throw signOutError;
+        }
+      } else {
+        // Use React Native Alert for mobile
+        console.log('🚪 Showing mobile confirmation dialog...');
+        Alert.alert(
+          'Cerrar Sesión',
+          '¿Estás seguro de que quieres cerrar sesión?',
+          [
+            {
+              text: 'Cancelar',
+              style: 'cancel',
+              onPress: () => console.log('🚪 Mobile - Sign out cancelled by user')
+            },
+            {
+              text: 'Cerrar Sesión',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  console.log('🚪 Mobile - User confirmed, proceeding with sign out...');
+                  console.log('🚪 Mobile - AuthSignOut function:', typeof authSignOut, !!authSignOut);
+                  
+                  if (!authSignOut) {
+                    console.error('🚪 ERROR: authSignOut function not available from AuthContext');
+                    Alert.alert('Error', 'No se pudo cerrar sesión. Función no disponible.');
+                    return;
+                  }
+
+                  console.log('🚪 Mobile - calling authSignOut...');
+                  try {
+                    await authSignOut();
+                    console.log('🚪 ✅ Mobile - signOut completed successfully');
+                  } catch (signOutError) {
+                    console.error('🚪 ❌ Mobile - Error during authSignOut:', signOutError);
+                    throw signOutError;
+                  }
+                  
+                } catch (signOutError) {
+                  console.error('🚪 ❌ Mobile - Error during sign out:', signOutError);
+                  Alert.alert(
+                    'Error',
+                    'Hubo un problema al cerrar sesión. Por favor, intenta de nuevo.'
+                  );
+                }
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('🚪 ❌ Unexpected error in handleSignOut:', error);
+      // More user-friendly error message
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert('No se pudo cerrar sesión. Inténtalo de nuevo.');
+      } else {
+        Alert.alert('Error', 'No se pudo cerrar sesión. Inténtalo de nuevo.');
+      }
+    }
   };
 
   return (
@@ -241,7 +330,7 @@ export default function ProfileTab(){
         
         <TouchableOpacity 
           style={styles.detailsButton}
-          onPress={() => router.push('/profile/achievements')}
+          onPress={() => Alert.alert('Logros', 'Funcionalidad de logros próximamente disponible')}
         >
           <Text style={styles.detailsButtonText}>Ver detalles</Text>
         </TouchableOpacity>
@@ -263,7 +352,7 @@ export default function ProfileTab(){
           title="Documentos de Viaje"
           subtitle="Pasaportes, visas, boletos"
           iconColor="#2196F3"
-          onPress={() => router.push('/profile/documents')}
+          onPress={() => Alert.alert('Documentos', 'Funcionalidad de documentos próximamente disponible')}
         />
 
         <MenuSection
@@ -271,7 +360,7 @@ export default function ProfileTab(){
           title="Mis Reseñas"
           subtitle="Gestiona tus reseñas de lugares"
           iconColor="#673AB7"
-          onPress={() => router.push('/explore/reviews')}
+          onPress={() => Alert.alert('Reseñas', 'Funcionalidad de reseñas próximamente disponible')}
         />
 
         <MenuSection
@@ -288,7 +377,7 @@ export default function ProfileTab(){
           title="Logros de Viaje"
           subtitle={`Nivel 1 ${profileData.level} • ${profileData.stats.achievementPoints} puntos ganados`}
           iconColor="#673AB7"
-          onPress={() => router.push('/profile/achievements')}
+          onPress={() => Alert.alert('Logros', 'Funcionalidad de logros próximamente disponible')}
         />
 
         <MenuSection
@@ -310,10 +399,27 @@ export default function ProfileTab(){
       </View>
 
       {/* Botón Cerrar Sesión */}
-      <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
+      <Pressable 
+        style={({ pressed }) => [
+          styles.signOutButton,
+          Platform.OS === 'web' && pressed && { opacity: 0.8 }
+        ]}
+        onPress={() => {
+          console.log('🚪 Button clicked for logout');
+          console.log('🚪 Current user:', user?.email);
+          console.log('🚪 AuthSignOut available:', !!authSignOut);
+          handleSignOut();
+        }}
+      >
         <Feather name="log-out" size={20} color="#FF3B30" />
         <Text style={styles.signOutText}>Cerrar Sesión</Text>
-      </TouchableOpacity>
+      </Pressable>
+
+      {/* EmailTester Component */}
+      <View style={styles.emailTesterSection}>
+        <Text style={styles.sectionTitle}>Prueba de Email</Text>
+        <EmailTester />
+      </View>
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -509,5 +615,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
     marginLeft: 8,
+  },
+  emailTesterSection: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 15,
   },
 });

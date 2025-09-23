@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '~/lib/supabase';
 import { getTodayISO } from '~/lib/dates';
@@ -75,14 +75,14 @@ const HomeDaySummary = React.memo(function HomeDaySummary() {
             <Text style={{ fontWeight:'700' }}>{t('Siguiente:')}</Text>
             <Text style={{ opacity:0.8 }}>{progress.next.name}</Text>
           </View>
-          <TouchableOpacity onPress={()=> router.push({ pathname:'/trips/[id]/live', params:{ id: trip.id } }) } style={{ backgroundColor:'#007aff', paddingVertical:8, borderRadius:10 }}>
+          <TouchableOpacity onPress={()=> Alert.alert('Live Mode', 'Funcionalidad de modo live próximamente disponible') } style={{ backgroundColor:'#007aff', paddingVertical:8, borderRadius:10 }}>
             <Text style={{ color:'#fff', fontWeight:'800' }}>{t('Abrir Travel Mode')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center' }}>
           <Text style={{ fontWeight:'700' }}>{t('¡Itinerario completado! 🎉')}</Text>
-          <TouchableOpacity onPress={()=> router.push({ pathname:'/trips/[id]/route', params:{ id: trip.id } }) } style={{ paddingHorizontal:12, paddingVertical:8, borderRadius:10, borderWidth:1, borderColor:'#ddd' }}>
+          <TouchableOpacity onPress={()=> Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible') } style={{ paddingHorizontal:12, paddingVertical:8, borderRadius:10, borderWidth:1, borderColor:'#ddd' }}>
             <Text style={{ fontWeight:'800' }}>{t('Ver ruta')}</Text>
           </TouchableOpacity>
         </View>

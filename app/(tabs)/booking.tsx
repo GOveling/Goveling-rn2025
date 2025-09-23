@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { useTheme } from '~/lib/theme';
 import { useRouter } from 'expo-router';
 
@@ -53,8 +53,12 @@ export default function BookingTab() {
   ];
 
   const handleBookingPress = (option: any) => {
-    // Navigate to specific booking section
-    router.push(option.route);
+    // Show alert for now since booking sections are coming soon
+    Alert.alert(
+      option.title,
+      `Funcionalidad de ${option.title.toLowerCase()} próximamente disponible`,
+      [{ text: 'OK' }]
+    );
   };
 
   return (

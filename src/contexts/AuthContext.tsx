@@ -67,7 +67,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    console.log('🔐 AuthContext signOut called');
+    console.log('🔐 Current user before signOut:', user?.email);
+    console.log('🔐 Current session before signOut:', session?.user?.email);
+    
+    try {
+      console.log('🔐 Calling supabase.auth.signOut()...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('🔐 ❌ Supabase signOut error:', error);
+        throw error;
+      }
+      
+      console.log('🔐 ✅ Supabase signOut completed successfully');
+    } catch (error) {
+      console.error('🔐 ❌ Error in AuthContext signOut:', error);
+      throw error;
+    }
   };
 
   const value = {

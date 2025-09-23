@@ -141,7 +141,7 @@ export default function ExploreTab() {
         shadowRadius: 8,
         elevation: 3
       }}
-      onPress={() => router.push(`/explore/place?id=${item.id}`)}
+      onPress={() => Alert.alert('Lugar', `Funcionalidad de detalles del lugar próximamente disponible`)}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1 }}>
@@ -321,7 +321,7 @@ export default function ExploreTab() {
           </View>
 
           <TouchableOpacity
-            onPress={() => router.push('/explore')}
+            onPress={() => Alert.alert('Explorar', 'Ya estás en la sección de explorar')}
           >
             <LinearGradient
               colors={['#8B5CF6', '#7C3AED']}

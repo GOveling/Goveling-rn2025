@@ -23,11 +23,6 @@ export default function Root(){
             }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="home" options={{ headerShown: false }} />
-              <Stack.Screen name="explore" options={{ headerShown: false }} />
-              <Stack.Screen name="trips" options={{ headerShown: false }} />
-              <Stack.Screen name="booking" options={{ headerShown: false }} />
-              <Stack.Screen name="profile" options={{ headerShown: false }} />
               <Stack.Screen name="settings" options={{ headerShown: false }} />
               <Stack.Screen name="+not-found" />
             </Stack>

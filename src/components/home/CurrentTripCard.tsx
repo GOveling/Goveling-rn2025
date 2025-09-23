@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Skeleton } from '~/components/ui/Skeleton';
@@ -66,7 +66,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
         {t('Crea tu primer trip para comenzar')}
       </Text>
-      <TouchableOpacity onPress={()=>router.push('/trips/new')}>
+      <TouchableOpacity onPress={()=>Alert.alert('Nuevo Trip', 'Funcionalidad de crear trips próximamente disponible')}>
         <LinearGradient
           colors={['#10B981', '#059669']}
           style={{
@@ -91,7 +91,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
 
     return (
       <TouchableOpacity
-        onPress={() => router.push(`/trips/${trip.id}`)}
+        onPress={() => Alert.alert('Trip Details', 'Funcionalidad de detalles del trip próximamente disponible')}
         activeOpacity={0.8}
       >
         <LinearGradient

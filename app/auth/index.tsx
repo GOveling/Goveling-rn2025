@@ -38,6 +38,11 @@ export default function AuthScreen(){
   const [rememberMe, setRememberMe] = useState(false);
   const [isDark, setIsDark] = useState(Appearance.getColorScheme() === 'dark');
   const [authError, setAuthError] = useState<string | null>(null);
+  
+  // Referencias para los TextInputs
+  const emailInputRef = React.useRef<TextInput>(null);
+  const passwordInputRef = React.useRef<TextInput>(null);
+  const confirmPasswordInputRef = React.useRef<TextInput>(null);
 
   // Listen to system theme changes
   React.useEffect(() => {
@@ -281,12 +286,15 @@ export default function AuthScreen(){
                     value={fullName}
                     onChangeText={setFullName}
                     autoCapitalize="words"
+                    returnKeyType="next"
+                    onSubmitEditing={() => emailInputRef.current?.focus()}
                   />
                 </View>
               )}
 
               <View style={styles.inputContainer}>
                 <TextInput
+                  ref={emailInputRef}
                   style={[styles.input, { 
                     borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                     color: isDark ? '#fff' : '#000',
@@ -298,11 +306,14 @@ export default function AuthScreen(){
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
 
               <View style={styles.inputContainer}>
                 <TextInput
+                  ref={passwordInputRef}
                   style={[styles.input, { 
                     borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                     color: isDark ? '#fff' : '#000',
@@ -313,6 +324,8 @@ export default function AuthScreen(){
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  onSubmitEditing={mode === 'signin' ? signIn : () => confirmPasswordInputRef.current?.focus()}
+                  returnKeyType={mode === 'signin' ? 'done' : 'next'}
                 />
                 <TouchableOpacity 
                   style={styles.eyeIcon} 
@@ -329,6 +342,7 @@ export default function AuthScreen(){
               {mode === 'signup' && (
                 <View style={styles.inputContainer}>
                   <TextInput
+                    ref={confirmPasswordInputRef}
                     style={[styles.input, { 
                       borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                       color: isDark ? '#fff' : '#000',
@@ -339,6 +353,8 @@ export default function AuthScreen(){
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showConfirmPassword}
+                    onSubmitEditing={signUp}
+                    returnKeyType="done"
                   />
                   <TouchableOpacity 
                     style={styles.eyeIcon} 
