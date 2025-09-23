@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import { supabase } from '~/lib/supabase';
+import { LocationCache } from './weatherCache';
 
 export type Trip = { id:string; name:string; start_date?:string|null; end_date?:string|null; cover_emoji?:string|null };
 
@@ -84,13 +85,122 @@ export async function getCurrentPosition(){
   return { lat: pos.coords.latitude, lng: pos.coords.longitude };
 }
 
+// Simple coordinate-based location detection
+export async function getLocationFromCoordinates(lat: number, lng: number): Promise<string | null> {
+  // Basic geographic region detection based on coordinates
+  const regions = [
+    { lat: [-90, -60], lng: [-180, 180], name: "Antártida" },
+    { lat: [-60, -23.5], lng: [-70, -30], name: "Argentina" },
+    { lat: [-23.5, 12], lng: [-82, -34], name: "Brasil" },
+    { lat: [32, 42], lng: [-125, -66], name: "Estados Unidos" },
+    { lat: [25, 49], lng: [-8, 40], name: "Europa" },
+    { lat: [-35, -10], lng: [-80, -65], name: "Chile" },
+    { lat: [-56, -17], lng: [-110, -25], name: "Sudamérica" },
+    { lat: [36, 71], lng: [-10, 70], name: "Europa/África" },
+    { lat: [-35, 37], lng: [110, 180], name: "Oceanía" },
+  ];
+  
+  for (const region of regions) {
+    if (lat >= region.lat[0] && lat <= region.lat[1] && 
+        lng >= region.lng[0] && lng <= region.lng[1]) {
+      return region.name;
+    }
+  }
+  
+  // If no specific region, give general location
+  if (lat > 0) {
+    return lng > 0 ? "Europa/Asia" : "América del Norte";
+  } else {
+    return lng > 0 ? "África/Oceanía" : "América del Sur";
+  }
+}
+
+// Alternative geocoding using BigDataCloud (same as weather API)
+export async function reverseGeocodeCoordinates(lat: number, lng: number): Promise<string | null> {
+  try {
+    const geocodeUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=es`;
+    
+    const response = await fetch(geocodeUrl);
+    if (!response.ok) {
+      return null;
+    }
+    
+    const geocodeData = await response.json();
+    
+    // Try different location fields in order of preference
+    let locationName = null;
+    
+    if (geocodeData.city) {
+      locationName = geocodeData.city;
+    } else if (geocodeData.locality) {
+      locationName = geocodeData.locality;
+    } else if (geocodeData.principalSubdivision) {
+      locationName = geocodeData.principalSubdivision;
+    } else if (geocodeData.countryName) {
+      locationName = geocodeData.countryName;
+    }
+    
+    if (locationName && geocodeData.countryName && locationName !== geocodeData.countryName) {
+      return `${locationName}, ${geocodeData.countryName}`;
+    } else if (locationName) {
+      return locationName;
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Cached version of reverseCity
+export async function reverseCityCached(lat: number, lng: number): Promise<string | null> {
+  // Try cache first
+  const cached = await LocationCache.get(lat, lng, 'expo');
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const result = await reverseCity(lat, lng);
+    if (result) {
+      await LocationCache.set(lat, lng, result, 'expo');
+    }
+    return result;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Cached version of reverseGeocodeCoordinates
+export async function reverseGeocodeCoordinatesCached(lat: number, lng: number): Promise<string | null> {
+  // Try cache first
+  const cached = await LocationCache.get(lat, lng, 'bigdata');
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const result = await reverseGeocodeCoordinates(lat, lng);
+    if (result) {
+      await LocationCache.set(lat, lng, result, 'bigdata');
+    }
+    return result;
+  } catch (error) {
+    return null;
+  }
+}
+
+// getLocationFromCoordinates is local computation, no need for cache
+export { getLocationFromCoordinates as getLocationFromCoordinatesCached };
+
 export async function reverseCity(lat:number, lng:number){
   try {
-    console.log('🌍 Reverse geocoding for:', lat, lng);
     const arr = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-    console.log('🌍 Reverse geocode response:', arr);
     const c = arr?.[0];
-    if (!c) return null;
+    if (!c) {
+      return null;
+    }
+    
     // Build location string with available data
     const parts = [];
     if (c.city) parts.push(c.city);
@@ -100,11 +210,12 @@ export async function reverseCity(lat:number, lng:number){
     else if (c.name) parts.push(c.name);
     else if (c.street) parts.push(c.street);
     
-    if (c.country) parts.push(c.country);
-    else if (c.isoCountryCode) parts.push(c.isoCountryCode);
+    if (c.country && parts.length > 0) parts.push(c.country);
+    else if (c.isoCountryCode && parts.length > 0) parts.push(c.isoCountryCode);
     
     const result = parts.length > 0 ? parts.join(', ') : null;
-    console.log('🌍 Final location string:', result);
     return result;
-  } catch { return null; }
+  } catch (error) { 
+    return null; 
+  }
 }

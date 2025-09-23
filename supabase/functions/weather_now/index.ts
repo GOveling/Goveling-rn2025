@@ -5,6 +5,44 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// Simple in-memory cache
+const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutos
+const cache = new Map<string, { data: any; timestamp: number }>();
+
+function getCacheKey(lat: number, lng: number, units: string): string {
+  // Round coordinates to 3 decimal places (≈111m precision) for cache grouping
+  const roundedLat = Math.round(lat * 1000) / 1000;
+  const roundedLng = Math.round(lng * 1000) / 1000;
+  return `${roundedLat},${roundedLng},${units}`;
+}
+
+function getCachedData(key: string) {
+  const cached = cache.get(key);
+  if (!cached) return null;
+  
+  const isExpired = Date.now() - cached.timestamp > CACHE_DURATION_MS;
+  if (isExpired) {
+    cache.delete(key);
+    return null;
+  }
+  
+  return cached.data;
+}
+
+function setCachedData(key: string, data: any) {
+  cache.set(key, { data, timestamp: Date.now() });
+  
+  // Clean up expired entries (keep cache size reasonable)
+  if (cache.size > 100) {
+    const now = Date.now();
+    for (const [k, v] of cache.entries()) {
+      if (now - v.timestamp > CACHE_DURATION_MS) {
+        cache.delete(k);
+      }
+    }
+  }
+}
+
 async function json(d: any, s = 200) { 
   return new Response(JSON.stringify(d), { 
     status: s, 
@@ -31,6 +69,14 @@ Deno.serve(async (req: Request) => {
     
     if (typeof lat !== 'number' || typeof lng !== 'number') {
       return json({ error: 'Invalid lat/lng parameters' }, 400);
+    }
+    
+    const cacheKey = getCacheKey(lat, lng, units || 'c');
+    
+    // Check cache first
+    const cachedResult = getCachedData(cacheKey);
+    if (cachedResult) {
+      return json({ ...cachedResult, cached: true });
     }
     
     const tempUnit = units === 'f' ? 'fahrenheit' : 'celsius';
@@ -66,12 +112,18 @@ Deno.serve(async (req: Request) => {
       // Continue without location data
     }
     
-    return json({ 
+    const result = { 
       ok: true, 
       temperature: weatherData?.current?.temperature_2m, 
       code: weatherData?.current?.weather_code,
-      location: locationData
-    });
+      location: locationData,
+      cached: false
+    };
+    
+    // Cache the result
+    setCachedData(cacheKey, result);
+    
+    return json(result);
   } catch (error) {
     console.error('Weather function error:', error);
     return json({ error: 'Internal server error' }, 500);

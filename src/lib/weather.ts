@@ -1,3 +1,26 @@
+import { WeatherCache } from './weatherCache';
+
+// Cached version of getWeather
+export async function getWeatherCached(lat: number, lng: number, units: 'c' | 'f') {
+  // Try to get from cache first
+  const cached = await WeatherCache.get(lat, lng, units);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    // Call original API
+    const fresh = await getWeather(lat, lng, units);
+    if (fresh) {
+      // Cache the result
+      await WeatherCache.set(lat, lng, units, fresh);
+    }
+    return fresh;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function getWeather(lat:number, lng:number, units:'c'|'f'){
   try {
     const base = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iwsuyrlrbmnbfyfkqowl.supabase.co';

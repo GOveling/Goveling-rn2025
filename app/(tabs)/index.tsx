@@ -5,8 +5,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
-import { getCurrentPosition, reverseCity, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
-import { getWeather } from '~/lib/weather';
+import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
+import { getWeatherCached } from '~/lib/weather';
 import { useSettingsStore } from '~/lib/settingsStore';
 import { useTravel } from '~/lib/travelStore';
 import CurrentTripCard from '~/components/home/CurrentTripCard';
@@ -36,7 +36,6 @@ export default function HomeTab(){
       if (p){ 
         setPos(p); 
         // Don't set city here, let the weather API effect handle it
-        console.log('🌍 Position obtained:', p.lat, p.lng);
       }
     })();
   }, []);
@@ -44,19 +43,62 @@ export default function HomeTab(){
   React.useEffect(()=>{
     (async()=>{
       if (!pos) return;
+      
       try{ 
-        const w = await getWeather(pos.lat, pos.lng, units); 
+        const w = await getWeatherCached(pos.lat, pos.lng, units); 
+        
         if(w) {
           setTemp(w.temp);
           
           // Use location data from Weather API if available
           if(w.location && w.location.city) {
-            console.log('🌍 Using weather API location:', w.location.city);
             setCity(w.location.city);
+          } else {
+            // Fallback 1: try to get city from reverse geocoding
+            try {
+              const fallbackCity = await reverseCityCached(pos.lat, pos.lng);
+              if (fallbackCity) {
+                setCity(fallbackCity);
+              } else {
+                // Fallback 2: try BigDataCloud geocoding
+                const alternativeCity = await reverseGeocodeCoordinatesCached(pos.lat, pos.lng);
+                if (alternativeCity) {
+                  setCity(alternativeCity);
+                } else {
+                  // Fallback 3: coordinate-based detection
+                  const coordinateLocation = await getLocationFromCoordinatesCached(pos.lat, pos.lng);
+                  if (coordinateLocation) {
+                    setCity(coordinateLocation);
+                  }
+                }
+              }
+            } catch (geocodeError) {
+              // Silent fallback error handling
+            }
           }
         }
       } catch(error){
-        console.error('🌡️ Weather/location error:', error);
+        // Fallback: try to get city from reverse geocoding even if weather fails
+        try {
+          const fallbackCity = await reverseCityCached(pos.lat, pos.lng);
+          if (fallbackCity) {
+            setCity(fallbackCity);
+          } else {
+            // Try alternative geocoding
+            const alternativeCity = await reverseGeocodeCoordinatesCached(pos.lat, pos.lng);
+            if (alternativeCity) {
+              setCity(alternativeCity);
+            } else {
+              // Last resort: coordinate-based detection
+              const coordinateLocation = await getLocationFromCoordinatesCached(pos.lat, pos.lng);
+              if (coordinateLocation) {
+                setCity(coordinateLocation);
+              }
+            }
+          }
+        } catch (geocodeError) {
+          // Silent fallback error handling
+        }
       }
     })();
   }, [pos, units]);
