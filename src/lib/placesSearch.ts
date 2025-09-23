@@ -22,6 +22,13 @@ export interface EnhancedPlace {
   distance_km?: number;
   photos?: string[];
   source: string;
+  score?: number;
+  description?: string;
+  phone?: string;
+  website?: string;
+  confidence_score?: number;
+  geocoded?: boolean;
+  opening_hours_raw?: any;
 }
 
 export interface PlacesSearchResponse {
