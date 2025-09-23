@@ -1,133 +1,127 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { searchPlacesEnhanced, EnhancedPlace } from '../../src/lib/placesSearch';
+import * as Location from 'expo-location';
+import { allUICategories, uiCategoriesGeneral, uiCategoriesSpecific, categoryDisplayToInternal } from '../../src/lib/categories';
+import { reverseGeocode } from '../../src/lib/geocoding';
 
 export default function ExploreTab() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   
   const [search, setSearch] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState('Todas las categorías');
-  const [showCategoryDropdown, setShowCategoryDropdown] = React.useState(false);
-  const [nearCurrentLocation, setNearCurrentLocation] = React.useState(true);
-  const [showMap, setShowMap] = React.useState(true);
-  const [currentLocation, setCurrentLocation] = React.useState('Antofagasta, Chile');
-  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = React.useState(false);
+  const [nearCurrentLocation, setNearCurrentLocation] = React.useState(false); // inicia apagado
+  // Removed showMap state (switch now controls nearCurrentLocation)
+  const [currentLocation, setCurrentLocation] = React.useState('Ubicación desactivada');
+  const [userCoords, setUserCoords] = React.useState<{lat:number; lng:number} | undefined>(undefined);
+  const [searchResults, setSearchResults] = React.useState<EnhancedPlace[]>([]);
   const [hasSearched, setHasSearched] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [locLoading, setLocLoading] = React.useState(false);
+  const abortRef = React.useRef<AbortController | null>(null);
 
-  const categories = [
-    'Todas las categorías',
-    'Restaurantes',
-    'Bares y Pubs', 
-    'Cafeterías',
-    'Museos',
-    'Parques',
-    'Compras',
-    'Hoteles'
-  ];
+  // Removed inline definitions of categories and use centralized ones
+  const generalCategories = uiCategoriesGeneral;
+  const specificCategories = uiCategoriesSpecific;
 
-  // Datos de ejemplo basados en la imagen
-  const sampleResults = [
-    {
-      id: '1',
-      name: 'Krossbar Antofagasta',
-      address: 'Av. República de Croacia 0738, 1270688 Antofagasta, Chile',
-      coordinates: '-23.678465, -70.412717',
-      rating: 4.7,
-      reviews: 410,
-      type: 'restaurant',
-      status: 'Abierto',
-      priceRange: '$$',
-      verified: true,
-      openNow: true,
-      phone: true,
-      website: true,
-      photos: 10
-    },
-    {
-      id: '2',
-      name: 'Bardos Antofagasta',
-      address: 'Av. Angamos 1309, 1270772 Antofagasta, Chile',
-      coordinates: '-23.663579, -70.402461',
-      rating: 4.6,
-      reviews: 774,
-      type: 'restaurant',
-      status: 'Abierto',
-      priceRange: '$$',
-      verified: false,
-      openNow: true,
-      phone: true,
-      website: true,
-      photos: 8
-    }
-  ];
-
-  const performSearch = () => {
-    if (!search.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un término de búsqueda');
-      return;
-    }
-    
-    // Simular búsqueda basada en el término
-    if (search.toLowerCase().includes('cerveza') || search.toLowerCase().includes('bar')) {
-      setSearchResults(sampleResults);
-      setHasSearched(true);
-    } else {
-      setSearchResults([]);
-      setHasSearched(true);
-    }
-  };
-
-  const renderCategoryDropdown = () => {
-    if (!showCategoryDropdown) return null;
-
-    return (
-      <View style={{
-        position: 'absolute',
-        top: 100,
-        left: 16,
-        right: 16,
-        backgroundColor: 'white',
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
-        zIndex: 1000,
-        maxHeight: 200
-      }}>
-        <ScrollView>
-          {categories.map((category, index) => (
-            <TouchableOpacity
-              key={index}
-              style={{
-                padding: 16,
-                borderBottomWidth: index < categories.length - 1 ? 1 : 0,
-                borderBottomColor: '#F3F4F6'
-              }}
-              onPress={() => {
-                setSelectedCategory(category);
-                setShowCategoryDropdown(false);
-              }}
-            >
-              <Text style={{ 
-                fontSize: 16, 
-                color: selectedCategory === category ? '#8B5CF6' : '#374151',
-                fontWeight: selectedCategory === category ? '600' : '400'
-              }}>
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+  const toggleCategory = (categoryName: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryName) 
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
     );
   };
 
-  const renderSearchResult = (item: any) => (
+  const ensureLocation = React.useCallback(async () => {
+    try {
+      setLocLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setCurrentLocation('Permiso denegado');
+        setUserCoords(undefined);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      setUserCoords({ lat, lng });
+      // Primero usar reverse geocode Nominatim (más rico)
+      const geo = await reverseGeocode(lat, lng);
+      if (geo) {
+        setCurrentLocation([geo.city, geo.country].filter(Boolean).join(', ') || geo.displayName || 'Ubicación lista');
+      } else {
+        setCurrentLocation('Ubicación lista');
+      }
+    } catch (e) {
+      setCurrentLocation('Error obteniendo ubicación');
+    } finally {
+      setLocLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (nearCurrentLocation && !userCoords && !locLoading) {
+      ensureLocation();
+    }
+  }, [nearCurrentLocation, userCoords, locLoading, ensureLocation]);
+
+  const performSearch = async () => {
+    console.log('[performSearch] Starting search with input:', search);
+    
+    if (!search.trim()) {
+      console.log('[performSearch] Empty search, returning early');
+      return;
+    }
+    
+    if (nearCurrentLocation && !userCoords) {
+      console.log('[performSearch] Need location, calling ensureLocation');
+      await ensureLocation();
+    }
+    if (nearCurrentLocation && !userCoords) {
+      console.log('[performSearch] Still no location after ensureLocation, aborting');
+      return; // still not available
+    }
+    
+    // Cancelar búsqueda previa
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setLoading(true);
+    
+    try {
+      const locale = (i18n?.language || 'es').split('-')[0];
+      const internalCats = selectedCategories.map(c=>categoryDisplayToInternal[c]).filter(Boolean);
+      const userLocation = nearCurrentLocation && userCoords ? userCoords : undefined;
+      
+      console.log('[performSearch] Calling searchPlacesEnhanced with:', {
+        input: search,
+        selectedCategories: internalCats,
+        userLocation,
+        locale
+      });
+      
+      const resp = await searchPlacesEnhanced({ input: search, selectedCategories: internalCats, userLocation, locale }, controller.signal);
+      
+      console.log('[performSearch] Got response:', resp);
+      
+      setSearchResults(resp.predictions);
+      setHasSearched(true);
+    } catch (e:any) {
+      console.error('[performSearch] Error during search:', e);
+      if (e.name !== 'AbortError') {
+        Alert.alert('Error', 'No se pudo completar la búsqueda');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderSearchResult = (item: EnhancedPlace) => (
     <TouchableOpacity
       key={item.id}
       style={{
@@ -141,8 +135,17 @@ export default function ExploreTab() {
         shadowRadius: 8,
         elevation: 3
       }}
-      onPress={() => Alert.alert('Lugar', `Funcionalidad de detalles del lugar próximamente disponible`)}
+      onPress={() => Alert.alert('Lugar', 'Detalles próximamente')}
     >
+      {/* Foto principal si existe */}
+      {item.photos && item.photos.length > 0 && (
+        <View style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F3F4F6', height: 160 }}>
+          <Text style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, fontSize: 12 }}>
+            Foto
+          </Text>
+          {/* RN Image could be used; placeholder rectangle for now to avoid import churn */}
+        </View>
+      )}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1 }}>
           {item.name}
@@ -152,107 +155,77 @@ export default function ExploreTab() {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-        <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 4 }}>📍</Text>
-        <Text style={{ fontSize: 14, color: '#6B7280', flex: 1 }}>
-          {item.address}
-        </Text>
-      </View>
+      {item.address && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 4 }}>📍</Text>
+          <Text style={{ fontSize: 14, color: '#6B7280', flex: 1 }}>
+            {item.address}
+          </Text>
+        </View>
+      )}
 
-      <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>
-        {item.coordinates}
-      </Text>
+      {typeof item.distance_km === 'number' && (
+        <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>
+          {item.distance_km.toFixed(2)} km
+        </Text>
+      )}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
-          <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginRight: 4 }}>
-            {item.rating}
-          </Text>
-          <Text style={{ fontSize: 14, color: '#6B7280' }}>
-            ({item.reviews})
-          </Text>
-        </View>
-        
-        <View style={{
-          backgroundColor: '#FEF3C7',
-          paddingHorizontal: 8,
-          paddingVertical: 2,
-          borderRadius: 12,
-          marginRight: 8
-        }}>
-          <Text style={{ fontSize: 12, color: '#92400E', fontWeight: '600' }}>
-            {item.type}
-          </Text>
-        </View>
+        {item.rating && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+            <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginRight: 4 }}>
+              {item.rating}
+            </Text>
+            {item.reviews_count && (
+              <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                ({item.reviews_count})
+              </Text>
+            )}
+          </View>
+        )}
 
-        <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '600' }}>
-          {item.priceRange}
-        </Text>
+        {item.category && (
+          <View style={{
+            backgroundColor: '#FEF3C7',
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 12,
+            marginRight: 8
+          }}>
+            <Text style={{ fontSize: 12, color: '#92400E', fontWeight: '600' }}>
+              {item.category}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        {item.verified && (
+        {item.openNow !== undefined && (
           <View style={{
-            backgroundColor: '#D1FAE5',
+            backgroundColor: item.openNow ? '#D1FAE5' : '#F3F4F6',
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 8,
+            marginRight: 8
+          }}>
+            <Text style={{ fontSize: 12, color: item.openNow ? '#065F46' : '#374151', fontWeight: '600' }}>
+              {item.openNow ? 'Abierto' : 'Cerrado'}
+            </Text>
+          </View>
+        )}
+        {item.priceLevel !== undefined && (
+          <View style={{
+            backgroundColor: '#E0E7FF',
             paddingHorizontal: 8,
             paddingVertical: 4,
             borderRadius: 8
           }}>
-            <Text style={{ fontSize: 12, color: '#065F46', fontWeight: '600' }}>
-              Google Verified
+            <Text style={{ fontSize: 12, color: '#4338CA', fontWeight: '600' }}>
+              {'$'.repeat(item.priceLevel + 1)}
             </Text>
           </View>
         )}
-        
-        {item.openNow && (
-          <View style={{
-            backgroundColor: '#D1FAE5',
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 8
-          }}>
-            <Text style={{ fontSize: 12, color: '#065F46', fontWeight: '600' }}>
-              Open Now
-            </Text>
-          </View>
-        )}
-
-        <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '600' }}>
-          {item.priceRange}
-        </Text>
-      </View>
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 16 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981', marginRight: 4 }} />
-          <Text style={{ fontSize: 12, color: '#6B7280' }}>{item.status}</Text>
-        </View>
-        
-        {item.phone && (
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: '#3B82F6', marginRight: 4 }}>📞</Text>
-            <Text style={{ fontSize: 14, color: '#3B82F6' }}>Tel</Text>
-          </TouchableOpacity>
-        )}
-        
-        {item.website && (
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: '#3B82F6', marginRight: 4 }}>🌐</Text>
-            <Text style={{ fontSize: 14, color: '#3B82F6' }}>Web</Text>
-          </TouchableOpacity>
-        )}
-        
-        {item.photos && (
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 4 }}>📷</Text>
-            <Text style={{ fontSize: 14, color: '#6B7280' }}>{item.photos}</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={{ marginLeft: 'auto' }}>
-          <Text style={{ fontSize: 20 }}>📍</Text>
-        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -343,29 +316,234 @@ export default function ExploreTab() {
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-          {/* Filtros */}
-          <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'white',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 12,
-              borderWidth: 1,
-              borderColor: '#E5E7EB'
-            }}
-            onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, color: '#8B5CF6', marginRight: 8 }}>🔽</Text>
-              <Text style={{ fontSize: 16, color: '#1F2937', fontWeight: '500' }}>
-                Buscar Categorías
-              </Text>
+          {/* Filtros Categorías (UI/UX Mejorado) */}
+          <View style={{ marginBottom: 16 }}>
+            {/* Header del filtro (colapsado/expandido) */}
+            <View
+              style={{
+                backgroundColor: expandedCategories ? 'white' : '#FBF9FF',
+                borderWidth: 1,
+                borderColor: '#C6B4F5',
+                borderRadius: 16,
+                paddingHorizontal: 14,
+                paddingVertical: 14,
+                flexDirection: 'row',
+                alignItems: 'center'
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setExpandedCategories(!expandedCategories)}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                activeOpacity={0.85}
+              >
+                <Text style={{ fontSize: 18, marginRight: 10 }}>🧪{/* Icono funnel placeholder */}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>Buscar Categorías</Text>
+              </TouchableOpacity>
+
+              {selectedCategories.length > 0 && (
+                <View style={{
+                  backgroundColor: '#F1E9FF',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  marginRight: 12
+                }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#5B21B6' }}>{selectedCategories.length}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity onPress={() => {
+                if (selectedCategories.length > 0) setSelectedCategories([]);
+                else setExpandedCategories(!expandedCategories);
+              }}>
+                <Text style={{ fontSize: 18, color: '#6B7280' }}>
+                  {selectedCategories.length > 0 ? '×' : (expandedCategories ? '˄' : '˅')}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text style={{ fontSize: 16, color: '#8B5CF6' }}>🔽</Text>
-          </TouchableOpacity>
+
+            {/* Chips seleccionados (solo visible cuando está colapsado y hay selección) */}
+            {!expandedCategories && selectedCategories.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginTop: 10 }}
+                contentContainerStyle={{ paddingRight: 4 }}
+              >
+                {selectedCategories.map(cat => {
+                  const data = [...generalCategories, ...specificCategories].find(c => c.name === cat);
+                  return (
+                    <View
+                      key={cat}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#EFE4FF',
+                        borderColor: '#C6B4F5',
+                        borderWidth: 1,
+                        paddingHorizontal: 14,
+                        height: 40,
+                        borderRadius: 22,
+                        marginRight: 8
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, color: '#4B0082', marginRight: 6 }}>
+                        {data?.icon}
+                      </Text>
+                      <Text style={{ fontSize: 14, color: '#4B0082', fontWeight: '500' }}>{cat}</Text>
+                      <TouchableOpacity onPress={() => toggleCategory(cat)} style={{ marginLeft: 8 }}>
+                        <Text style={{ fontSize: 16, color: '#4B0082' }}>×</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            {/* Panel expandido */}
+            {expandedCategories && (
+              <View style={{ marginTop: 12 }}>
+                <View
+                  style={{
+                    backgroundColor: 'white',
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    borderTopWidth: 0,
+                    borderBottomLeftRadius: 16,
+                    borderBottomRightRadius: 16,
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Scroll interno solo para las categorías, manteniendo el header arriba fijo */}
+                  <ScrollView
+                    style={{ maxHeight: 420 }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {/* Sección General */}
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 10 }}>General</Text>
+                    {[...generalCategories].map(cat => {
+                      const isSelected = selectedCategories.includes(cat.name);
+                      return (
+                        <TouchableOpacity
+                          key={cat.name}
+                          activeOpacity={0.9}
+                          onPress={() => toggleCategory(cat.name)}
+                          style={{
+                            marginBottom: 10,
+                            borderRadius: 10,
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {isSelected ? (
+                            <LinearGradient
+                              colors={['#8B5CF6', '#C151E6', '#EC6A3C']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                              style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}
+                            >
+                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
+                              <Text style={{ fontSize: 15, fontWeight: '600', color: 'white' }}>{cat.name}</Text>
+                            </LinearGradient>
+                          ) : (
+                            <View style={{
+                              backgroundColor: 'white',
+                              borderWidth: 1,
+                              borderColor: '#E5E7EB',
+                              padding: 16,
+                              flexDirection: 'row',
+                              alignItems: 'center'
+                            }}>
+                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
+                              <Text style={{ fontSize: 15, fontWeight: '500', color: '#111827' }}>{cat.name}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+
+                    {/* Sección Lugares Específicos */}
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151', marginTop: 4, marginBottom: 10 }}>Lugares Específicos</Text>
+                    {[...specificCategories].map(cat => {
+                      const isSelected = selectedCategories.includes(cat.name);
+                      return (
+                        <TouchableOpacity
+                          key={cat.name}
+                          activeOpacity={0.9}
+                          onPress={() => toggleCategory(cat.name)}
+                          style={{
+                            marginBottom: 10,
+                            borderRadius: 10,
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {isSelected ? (
+                            <LinearGradient
+                              colors={['#8B5CF6', '#C151E6', '#EC6A3C']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                              style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}
+                            >
+                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
+                              <Text style={{ fontSize: 15, fontWeight: '600', color: 'white' }}>{cat.name}</Text>
+                            </LinearGradient>
+                          ) : (
+                            <View style={{
+                              backgroundColor: 'white',
+                              borderWidth: 1,
+                              borderColor: '#E5E7EB',
+                              padding: 16,
+                              flexDirection: 'row',
+                              alignItems: 'center'
+                            }}>
+                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
+                              <Text style={{ fontSize: 15, fontWeight: '500', color: '#111827' }}>{cat.name}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+
+                    {/* Chips dentro del panel para feedback */}
+                    {selectedCategories.length > 0 && (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginTop: 4, marginBottom: 4 }}
+                        contentContainerStyle={{ paddingRight: 4 }}
+                      >
+                        {selectedCategories.map(cat => {
+                          const data = [...generalCategories, ...specificCategories].find(c => c.name === cat);
+                          return (
+                            <View
+                              key={cat}
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: '#EFE4FF',
+                                borderColor: '#C6B4F5',
+                                borderWidth: 1,
+                                paddingHorizontal: 14,
+                                height: 38,
+                                borderRadius: 22,
+                                marginRight: 8
+                              }}
+                            >
+                              <Text style={{ fontSize: 14, color: '#4B0082', marginRight: 6 }}>{data?.icon}</Text>
+                              <Text style={{ fontSize: 14, color: '#4B0082', fontWeight: '500' }}>{cat}</Text>
+                              <TouchableOpacity onPress={() => toggleCategory(cat)} style={{ marginLeft: 8 }}>
+                                <Text style={{ fontSize: 16, color: '#4B0082' }}>×</Text>
+                              </TouchableOpacity>
+                            </View>
+                          );
+                        })}
+                      </ScrollView>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+            )}
+          </View>
 
           {/* Ubicación actual */}
           <View style={{
@@ -400,12 +578,13 @@ export default function ExploreTab() {
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 8 }}>Mapa</Text>
+              <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 8 }}>Ubicación</Text>
               <Switch
-                value={showMap}
-                onValueChange={setShowMap}
-                trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
-                thumbColor={showMap ? '#FFFFFF' : '#FFFFFF'}
+                value={nearCurrentLocation}
+                onValueChange={setNearCurrentLocation}
+                trackColor={{ false: '#CBD5E1', true: '#3B82F6' }}
+                thumbColor={nearCurrentLocation ? '#FFFFFF' : '#FFFFFF'}
+                ios_backgroundColor="#CBD5E1"
               />
             </View>
           </View>
@@ -421,9 +600,10 @@ export default function ExploreTab() {
             overflow: 'hidden'
           }}>
             <TextInput
-              placeholder="Cerveza"
+              placeholder="Busca tu próximo destino..."
               value={search}
               onChangeText={setSearch}
+              onSubmitEditing={performSearch}
               style={{
                 flex: 1,
                 padding: 16,
@@ -431,19 +611,19 @@ export default function ExploreTab() {
                 color: '#1F2937'
               }}
               placeholderTextColor="#9CA3AF"
-              onSubmitEditing={performSearch}
             />
-            <TouchableOpacity onPress={performSearch}>
+            <TouchableOpacity onPress={performSearch} disabled={loading}>
               <LinearGradient
                 colors={['#8B5CF6', '#EC4899']}
                 style={{
                   paddingVertical: 16,
                   paddingHorizontal: 20,
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  opacity: loading ? 0.6 : 1
                 }}
               >
-                <Text style={{ fontSize: 16 }}>🔍</Text>
+                <Text style={{ fontSize: 16 }}>{loading ? '…' : '🔍'}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -464,7 +644,114 @@ export default function ExploreTab() {
                 </Text>
               </View>
 
-              {searchResults.map(renderSearchResult)}
+              {searchResults.map(item => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 12,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 3
+                  }}
+                  onPress={() => Alert.alert('Lugar', 'Detalles próximamente')}
+                >
+                  {/* Foto principal si existe */}
+                  {item.photos && item.photos.length > 0 && (
+                    <View style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F3F4F6', height: 160 }}>
+                      <Text style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, fontSize: 12 }}>
+                        Foto
+                      </Text>
+                      {/* RN Image could be used; placeholder rectangle for now to avoid import churn */}
+                    </View>
+                  )}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1 }}>
+                      {item.name}
+                    </Text>
+                    <TouchableOpacity style={{ padding: 4 }}>
+                      <Text style={{ fontSize: 20 }}>🤍</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {item.address && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                      <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 4 }}>📍</Text>
+                      <Text style={{ fontSize: 14, color: '#6B7280', flex: 1 }}>
+                        {item.address}
+                      </Text>
+                    </View>
+                  )}
+
+                  {typeof item.distance_km === 'number' && (
+                    <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>
+                      {item.distance_km.toFixed(2)} km
+                    </Text>
+                  )}
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    {item.rating && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                        <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginRight: 4 }}>
+                          {item.rating}
+                        </Text>
+                        {item.reviews_count && (
+                          <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                            ({item.reviews_count})
+                          </Text>
+                        )}
+                      </View>
+                    )}
+
+                    {item.category && (
+                      <View style={{
+                        backgroundColor: '#FEF3C7',
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 12,
+                        marginRight: 8
+                      }}>
+                        <Text style={{ fontSize: 12, color: '#92400E', fontWeight: '600' }}>
+                          {item.category}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    {item.openNow !== undefined && (
+                      <View style={{
+                        backgroundColor: item.openNow ? '#D1FAE5' : '#F3F4F6',
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        marginRight: 8
+                      }}>
+                        <Text style={{ fontSize: 12, color: item.openNow ? '#065F46' : '#374151', fontWeight: '600' }}>
+                          {item.openNow ? 'Abierto' : 'Cerrado'}
+                        </Text>
+                      </View>
+                    )}
+                    {item.priceLevel !== undefined && (
+                      <View style={{
+                        backgroundColor: '#E0E7FF',
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8
+                      }}>
+                        <Text style={{ fontSize: 12, color: '#4338CA', fontWeight: '600' }}>
+                          {'$'.repeat(item.priceLevel + 1)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
 
               {searchResults.length === 0 && (
                 <View style={{
@@ -483,9 +770,17 @@ export default function ExploreTab() {
               )}
             </View>
           )}
+          {hasSearched && searchResults.length === 0 && !loading && (
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Text style={{ fontSize: 16, color: '#6B7280' }}>Sin resultados</Text>
+            </View>
+          )}
+          {loading && (
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Text style={{ fontSize: 16, color: '#6B7280' }}>Buscando…</Text>
+            </View>
+          )}
         </ScrollView>
-
-        {renderCategoryDropdown()}
       </View>
     </>
   );
