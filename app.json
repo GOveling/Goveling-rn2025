@@ -7,9 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "web": {
-      "output": "server",
-      "bundler": "metro",
-      "template": "./web/index.html"
+      "output": "static",
+      "bundler": "metro"
     },
     "splash": {
       "image": "./assets/branding-zeppeling.png",
