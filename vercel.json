@@ -4,37 +4,33 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
-  "routes": [
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "rewrites": [
     {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
-      "dest": "/$1",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/((?!_expo|assets).*)",
+      "destination": "/index.html"
     }
   ],
-  "env": {
-    "EXPO_PUBLIC_SUPABASE_URL": "@expo_public_supabase_url",
-    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@expo_public_supabase_anon_key",
-    "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@expo_public_google_maps_api_key"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  },
   "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
@@ -52,5 +48,15 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "EXPO_PUBLIC_SUPABASE_URL": "@expo_public_supabase_url",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@expo_public_supabase_anon_key",
+    "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@expo_public_google_maps_api_key"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
 }
