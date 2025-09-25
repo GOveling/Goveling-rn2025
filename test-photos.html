@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Photo URLs</title>
+</head>
+<body>
+    <h1>Testing Photo URLs from API</h1>
+    <div id="results"></div>
+
+    <script>
+        // Test photos URLs from our API response
+        const testPhotos = [
+            "https://places.googleapis.com/v1/places/ChIJy-UDlc4pQg0RhSUkQDbRgr8/photos/AciIO2fciJ1NaypXuXViQaPvGUMDIx03vR81C57kEHG46viq67OC8WQcbT8a4_wiyEX3wspYaqq-voxPAQ5TqKcxAY4rEySX9MWAUfwtRCmHenQRybcfOfixHw65x9vOvjxAHFxd55CmNZXdUUKFVcywIdmYVaWXjIZdYWBgiA8wbCfun0GUyU3bY026LSecVYlFcXoC7_pEy-v9UdAOhmexgx__IiQYUB7lwAiYzxYfiVu1srjI0JXHbqFegUh1dtNnpyauJtQqRzQG9LnN9pJanDzZhMLSLl6kfoCo_H9BRcRyCQ/media?maxHeightPx=400&key=AIzaSyCiALieojm1xA6u9eCUvu-w1KACQzWFLKU"
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        
+        testPhotos.forEach((url, index) => {
+            const container = document.createElement('div');
+            container.style.margin = '20px 0';
+            
+            const title = document.createElement('h3');
+            title.textContent = `Photo ${index + 1}`;
+            container.appendChild(title);
+            
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.maxWidth = '400px';
+            img.style.height = 'auto';
+            img.onload = () => {
+                console.log(`Photo ${index + 1} loaded successfully`);
+                const status = document.createElement('p');
+                status.textContent = '✅ Loaded successfully';
+                status.style.color = 'green';
+                container.appendChild(status);
+            };
+            img.onerror = (error) => {
+                console.error(`Photo ${index + 1} failed to load:`, error);
+                const status = document.createElement('p');
+                status.textContent = '❌ Failed to load';
+                status.style.color = 'red';
+                container.appendChild(status);
+            };
+            
+            container.appendChild(img);
+            resultsDiv.appendChild(container);
+        });
+    </script>
+</body>
+</html>

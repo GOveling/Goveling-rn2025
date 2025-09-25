@@ -182,10 +182,10 @@ function normalizePlace(raw: any, category?: string, userLocation?: {lat:number;
       distance_km = haversine(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
     }
 
-    // Limitar fotos (máx 2) construyendo URL media endpoint
+    // Limitar fotos (máx 5) construyendo URL media endpoint
     const photos: string[] = [];
     if (raw.photos && Array.isArray(raw.photos)) {
-      for (const p of raw.photos.slice(0,2)) {
+      for (const p of raw.photos.slice(0,5)) {
         if (p.name) {
           // p.name ej: "places/XXX/photos/YYY"
           photos.push(`https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&key=${GOOGLE_PLACES_KEY}`);

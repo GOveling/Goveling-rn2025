@@ -22,32 +22,31 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
     }
   };
   const renderPhoto = () => {
+    console.log(`[PlaceCard] ${place.name} renderPhoto called`);
+    console.log(`[PlaceCard] ${place.name} place.photos:`, place.photos);
+    console.log(`[PlaceCard] ${place.name} photos length:`, place.photos?.length);
+    
     if (place.photos && place.photos.length > 0) {
+      console.log(`[PlaceCard] ${place.name} showing photo:`, place.photos[0]);
       return (
-        <View style={[styles.photoContainer, compact && styles.photoContainerCompact]}>
-          <Image 
-            source={{ uri: place.photos[0] }} 
-            style={[styles.photo, compact && styles.photoCompact]}
-            resizeMode="cover"
-          />
-          <View style={styles.photoLabel}>
-            <Text style={styles.photoLabelText}>Foto</Text>
-          </View>
-        </View>
+        <Image
+          source={{ uri: place.photos[0] }}
+          style={styles.photo}
+          resizeMode="cover"
+          onLoad={() => console.log(`[PlaceCard] ${place.name} Image loaded successfully`)}
+          onError={(error) => console.log(`[PlaceCard] ${place.name} Image failed to load:`, error)}
+        />
       );
     }
     
+    console.log(`[PlaceCard] ${place.name} NO PHOTOS - showing fallback`);
+    // Fallback placeholder
     return (
-      <View style={[styles.photoContainer, styles.placeholderPhoto, compact && styles.photoContainerCompact]}>
-        <Text style={styles.placeholderIcon}>📍</Text>
-        <View style={styles.photoLabel}>
-          <Text style={styles.photoLabelText}>Sin foto</Text>
-        </View>
+      <View style={[styles.photo, styles.placeholderPhoto]}>
+        <Text style={styles.placeholderIcon}>🏞</Text>
       </View>
     );
-  };
-
-  const renderStatus = () => {
+  };  const renderStatus = () => {
     if (place.openNow === undefined) return null;
     
     return (
@@ -71,7 +70,9 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
       onPress={() => onPress(place)}
       activeOpacity={0.7}
     >
-      {renderPhoto()}
+      <View style={[styles.photoContainer, compact && styles.photoContainerCompact]}>
+        {renderPhoto()}
+      </View>
       
       <View style={styles.content}>
         <View style={styles.titleRow}>

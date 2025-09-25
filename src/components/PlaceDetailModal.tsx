@@ -38,6 +38,12 @@ interface PlaceDetailModalProps {
 export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetailModalProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
+
+  // Reset selected photo when place changes
+  React.useEffect(() => {
+    setSelectedPhotoIndex(0);
+  }, [place?.id]);
 
   if (!place) return null;
 
@@ -105,6 +111,9 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
       );
     }
 
+    // Show up to 5 photos
+    const photosToShow = place.photos.slice(0, 5);
+
     return (
       <ScrollView 
         horizontal 
@@ -112,19 +121,32 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
         style={styles.photosContainer}
         contentContainerStyle={styles.photosContent}
       >
-        {place.photos.map((photo, index) => (
-          <View key={index} style={styles.photoContainer}>
+        {photosToShow.map((photo, index) => (
+          <TouchableOpacity 
+            key={index} 
+            style={styles.photoContainer}
+            onPress={() => setSelectedPhotoIndex(index)}
+            activeOpacity={0.8}
+          >
             <Image 
               source={{ uri: photo }} 
-              style={styles.photo}
+              style={[
+                styles.photo,
+                selectedPhotoIndex === index && styles.photoSelected
+              ]}
               resizeMode="cover"
             />
             {index === 0 && (
               <View style={styles.photoLabel}>
-                <Text style={styles.photoLabelText}>Foto principal</Text>
+                <Text style={styles.photoLabelText}>Principal</Text>
               </View>
             )}
-          </View>
+            {selectedPhotoIndex === index && (
+              <View style={styles.photoSelectedOverlay}>
+                <Text style={styles.photoSelectedText}>✓</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         ))}
       </ScrollView>
     );
@@ -142,7 +164,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
         <View style={styles.header}>
           {place.photos && place.photos.length > 0 ? (
             <Image 
-              source={{ uri: place.photos[0] }} 
+              source={{ uri: place.photos[selectedPhotoIndex] || place.photos[0] }} 
               style={styles.headerImage}
               resizeMode="cover"
             />
@@ -630,5 +652,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  // New styles for photo selection
+  photoSelected: {
+    borderWidth: 3,
+    borderColor: '#3B82F6',
+  },
+  photoSelectedOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#3B82F6',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoSelectedText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

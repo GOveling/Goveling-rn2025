@@ -41,6 +41,11 @@ export interface PlacesSearchResponse {
 }
 
 // Cache en memoria de corto plazo (sesión)
+export function clearPlacesCache() {
+  memoryCache.clear();
+  console.log('[placesSearch] Cache cleared');
+}
+
 const memoryCache = new Map<string, { ts: number; data: PlacesSearchResponse }>();
 const CACHE_TTL_MS = 30_000; // 30s
 
@@ -127,6 +132,7 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
 
       const data = await response.json();
       console.log('[placesSearch] Direct fetch response:', data);
+      console.log('[placesSearch] First place photos:', data?.predictions?.[0]?.photos);
       memoryCache.set(key, { ts: now, data });
       return data as PlacesSearchResponse;
     } else {

@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { searchPlacesEnhanced, EnhancedPlace } from '../../src/lib/placesSearch';
+import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
 import * as Location from 'expo-location';
 import { allUICategories, uiCategoriesGeneral, uiCategoriesSpecific, categoryDisplayToInternal } from '../../src/lib/categories';
 import { reverseGeocode } from '../../src/lib/geocoding';
@@ -92,6 +92,9 @@ export default function ExploreTab() {
       return;
     }
     
+    // Clear cache for fresh data
+    clearPlacesCache();
+    
     if (nearCurrentLocation && !userCoords) {
       console.log('[performSearch] Need location, calling ensureLocation');
       await ensureLocation();
@@ -122,6 +125,7 @@ export default function ExploreTab() {
       const resp = await searchPlacesEnhanced({ input: search, selectedCategories: internalCats, userLocation, locale }, controller.signal);
       
       console.log('[performSearch] Got response:', resp);
+      console.log('[performSearch] First prediction photos:', resp?.predictions?.[0]?.photos);
       
       setSearchResults(resp.predictions);
       setHasSearched(true);
@@ -557,114 +561,7 @@ export default function ExploreTab() {
                 </Text>
               </View>
 
-              {searchResults.map(item => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 8,
-                    elevation: 3
-                  }}
-                  onPress={() => handlePlacePress(item)}
-                >
-                  {/* Foto principal si existe */}
-                  {item.photos && item.photos.length > 0 && (
-                    <View style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F3F4F6', height: 160 }}>
-                      <Text style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, fontSize: 12 }}>
-                        Foto
-                      </Text>
-                      {/* RN Image could be used; placeholder rectangle for now to avoid import churn */}
-                    </View>
-                  )}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1 }}>
-                      {item.name}
-                    </Text>
-                    <TouchableOpacity style={{ padding: 4 }}>
-                      <Text style={{ fontSize: 20 }}>🤍</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {item.address && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                      <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 4 }}>📍</Text>
-                      <Text style={{ fontSize: 14, color: '#6B7280', flex: 1 }}>
-                        {item.address}
-                      </Text>
-                    </View>
-                  )}
-
-                  {typeof item.distance_km === 'number' && (
-                    <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>
-                      {item.distance_km.toFixed(2)} km
-                    </Text>
-                  )}
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                    {item.rating && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
-                        <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginRight: 4 }}>
-                          {item.rating}
-                        </Text>
-                        {item.reviews_count && (
-                          <Text style={{ fontSize: 14, color: '#6B7280' }}>
-                            ({item.reviews_count})
-                          </Text>
-                        )}
-                      </View>
-                    )}
-
-                    {item.category && (
-                      <View style={{
-                        backgroundColor: '#FEF3C7',
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 12,
-                        marginRight: 8
-                      }}>
-                        <Text style={{ fontSize: 12, color: '#92400E', fontWeight: '600' }}>
-                          {item.category}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                    {item.openNow !== undefined && (
-                      <View style={{
-                        backgroundColor: item.openNow ? '#D1FAE5' : '#F3F4F6',
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                        marginRight: 8
-                      }}>
-                        <Text style={{ fontSize: 12, color: item.openNow ? '#065F46' : '#374151', fontWeight: '600' }}>
-                          {item.openNow ? 'Abierto' : 'Cerrado'}
-                        </Text>
-                      </View>
-                    )}
-                    {item.priceLevel !== undefined && (
-                      <View style={{
-                        backgroundColor: '#E0E7FF',
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8
-                      }}>
-                        <Text style={{ fontSize: 12, color: '#4338CA', fontWeight: '600' }}>
-                          {'$'.repeat(item.priceLevel + 1)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {searchResults.map(item => renderSearchResult(item))}
 
               {searchResults.length === 0 && (
                 <View style={{
