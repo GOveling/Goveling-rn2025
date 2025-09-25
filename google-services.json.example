@@ -1,21 +1,22 @@
 {
   "project_info": {
-    "project_number": "943741940973",
-    "project_id": "goveling-rn2025",
-    "storage_bucket": "goveling-rn2025.firebasestorage.app"
+    "project_number": "695125246048",
+    "firebase_url": "https://your-project.firebaseio.com",
+    "project_id": "your-project-id",
+    "storage_bucket": "your-project.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:943741940973:android:ca8f5640611217033888e4",
+        "mobilesdk_app_id": "1:695125246048:android:your_app_id",
         "android_client_info": {
-          "package_name": "com.goveling.app"
+          "package_name": "com.yourcompany.yourapp"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCoRB_EalV9qON-u2YdydIzhssfxji3MXE"
+          "current_key": "YOUR_GOOGLE_API_KEY_HERE"
         }
       ],
       "services": {

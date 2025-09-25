@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Script para aplicar migraciones usando la API REST de Supabase
+echo "🚀 Aplicando migraciones a Supabase..."
+
+# Use environment variables instead of hardcoded values
+API_KEY="${SUPABASE_ANON_KEY}"
+BASE_URL="${SUPABASE_URL}"
+
+if [ -z "$API_KEY" ] || [ -z "$BASE_URL" ]; then
+    echo "❌ Error: SUPABASE_ANON_KEY and SUPABASE_URL environment variables must be set"
+    echo "Please set them in your .env file or export them:"
+    echo "export SUPABASE_ANON_KEY='your_anon_key_here'"
+    echo "export SUPABASE_URL='your_supabase_url_here'"
+    exit 1
+fi
+
+echo "📋 Aplicando migración base..."
+
+# Rest of the script...
