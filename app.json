@@ -8,7 +8,8 @@
     "userInterfaceStyle": "automatic",
     "web": {
       "output": "static",
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.ico"
     },
     "splash": {
       "image": "./assets/branding-zeppeling.png",
