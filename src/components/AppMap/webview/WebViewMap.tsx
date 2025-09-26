@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { WebView } from 'react-native-webview';
 import { AppMapProps } from '../types';
+import { MAP_STYLE_URL } from '../../../config/maps';
 
 const buildHtml = (props: AppMapProps) => `<!doctype html><html><head>
 <meta name=viewport content="initial-scale=1, width=device-width" />
@@ -12,7 +13,7 @@ const buildHtml = (props: AppMapProps) => `<!doctype html><html><head>
  const props = ${JSON.stringify(props)};
  const map = new maplibregl.Map({
    container: 'map',
-   style: 'https://demotiles.maplibre.org/style.json',
+   style: '${MAP_STYLE_URL}',
    center: [props.center.longitude, props.center.latitude],
    zoom: props.zoom || 13
  });

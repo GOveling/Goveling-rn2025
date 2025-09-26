@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert, Animated, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
@@ -9,6 +9,9 @@ import { allUICategories, uiCategoriesGeneral, uiCategoriesSpecific, categoryDis
 import { reverseGeocode } from '../../src/lib/geocoding';
 import PlaceDetailModal from '../../src/components/PlaceDetailModal';
 import PlaceCard from '../../src/components/PlaceCard';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppMap from '../../src/components/AppMap';
 
 export default function ExploreTab() {
   const { t, i18n } = useTranslation();
@@ -18,7 +21,7 @@ export default function ExploreTab() {
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
   const [expandedCategories, setExpandedCategories] = React.useState(false);
   const [nearCurrentLocation, setNearCurrentLocation] = React.useState(false); // inicia apagado
-  // Removed showMap state (switch now controls nearCurrentLocation)
+  const [showMap, setShowMap] = React.useState(false);
   const [currentLocation, setCurrentLocation] = React.useState('Ubicación desactivada');
   const [userCoords, setUserCoords] = React.useState<{lat:number; lng:number} | undefined>(undefined);
   const [searchResults, setSearchResults] = React.useState<EnhancedPlace[]>([]);
@@ -548,17 +551,37 @@ export default function ExploreTab() {
           {/* Resultados */}
           {hasSearched && (
             <View style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                <View style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#10B981',
-                  marginRight: 8
-                }} />
-                <Text style={{ fontSize: 16, color: '#1F2937', fontWeight: '500' }}>
-                  {searchResults.length} resultados encontrados
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: '#10B981',
+                    marginRight: 8
+                  }} />
+                  <Text style={{ fontSize: 16, color: '#1F2937', fontWeight: '500' }}>
+                    {searchResults.length} resultados encontrados
+                  </Text>
+                </View>
+                
+                {searchResults.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setShowMap(true)}
+                    style={{
+                      backgroundColor: '#3B82F6',
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      flexDirection: 'row',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', marginRight: 4 }}>
+                      🗺️ Ver Mapa
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {searchResults.map(item => renderSearchResult(item))}
@@ -599,6 +622,45 @@ export default function ExploreTab() {
         place={selectedPlace}
         onClose={handleCloseModal}
       />
+
+      {/* Modal de mapa */}
+      {showMap && (
+        <Modal visible={showMap} animationType="slide" presentationStyle="fullScreen">
+          <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              paddingHorizontal: 16, 
+              paddingTop: 50, 
+              paddingBottom: 12, 
+              borderBottomWidth: 1, 
+              borderBottomColor: '#e5e5e5' 
+            }}>
+              <TouchableOpacity onPress={() => setShowMap(false)} style={{ padding: 8 }}>
+                <Ionicons name="arrow-back" size={24} color="#333" />
+              </TouchableOpacity>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>Mapa de Lugares</Text>
+              <View style={{ width: 40 }} />
+            </View>
+            <AppMap 
+              center={searchResults[0]?.coordinates ? { 
+                latitude: searchResults[0].coordinates.lat, 
+                longitude: searchResults[0].coordinates.lng 
+              } : { latitude: 40.4168, longitude: -3.7038 }}
+              markers={searchResults.filter(p => p.coordinates).map((p, idx) => ({ 
+                id: `p-${idx}`, 
+                coord: { 
+                  latitude: p.coordinates!.lat, 
+                  longitude: p.coordinates!.lng 
+                }, 
+                title: p.name || `Lugar ${idx + 1}` 
+              }))}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </Modal>
+      )}
     </>
   );
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { AppMapProps } from '../types';
+import { MAP_STYLE_URL } from '../../../config/maps';
 
 export default function WebDomMap({ center, zoom = 13, markers = [], polylines = [], onRegionChange }: AppMapProps) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -11,7 +12,7 @@ export default function WebDomMap({ center, zoom = 13, markers = [], polylines =
     if (!ref.current) return;
     const map = new maplibregl.Map({
       container: ref.current,
-      style: 'https://demotiles.maplibre.org/style.json',
+      style: MAP_STYLE_URL,
       center: [center.longitude, center.latitude],
       zoom,
     });

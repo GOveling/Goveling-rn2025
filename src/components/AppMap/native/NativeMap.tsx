@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { AppMapProps } from '../types';
+import { MAP_STYLE_URL } from '../../../config/maps';
 
 let MapboxGL: any = null;
 try {
@@ -16,7 +17,7 @@ export default function NativeMap({ center, zoom = 13, markers = [], polylines =
 
   return (
     <View style={{ flex: 1 }}>
-      <MapboxGL.MapView style={{ flex: 1 }} styleURL="https://demotiles.maplibre.org/style.json">
+      <MapboxGL.MapView style={{ flex: 1 }} styleURL={MAP_STYLE_URL}>
         <MapboxGL.Camera zoomLevel={zoom} centerCoordinate={[center.longitude, center.latitude]} />
         {markers.map(m => (
           <MapboxGL.PointAnnotation key={m.id} id={m.id} coordinate={[m.coord.longitude, m.coord.latitude]} />
