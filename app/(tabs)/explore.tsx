@@ -32,6 +32,16 @@ export default function ExploreTab() {
   const [modalVisible, setModalVisible] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
 
+  // Location handling functions for the map
+  const handleLocationFound = (location: { latitude: number; longitude: number }) => {
+    setUserCoords({ lat: location.latitude, lng: location.longitude });
+    // No longer show alert with coordinates
+  };
+
+  const handleLocationError = (error: string) => {
+    Alert.alert('Error de ubicación', error);
+  };
+
   // Removed inline definitions of categories and use centralized ones
   const generalCategories = uiCategoriesGeneral;
   const specificCategories = uiCategoriesSpecific;
@@ -478,17 +488,14 @@ export default function ExploreTab() {
             borderColor: '#E5E7EB'
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: '#DBEAFE',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12
-              }}>
-                <Text style={{ fontSize: 16 }}>📍</Text>
-              </View>
+              <Switch
+                value={nearCurrentLocation}
+                onValueChange={setNearCurrentLocation}
+                trackColor={{ false: '#CBD5E1', true: '#3B82F6' }}
+                thumbColor={nearCurrentLocation ? '#FFFFFF' : '#FFFFFF'}
+                ios_backgroundColor="#CBD5E1"
+                style={{ marginRight: 12 }}
+              />
               
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 16, fontWeight: '500', color: '#1F2937' }}>
@@ -498,14 +505,21 @@ export default function ExploreTab() {
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, color: '#6B7280', marginRight: 8 }}>Ubicación</Text>
-              <Switch
-                value={nearCurrentLocation}
-                onValueChange={setNearCurrentLocation}
-                trackColor={{ false: '#CBD5E1', true: '#3B82F6' }}
-                thumbColor={nearCurrentLocation ? '#FFFFFF' : '#FFFFFF'}
-                ios_backgroundColor="#CBD5E1"
-              />
+              <TouchableOpacity
+                onPress={() => setShowMap(true)}
+                style={{
+                  backgroundColor: '#3B82F6',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', marginRight: 4 }}>
+                  🗺️ Ver Mapa
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -564,24 +578,6 @@ export default function ExploreTab() {
                     {searchResults.length} resultados encontrados
                   </Text>
                 </View>
-                
-                {searchResults.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setShowMap(true)}
-                    style={{
-                      backgroundColor: '#3B82F6',
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
-                      flexDirection: 'row',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', marginRight: 4 }}>
-                      🗺️ Ver Mapa
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
 
               {searchResults.map(item => renderSearchResult(item))}
@@ -644,7 +640,10 @@ export default function ExploreTab() {
               <View style={{ width: 40 }} />
             </View>
             <AppMap 
-              center={searchResults[0]?.coordinates ? { 
+              center={userCoords ? { 
+                latitude: userCoords.lat, 
+                longitude: userCoords.lng 
+              } : searchResults[0]?.coordinates ? { 
                 latitude: searchResults[0].coordinates.lat, 
                 longitude: searchResults[0].coordinates.lng 
               } : { latitude: 40.4168, longitude: -3.7038 }}
@@ -656,6 +655,9 @@ export default function ExploreTab() {
                 }, 
                 title: p.name || `Lugar ${idx + 1}` 
               }))}
+              showUserLocation={true}
+              onLocationFound={handleLocationFound}
+              onLocationError={handleLocationError}
               style={{ flex: 1 }}
             />
           </View>

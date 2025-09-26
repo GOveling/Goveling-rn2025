@@ -8,4 +8,7 @@ export type AppMapProps = {
   markers?: Array<{ id: string; coord: LatLng; title?: string }>;
   polylines?: Array<{ id: string; path: Polyline }>;
   onRegionChange?: (center: LatLng, zoom: number) => void;
+  showUserLocation?: boolean;
+  onLocationFound?: (location: LatLng) => void;
+  onLocationError?: (error: string) => void;
 };
