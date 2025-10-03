@@ -38,22 +38,30 @@ try {
 }
 
 export const UniversalMap: React.FC<UniversalMapProps> = ({ userLocation, places, style }) => {
+  console.log('[UniversalMap] Platform:', Platform.OS);
+  console.log('[UniversalMap] AppleMap available:', !!AppleMap);
+  console.log('[UniversalMap] NativeMapLibre available:', !!NativeMapLibre);
+
   // 1. Web: MapLibre GL JS directo
   if (Platform.OS === 'web') {
+    console.log('[UniversalMap] Using WebDirectMap for web');
     return <WebDirectMap userLocation={userLocation} places={places} style={style} />;
   }
 
   // 2. iOS: Apple Maps (MapKit) para mejor integración nativa
   if (Platform.OS === 'ios' && AppleMap) {
+    console.log('[UniversalMap] Using AppleMap for iOS');
     return <AppleMap userLocation={userLocation} places={places} style={style} />;
   }
 
   // 3. Android: MapLibre nativo (si está disponible)
   if (Platform.OS === 'android' && NativeMapLibre) {
+    console.log('[UniversalMap] Using NativeMapLibreComponent for Android');
     return <NativeMapLibreComponent userLocation={userLocation} places={places} style={style} />;
   }
 
   // 4. Fallback universal: WebView con MapLibre GL JS (Expo Go y otros casos)
+  console.log('[UniversalMap] Using WebViewMap fallback');
   return <WebViewMap userLocation={userLocation} places={places} style={style} />;
 };
 
