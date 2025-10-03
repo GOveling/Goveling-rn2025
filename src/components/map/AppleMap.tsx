@@ -1,6 +1,22 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+
+// Intentar importar react-native-maps, usar fallback si no está disponible
+let MapView: any = null;
+let Marker: any = null;
+let PROVIDER_DEFAULT: any = null;
+
+try {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  PROVIDER_DEFAULT = maps.PROVIDER_DEFAULT;
+} catch (e) {
+  // react-native-maps no está disponible (ej: Expo Go)
+  MapView = null;
+  Marker = null;
+  PROVIDER_DEFAULT = null;
+}
 
 interface PlaceLike {
   id?: string | number;
@@ -86,6 +102,12 @@ function calculateRegion(userLocation: { latitude: number; longitude: number } |
 }
 
 export const AppleMap: React.FC<AppleMapProps> = ({ userLocation, places, style }) => {
+  // Si react-native-maps no está disponible, retornar null para usar fallback
+  if (!MapView || !Marker || !PROVIDER_DEFAULT) {
+    console.log('[AppleMap] react-native-maps not available, using fallback');
+    return null;
+  }
+
   const region = calculateRegion(userLocation, places);
 
   return (
