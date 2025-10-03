@@ -2,9 +2,18 @@ import React, { useEffect, useRef } from 'react';
 import { Platform, View, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-// Intent: Capa universal (Expo Go + Web) usando MapLibre GL JS.
-// En builds nativos de producción, si está instalado 'react-native-maplibre-gl/maps',
-// se utilizará automáticamente esa implementación (ver bloque try/catch).
+// Intent: Estrategia multiplataforma optimizada:
+// - Web y Android: MapLibre GL JS (mejor rendimiento, más personalizable)
+// - iOS: Apple Maps (MapKit) - Cumple guidelines de Apple, mejor integración nativa
+// - Fallback: WebView con MapLibre para Expo Go
+
+// Importar AppleMap para iOS
+let AppleMap: any = null;
+try {
+  AppleMap = require('./AppleMap').default;
+} catch (e) {
+  AppleMap = null;
+}
 
 interface PlaceLike {
   id?: string | number;
@@ -29,17 +38,22 @@ try {
 }
 
 export const UniversalMap: React.FC<UniversalMapProps> = ({ userLocation, places, style }) => {
-  // 1. Web directo con MapLibre GL JS
+  // 1. Web: MapLibre GL JS directo
   if (Platform.OS === 'web') {
     return <WebDirectMap userLocation={userLocation} places={places} style={style} />;
   }
 
-  // 2. Build nativa con módulo MapLibre (si está disponible)
-  if (NativeMapLibre) {
+  // 2. iOS: Apple Maps (MapKit) para mejor integración nativa
+  if (Platform.OS === 'ios' && AppleMap) {
+    return <AppleMap userLocation={userLocation} places={places} style={style} />;
+  }
+
+  // 3. Android: MapLibre nativo (si está disponible)
+  if (Platform.OS === 'android' && NativeMapLibre) {
     return <NativeMapLibreComponent userLocation={userLocation} places={places} style={style} />;
   }
 
-  // 3. Expo Go / fallback nativo: WebView con MapLibre GL JS
+  // 4. Fallback universal: WebView con MapLibre GL JS (Expo Go y otros casos)
   return <WebViewMap userLocation={userLocation} places={places} style={style} />;
 };
 
