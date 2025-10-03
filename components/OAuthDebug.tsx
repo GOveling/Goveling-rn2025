@@ -14,8 +14,8 @@ export default function OAuthDebug() {
     console.log('OAuth Config:', oauthConfig);
     
     if (typeof window !== 'undefined') {
-      console.log('Window location:', window.location.href);
-      console.log('Window origin:', window.location.origin);
+      console.log('Window location:', window.location?.href);
+      console.log('Window origin:', window.location?.origin);
     }
     
     try {

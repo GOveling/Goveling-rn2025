@@ -92,11 +92,11 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
     console.log('[placesSearch] Invoking edge function google-places-enhanced');
     
     // En desarrollo web (localhost), usar fetch directo para evitar problemas de CORS
-    const isWebDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    const isWebDev = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost';
     
     if (isWebDev) {
       console.log('[placesSearch] Using direct fetch for web development');
-      console.log('[placesSearch] Window location:', window.location.href);
+      console.log('[placesSearch] Window location:', window.location?.href);
       
       // En web, usar las variables de entorno explícitamente
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iwsuyrlrbmnbfyfkqowl.supabase.co';

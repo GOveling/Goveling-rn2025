@@ -55,7 +55,7 @@ export const getOAuthConfig = () => {
   return {
     clientId: platformInfo.clientId,
     redirectUrl: platformInfo.isWeb 
-      ? `${window.location.origin}/auth/callback`
+      ? `${window.location?.origin || 'http://localhost:8081'}/auth/callback`
       : 'com.goveling.app://auth/callback', // Deep link para móvil
     platform: platformInfo.platform
   };
