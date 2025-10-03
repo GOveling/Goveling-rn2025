@@ -35,7 +35,8 @@
       "expo-file-system",
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
-      "expo-updates"
+      "expo-updates",
+      "./plugins/withReactNativeMaps.js"
     ],
     "ios": {
       "bundleIdentifier": "com.goveling.app",
