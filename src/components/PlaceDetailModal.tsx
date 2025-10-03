@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useRouter } from 'expo-router';
 import { useFavorites } from '../lib/useFavorites';
+import { processPlaceCategories } from '../lib/categoryProcessor';
 
 // Conditional BlurView import
 let BlurView: any = View;
@@ -261,16 +262,11 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
           {/* Información adicional */}
           {(place.category || place.types) && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Categoría</Text>
+              <Text style={styles.sectionTitle}>Categorías</Text>
               <View style={styles.tagsContainer}>
-                {place.category && (
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{place.category}</Text>
-                  </View>
-                )}
-                {place.types?.slice(0, 3).map((type, index) => (
+                {processPlaceCategories(place.types || [], place.category, 4).map((category, index) => (
                   <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{type}</Text>
+                    <Text style={styles.tagText}>{category}</Text>
                   </View>
                 ))}
               </View>
