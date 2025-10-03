@@ -18,7 +18,11 @@
     "setup": "echo 'run supabase db push && supabase functions deploy'",
     "prebuild": "expo prebuild",
     "pods": "npx pod-install",
-    "dev:all": "expo start --web --port 8081"
+    "dev:all": "expo start --web --port 8081",
+    "update": "eas update --auto",
+    "update:prod": "eas update --auto --branch production",
+    "update:dev": "eas update --auto --branch development",
+    "deploy": "git add . && git commit -m 'feat: update app' && git push && eas update --auto"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
