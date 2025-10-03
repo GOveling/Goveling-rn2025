@@ -99,6 +99,16 @@ export default function ExploreTab() {
 
   const performSearch = async () => {
     console.log('[performSearch] Starting search with input:', search);
+    console.log('[performSearch] Current state:', {
+      search: search,
+      searchLength: search.length,
+      searchTrim: search.trim(),
+      selectedCategories,
+      nearCurrentLocation,
+      userCoords,
+      hasSearched,
+      loading
+    });
     
     if (!search.trim()) {
       console.log('[performSearch] Empty search, returning early');
@@ -138,15 +148,26 @@ export default function ExploreTab() {
       const resp = await searchPlacesEnhanced({ input: search, selectedCategories: internalCats, userLocation, locale }, controller.signal);
       
       console.log('[performSearch] Got response:', resp);
-      console.log('[performSearch] First prediction photos:', resp?.predictions?.[0]?.photos);
+      console.log('[performSearch] Response status:', resp?.status);
+      console.log('[performSearch] Response predictions count:', resp?.predictions?.length);
+      console.log('[performSearch] First prediction:', resp?.predictions?.[0]);
       
-      setSearchResults(resp.predictions);
+      if (resp?.status === 'ERROR') {
+        console.error('[performSearch] API returned error:', resp.error);
+        Alert.alert('Error de búsqueda', resp.error || 'Error desconocido en la búsqueda');
+        setSearchResults([]);
+      } else {
+        setSearchResults(resp.predictions || []);
+      }
       setHasSearched(true);
     } catch (e:any) {
       console.error('[performSearch] Error during search:', e);
+      console.error('[performSearch] Error stack:', e.stack);
       if (e.name !== 'AbortError') {
-        Alert.alert('Error', 'No se pudo completar la búsqueda');
+        Alert.alert('Error', 'No se pudo completar la búsqueda: ' + e.message);
       }
+      setSearchResults([]);
+      setHasSearched(true);
     } finally {
       setLoading(false);
     }
