@@ -25,10 +25,13 @@
     "deploy": "git add . && git commit -m 'feat: update app' && git push && eas update --auto"
   },
   "dependencies": {
+    "@dotlottie/react-player": "^1.6.19",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^4.6.3",
+    "@lottiefiles/dotlottie-react": "^0.17.4",
     "@maplibre/maplibre-react-native": "^10.2.1",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-firebase/app": "^23.4.0",
@@ -58,6 +61,7 @@
     "firebase": "^12.3.0",
     "i18next": "^23.10.1",
     "intl-pluralrules": "^2.0.1",
+    "lottie-react-native": "~7.3.1",
     "maplibre-gl": "^5.8.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

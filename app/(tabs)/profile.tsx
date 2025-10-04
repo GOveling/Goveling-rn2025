@@ -268,7 +268,11 @@ export default function ProfileTab(){
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={{ paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header con Avatar y Info Personal */}
       <View style={styles.headerSection}>
         <View style={styles.avatarContainer}>
