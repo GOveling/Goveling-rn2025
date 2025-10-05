@@ -4,10 +4,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
 import { useRouter } from 'expo-router';
 import { supabase } from '~/lib/supabase';
+import NewTripModal from '../../src/components/NewTripModal';
 
 export default function TripsTab() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
+
+  // Estados
+  const [showNewTripModal, setShowNewTripModal] = useState(false);
 
   // Stats data - these would come from your database
   const [stats, setStats] = useState({
@@ -135,7 +139,7 @@ export default function TripsTab() {
 
         {/* Nuevo Viaje Button */}
         <TouchableOpacity
-          onPress={() => Alert.alert('Nuevo Trip', 'Funcionalidad de crear trips próximamente disponible')}
+          onPress={() => setShowNewTripModal(true)}
           style={{
             borderRadius: 16,
             padding: 18,
@@ -618,6 +622,15 @@ export default function TripsTab() {
         {/* Bottom padding */}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Modal de Nuevo Viaje */}
+      <NewTripModal
+        visible={showNewTripModal}
+        onClose={() => setShowNewTripModal(false)}
+        onTripCreated={() => {
+          loadTripStats(); // Recargar estadísticas
+        }}
+      />
     </View>
   );
 }

@@ -42,11 +42,11 @@ export default function TabLayout() {
           borderTopColor: '#e5e7eb',
           paddingBottom: 8,
           paddingTop: 8,
-          height: 70 // Aumentamos la altura para acomodar el texto
+          height: 84 // Aumentamos la altura 20% más para evitar corte de iconos en dispositivos nativos
         } : {
           paddingBottom: 8,
           paddingTop: 8,
-          height: 70
+          height: 84
         }
       }}>
       <Tabs.Screen
