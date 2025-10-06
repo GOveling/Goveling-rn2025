@@ -30,8 +30,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🚀 AuthProvider initializing...');
+    
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('❌ Error getting initial session:', error);
+      }
       console.log('🔍 Initial session check:', session?.user?.email || 'No session');
       setSession(session);
       setUser(session?.user ?? null);
@@ -43,6 +48,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state change:', event, session?.user?.email || 'No user');
+      
+      // Special handling for OAuth callback completion
+      if (event === 'SIGNED_IN' && session) {
+        console.log('✅ User signed in via OAuth:', session.user.email);
+        console.log('🔗 Auth metadata:', session.user.app_metadata);
+      }
+      
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('🔄 Token refreshed for:', session?.user?.email);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

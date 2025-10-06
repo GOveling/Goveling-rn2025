@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '~/lib/supabase';
+import { analyzeOAuthCallback, waitForSession, logOAuthDebugInfo } from '~/lib/oauth-callback-utils';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -9,99 +10,71 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        console.log('🔍 Auth callback started');
-        console.log('📍 Current URL:', window.location.href);
+        console.log('🔍 Enhanced Auth callback started');
+        logOAuthDebugInfo();
         
-        // Check if we have URL fragments or query params that indicate OAuth callback
-        const url = window.location.href;
-        const hashFragment = window.location.hash;
-        const searchParams = window.location.search;
+        // Analyze the callback
+        const callbackResult = analyzeOAuthCallback();
+        console.log('📊 Callback analysis:', callbackResult);
         
-        console.log('🔗 URL parts:', { url, hashFragment, searchParams });
-        
-        // Decode and log the state parameter for debugging
-        const urlParams = new URLSearchParams(searchParams);
-        const stateParam = urlParams.get('state');
-        if (stateParam) {
-          try {
-            const decodedState = JSON.parse(atob(stateParam.split('.')[1]));
-            console.log('🔍 Decoded state:', decodedState);
-          } catch (e) {
-            console.log('⚠️ Could not decode state parameter');
+        if (callbackResult.hasError) {
+          console.error('❌ OAuth error detected:', callbackResult.errorType, callbackResult.errorDescription);
+          
+          // Even if there's a callback error, check if session was created
+          if (callbackResult.needsSessionCheck) {
+            console.log('🔧 Checking session despite callback error...');
+            
+            const { session } = await waitForSession(
+              () => supabase.auth.getSession(),
+              3, // Fewer attempts for error cases
+              1500
+            );
+            
+            if (session) {
+              console.log('🎉 Session found despite callback error!');
+              router.replace('/(tabs)');
+              return;
+            }
           }
+          
+          // Redirect with error
+          router.replace(`/auth?error=${callbackResult.errorType}&description=${callbackResult.errorDescription || ''}`);
+          return;
         }
         
-        if (hashFragment.includes('access_token') || searchParams.includes('code') || hashFragment.includes('error')) {
+        if (callbackResult.success || callbackResult.needsSessionCheck) {
           console.log('✅ OAuth callback detected, processing...');
           
-          // Handle OAuth error first
-          if (hashFragment.includes('error') || searchParams.includes('error')) {
-            const urlParams = new URLSearchParams(hashFragment.replace('#', '') || searchParams);
-            const error = urlParams.get('error');
-            const errorDescription = urlParams.get('error_description');
-            console.error('❌ OAuth error:', error, errorDescription);
-            router.replace(`/auth?error=${error}&description=${errorDescription}`);
-            return;
-          }
+          // Wait for session to be established
+          const { session, attempts } = await waitForSession(
+            () => supabase.auth.getSession(),
+            8, // More attempts for success cases
+            1200
+          );
           
-          // Process successful OAuth callback
-          console.log('🔄 Processing OAuth callback with code exchange...');
-          
-          // First, try to exchange the code for tokens manually if needed
-          const urlParams = new URLSearchParams(searchParams);
-          const code = urlParams.get('code');
-          const state = urlParams.get('state');
-          
-          if (code) {
-            console.log('📝 Found authorization code, initiating session...');
-            // Let Supabase handle the code exchange automatically
-            // by checking for session after a short delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          
-          // Check for session
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError) {
-            console.error('❌ OAuth session error:', sessionError);
-            router.replace('/auth?error=oauth_session_failed');
-            return;
-          }
-
-          if (sessionData.session) {
-            console.log('🎉 Authentication successful!', {
-              user: sessionData.session.user.email,
-              provider: sessionData.session.user.app_metadata.provider
+          if (session) {
+            console.log(`🎉 Authentication successful after ${attempts} attempts!`, {
+              user: session.user.email,
+              provider: session.user.app_metadata.provider
             });
-            // AuthGuard will handle the redirect automatically
             router.replace('/(tabs)');
           } else {
-            console.log('⚠️ No session found, trying refresh...');
-            // Try refreshing the session or waiting for auth state change
-            let retryCount = 0;
-            const maxRetries = 3;
-            
-            const checkSession = async () => {
-              retryCount++;
-              const { data: retryData, error: retryError } = await supabase.auth.getSession();
-              
-              if (retryData.session) {
-                console.log('🔄 Session found on retry', retryCount);
-                router.replace('/(tabs)');
-              } else if (retryCount < maxRetries) {
-                console.log(`⏳ Retry ${retryCount}/${maxRetries}...`);
-                setTimeout(checkSession, 1000);
-              } else {
-                console.log('❌ Max retries reached, no session created');
-                router.replace('/auth?error=no_session_created');
-              }
-            };
-            
-            setTimeout(checkSession, 1000);
+            console.log('❌ No session created after OAuth callback');
+            router.replace('/auth?error=no_session_created');
           }
         } else {
-          console.log('❓ Not an OAuth callback, redirecting to auth');
-          router.replace('/auth');
+          console.log('❓ Not an OAuth callback, checking existing session...');
+          
+          // Even if no OAuth params, check if we have a session
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (sessionData.session) {
+            console.log('🎉 Existing session found, redirecting to app');
+            router.replace('/(tabs)');
+          } else {
+            console.log('📍 No session, redirecting to auth');
+            router.replace('/auth');
+          }
         }
       } catch (error) {
         console.error('💥 Auth callback error:', error);
@@ -110,7 +83,7 @@ export default function AuthCallback() {
     };
 
     // Add a small delay to ensure URL is fully loaded
-    const timer = setTimeout(handleAuthCallback, 100);
+    const timer = setTimeout(handleAuthCallback, 300);
     return () => clearTimeout(timer);
   }, [router]);
 
@@ -129,6 +102,14 @@ export default function AuthCallback() {
         textAlign: 'center'
       }}>
         Completando autenticación con Google...
+      </Text>
+      <Text style={{ 
+        marginTop: 8, 
+        fontSize: 12, 
+        color: '#999',
+        textAlign: 'center'
+      }}>
+        Procesando callback OAuth...
       </Text>
     </View>
   );

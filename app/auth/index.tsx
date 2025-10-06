@@ -182,16 +182,16 @@ export default function AuthScreen(){
           },
           scopes: 'openid email profile',
           skipBrowserRedirect: false,
-          // Configuración adicional para desarrollo
+          // Configuración adicional para desarrollo web
           ...(typeof window !== 'undefined' && {
-            // En web/Expo Go, forzar el uso del client web
+            // Agregar parámetros específicos para desarrollo local
             queryParams: {
-              ...{
-                access_type: 'offline',
-                prompt: 'select_account',
-                hd: undefined,
-              },
-              client_id: getGoogleClientId(), // Usar función para obtener client ID correcto
+              access_type: 'offline',
+              prompt: 'select_account',
+              hd: undefined,
+              // Forzar flujo de código de autorización
+              response_type: 'code',
+              state: 'development_callback'
             }
           })
         }

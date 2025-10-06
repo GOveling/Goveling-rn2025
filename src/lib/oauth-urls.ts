@@ -38,7 +38,14 @@ export const getSafeRedirectUrl = (environment: 'development' | 'production' = '
     return AUTHORIZED_REDIRECT_URLS.production[0] || AUTHORIZED_REDIRECT_URLS.supabase;
   }
   
-  // Para desarrollo, usar siempre Supabase (más confiable)
+  // Para desarrollo web local, usar localhost si estamos en web
+  if (typeof window !== 'undefined') {
+    const currentOrigin = window.location.origin;
+    console.log('🌐 Detected web environment, using:', `${currentOrigin}/auth/callback`);
+    return `${currentOrigin}/auth/callback`;
+  }
+  
+  // Para Expo Go y otros casos, usar Supabase (más confiable)
   return AUTHORIZED_REDIRECT_URLS.supabase;
 };
 
