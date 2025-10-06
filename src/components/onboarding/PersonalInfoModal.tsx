@@ -17,6 +17,9 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCountries } from '../../hooks/useCountries';
+import { useCitiesByCountry } from '../../hooks/useCitiesByCountry';
+import { Country, CityResult } from '../../types/geo';
 
 interface PersonalInfoModalProps {
   isOpen: boolean;
@@ -28,11 +31,11 @@ interface FormData {
   full_name: string;
   birth_date: Date | null;
   gender: string;
-  country: string;
-  city_state: string;
+  country: string;           // country_code (ej: "MX", "ES")
+  city_state: string;        // nombre de la ciudad seleccionada
   address: string;
-  phone: string;
-  phone_country_code: string;
+  mobile_phone: string;      // número de teléfono sin prefijo
+  country_code: string;      // prefijo telefónico (ej: "+52")
 }
 
 const genderOptions = [
@@ -42,23 +45,27 @@ const genderOptions = [
   { label: 'Prefiero no decirlo', value: 'prefer_not_to_say', icon: '🤐' },
 ];
 
-const countryCodes = [
-  { country: 'España', code: '+34' },
-  { country: 'México', code: '+52' },
-  { country: 'Argentina', code: '+54' },
-  { country: 'Estados Unidos', code: '+1' },
-  { country: 'Colombia', code: '+57' },
-  { country: 'Chile', code: '+56' },
-  { country: 'Perú', code: '+51' },
-  { country: 'Venezuela', code: '+58' },
-];
+
 
 export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInfoModalProps) {
   const [showIntro, setShowIntro] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
-  
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Hooks para países y ciudades
+  const { countries, loading: countriesLoading, error: countriesError } = useCountries();
+  const { 
+    cities, 
+    loading: citiesLoading, 
+    error: citiesError,
+    loadCitiesForCountry,
+    clearResults 
+  } = useCitiesByCountry();
+
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
     birth_date: null,
@@ -66,11 +73,72 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
     country: '',
     city_state: '',
     address: '',
-    phone: '',
-    phone_country_code: '+34',
+    mobile_phone: '',
+    country_code: '',
   });
 
+  // Función para normalizar código telefónico
+  const normalizePhoneCode = (phoneCode: string): string => {
+    if (!phoneCode) return '';
+    const cleanCode = phoneCode.replace(/^\++/, ''); // Elimina todos los "+" iniciales
+    return `+${cleanCode}`; // Agrega exactamente un "+"
+  };
+
+  // useEffect #1: Inicialización y carga de datos
   useEffect(() => {
+    if (isOpen && user?.id) {
+      checkIntroStatus();
+      loadExistingData();
+    }
+  }, [isOpen, user?.id]);
+
+  // useEffect #2: Actualización automática del prefijo telefónico cuando cambia el país
+  useEffect(() => {
+    if (!isInitialized) return; // Previene actualización durante la carga inicial
+
+    if (formData.country) {
+      // Busca el país en el array de países
+      const country = countries.find(c => c.country_code === formData.country);
+      
+      if (country) {
+        // Normaliza el phone_code (asegura un solo "+")
+        const phoneCode = normalizePhoneCode(country.phone_code);
+        
+        // Actualiza el prefijo automáticamente
+        setFormData(prev => ({
+          ...prev,
+          country_code: phoneCode
+        }));
+      }
+    } else {
+      // Si no hay país, limpia prefijo y teléfono
+      setFormData(prev => ({
+        ...prev,
+        country_code: '',
+        mobile_phone: ''
+      }));
+    }
+  }, [formData.country, countries, isInitialized]);
+
+  // useEffect #3: Carga reactiva de ciudades cuando cambia el país
+  useEffect(() => {
+    if (!isInitialized) return; // Previene fetch duplicado al cargar perfil
+
+    if (formData.country && formData.country !== '') {
+      setFormData(prev => ({ ...prev, city_state: '' })); // Limpia ciudad anterior
+      loadCitiesForCountry(formData.country); // Fetch ciudades del nuevo país
+    } else {
+      clearResults(); // Limpia resultados si no hay país
+    }
+  }, [formData.country, loadCitiesForCountry, clearResults, isInitialized]);
+
+  // useEffect #4: Limpieza al cerrar modal
+  useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
+      clearResults(); // Limpia ciudades cargadas
+    }
+  }, [isOpen, clearResults]);  useEffect(() => {
     if (isOpen && user?.id) {
       checkIntroStatus();
       loadExistingData();
@@ -111,12 +179,16 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           country: profile.country || '',
           city_state: profile.city_state || '',
           address: profile.address || '',
-          phone: profile.phone || '',
-          phone_country_code: profile.phone_country_code || '+34',
+          mobile_phone: profile.mobile_phone || '',
+          country_code: profile.country_code || '',
         });
       }
+      
+      // Marcar como inicializado después de cargar los datos
+      setIsInitialized(true);
     } catch (error) {
       console.error('Error loading existing data:', error);
+      setIsInitialized(true); // Marcar como inicializado incluso si hay error
     }
   };
 
@@ -172,8 +244,8 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
         country: formData.country || null,
         city_state: formData.city_state || null,
         address: formData.address || null,
-        phone: formData.phone || null,
-        phone_country_code: formData.phone_country_code,
+        mobile_phone: formData.mobile_phone || null,
+        country_code: formData.country_code,
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -244,6 +316,15 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
   const getGenderLabel = (value: string) => {
     const option = genderOptions.find(o => o.value === value);
     return option ? `${option.icon} ${option.label}` : '';
+  };
+
+  const getCountryLabel = (countryCode: string) => {
+    const country = countries.find(c => c.country_code === countryCode);
+    return country ? `🌍 ${country.country_name}` : '';
+  };
+
+  const getCityLabel = (cityName: string) => {
+    return cityName ? `🏙️ ${cityName}` : '';
   };
 
   if (!isOpen) return null;
@@ -358,28 +439,71 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Campos Opcionales</Text>
 
-                {/* Country */}
+                {/* Country Selector */}
                 <View style={styles.fieldContainer}>
                   <Text style={styles.fieldLabel}>País</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={formData.country}
-                    onChangeText={(text) => updateField('country', text)}
-                    placeholder="Ej: España"
-                    placeholderTextColor="rgba(0,0,0,0.5)"
-                  />
+                  <TouchableOpacity
+                    style={[styles.pickerButton, formData.country && styles.pickerButtonSelected]}
+                    onPress={() => setShowCountryPicker(true)}
+                    disabled={countriesLoading}
+                  >
+                    <Text style={[styles.pickerButtonText, formData.country && styles.pickerButtonTextSelected]}>
+                      {formData.country ? getCountryLabel(formData.country) : '🌍 Seleccionar país'}
+                    </Text>
+                    {countriesLoading ? (
+                      <ActivityIndicator size="small" color="#6366F1" />
+                    ) : (
+                      <Ionicons name="chevron-down" size={20} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                  {countriesError && (
+                    <Text style={styles.errorText}>
+                      Error al cargar países. Usando lista básica.
+                    </Text>
+                  )}
                 </View>
 
-                {/* City/State */}
+                {/* City/State Selector */}
                 <View style={styles.fieldContainer}>
                   <Text style={styles.fieldLabel}>Ciudad/Estado</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={formData.city_state}
-                    onChangeText={(text) => updateField('city_state', text)}
-                    placeholder="Ej: Madrid, Comunidad de Madrid"
-                    placeholderTextColor="rgba(0,0,0,0.5)"
-                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.pickerButton, 
+                      formData.city_state && styles.pickerButtonSelected,
+                      (!formData.country || citiesLoading) && styles.pickerButtonDisabled
+                    ]}
+                    onPress={() => setShowCityPicker(true)}
+                    disabled={!formData.country || citiesLoading}
+                  >
+                    <Text style={[
+                      styles.pickerButtonText, 
+                      formData.city_state && styles.pickerButtonTextSelected,
+                      (!formData.country || citiesLoading) && styles.pickerButtonTextDisabled
+                    ]}>
+                      {!formData.country 
+                        ? '🌍 Selecciona un país primero'
+                        : citiesLoading 
+                        ? '⏳ Cargando ciudades...'
+                        : formData.city_state 
+                        ? getCityLabel(formData.city_state)
+                        : '🏙️ Seleccionar ciudad o estado'
+                      }
+                    </Text>
+                    {citiesLoading ? (
+                      <ActivityIndicator size="small" color="#6366F1" />
+                    ) : (
+                      <Ionicons 
+                        name="chevron-down" 
+                        size={20} 
+                        color={!formData.country ? "#ccc" : "#6366F1"} 
+                      />
+                    )}
+                  </TouchableOpacity>
+                  {citiesError && (
+                    <Text style={styles.errorText}>
+                      Error al cargar ciudades para este país.
+                    </Text>
+                  )}
                 </View>
 
                 {/* Address */}
@@ -401,29 +525,33 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   <Text style={styles.fieldLabel}>Teléfono Móvil</Text>
                   <View style={styles.phoneContainer}>
                     <View style={styles.countryCodeContainer}>
-                      <Picker
-                        selectedValue={formData.phone_country_code}
-                        onValueChange={(value) => updateField('phone_country_code', value)}
-                        style={styles.countryCodePicker}
-                      >
-                        {countryCodes.map((item) => (
-                          <Picker.Item
-                            key={item.code}
-                            label={`${item.country} ${item.code}`}
-                            value={item.code}
-                          />
-                        ))}
-                      </Picker>
+                      <TextInput
+                        style={[styles.textInput, styles.countryCodeInput]}
+                        value={formData.country_code}
+                        placeholder="+XX"
+                        placeholderTextColor="rgba(0,0,0,0.5)"
+                        editable={false}
+                      />
                     </View>
                     <TextInput
                       style={[styles.textInput, styles.phoneInput]}
-                      value={formData.phone}
-                      onChangeText={(text) => updateField('phone', text)}
-                      placeholder="123456789"
+                      value={formData.mobile_phone}
+                      onChangeText={(text) => {
+                        // Solo permitir números y espacios
+                        const cleanText = text.replace(/[^0-9\s]/g, '');
+                        updateField('mobile_phone', cleanText);
+                      }}
+                      placeholder="123 456 7890"
                       placeholderTextColor="rgba(0,0,0,0.5)"
                       keyboardType="phone-pad"
+                      editable={!!formData.country_code}
                     />
                   </View>
+                  {!formData.country && (
+                    <Text style={styles.helperText}>
+                      Selecciona un país primero para habilitar el teléfono
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -541,6 +669,113 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                       {option.label}
                     </Text>
                     {formData.gender === option.value && (
+                      <Ionicons name="checkmark" size={20} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </Modal>
+
+          {/* Country Picker Modal */}
+          <Modal
+            visible={showCountryPicker}
+            animationType="slide"
+            presentationStyle="pageSheet"
+          >
+            <View style={styles.pickerModal}>
+              <View style={styles.pickerHeader}>
+                <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                  <Text style={styles.pickerCancel}>Cancelar</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerTitle}>Seleccionar País</Text>
+                <View style={{ width: 60 }} />
+              </View>
+              <ScrollView style={styles.pickerContent}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Buscar país..."
+                  placeholderTextColor="#6b7280"
+                  onChangeText={(text) => {
+                    // Implementar búsqueda local
+                    // Por ahora mostramos todos los países
+                  }}
+                />
+                {countries.map((country) => (
+                  <TouchableOpacity
+                    key={country.country_code}
+                    style={[styles.pickerOption, formData.country === country.country_code && styles.pickerOptionSelected]}
+                    onPress={() => {
+                      updateField('country', country.country_code);
+                      setShowCountryPicker(false);
+                    }}
+                  >
+                    <Text style={styles.pickerOptionIcon}>🌍</Text>
+                    <View style={styles.countryOptionContent}>
+                      <Text style={[styles.pickerOptionText, formData.country === country.country_code && styles.pickerOptionTextSelected]}>
+                        {country.country_name}
+                      </Text>
+                      <Text style={styles.phoneCodeText}>{country.phone_code}</Text>
+                    </View>
+                    {formData.country === country.country_code && (
+                      <Ionicons name="checkmark" size={20} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </Modal>
+
+          {/* City Picker Modal */}
+          <Modal
+            visible={showCityPicker}
+            animationType="slide"
+            presentationStyle="pageSheet"
+          >
+            <View style={styles.pickerModal}>
+              <View style={styles.pickerHeader}>
+                <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+                  <Text style={styles.pickerCancel}>Cancelar</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerTitle}>Seleccionar Ciudad</Text>
+                <View style={{ width: 60 }} />
+              </View>
+              <ScrollView style={styles.pickerContent}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Buscar ciudad..."
+                  placeholderTextColor="#6b7280"
+                  onChangeText={(text) => {
+                    // Implementar búsqueda local
+                    // Por ahora mostramos todas las ciudades
+                  }}
+                />
+                {cities.length === 0 && !citiesLoading && formData.country && (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>
+                      No se encontraron ciudades para este país
+                    </Text>
+                  </View>
+                )}
+                {cities.map((city) => (
+                  <TouchableOpacity
+                    key={`${city.city}-${city.latitude}-${city.longitude}`}
+                    style={[styles.pickerOption, formData.city_state === city.city && styles.pickerOptionSelected]}
+                    onPress={() => {
+                      updateField('city_state', city.city);
+                      setShowCityPicker(false);
+                    }}
+                  >
+                    <Text style={styles.pickerOptionIcon}>🏙️</Text>
+                    <View style={styles.cityOptionContent}>
+                      <Text style={[styles.pickerOptionText, formData.city_state === city.city && styles.pickerOptionTextSelected]}>
+                        {city.city}
+                      </Text>
+                      <Text style={styles.populationText}>
+                        {city.population.toLocaleString()} habitantes
+                      </Text>
+                    </View>
+                    {formData.city_state === city.city && (
                       <Ionicons name="checkmark" size={20} color="#6366F1" />
                     )}
                   </TouchableOpacity>
@@ -723,6 +958,30 @@ const styles = {
     color: '#1F2937',
     fontWeight: '600' as const,
   },
+  pickerButtonDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
+  },
+  pickerButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+    fontStyle: 'italic' as const,
+  },
+  helperText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 4,
+    fontStyle: 'italic' as const,
+  },
+  countryCodeInput: {
+    textAlign: 'center' as const,
+    fontWeight: '600' as const,
+    backgroundColor: '#F9FAFB',
+  },
   phoneContainer: {
     flexDirection: 'row' as const,
     gap: 12,
@@ -889,5 +1148,44 @@ const styles = {
   pickerOptionTextSelected: {
     color: '#6366F1',
     fontWeight: '600' as const,
+  },
+  searchInput: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  countryOptionContent: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  },
+  phoneCodeText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500' as const,
+  },
+  cityOptionContent: {
+    flex: 1,
+  },
+  populationText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  emptyState: {
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center' as const,
   },
 };
