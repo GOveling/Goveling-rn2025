@@ -24,14 +24,19 @@ serve(async (req) => {
       
       if (existingUser) {
         console.log('👤 User already exists:', email);
+        // Return success response with userExists flag instead of error status
         return new Response(JSON.stringify({ 
           ok: false, 
           error: 'user_already_exists',
           message: 'Este email ya está registrado en Goveling. Por favor inicia sesión.',
           userExists: true
         }), { 
-          status: 409, // Conflict
-          headers: { "Content-Type": "application/json" } 
+          status: 200, // Return 200 instead of 409 to avoid Edge Function error
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+          }
         });
       }
     }
@@ -59,7 +64,11 @@ serve(async (req) => {
         code,
         message: 'Development mode - check server logs for code'
       }), { 
-        headers: { "Content-Type": "application/json" } 
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+        } 
       });
     }
 
@@ -278,7 +287,11 @@ serve(async (req) => {
       emailId: resendData.id,
       code: resendApiKey ? undefined : code // Solo devolver código en desarrollo
     }), { 
-      headers: { "Content-Type": "application/json" } 
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+      } 
     });
 
   } catch (e) {
@@ -287,8 +300,12 @@ serve(async (req) => {
       ok: false, 
       error: e.message 
     }), { 
-      status: 400,
-      headers: { "Content-Type": "application/json" }
+      status: 200, // Return 200 instead of 400 to avoid Edge Function errors
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+      }
     });
   }
 });

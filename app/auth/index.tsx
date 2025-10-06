@@ -66,17 +66,27 @@ export default function AuthScreen(){
     setLoading(true);
     try {
       // Send confirmation email with Resend
-      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+      const response = await supabase.functions.invoke('send-confirmation-email', {
         body: { 
           email,
           fullName 
         }
       });
 
-      if (emailError) throw emailError;
+      console.log('📧 Email function response:', response);
+
+      // Check if there's a function error (network/execution error)
+      if (response.error) {
+        console.error('❌ Function error:', response.error);
+        throw new Error(response.error.message || 'Error al conectar con el servidor');
+      }
+
+      // Check the response data
+      const emailData = response.data;
       
       if (emailData?.ok) {
-        // Store signup data temporarily in AsyncStorage for verification step
+        // Success case - email sent
+        console.log('✅ Email sent successfully');
         await AsyncStorage.setItem('pendingSignup', JSON.stringify({
           email,
           password,
@@ -94,18 +104,18 @@ export default function AuthScreen(){
             }
           ]
         );
-      } else if (emailData?.userExists) {
-        // Handle user already exists case
+      } else if (emailData?.userExists || emailData?.error === 'user_already_exists') {
+        // User already exists case
+        console.log('👤 User already exists, switching to sign in');
         Alert.alert(
           'Usuario Existente',
-          emailData.message || 'Este email ya está registrado en Goveling.',
+          emailData.message || 'Este email ya está registrado en Goveling. Por favor inicia sesión.',
           [
             {
               text: 'Iniciar Sesión',
               onPress: () => {
-                setIsSignUp(false); // Switch to sign in mode
-                // Pre-fill the email
-                setEmail(email);
+                setMode('signin'); // Switch to sign in mode
+                setEmail(email); // Pre-fill the email
               }
             },
             {
@@ -114,10 +124,15 @@ export default function AuthScreen(){
             }
           ]
         );
+      } else {
+        // Other error from the function
+        throw new Error(emailData?.message || 'Error inesperado al procesar la solicitud');
       }
     } catch (error: any) {
-      // Handle specific error types
-      if (error.message?.includes('user_already_exists') || error.status === 409) {
+      console.error('❌ Signup error:', error);
+      
+      // Handle specific error cases
+      if (error.message?.includes('user_already_exists')) {
         Alert.alert(
           'Usuario Existente',
           'Este email ya está registrado en Goveling. Por favor inicia sesión.',
@@ -125,7 +140,7 @@ export default function AuthScreen(){
             {
               text: 'Iniciar Sesión',
               onPress: () => {
-                setIsSignUp(false); // Switch to sign in mode
+                setMode('signin'); // Switch to sign in mode
                 setEmail(email); // Pre-fill the email
               }
             },
