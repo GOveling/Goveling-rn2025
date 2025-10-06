@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '~/lib/supabase';
 import { router } from 'expo-router';
 
@@ -64,24 +65,38 @@ export default function AuthScreen(){
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          }
+      // Send confirmation email with Resend
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+        body: { 
+          email,
+          fullName 
         }
       });
 
-      if (error) throw error;
+      if (emailError) throw emailError;
       
-      if (data.user) {
-        Alert.alert('Éxito', 'Cuenta creada exitosamente');
-        // The AuthProvider will handle navigation
+      if (emailData?.ok) {
+        // Store signup data temporarily in AsyncStorage for verification step
+        await AsyncStorage.setItem('pendingSignup', JSON.stringify({
+          email,
+          password,
+          fullName,
+          timestamp: Date.now()
+        }));
+
+        Alert.alert(
+          '¡Casi listo!', 
+          `Hemos enviado un código de verificación a ${email}. Revisa tu correo e ingresa el código para completar tu registro.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => router.push('/auth/verify-email' as any)
+            }
+          ]
+        );
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Error', error.message || 'Error al enviar el correo de confirmación');
     } finally {
       setLoading(false);
     }

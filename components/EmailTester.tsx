@@ -4,6 +4,7 @@ import { supabase } from '../src/lib/supabase';
 
 export default function EmailTester() {
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -50,6 +51,49 @@ export default function EmailTester() {
     }
   };
 
+  const testConfirmationEmail = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Por favor ingresa un email');
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+
+    try {
+      console.log('🧪 Testing confirmation email with:', email, fullName);
+      
+      // Call the new confirmation email function
+      const { data, error } = await supabase.functions.invoke('send-confirmation-email', {
+        body: { 
+          email: email,
+          fullName: fullName || 'Usuario de Prueba'
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ Confirmation email response:', data);
+      
+      if (data.ok) {
+        setResult(`✅ Email de confirmación enviado!${data.emailId ? ` ID: ${data.emailId}` : ''}${data.code ? ` Código: ${data.code}` : ''}`);
+        Alert.alert('¡Éxito!', 'Email de confirmación enviado. Revisa tu bandeja de entrada.');
+      } else {
+        setResult(`❌ Error: ${data.error || 'Unknown error'}`);
+        Alert.alert('Error', data.error || 'Error desconocido');
+      }
+
+    } catch (error: any) {
+      console.error('💥 Confirmation email test error:', error);
+      setResult(`❌ Error: ${error.message}`);
+      Alert.alert('Error', error.message || 'Error al enviar email de confirmación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🧪 Probador de Email</Text>
@@ -64,13 +108,32 @@ export default function EmailTester() {
         autoCapitalize="none"
       />
       
+      <Text style={styles.label}>Nombre completo (opcional):</Text>
+      <TextInput
+        style={styles.input}
+        value={fullName}
+        onChangeText={setFullName}
+        placeholder="Tu Nombre"
+        autoCapitalize="words"
+      />
+      
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={testEmail}
         disabled={loading}
       >
         <Text style={styles.buttonText}>
-          {loading ? 'Enviando...' : 'Enviar Email de Prueba'}
+          {loading ? 'Enviando...' : 'Enviar Email de Prueba (OTP)'}
+        </Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[styles.button, styles.confirmationButton, loading && styles.buttonDisabled]}
+        onPress={testConfirmationEmail}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Enviando...' : 'Enviar Email de Confirmación'}
         </Text>
       </TouchableOpacity>
       
@@ -121,6 +184,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  confirmationButton: {
+    backgroundColor: '#6366F1',
   },
   buttonDisabled: {
     backgroundColor: '#6B7280',
