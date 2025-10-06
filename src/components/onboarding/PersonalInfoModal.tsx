@@ -36,10 +36,10 @@ interface FormData {
 }
 
 const genderOptions = [
-  { label: 'Seleccionar género', value: '' },
-  { label: 'Masculino', value: 'masculine' },
-  { label: 'Femenino', value: 'feminine' },
-  { label: 'Prefiero no decirlo', value: 'prefer_not_to_say' },
+  { label: 'Seleccionar género', value: '', icon: '👤' },
+  { label: 'Masculino', value: 'masculine', icon: '👨' },
+  { label: 'Femenino', value: 'feminine', icon: '👩' },
+  { label: 'Prefiero no decirlo', value: 'prefer_not_to_say', icon: '🤐' },
 ];
 
 const countryCodes = [
@@ -57,6 +57,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
   const [showIntro, setShowIntro] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
@@ -209,10 +210,40 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      updateField('birth_date', selectedDate);
+    console.log('Date change event:', event?.type, selectedDate);
+    
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
     }
+    
+    if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
+      console.log('Date picker dismissed');
+      setShowDatePicker(false);
+      return;
+    }
+
+    if (selectedDate && event.type === 'set') {
+      console.log('Setting birth date:', selectedDate);
+      updateField('birth_date', selectedDate);
+      // En iOS, el modal se cierra manualmente con los botones Done/Cancel
+      if (Platform.OS === 'android') {
+        setShowDatePicker(false);
+      }
+    }
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return '';
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getGenderLabel = (value: string) => {
+    const option = genderOptions.find(o => o.value === value);
+    return option ? `${option.icon} ${option.label}` : '';
   };
 
   if (!isOpen) return null;
@@ -290,15 +321,15 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     style={styles.dateButton}
                     onPress={() => setShowDatePicker(true)}
                   >
+                    <Ionicons name="calendar" size={20} color="#6366F1" />
                     <Text style={[styles.dateButtonText, { 
                       color: formData.birth_date ? '#000' : 'rgba(0,0,0,0.5)' 
                     }]}>
                       {formData.birth_date 
-                        ? formData.birth_date.toLocaleDateString('es-ES')
+                        ? formatDate(formData.birth_date)
                         : 'Seleccionar fecha'
                       }
                     </Text>
-                    <Ionicons name="calendar" size={20} color="#6366F1" />
                   </TouchableOpacity>
                   {formData.birth_date && (
                     <Text style={styles.ageText}>
@@ -310,21 +341,15 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 {/* Gender */}
                 <View style={styles.fieldContainer}>
                   <Text style={styles.fieldLabel}>Género *</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={formData.gender}
-                      onValueChange={(value) => updateField('gender', value)}
-                      style={styles.picker}
-                    >
-                      {genderOptions.map((option) => (
-                        <Picker.Item
-                          key={option.value}
-                          label={option.label}
-                          value={option.value}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowGenderPicker(true)}
+                  >
+                    <Text style={[styles.pickerButtonText, formData.gender && styles.pickerButtonTextSelected]}>
+                      {formData.gender ? getGenderLabel(formData.gender) : '👤 Seleccionar género'}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color="#6366F1" />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -427,7 +452,54 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           </View>
 
           {/* Date Picker */}
-          {showDatePicker && (
+          {showDatePicker && Platform.OS === 'ios' && (
+            <Modal
+              visible={showDatePicker}
+              animationType="slide"
+              presentationStyle="formSheet"
+              transparent={false}
+            >
+              <View style={styles.iosDatePickerContainer}>
+                <View style={styles.iosDatePickerHeader}>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Date picker cancelled');
+                      setShowDatePicker(false);
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={styles.datePickerCancel}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.datePickerTitle}>Fecha de Nacimiento</Text>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Date picker done');
+                      setShowDatePicker(false);
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={styles.datePickerDone}>Listo</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.datePickerContent}>
+                  <DateTimePicker
+                    value={formData.birth_date || new Date()}
+                    mode="date"
+                    display="inline"
+                    onChange={onDateChange}
+                    maximumDate={new Date()}
+                    minimumDate={new Date(1900, 0, 1)}
+                    locale="es-ES"
+                    style={styles.iosDatePicker}
+                    textColor="#FFFFFF"
+                    accentColor="#6366F1"
+                  />
+                </View>
+              </View>
+            </Modal>
+          )}
+
+          {showDatePicker && Platform.OS === 'android' && (
             <DateTimePicker
               value={formData.birth_date || new Date()}
               mode="date"
@@ -437,6 +509,43 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
               minimumDate={new Date(1900, 0, 1)}
             />
           )}
+
+          {/* Gender Picker Modal */}
+          <Modal
+            visible={showGenderPicker}
+            animationType="slide"
+            presentationStyle="pageSheet"
+          >
+            <View style={styles.pickerModal}>
+              <View style={styles.pickerHeader}>
+                <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
+                  <Text style={styles.pickerCancel}>Cancelar</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerTitle}>Seleccionar Género</Text>
+                <View style={{ width: 60 }} />
+              </View>
+              <ScrollView style={styles.pickerContent}>
+                {genderOptions.slice(1).map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.pickerOption, formData.gender === option.value && styles.pickerOptionSelected]}
+                    onPress={() => {
+                      updateField('gender', option.value);
+                      setShowGenderPicker(false);
+                    }}
+                  >
+                    <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
+                    <Text style={[styles.pickerOptionText, formData.gender === option.value && styles.pickerOptionTextSelected]}>
+                      {option.label}
+                    </Text>
+                    {formData.gender === option.value && (
+                      <Ionicons name="checkmark" size={20} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </Modal>
         </LinearGradient>
       </KeyboardAvoidingView>
     </Modal>
@@ -539,13 +648,24 @@ const styles = {
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
+    minHeight: 56,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   dateButtonText: {
     fontSize: 16,
+    marginLeft: 8,
+    flex: 1,
+    fontWeight: '500' as const,
   },
   ageText: {
     fontSize: 14,
@@ -561,6 +681,34 @@ const styles = {
   },
   picker: {
     height: 50,
+  },
+  pickerButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    minHeight: 56,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: 'rgba(0,0,0,0.5)',
+    fontWeight: '500' as const,
+  },
+  pickerButtonTextSelected: {
+    color: '#000',
   },
   phoneContainer: {
     flexDirection: 'row' as const,
@@ -609,5 +757,106 @@ const styles = {
     fontSize: 16,
     fontWeight: 'bold' as const,
     color: '#6366F1',
+  },
+  // Estilos para iOS DatePicker
+  iosDatePickerContainer: {
+    flex: 1,
+    backgroundColor: '#6366F1', // Mantener consistencia con el tema del modal
+    justifyContent: 'space-between' as const,
+  },
+  iosDatePickerHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 15,
+    backgroundColor: '#6366F1',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#8B5CF6',
+  },
+  datePickerContent: {
+    flex: 1,
+    backgroundColor: '#6366F1',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+  },
+  datePickerCancel: {
+    fontSize: 17,
+    color: '#ffffff',
+  },
+  datePickerTitle: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#ffffff',
+  },
+  datePickerDone: {
+    fontSize: 17,
+    color: '#ffffff',
+    fontWeight: '600' as const,
+  },
+  iosDatePicker: {
+    backgroundColor: '#6366F1',
+    width: '95%' as const,
+    maxWidth: 400,
+    alignSelf: 'center' as const,
+  },
+  // Estilos para Gender Picker Modal
+  pickerModal: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  pickerHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  pickerCancel: {
+    fontSize: 16,
+    color: '#6366F1',
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#1A1A1A',
+  },
+  pickerContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  pickerOption: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  pickerOptionSelected: {
+    borderColor: '#6366F1',
+    backgroundColor: '#F0F4FF',
+  },
+  pickerOptionIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  pickerOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A1A1A',
+  },
+  pickerOptionTextSelected: {
+    color: '#6366F1',
+    fontWeight: '600' as const,
   },
 };
