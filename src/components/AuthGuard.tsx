@@ -2,15 +2,30 @@ import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
 import { router, useSegments, useRootNavigationState } from 'expo-router';
+import { useOnboarding } from '~/hooks/useOnboarding';
+import WelcomeModal from './onboarding/WelcomeModal';
+import PersonalInfoModal from './onboarding/PersonalInfoModal';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
+  
+  const {
+    showWelcome,
+    showPersonalInfo,
+    user: onboardingUser,
+    profile,
+    loading: onboardingLoading,
+    completeWelcome,
+    closePersonalInfo,
+  } = useOnboarding();
+
+  const loading = authLoading || onboardingLoading;
 
   useEffect(() => {
     if (!navigationState?.key || loading) {
@@ -21,6 +36,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     console.log('🛡️ AuthGuard: Checking authentication state');
     console.log('👤 User:', user?.email || 'Not authenticated');
     console.log('📍 Current segments:', segments);
+    console.log('🎯 Onboarding state:', { showWelcome, showPersonalInfo });
 
     const inAuthGroup = segments[0] === 'auth';
     const inTabsGroup = segments[0] === '(tabs)';
@@ -33,14 +49,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
     } else {
       // User is authenticated
-      console.log('✅ User authenticated, ensuring access to main app');
+      console.log('✅ User authenticated, checking onboarding status');
+      
+      // If showing onboarding modals, don't redirect
+      if (showWelcome || showPersonalInfo) {
+        console.log('🎉 Showing onboarding modals, staying in place');
+        return;
+      }
+      
       if (inAuthGroup) {
         // User is on auth screen but already authenticated, redirect to main app
         console.log('🔄 User already authenticated, redirecting to main app');
         router.replace('/(tabs)');
       }
     }
-  }, [user, loading, segments, navigationState?.key]);
+  }, [user, loading, segments, navigationState?.key, showWelcome, showPersonalInfo]);
 
   // Show loading screen while checking authentication
   if (loading || !navigationState?.key) {
@@ -58,11 +81,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
           color: '#666',
           textAlign: 'center'
         }}>
-          Verificando autenticación...
+          {authLoading ? 'Verificando autenticación...' : 'Preparando experiencia...'}
         </Text>
       </View>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      
+      {/* Onboarding Modals */}
+      <WelcomeModal 
+        isOpen={showWelcome} 
+        onClose={completeWelcome} 
+      />
+      
+      <PersonalInfoModal 
+        isOpen={showPersonalInfo} 
+        onClose={closePersonalInfo}
+        user={onboardingUser || user}
+      />
+    </>
+  );
 }
