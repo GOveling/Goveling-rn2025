@@ -314,36 +314,107 @@ export const apiService = {
   },
 
   /**
-   * Obtiene las ciudades de un país específico
+   * Obtiene las ciudades de un país específico desde la API de Goveling
+   * URL correcta: /geo/countries/{countryCode}/cities
+   * Incluye caché en localStorage con timestamp de 24 horas
    */
   async getCitiesByCountry(countryCode: string): Promise<CityResult[]> {
     try {
-      console.log(`🏙️ Fetching cities for country: ${countryCode}`);
+      // Normalizar countryCode a mayúsculas
+      const normalizedCountryCode = countryCode.toUpperCase();
+      console.log(`🏙️ Fetching cities for country: ${normalizedCountryCode}`);
 
-      const response = await fetch(`${API_BASE_URL}/geo/cities/${countryCode}`, {
+      // Verificar caché primero (24 horas de validez)
+      const cacheKey = `cities_${normalizedCountryCode}`;
+      const cachedData = this.getCachedData(cacheKey, 24 * 60 * 60 * 1000); // 24 horas en ms
+      
+      if (cachedData) {
+        console.log(`🎯 Using cached cities for ${normalizedCountryCode}: ${cachedData.length} cities`);
+        return cachedData;
+      }
+
+      // URL corregida según la documentación
+      const response = await fetch(`${API_BASE_URL}/geo/countries/${normalizedCountryCode}/cities`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        // Timeout de 15 segundos para evitar cold starts prolongados
+        signal: AbortSignal.timeout(15000)
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+
+      // Transformar los datos según la documentación
+      const transformedCities = rawData.map((city: any) => ({
+        city: city.city || city.name,
+        latitude: city.latitude || city.lat || 0,
+        longitude: city.longitude || city.lng || city.lon || 0,
+        population: city.population || 0,
+        country_code: normalizedCountryCode
+      }));
 
       // Ordenar ciudades alfabéticamente
-      const sortedCities = data.sort((a: CityResult, b: CityResult) => 
-        a.city.localeCompare(b.city)
+      const sortedCities = transformedCities.sort((a: CityResult, b: CityResult) => 
+        a.city.localeCompare(b.city, 'es', { sensitivity: 'base' })
       );
 
-      console.log(`✅ Successfully loaded ${sortedCities.length} cities for ${countryCode}`);
+      // Guardar en caché
+      this.setCachedData(cacheKey, sortedCities);
+
+      console.log(`✅ Successfully loaded ${sortedCities.length} cities for ${normalizedCountryCode}`);
       return sortedCities;
 
     } catch (error) {
       console.error(`❌ Failed to fetch cities for ${countryCode}:`, error);
       throw error;
+    }
+  },
+
+  /**
+   * Obtiene datos del caché local con validación de timestamp
+   */
+  getCachedData(key: string, maxAgeMs: number): any[] | null {
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      
+      const cached = localStorage.getItem(key);
+      if (!cached) return null;
+
+      const { data, timestamp } = JSON.parse(cached);
+      const now = Date.now();
+      
+      if (now - timestamp > maxAgeMs) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.warn(`Error reading cache for ${key}:`, error);
+      return null;
+    }
+  },
+
+  /**
+   * Guarda datos en caché local con timestamp
+   */
+  setCachedData(key: string, data: any[]): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      
+      const cacheEntry = {
+        data,
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem(key, JSON.stringify(cacheEntry));
+    } catch (error) {
+      console.warn(`Error saving cache for ${key}:`, error);
     }
   }
 };

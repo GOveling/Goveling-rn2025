@@ -9,7 +9,7 @@
     "web": {
       "output": "static",
       "bundler": "metro",
-      "favicon": "./assets/favicon.ico"
+      "favicon": "./assets/icon.png"
     },
     "splash": {
       "image": "./assets/branding-zeppeling.png",

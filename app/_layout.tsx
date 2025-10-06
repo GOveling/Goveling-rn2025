@@ -3,7 +3,7 @@ import i18n from '../src/i18n';
 import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider } from '../src/lib/theme';
 import { AuthProvider } from '../src/contexts/AuthContext';
-import { AuthGuard } from '../src/components/AuthGuard';
+import { AuthGuard } from '../src/components/SimpleAuthGuard';
 import { Stack } from 'expo-router';
 import { Platform } from 'react-native'
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';

@@ -12,6 +12,7 @@ import {
   AntDesign 
 } from '@expo/vector-icons';
 import EmailTester from '../../components/EmailTester';
+import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
 
 const { width } = Dimensions.get('window');
 
@@ -36,6 +37,12 @@ export default function ProfileTab(){
       achievementPoints: 0
     }
   });
+
+  const [showPersonalModal, setShowPersonalModal] = React.useState(false);
+
+  React.useEffect(() => {
+    console.log('🎯 ProfileTab: showPersonalModal state changed to:', showPersonalModal);
+  }, [showPersonalModal]);
 
   React.useEffect(() => {
     loadProfileData();
@@ -347,7 +354,13 @@ export default function ProfileTab(){
           title="Información Personal"
           subtitle="Administra tus datos personales"
           iconColor="#00C853"
-          onPress={() => router.push('/settings')}
+          onPress={() => {
+            console.log('🔥 INFORMACIÓN PERSONAL BUTTON CLICKED');
+            console.log('🔥 Current showPersonalModal state:', showPersonalModal);
+            console.log('🔥 Setting showPersonalModal to true...');
+            setShowPersonalModal(true);
+            console.log('🔥 Modal should now be visible');
+          }}
         />
 
         <MenuSection
@@ -424,6 +437,18 @@ export default function ProfileTab(){
         <Text style={styles.sectionTitle}>Prueba de Email</Text>
         <EmailTester />
       </View>
+
+      {/* Personal Info Modal */}
+      <PersonalInfoEditModal 
+        visible={showPersonalModal} 
+        onClose={() => {
+          console.log('🎯 PersonalInfoEditModal: onClose called, setting showPersonalModal to false');
+          setShowPersonalModal(false);
+        }} 
+        userId={user?.id || ''} 
+        userEmail={user?.email}
+        onSaved={loadProfileData}
+      />
 
       <View style={{ height: 100 }} />
     </ScrollView>

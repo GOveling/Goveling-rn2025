@@ -12,6 +12,7 @@ import {
   AntDesign 
 } from '@expo/vector-icons';
 import EmailTester from '../../components/EmailTester';
+import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
 
 const { width } = Dimensions.get('window');
 
@@ -36,6 +37,12 @@ export default function ProfileScreen(){
       achievementPoints: 0
     }
   });
+
+  const [showPersonalModal, setShowPersonalModal] = React.useState(false);
+
+  React.useEffect(() => {
+    console.log('🎯 ProfileScreen: showPersonalModal state changed to:', showPersonalModal);
+  }, [showPersonalModal]);
 
   React.useEffect(() => {
     loadProfileData();
@@ -341,7 +348,13 @@ export default function ProfileScreen(){
           title="Información Personal"
           subtitle="Administra tus datos personales"
           iconColor="#00C853"
-          onPress={() => router.push('/profile/personal-info')}
+          onPress={() => {
+            console.log('🔥 INFORMACIÓN PERSONAL BUTTON CLICKED');
+            console.log('🔥 Current showPersonalModal state:', showPersonalModal);
+            console.log('🔥 Setting showPersonalModal to true...');
+            setShowPersonalModal(true);
+            console.log('🔥 Modal should now be visible');
+          }}
         />
 
         <MenuSection
@@ -439,6 +452,17 @@ export default function ProfileScreen(){
         <Feather name="log-out" size={20} color="#FF3B30" />
         <Text style={styles.signOutText}>Cerrar Sesión</Text>
       </Pressable>
+
+      <PersonalInfoEditModal 
+        visible={showPersonalModal} 
+        onClose={() => {
+          console.log('🎯 PersonalInfoEditModal: onClose called, setting showPersonalModal to false');
+          setShowPersonalModal(false);
+        }} 
+        userId={user?.id || ''} 
+        userEmail={user?.email}
+        onSaved={loadProfileData}
+      />
 
       <View style={{ height: 100 }} />
     </ScrollView>
