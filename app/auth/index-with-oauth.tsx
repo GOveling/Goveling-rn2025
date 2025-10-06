@@ -47,6 +47,42 @@ export default function AuthScreen(){
     return () => subscription?.remove();
   }, []);
 
+  // Check for OAuth errors in URL params
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      const description = urlParams.get('description');
+      
+      if (error) {
+        let errorMessage = 'Error de autenticación';
+        switch (error) {
+          case 'oauth_failed':
+            errorMessage = 'Error al iniciar sesión con Google';
+            break;
+          case 'session_failed':
+            errorMessage = 'No se pudo crear la sesión';
+            break;
+          case 'callback_failed':
+            errorMessage = 'Error en el callback de autenticación';
+            break;
+          case 'no_session_created':
+            errorMessage = 'No se pudo crear la sesión después del login';
+            break;
+          case 'access_denied':
+            errorMessage = 'Acceso denegado por el usuario';
+            break;
+          default:
+            errorMessage = description || error;
+        }
+        setAuthError(errorMessage);
+        
+        // Clear the error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   const toggleTheme = () => {
     setIsDark(!isDark);
   };
@@ -110,6 +146,100 @@ export default function AuthScreen(){
     }
   };
 
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    
+    // Declarar variables fuera del try para que estén disponibles en catch
+    const oauthConfig = getOAuthConfig();
+    const platformInfo = getPlatformInfo();
+    
+    try {
+      console.log('🔍 OAuth Config:', oauthConfig);
+      console.log('📱 Platform Info:', platformInfo);
+      console.log('🌐 Current environment:', typeof window !== 'undefined' ? 'Web' : 'Native');
+      console.log('🔧 Expo Go Mode:', platformInfo.inExpoGo);
+      console.log('⚙️ Use Web Auth:', platformInfo.shouldUseWebAuth);
+      
+      // Usar la configuración optimizada
+      const redirectTo = oauthConfig.redirectUrl;
+      console.log('📍 Redirect URL (optimizada):', redirectTo);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+            hd: undefined, // Allow any domain
+          },
+          scopes: 'openid email profile',
+          skipBrowserRedirect: false,
+          // Configuración adicional para desarrollo web
+          ...(typeof window !== 'undefined' && {
+            // Agregar parámetros específicos para desarrollo local
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'select_account',
+              hd: undefined,
+              // Forzar flujo de código de autorización
+              response_type: 'code',
+              state: 'development_callback'
+            }
+          })
+        }
+      });
+
+      if (error) {
+        console.error('❌ OAuth setup error:', error);
+        throw error;
+      }
+      
+      console.log('✅ OAuth initiated successfully:', data);
+      
+      // En Expo Go y web, la redirección es automática
+      if (data?.url) {
+        console.log('🚀 OAuth URL generada:', data.url);
+        
+        if (platformInfo.inExpoGo) {
+          console.log('� Abriendo autenticación en navegador web desde Expo Go...');
+          // En Expo Go, el navegador se abrirá automáticamente
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('💥 Google OAuth Error:', error);
+      console.error('📋 Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        platform: platformInfo.platform,
+        inExpoGo: platformInfo.inExpoGo
+      });
+      
+      let userMessage = 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.';
+      
+      // Manejar errores específicos comunes
+      if (error.message?.includes('secure') || error.message?.includes('browser') || error.message?.includes('unsafe')) {
+        userMessage = '⚠️ Error de seguridad del navegador\n\n' +
+                     'Esto es común en desarrollo local. Soluciones:\n\n' +
+                     '• Usar Chrome/Safari actualizado\n' +
+                     '• Verificar que no tengas bloqueadores de cookies\n' +
+                     '• Permitir popups para este sitio\n' +
+                     '• La autenticación funcionará mejor en la app deployada';
+      } else if (error.message?.includes('popup')) {
+        userMessage = '🚫 Popup bloqueado\n\nPermite popups para este sitio e intenta de nuevo.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        userMessage = '🌐 Error de conexión\n\nVerifica tu conexión a internet e intenta de nuevo.';
+      }
+      
+      setAuthError(userMessage);
+      Alert.alert('Error de autenticación', userMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const backgroundColors = isDark 
     ? ['#1A1B3C', '#2D1B69', '#4A154B'] as const
     : ['#6366F1', '#8B5CF6', '#EC4899'] as const;
@@ -143,6 +273,15 @@ export default function AuthScreen(){
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Debug Components - Only in development */}
+          {__DEV__ && (
+            <>
+              <SupabaseConfig />
+              <OAuthDebug />
+              <AuthDebugger />
+            </>
+          )}
+          
           {/* Error Message */}
           {authError && (
             <View style={[styles.errorContainer, { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' }]}>
@@ -287,16 +426,16 @@ export default function AuthScreen(){
                   </TouchableOpacity>
                   
                   <TouchableOpacity>
-                    <Text style={[styles.forgotText, { color: isDark ? '#fff' : '#6366F1' }]}>
-                      Forgot password?
+                    <Text style={[styles.forgotText, { color: isDark ? '#fff' : '#666' }]}>
+                      Forgot Password?
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Main Button */}
-              <TouchableOpacity 
-                style={[styles.mainButton, { opacity: loading ? 0.6 : 1 }]}
+              {/* Main Action Button */}
+              <TouchableOpacity
+                style={styles.mainButton}
                 onPress={mode === 'signup' ? signUp : signIn}
                 disabled={loading}
               >
@@ -350,55 +489,43 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
+    paddingHorizontal: 20,
     paddingVertical: 40,
   },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 16,
-    borderRadius: 12,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    marginLeft: 12,
-  },
   card: {
-    marginHorizontal: 20,
     borderRadius: 24,
-    padding: 32,
+    padding: 24,
+    marginHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 4,
     },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 16,
+    elevation: 8,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
   },
   formContainer: {
-    gap: 20,
+    gap: 16,
   },
   inputContainer: {
     position: 'relative',
   },
   input: {
     height: 56,
-    borderWidth: 1.5,
-    borderRadius: 16,
-    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    backgroundColor: 'transparent',
   },
   eyeIcon: {
     position: 'absolute',
@@ -409,7 +536,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: -8,
+    marginTop: 8,
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -418,8 +545,8 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 20,
     height: 20,
-    borderWidth: 2,
     borderRadius: 4,
+    borderWidth: 2,
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -433,33 +560,93 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 14,
-    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   mainButton: {
-    marginTop: 8,
-    borderRadius: 16,
+    marginTop: 24,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   buttonGradient: {
-    paddingVertical: 18,
+    height: 56,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   mainButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  orContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+    position: 'relative',
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  orTextContainer: {
+    position: 'absolute',
+    left: '50%',
+    transform: [{ translateX: -12 }],
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 12,
+  },
+  orText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    height: 56,
+    borderRadius: 12,
+    gap: 12,
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+  },
+  googleButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '500',
   },
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
+    marginTop: 24,
   },
   switchText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   switchLink: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 8,
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(220,38,38,0.3)',
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
