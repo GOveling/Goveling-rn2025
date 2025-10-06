@@ -31,10 +31,5 @@
   },
   "submit": {
     "production": {}
-  },
-  "update": {
-    "default": {
-      "branch": "main"
-    }
   }
 }
