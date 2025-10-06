@@ -357,7 +357,7 @@ export default function AuthScreen(){
                     </Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={() => router.push('/auth/forgot-password' as any)}>
                     <Text style={[styles.forgotText, { color: isDark ? '#fff' : '#6366F1' }]}>
                       Forgot password?
                     </Text>
