@@ -1,0 +1,1075 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Platform,
+  KeyboardAvoidingView,
+  ActivityIndicator,
+  StatusBar,
+  Dimensions,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { router } from 'expo-router';
+import { supabase } from '../../src/lib/supabase';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useCountries } from '../../src/hooks/useCountries';
+import { useCitiesByCountry } from '../../src/hooks/useCitiesByCountry';
+import { Country, CityResult } from '../../src/types/geo';
+
+const { height: screenHeight } = Dimensions.get('window');
+
+interface ProfileData {
+  full_name: string;
+  birth_date: Date | null;
+  age: number | null;
+  gender: string;
+  country: string;
+  city_state: string;
+  address: string;
+  mobile_phone: string;
+  country_code: string;
+}
+
+const genderOptions = [
+  { label: 'Masculino', value: 'masculine', icon: '👨' },
+  { label: 'Femenino', value: 'feminine', icon: '👩' },
+  { label: 'Prefiero no decirlo', value: 'prefer_not_to_say', icon: '🤐' },
+];
+
+export default function PersonalInfoScreen() {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
+
+  // Hooks para países y ciudades
+  const { countries, loading: countriesLoading, error: countriesError } = useCountries();
+  const { 
+    cities, 
+    loading: citiesLoading, 
+    error: citiesError,
+    loadCitiesForCountry,
+    clearResults 
+  } = useCitiesByCountry();
+
+  const [profileData, setProfileData] = useState<ProfileData>({
+    full_name: '',
+    birth_date: null,
+    age: null,
+    gender: '',
+    country: '',
+    city_state: '',
+    address: '',
+    mobile_phone: '',
+    country_code: '',
+  });
+
+  const [originalData, setOriginalData] = useState<ProfileData>({
+    full_name: '',
+    birth_date: null,
+    age: null,
+    gender: '',
+    country: '',
+    city_state: '',
+    address: '',
+    mobile_phone: '',
+    country_code: '',
+  });
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  useEffect(() => {
+    if (profileData.country && isEditing) {
+      loadCitiesForCountry(profileData.country);
+    }
+  }, [profileData.country, isEditing]);
+
+  const calculateAge = (birthDate: Date): number => {
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      return age - 1;
+    }
+    return age;
+  };
+
+  const loadProfileData = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (profile) {
+        const birthDate = profile.birth_date ? new Date(profile.birth_date) : null;
+        const age = birthDate ? calculateAge(birthDate) : null;
+
+        const data: ProfileData = {
+          full_name: profile.full_name || '',
+          birth_date: birthDate,
+          age: age,
+          gender: profile.gender || '',
+          country: profile.country || '',
+          city_state: profile.city_state || '',
+          address: profile.address || '',
+          mobile_phone: profile.mobile_phone || '',
+          country_code: profile.country_code || '',
+        };
+
+        setProfileData(data);
+        setOriginalData(data);
+      }
+    } catch (error) {
+      console.error('Error loading profile data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProfileData = async () => {
+    if (!user?.id) return;
+
+    if (!profileData.full_name.trim()) {
+      Alert.alert('Error', 'El nombre completo es obligatorio');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updateData = {
+        full_name: profileData.full_name.trim(),
+        birth_date: profileData.birth_date ? profileData.birth_date.toISOString().split('T')[0] : null,
+        age: profileData.birth_date ? calculateAge(profileData.birth_date) : null,
+        gender: profileData.gender || null,
+        country: profileData.country || null,
+        city_state: profileData.city_state || null,
+        address: profileData.address || null,
+        mobile_phone: profileData.mobile_phone || null,
+        country_code: profileData.country_code || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          ...updateData,
+        });
+
+      if (error) throw error;
+
+      // Actualizar la edad calculada en el estado local
+      const updatedData = {
+        ...profileData,
+        age: profileData.birth_date ? calculateAge(profileData.birth_date) : null
+      };
+      setProfileData(updatedData);
+      setOriginalData(updatedData);
+
+      setIsEditing(false);
+      Alert.alert('Éxito', 'Tu información personal ha sido actualizada');
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', error.message || 'Error al guardar la información');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setProfileData(originalData);
+    setIsEditing(false);
+    clearResults();
+  };
+
+  const updateField = (field: keyof ProfileData, value: any) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
+      setShowDatePicker(false);
+      return;
+    }
+
+    if (selectedDate && event.type === 'set') {
+      updateField('birth_date', selectedDate);
+      if (Platform.OS === 'android') {
+        setShowDatePicker(false);
+      }
+    }
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return '';
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getGenderLabel = (value: string) => {
+    const option = genderOptions.find(o => o.value === value);
+    return option ? `${option.icon} ${option.label}` : '';
+  };
+
+  const getCountryLabel = (countryCode: string) => {
+    const country = countries.find(c => c.country_code === countryCode);
+    return country ? `🌍 ${country.country_name}` : '';
+  };
+
+  const getCityLabel = (cityName: string) => {
+    return cityName ? `🏙️ ${cityName}` : '';
+  };
+
+  const normalizePhoneCode = (phoneCode: string): string => {
+    if (!phoneCode) return '';
+    const cleanCode = phoneCode.replace(/^\++/, '');
+    return `+${cleanCode}`;
+  };
+
+  // Actualizar prefijo telefónico cuando cambia el país
+  useEffect(() => {
+    if (profileData.country && isEditing) {
+      const country = countries.find(c => c.country_code === profileData.country);
+      if (country) {
+        const phoneCode = normalizePhoneCode(country.phone_code);
+        updateField('country_code', phoneCode);
+      }
+    }
+  }, [profileData.country, countries, isEditing]);
+
+  if (loading && !isEditing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={styles.loadingText}>Cargando información...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={['#6366F1', '#8B5CF6']}
+        style={styles.header}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Información Personal</Text>
+        
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => {
+            if (isEditing) {
+              saveProfileData();
+            } else {
+              setIsEditing(true);
+            }
+          }}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={styles.editButtonText}>
+              {isEditing ? 'Guardar' : 'Editar'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </LinearGradient>
+
+      <KeyboardAvoidingView 
+        style={styles.content}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.form}>
+
+            {/* Información Básica */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Información Básica</Text>
+
+              {/* Nombre Completo */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Nombre Completo *</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profileData.full_name}
+                    onChangeText={(text) => updateField('full_name', text)}
+                    placeholder="Ingresa tu nombre completo"
+                    placeholderTextColor="rgba(0,0,0,0.5)"
+                  />
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.full_name || 'No especificado'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Fecha de Nacimiento y Edad */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Fecha de Nacimiento</Text>
+                {isEditing ? (
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Ionicons name="calendar" size={20} color="#6366F1" />
+                    <Text style={[styles.dateButtonText, { 
+                      color: profileData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
+                    }]}>
+                      {profileData.birth_date 
+                        ? formatDate(profileData.birth_date)
+                        : 'Seleccionar fecha'
+                      }
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.birth_date ? formatDate(profileData.birth_date) : 'No especificado'}
+                    </Text>
+                  </View>
+                )}
+                
+                {/* Mostrar edad calculada */}
+                {profileData.age !== null && (
+                  <View style={styles.ageContainer}>
+                    <Ionicons name="time" size={16} color="#6366F1" />
+                    <Text style={styles.ageText}>
+                      Edad: {profileData.age} años
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Género */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Género</Text>
+                {isEditing ? (
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowGenderPicker(true)}
+                  >
+                    <Text style={styles.pickerButtonText}>
+                      {profileData.gender ? getGenderLabel(profileData.gender) : '👤 Seleccionar género'}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color="#6366F1" />
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.gender ? getGenderLabel(profileData.gender) : 'No especificado'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Información de Ubicación */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Ubicación</Text>
+
+              {/* País */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>País</Text>
+                {isEditing ? (
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowCountryPicker(true)}
+                    disabled={countriesLoading}
+                  >
+                    <Text style={styles.pickerButtonText}>
+                      {profileData.country ? getCountryLabel(profileData.country) : '🌍 Seleccionar país'}
+                    </Text>
+                    {countriesLoading ? (
+                      <ActivityIndicator size="small" color="#6366F1" />
+                    ) : (
+                      <Ionicons name="chevron-down" size={20} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.country ? getCountryLabel(profileData.country) : 'No especificado'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Ciudad/Estado */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Ciudad/Estado</Text>
+                {isEditing ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.pickerButton,
+                      (!profileData.country || citiesLoading) && styles.pickerButtonDisabled
+                    ]}
+                    onPress={() => setShowCityPicker(true)}
+                    disabled={!profileData.country || citiesLoading}
+                  >
+                    <Text style={[
+                      styles.pickerButtonText,
+                      (!profileData.country || citiesLoading) && styles.pickerButtonTextDisabled
+                    ]}>
+                      {!profileData.country 
+                        ? '🌍 Selecciona un país primero'
+                        : citiesLoading 
+                        ? '⏳ Cargando ciudades...'
+                        : profileData.city_state 
+                        ? getCityLabel(profileData.city_state)
+                        : '🏙️ Seleccionar ciudad o estado'
+                      }
+                    </Text>
+                    {citiesLoading ? (
+                      <ActivityIndicator size="small" color="#6366F1" />
+                    ) : (
+                      <Ionicons 
+                        name="chevron-down" 
+                        size={20} 
+                        color={!profileData.country ? "#ccc" : "#6366F1"} 
+                      />
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.city_state ? getCityLabel(profileData.city_state) : 'No especificado'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Dirección */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Dirección</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={[styles.textInput, styles.textArea]}
+                    value={profileData.address}
+                    onChangeText={(text) => updateField('address', text)}
+                    placeholder="Dirección completa"
+                    placeholderTextColor="rgba(0,0,0,0.5)"
+                    multiline
+                    numberOfLines={3}
+                  />
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.address || 'No especificado'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Información de Contacto */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Contacto</Text>
+
+              {/* Teléfono */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Teléfono Móvil</Text>
+                {isEditing ? (
+                  <View style={styles.phoneContainer}>
+                    <View style={styles.countryCodeContainer}>
+                      <TextInput
+                        style={[styles.textInput, styles.countryCodeInput]}
+                        value={profileData.country_code}
+                        placeholder="+XX"
+                        placeholderTextColor="rgba(0,0,0,0.5)"
+                        editable={false}
+                      />
+                    </View>
+                    <TextInput
+                      style={[styles.textInput, styles.phoneInput]}
+                      value={profileData.mobile_phone}
+                      onChangeText={(text) => {
+                        const cleanText = text.replace(/[^0-9\s]/g, '');
+                        updateField('mobile_phone', cleanText);
+                      }}
+                      placeholder="123 456 7890"
+                      placeholderTextColor="rgba(0,0,0,0.5)"
+                      keyboardType="phone-pad"
+                      editable={!!profileData.country_code}
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.displayField}>
+                    <Text style={styles.displayText}>
+                      {profileData.country_code && profileData.mobile_phone 
+                        ? `${profileData.country_code} ${profileData.mobile_phone}`
+                        : 'No especificado'
+                      }
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Botones de acción cuando está editando */}
+        {isEditing && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={cancelEdit}
+              disabled={loading}
+            >
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.saveButton, { opacity: loading ? 0.6 : 1 }]}
+              onPress={saveProfileData}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+
+      {/* Date Picker para iOS */}
+      {showDatePicker && Platform.OS === 'ios' && (
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <Text style={styles.pickerCancel}>Cancelar</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerTitle}>Fecha de Nacimiento</Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <Text style={styles.pickerDone}>Listo</Text>
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={profileData.birth_date || new Date()}
+              mode="date"
+              display="spinner"
+              onChange={onDateChange}
+              maximumDate={new Date()}
+              minimumDate={new Date(1900, 0, 1)}
+              style={styles.datePicker}
+            />
+          </View>
+        </View>
+      )}
+
+      {/* Date Picker para Android */}
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={profileData.birth_date || new Date()}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+          maximumDate={new Date()}
+          minimumDate={new Date(1900, 0, 1)}
+        />
+      )}
+
+      {/* Gender Picker */}
+      {showGenderPicker && (
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
+                <Text style={styles.pickerCancel}>Cancelar</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerTitle}>Seleccionar Género</Text>
+              <View style={{ width: 60 }} />
+            </View>
+            <ScrollView style={styles.pickerContent}>
+              {genderOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.pickerOption, profileData.gender === option.value && styles.pickerOptionSelected]}
+                  onPress={() => {
+                    updateField('gender', option.value);
+                    setShowGenderPicker(false);
+                  }}
+                >
+                  <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
+                  <Text style={[styles.pickerOptionText, profileData.gender === option.value && styles.pickerOptionTextSelected]}>
+                    {option.label}
+                  </Text>
+                  {profileData.gender === option.value && (
+                    <Ionicons name="checkmark" size={20} color="#6366F1" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
+
+      {/* Country Picker */}
+      {showCountryPicker && (
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                <Text style={styles.pickerCancel}>Cancelar</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerTitle}>Seleccionar País</Text>
+              <View style={{ width: 60 }} />
+            </View>
+            <ScrollView style={styles.pickerContent}>
+              {countries.map((country) => (
+                <TouchableOpacity
+                  key={country.country_code}
+                  style={[styles.pickerOption, profileData.country === country.country_code && styles.pickerOptionSelected]}
+                  onPress={() => {
+                    updateField('country', country.country_code);
+                    updateField('city_state', ''); // Limpiar ciudad cuando cambia país
+                    setShowCountryPicker(false);
+                  }}
+                >
+                  <Text style={styles.pickerOptionIcon}>🌍</Text>
+                  <View style={styles.countryOptionContent}>
+                    <Text style={[styles.pickerOptionText, profileData.country === country.country_code && styles.pickerOptionTextSelected]}>
+                      {country.country_name}
+                    </Text>
+                    <Text style={styles.phoneCodeText}>{country.phone_code}</Text>
+                  </View>
+                  {profileData.country === country.country_code && (
+                    <Ionicons name="checkmark" size={20} color="#6366F1" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
+
+      {/* City Picker */}
+      {showCityPicker && (
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+                <Text style={styles.pickerCancel}>Cancelar</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerTitle}>Seleccionar Ciudad</Text>
+              <View style={{ width: 60 }} />
+            </View>
+            <ScrollView style={styles.pickerContent}>
+              {cities.length === 0 && !citiesLoading ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>
+                    No se encontraron ciudades para este país
+                  </Text>
+                </View>
+              ) : (
+                cities.map((city) => (
+                  <TouchableOpacity
+                    key={`${city.city}-${city.latitude}-${city.longitude}`}
+                    style={[styles.pickerOption, profileData.city_state === city.city && styles.pickerOptionSelected]}
+                    onPress={() => {
+                      updateField('city_state', city.city);
+                      setShowCityPicker(false);
+                    }}
+                  >
+                    <Text style={styles.pickerOptionIcon}>🏙️</Text>
+                    <View style={styles.cityOptionContent}>
+                      <Text style={[styles.pickerOptionText, profileData.city_state === city.city && styles.pickerOptionTextSelected]}>
+                        {city.city}
+                      </Text>
+                      <Text style={styles.populationText}>
+                        {city.population.toLocaleString()} habitantes
+                      </Text>
+                    </View>
+                    {profileData.city_state === city.city && (
+                      <Ionicons name="checkmark" size={20} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = {
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    backgroundColor: '#F8F9FA',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  header: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold' as const,
+    color: 'white',
+    flex: 1,
+    textAlign: 'center' as const,
+  },
+  editButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 70,
+    alignItems: 'center' as const,
+  },
+  editButtonText: {
+    color: 'white',
+    fontWeight: '600' as const,
+    fontSize: 14,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  form: {
+    padding: 20,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold' as const,
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  fieldContainer: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#374151',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top' as const,
+  },
+  displayField: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  displayText: {
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  dateButton: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    marginLeft: 8,
+    flex: 1,
+  },
+  ageContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginTop: 8,
+    backgroundColor: '#F0F4FF',
+    padding: 8,
+    borderRadius: 8,
+  },
+  ageText: {
+    fontSize: 14,
+    color: '#6366F1',
+    marginLeft: 6,
+    fontWeight: '500' as const,
+  },
+  pickerButton: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  pickerButtonDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#1f2937',
+    flex: 1,
+  },
+  pickerButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  phoneContainer: {
+    flexDirection: 'row' as const,
+    gap: 12,
+  },
+  countryCodeContainer: {
+    flex: 1,
+  },
+  countryCodeInput: {
+    textAlign: 'center' as const,
+    fontWeight: '600' as const,
+    backgroundColor: '#F9FAFB',
+  },
+  phoneInput: {
+    flex: 2,
+  },
+  actionButtons: {
+    flexDirection: 'row' as const,
+    padding: 20,
+    gap: 12,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#6b7280',
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#6366F1',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    color: 'white',
+  },
+  // Estilos para los pickers modales
+  pickerOverlay: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end' as const,
+  },
+  pickerContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: screenHeight * 0.7,
+  },
+  pickerHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#1A1A1A',
+  },
+  pickerCancel: {
+    fontSize: 16,
+    color: '#6366F1',
+  },
+  pickerDone: {
+    fontSize: 16,
+    color: '#6366F1',
+    fontWeight: '600' as const,
+  },
+  pickerContent: {
+    paddingHorizontal: 20,
+  },
+  pickerOption: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  pickerOptionSelected: {
+    borderColor: '#6366F1',
+    backgroundColor: '#F0F4FF',
+  },
+  pickerOptionIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  pickerOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A1A1A',
+  },
+  pickerOptionTextSelected: {
+    color: '#6366F1',
+    fontWeight: '600' as const,
+  },
+  countryOptionContent: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  },
+  phoneCodeText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500' as const,
+  },
+  cityOptionContent: {
+    flex: 1,
+  },
+  populationText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  emptyState: {
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center' as const,
+  },
+  datePicker: {
+    backgroundColor: 'white',
+  },
+};

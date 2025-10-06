@@ -341,7 +341,7 @@ export default function ProfileScreen(){
           title="Información Personal"
           subtitle="Administra tus datos personales"
           iconColor="#00C853"
-          onPress={() => router.push('/settings')}
+          onPress={() => router.push('/profile/personal-info')}
         />
 
         <MenuSection
