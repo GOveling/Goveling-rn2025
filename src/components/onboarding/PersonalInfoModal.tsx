@@ -318,12 +318,13 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 <View style={styles.fieldContainer}>
                   <Text style={styles.fieldLabel}>Fecha de Nacimiento *</Text>
                   <TouchableOpacity
-                    style={styles.dateButton}
+                    style={[styles.dateButton, formData.birth_date && styles.dateButtonSelected]}
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Ionicons name="calendar" size={20} color="#6366F1" />
                     <Text style={[styles.dateButtonText, { 
-                      color: formData.birth_date ? '#000' : 'rgba(0,0,0,0.5)' 
+                      color: formData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
+                      fontWeight: formData.birth_date ? '600' : '400'
                     }]}>
                       {formData.birth_date 
                         ? formatDate(formData.birth_date)
@@ -342,7 +343,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 <View style={styles.fieldContainer}>
                   <Text style={styles.fieldLabel}>Género *</Text>
                   <TouchableOpacity
-                    style={styles.pickerButton}
+                    style={[styles.pickerButton, formData.gender && styles.pickerButtonSelected]}
                     onPress={() => setShowGenderPicker(true)}
                   >
                     <Text style={[styles.pickerButtonText, formData.gender && styles.pickerButtonTextSelected]}>
@@ -491,8 +492,9 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     minimumDate={new Date(1900, 0, 1)}
                     locale="es-ES"
                     style={styles.iosDatePicker}
-                    textColor="#FFFFFF"
+                    textColor="#000000"
                     accentColor="#6366F1"
+                    themeVariant="light"
                   />
                 </View>
               </View>
@@ -661,6 +663,11 @@ const styles = {
     shadowRadius: 3,
     elevation: 2,
   },
+  dateButtonSelected: {
+    borderColor: '#6366F1',
+    backgroundColor: '#F8FAFF',
+    borderWidth: 2,
+  },
   dateButtonText: {
     fontSize: 16,
     marginLeft: 8,
@@ -702,13 +709,19 @@ const styles = {
     shadowRadius: 3,
     elevation: 2,
   },
+  pickerButtonSelected: {
+    borderColor: '#6366F1',
+    backgroundColor: '#F8FAFF',
+    borderWidth: 2,
+  },
   pickerButtonText: {
     fontSize: 16,
     color: 'rgba(0,0,0,0.5)',
     fontWeight: '500' as const,
   },
   pickerButtonTextSelected: {
-    color: '#000',
+    color: '#1F2937',
+    fontWeight: '600' as const,
   },
   phoneContainer: {
     flexDirection: 'row' as const,
@@ -761,7 +774,7 @@ const styles = {
   // Estilos para iOS DatePicker
   iosDatePickerContainer: {
     flex: 1,
-    backgroundColor: '#6366F1', // Mantener consistencia con el tema del modal
+    backgroundColor: '#FFFFFF', // Fondo blanco para mejor contraste
     justifyContent: 'space-between' as const,
   },
   iosDatePickerHeader: {
@@ -771,21 +784,30 @@ const styles = {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 30,
     paddingBottom: 15,
-    backgroundColor: '#6366F1',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#8B5CF6',
+    backgroundColor: '#6366F1', // Header mantiene el color del tema
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   datePickerContent: {
     flex: 1,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#FFFFFF', // Fondo blanco
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    paddingVertical: 10,
-    paddingHorizontal: 0,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   datePickerCancel: {
     fontSize: 17,
     color: '#ffffff',
+    fontWeight: '500' as const,
   },
   datePickerTitle: {
     fontSize: 17,
@@ -798,10 +820,19 @@ const styles = {
     fontWeight: '600' as const,
   },
   iosDatePicker: {
-    backgroundColor: '#6366F1',
-    width: '95%' as const,
-    maxWidth: 400,
+    backgroundColor: '#FFFFFF', // Fondo blanco para el calendario
+    width: '100%' as const,
+    maxWidth: 380,
     alignSelf: 'center' as const,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   // Estilos para Gender Picker Modal
   pickerModal: {
