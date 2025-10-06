@@ -138,12 +138,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
       setIsInitialized(false);
       clearResults(); // Limpia ciudades cargadas
     }
-  }, [isOpen, clearResults]);  useEffect(() => {
-    if (isOpen && user?.id) {
-      checkIntroStatus();
-      loadExistingData();
-    }
-  }, [isOpen, user?.id]);
+  }, [isOpen, clearResults]);
 
   const checkIntroStatus = async () => {
     try {
