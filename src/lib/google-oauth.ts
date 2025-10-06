@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { getSafeRedirectUrl } from './oauth-urls';
 
 // Client IDs por plataforma
 const GOOGLE_CLIENT_IDS = {
@@ -78,22 +79,15 @@ export const getPlatformInfo = () => {
 export const getOAuthConfig = () => {
   const platformInfo = getPlatformInfo();
   
-  // Para Expo Go, usar siempre configuración web
-  if (platformInfo.inExpoGo) {
-    return {
-      clientId: platformInfo.clientId,
-      redirectUrl: 'https://iwsuyrlrbmnbfyfkqowl.supabase.co/auth/v1/callback', // Usar URL de Supabase
-      platform: 'expo-go',
-      useWebAuth: true
-    };
-  }
+  // Usar siempre la URL más segura (Supabase) para desarrollo
+  const redirectUrl = getSafeRedirectUrl('development');
   
   return {
     clientId: platformInfo.clientId,
-    redirectUrl: platformInfo.isWeb 
-      ? `${window.location?.origin || 'http://localhost:8081'}/auth/callback`
-      : 'com.goveling.app://auth/callback', // Deep link para móvil nativo
+    redirectUrl,
     platform: platformInfo.platform,
-    useWebAuth: platformInfo.shouldUseWebAuth
+    useWebAuth: true, // Siempre usar web auth en desarrollo
+    inExpoGo: platformInfo.inExpoGo,
+    isSecure: true // Indicar que usamos URL segura
   };
 };

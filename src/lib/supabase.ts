@@ -9,5 +9,11 @@ if (!url || !anon) {
 }
 
 export const supabase = createClient(url, anon, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  auth: { 
+    persistSession: true, 
+    autoRefreshToken: true, 
+    detectSessionInUrl: false,
+    flowType: 'pkce', // Usar PKCE flow para mejor seguridad
+    debug: __DEV__ // Solo logs en desarrollo
+  }
 });

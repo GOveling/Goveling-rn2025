@@ -19,11 +19,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
 import { router } from 'expo-router';
 import { getRedirectUrl } from '~/lib/oauth-config';
-import { getOAuthConfig, getPlatformInfo } from '~/lib/google-oauth';
+import { getOAuthConfig, getPlatformInfo, getGoogleClientId } from '~/lib/google-oauth';
 import OAuthDebug from '../../components/OAuthDebug';
 import SupabaseConfig from '../../components/SupabaseConfig';
 import AuthDebugger from '../../components/AuthDebugger';
 import ExpoGoOAuthInfo from '../../src/components/ExpoGoOAuthInfo';
+import OAuthHelp from '../../src/components/OAuthHelp';
 
 const { width, height } = Dimensions.get('window');
 
@@ -154,31 +155,21 @@ export default function AuthScreen(){
 
   const signInWithGoogle = async () => {
     setLoading(true);
+    
+    // Declarar variables fuera del try para que estén disponibles en catch
+    const oauthConfig = getOAuthConfig();
+    const platformInfo = getPlatformInfo();
+    
     try {
-      const oauthConfig = getOAuthConfig();
-      const platformInfo = getPlatformInfo();
-      
       console.log('🔍 OAuth Config:', oauthConfig);
       console.log('📱 Platform Info:', platformInfo);
       console.log('🌐 Current environment:', typeof window !== 'undefined' ? 'Web' : 'Native');
       console.log('🔧 Expo Go Mode:', platformInfo.inExpoGo);
       console.log('⚙️ Use Web Auth:', platformInfo.shouldUseWebAuth);
       
-      let redirectTo: string;
-      
-      if (platformInfo.inExpoGo) {
-        // Para Expo Go, usar URL de callback de Supabase
-        redirectTo = 'https://iwsuyrlrbmnbfyfkqowl.supabase.co/auth/v1/callback';
-        console.log('🔧 Expo Go detectado - Usando callback de Supabase');
-      } else if (typeof window !== 'undefined') {
-        // Para web
-        redirectTo = `http://localhost:8081/auth/callback`;
-      } else {
-        // Para app nativa (standalone)
-        redirectTo = 'com.goveling.app://auth/callback';
-      }
-        
-      console.log('📍 Redirect URL:', redirectTo);
+      // Usar la configuración optimizada
+      const redirectTo = oauthConfig.redirectUrl;
+      console.log('📍 Redirect URL (optimizada):', redirectTo);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -190,7 +181,19 @@ export default function AuthScreen(){
             hd: undefined, // Allow any domain
           },
           scopes: 'openid email profile',
-          skipBrowserRedirect: platformInfo.inExpoGo ? false : false // En Expo Go, permitir redirección del navegador
+          skipBrowserRedirect: false,
+          // Configuración adicional para desarrollo
+          ...(typeof window !== 'undefined' && {
+            // En web/Expo Go, forzar el uso del client web
+            queryParams: {
+              ...{
+                access_type: 'offline',
+                prompt: 'select_account',
+                hd: undefined,
+              },
+              client_id: getGoogleClientId(), // Usar función para obtener client ID correcto
+            }
+          })
         }
       });
 
@@ -213,10 +216,32 @@ export default function AuthScreen(){
       
     } catch (error: any) {
       console.error('💥 Google OAuth Error:', error);
-      Alert.alert(
-        'Error de autenticación', 
-        error.message || 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
-      );
+      console.error('📋 Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        platform: platformInfo.platform,
+        inExpoGo: platformInfo.inExpoGo
+      });
+      
+      let userMessage = 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.';
+      
+      // Manejar errores específicos comunes
+      if (error.message?.includes('secure') || error.message?.includes('browser') || error.message?.includes('unsafe')) {
+        userMessage = '⚠️ Error de seguridad del navegador\n\n' +
+                     'Esto es común en desarrollo local. Soluciones:\n\n' +
+                     '• Usar Chrome/Safari actualizado\n' +
+                     '• Verificar que no tengas bloqueadores de cookies\n' +
+                     '• Permitir popups para este sitio\n' +
+                     '• La autenticación funcionará mejor en la app deployada';
+      } else if (error.message?.includes('popup')) {
+        userMessage = '🚫 Popup bloqueado\n\nPermite popups para este sitio e intenta de nuevo.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        userMessage = '🌐 Error de conexión\n\nVerifica tu conexión a internet e intenta de nuevo.';
+      }
+      
+      setAuthError(userMessage);
+      Alert.alert('Error de autenticación', userMessage);
     } finally {
       setLoading(false);
     }
@@ -443,6 +468,9 @@ export default function AuthScreen(){
 
               {/* Expo Go OAuth Info */}
               <ExpoGoOAuthInfo isDark={isDark} />
+
+              {/* OAuth Help */}
+              <OAuthHelp isDark={isDark} visible={!!authError} />
 
               {/* Google Button */}
               <TouchableOpacity style={styles.googleButton} onPress={signInWithGoogle}>
