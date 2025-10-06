@@ -23,6 +23,7 @@ import { getOAuthConfig, getPlatformInfo } from '~/lib/google-oauth';
 import OAuthDebug from '../../components/OAuthDebug';
 import SupabaseConfig from '../../components/SupabaseConfig';
 import AuthDebugger from '../../components/AuthDebugger';
+import ExpoGoOAuthInfo from '../../src/components/ExpoGoOAuthInfo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -158,13 +159,24 @@ export default function AuthScreen(){
       const platformInfo = getPlatformInfo();
       
       console.log('🔍 OAuth Config:', oauthConfig);
-      console.log('� Platform Info:', platformInfo);
-      console.log('🌐 Current window location:', typeof window !== 'undefined' ? window.location.href : 'Native app');
+      console.log('📱 Platform Info:', platformInfo);
+      console.log('🌐 Current environment:', typeof window !== 'undefined' ? 'Web' : 'Native');
+      console.log('🔧 Expo Go Mode:', platformInfo.inExpoGo);
+      console.log('⚙️ Use Web Auth:', platformInfo.shouldUseWebAuth);
       
-      // Configuración específica para web con puerto explícito
-      const redirectTo = typeof window !== 'undefined' 
-        ? `http://localhost:8081/auth/callback`
-        : 'com.goveling.app://auth/callback';
+      let redirectTo: string;
+      
+      if (platformInfo.inExpoGo) {
+        // Para Expo Go, usar URL de callback de Supabase
+        redirectTo = 'https://iwsuyrlrbmnbfyfkqowl.supabase.co/auth/v1/callback';
+        console.log('🔧 Expo Go detectado - Usando callback de Supabase');
+      } else if (typeof window !== 'undefined') {
+        // Para web
+        redirectTo = `http://localhost:8081/auth/callback`;
+      } else {
+        // Para app nativa (standalone)
+        redirectTo = 'com.goveling.app://auth/callback';
+      }
         
       console.log('📍 Redirect URL:', redirectTo);
       
@@ -178,8 +190,7 @@ export default function AuthScreen(){
             hd: undefined, // Allow any domain
           },
           scopes: 'openid email profile',
-          // Force the correct site URL
-          skipBrowserRedirect: false
+          skipBrowserRedirect: platformInfo.inExpoGo ? false : false // En Expo Go, permitir redirección del navegador
         }
       });
 
@@ -189,12 +200,15 @@ export default function AuthScreen(){
       }
       
       console.log('✅ OAuth initiated successfully:', data);
-      console.log('🔗 OAuth URL generated, redirecting...');
       
-      // En web, la redirección es automática
-      // En móvil, necesitamos manejar la respuesta
+      // En Expo Go y web, la redirección es automática
       if (data?.url) {
-        console.log('🚀 Redirecting to OAuth URL:', data.url);
+        console.log('🚀 OAuth URL generada:', data.url);
+        
+        if (platformInfo.inExpoGo) {
+          console.log('� Abriendo autenticación en navegador web desde Expo Go...');
+          // En Expo Go, el navegador se abrirá automáticamente
+        }
       }
       
     } catch (error: any) {
@@ -426,6 +440,9 @@ export default function AuthScreen(){
                   <Text style={[styles.orText, { color: isDark ? '#fff' : '#666' }]}>or</Text>
                 </View>
               </View>
+
+              {/* Expo Go OAuth Info */}
+              <ExpoGoOAuthInfo isDark={isDark} />
 
               {/* Google Button */}
               <TouchableOpacity style={styles.googleButton} onPress={signInWithGoogle}>
