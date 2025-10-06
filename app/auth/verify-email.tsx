@@ -126,7 +126,12 @@ export default function VerifyEmailScreen() {
 
       // Verify the code and create user
       const { data, error } = await supabase.functions.invoke('verify-email-code', {
-        body: { email, code: fullCode }
+        body: { 
+          email, 
+          code: fullCode,
+          password,
+          fullName 
+        }
       });
 
       if (error) throw error;

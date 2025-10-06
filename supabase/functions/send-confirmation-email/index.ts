@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+  const supabaseServiceRole = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   
   try {
     const { email, fullName } = await req.json();
@@ -10,6 +11,32 @@ serve(async (req) => {
     if (!email) {
       throw new Error('Email is required');
     }
+
+    console.log('🔍 Checking if user already exists:', email);
+
+    // Check if user already exists
+    const { data: users, error: listError } = await supabaseServiceRole.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error('❌ Error checking users:', listError);
+    } else {
+      const existingUser = users.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      
+      if (existingUser) {
+        console.log('👤 User already exists:', email);
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          error: 'user_already_exists',
+          message: 'Este email ya está registrado en Goveling. Por favor inicia sesión.',
+          userExists: true
+        }), { 
+          status: 409, // Conflict
+          headers: { "Content-Type": "application/json" } 
+        });
+      }
+    }
+
+    console.log('✅ Email available, proceeding with registration');
 
     // Generate OTP code
     const code = (Math.floor(Math.random() * 900000) + 100000).toString();

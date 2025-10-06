@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '~/lib/supabase';
 import { router } from 'expo-router';
 
@@ -65,79 +64,24 @@ export default function AuthScreen(){
 
     setLoading(true);
     try {
-      // Send confirmation email with Resend
-      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
-        body: { 
-          email,
-          fullName 
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          }
         }
       });
 
-      if (emailError) throw emailError;
+      if (error) throw error;
       
-      if (emailData?.ok) {
-        // Store signup data temporarily in AsyncStorage for verification step
-        await AsyncStorage.setItem('pendingSignup', JSON.stringify({
-          email,
-          password,
-          fullName,
-          timestamp: Date.now()
-        }));
-
-        Alert.alert(
-          '¡Casi listo!', 
-          `Hemos enviado un código de verificación a ${email}. Revisa tu correo e ingresa el código para completar tu registro.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => router.push('/auth/verify-email' as any)
-            }
-          ]
-        );
-      } else if (emailData?.userExists) {
-        // Handle user already exists case
-        Alert.alert(
-          'Usuario Existente',
-          emailData.message || 'Este email ya está registrado en Goveling.',
-          [
-            {
-              text: 'Iniciar Sesión',
-              onPress: () => {
-                setIsSignUp(false); // Switch to sign in mode
-                // Pre-fill the email
-                setEmail(email);
-              }
-            },
-            {
-              text: 'Cancelar',
-              style: 'cancel'
-            }
-          ]
-        );
+      if (data.user) {
+        Alert.alert('Éxito', 'Cuenta creada exitosamente');
+        // The AuthProvider will handle navigation
       }
     } catch (error: any) {
-      // Handle specific error types
-      if (error.message?.includes('user_already_exists') || error.status === 409) {
-        Alert.alert(
-          'Usuario Existente',
-          'Este email ya está registrado en Goveling. Por favor inicia sesión.',
-          [
-            {
-              text: 'Iniciar Sesión',
-              onPress: () => {
-                setIsSignUp(false); // Switch to sign in mode
-                setEmail(email); // Pre-fill the email
-              }
-            },
-            {
-              text: 'Cancelar',
-              style: 'cancel'
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Error', error.message || 'Error al enviar el correo de confirmación');
-      }
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
