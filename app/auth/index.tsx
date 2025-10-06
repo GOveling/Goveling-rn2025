@@ -241,10 +241,14 @@ export default function AuthScreen(){
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Debug Components - Remove in production */}
-          <SupabaseConfig />
-          <OAuthDebug />
-          <AuthDebugger />
+          {/* Debug Components - Only in development */}
+          {__DEV__ && (
+            <>
+              <SupabaseConfig />
+              <OAuthDebug />
+              <AuthDebugger />
+            </>
+          )}
           
           {/* Error Message */}
           {authError && (

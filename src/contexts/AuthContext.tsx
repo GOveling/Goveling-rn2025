@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
-import { router } from 'expo-router';
 
 interface AuthContextType {
   user: User | null;
@@ -33,31 +32,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔍 Initial session check:', session);
+      console.log('🔍 Initial session check:', session?.user?.email || 'No session');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Don't auto-redirect during initial load to avoid conflicts with OAuth flow
-      // Let individual screens handle their own routing logic
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state change:', event, session?.user?.email);
+      console.log('🔄 Auth state change:', event, session?.user?.email || 'No user');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
-      // Only handle specific events to avoid interfering with OAuth flow
+      // Log events but don't handle navigation here - AuthGuard will handle it
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in, redirecting to main app');
-        router.replace('/(tabs)');
+        console.log('✅ User signed in successfully');
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out, redirecting to auth');
-        router.replace('/auth');
+        console.log('👋 User signed out successfully');
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('🔄 Token refreshed');
       }

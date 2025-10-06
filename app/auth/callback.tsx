@@ -73,10 +73,8 @@ export default function AuthCallback() {
               user: sessionData.session.user.email,
               provider: sessionData.session.user.app_metadata.provider
             });
-            // Small delay to ensure the auth context picks up the session
-            setTimeout(() => {
-              router.replace('/(tabs)');
-            }, 100);
+            // AuthGuard will handle the redirect automatically
+            router.replace('/(tabs)');
           } else {
             console.log('⚠️ No session found, trying refresh...');
             // Try refreshing the session or waiting for auth state change
