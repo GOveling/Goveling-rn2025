@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions, Pressable, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions, Pressable, Platform, Image, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { supabase } from '~/lib/supabase';
@@ -13,6 +13,7 @@ import {
 } from '@expo/vector-icons';
 import EmailTester from '../../components/EmailTester';
 import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
+import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
 
 const { width } = Dimensions.get('window');
 
@@ -28,6 +29,7 @@ export default function ProfileScreen(){
   const [profileData, setProfileData] = React.useState({
     fullName: 'Sebastian Araos',
     description: 'Travel Enthusiast',
+    avatarUrl: '',
     initials: 'SA',
     level: 'Backpack Explorer',
     stats: {
@@ -39,10 +41,18 @@ export default function ProfileScreen(){
   });
 
   const [showPersonalModal, setShowPersonalModal] = React.useState(false);
+  const [showProfileEditModal, setShowProfileEditModal] = React.useState(false);
 
   React.useEffect(() => {
     console.log('🎯 ProfileScreen: showPersonalModal state changed to:', showPersonalModal);
   }, [showPersonalModal]);
+
+  React.useEffect(() => {
+    console.log('🎯 ProfileScreen: showProfileEditModal state changed to:', showProfileEditModal);
+    if (showProfileEditModal) {
+      console.log('✅ ProfileEditModal should be visible now!');
+    }
+  }, [showProfileEditModal]);
 
   React.useEffect(() => {
     loadProfileData();
@@ -64,6 +74,8 @@ export default function ProfileScreen(){
         setProfileData(prev => ({
           ...prev,
           fullName: profile.full_name || 'Sebastian Araos',
+          description: profile.description || 'Travel Enthusiast',
+          avatarUrl: profile.avatar_url || '',
           initials: (profile.full_name || 'SA').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
         }));
       }
@@ -277,20 +289,33 @@ export default function ProfileScreen(){
       {/* Header con Avatar y Info Personal */}
       <View style={styles.headerSection}>
         <View style={styles.avatarContainer}>
-          <LinearGradient
-            colors={['#4F8EF7', '#FF8C42']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.avatarGradient}
-          >
-            <Text style={styles.avatarText}>{profileData.initials}</Text>
-          </LinearGradient>
+          {profileData.avatarUrl ? (
+            <Image 
+              source={{ uri: profileData.avatarUrl }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <LinearGradient
+              colors={['#4F8EF7', '#FF8C42']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarGradient}
+            >
+              <Text style={styles.avatarText}>{profileData.initials}</Text>
+            </LinearGradient>
+          )}
           
           <TouchableOpacity 
             style={styles.editButton}
-            onPress={() => router.push('/settings')}
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              console.log('🎯 Avatar edit button pressed - opening ProfileEditModal');
+              console.log('🔍 Current showProfileEditModal state:', showProfileEditModal);
+              setShowProfileEditModal(true);
+              console.log('✅ setShowProfileEditModal(true) called');
+            }}
           >
-            <Ionicons name="create" size={16} color="#4F8EF7" />
+            <Ionicons name="create" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
         
@@ -350,10 +375,11 @@ export default function ProfileScreen(){
           iconColor="#00C853"
           onPress={() => {
             console.log('🔥 INFORMACIÓN PERSONAL BUTTON CLICKED');
-            console.log('🔥 Current showPersonalModal state:', showPersonalModal);
-            console.log('🔥 Setting showPersonalModal to true...');
-            setShowPersonalModal(true);
-            console.log('🔥 Modal should now be visible');
+            Alert.alert(
+              'Información Personal',
+              'Este botón abre el modal de información personal (datos como país, ciudad, etc.). Para cambiar la foto de perfil, usa el pequeño botón de lápiz al lado del avatar.',
+              [{ text: 'OK', onPress: () => setShowPersonalModal(true) }]
+            );
           }}
         />
 
@@ -379,7 +405,10 @@ export default function ProfileScreen(){
           title="Notificaciones"
           subtitle="Gestionar alertas y actualizaciones"
           iconColor="#00C853"
-          onPress={() => router.push('/settings')}
+          onPress={() => {
+            console.log('⚠️ Notificaciones pressed - TEMPORALMENTE DESHABILITADO');
+            // router.push('/settings')
+          }}
         />
 
         <MenuSection
@@ -405,8 +434,34 @@ export default function ProfileScreen(){
           title="Configuración"
           subtitle="Preferencias de la app"
           iconColor="#666"
-          onPress={() => router.push('/settings')}
+          onPress={() => {
+            console.log('⚠️ Configuración pressed - TEMPORALMENTE DESHABILITADO');
+            // router.push('/settings')
+          }}
         />
+      </View>
+
+      {/* Botón de Prueba Temporal */}
+      <View style={{ padding: 20, backgroundColor: '#fff', margin: 20, borderRadius: 10 }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#FF0000',
+            padding: 15,
+            borderRadius: 10,
+            alignItems: 'center'
+          }}
+          onPress={() => {
+            console.log('🔴 BOTÓN DE PRUEBA PRESIONADO - Abriendo ProfileEditModal');
+            setShowProfileEditModal(true);
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+            PRUEBA - ABRIR MODAL DE PERFIL
+          </Text>
+        </TouchableOpacity>
+        <Text style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: '#666' }}>
+          Estado actual: {showProfileEditModal ? 'ABIERTO' : 'CERRADO'}
+        </Text>
       </View>
 
       {/* Prueba de Email */}
@@ -464,6 +519,19 @@ export default function ProfileScreen(){
         onSaved={loadProfileData}
       />
 
+      <ProfileEditModal 
+        visible={showProfileEditModal}
+        onClose={() => {
+          console.log('🔄 Closing ProfileEditModal');
+          setShowProfileEditModal(false);
+        }}
+        onSaved={() => {
+          console.log('💾 Profile saved in ProfileEditModal');
+          loadProfileData();
+          setShowProfileEditModal(false);
+        }}
+      />
+
       <View style={{ height: 100 }} />
     </ScrollView>
   );
@@ -497,6 +565,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   avatarText: {
     fontSize: 36,
     fontWeight: '700',
@@ -506,10 +584,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     bottom: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#fff',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4F8EF7',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -517,6 +595,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+    zIndex: 10, // Asegurar que esté encima
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   userName: {
     fontSize: 28,
