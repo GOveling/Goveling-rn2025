@@ -11,7 +11,6 @@ import {
   Feather, 
   AntDesign 
 } from '@expo/vector-icons';
-import EmailTester from '../../components/EmailTester';
 import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
 
@@ -457,12 +456,6 @@ export default function ProfileTab(){
         <Text style={styles.signOutText}>Cerrar Sesión</Text>
       </Pressable>
 
-      {/* EmailTester Component */}
-      <View style={styles.emailTesterSection}>
-        <Text style={styles.sectionTitle}>Prueba de Email</Text>
-        <EmailTester />
-      </View>
-
       {/* Personal Info Modal */}
       <PersonalInfoEditModal 
         visible={showPersonalModal} 
@@ -488,29 +481,6 @@ export default function ProfileTab(){
           setShowProfileEditModal(false);
         }}
       />
-
-      {/* Botón de Prueba Temporal */}
-      <View style={{ padding: 20, backgroundColor: '#fff', margin: 20, borderRadius: 10 }}>
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#FF0000',
-            padding: 15,
-            borderRadius: 10,
-            alignItems: 'center'
-          }}
-          onPress={() => {
-            console.log('🔴 BOTÓN DE PRUEBA PRESIONADO - Abriendo ProfileEditModal');
-            setShowProfileEditModal(true);
-          }}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-            PRUEBA - ABRIR MODAL DE PERFIL
-          </Text>
-        </TouchableOpacity>
-        <Text style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: '#666' }}>
-          Estado actual: {showProfileEditModal ? 'ABIERTO' : 'CERRADO'}
-        </Text>
-      </View>
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -719,26 +689,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
     marginLeft: 8,
-  },
-  emailTesterSection: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 15,
   },
 });

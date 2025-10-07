@@ -165,6 +165,9 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
   };
 
   const handleCreateTrip = async () => {
+    console.log('🎯 handleCreateTrip iniciado');
+    console.log('📝 Datos del trip:', JSON.stringify(tripData, null, 2));
+    
     if (!tripData.title.trim()) {
       Alert.alert('Error', 'El nombre del viaje es obligatorio');
       return;
@@ -183,35 +186,50 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
     setLoading(true);
 
     try {
+      console.log('🔍 Obteniendo usuario autenticado...');
       const { data: user } = await supabase.auth.getUser();
+      console.log('👤 Usuario obtenido:', user?.user?.email, 'ID:', user?.user?.id);
+      
       if (!user?.user?.id) {
+        console.error('❌ No hay usuario autenticado');
         Alert.alert('Error', 'Debes estar autenticado para crear un viaje');
         return;
       }
 
       // Crear el viaje en Supabase
+      const now = new Date();
+      const tentativeEndDate = new Date(now);
+      tentativeEndDate.setDate(now.getDate() + 7); // 7 días después como fecha tentativa
+      
+      const tripInsertData = {
+        user_id: user.user.id,
+        owner_id: user.user.id,
+        title: tripData.title.trim(),
+        description: tripData.description.trim() || null,
+        start_date: tripData.isDateUncertain ? now : tripData.startDate,
+        end_date: tripData.isDateUncertain ? tentativeEndDate : tripData.endDate,
+        budget: tripData.budget ? parseFloat(tripData.budget) : null,
+        accommodation_preference: tripData.accommodation || null,
+        transport_preference: tripData.transport || null,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+
+      console.log('💾 Datos a insertar en Supabase:', JSON.stringify(tripInsertData, null, 2));
+      
       const { data, error } = await supabase
         .from('trips')
-        .insert({
-          user_id: user.user.id,
-          owner_id: user.user.id,
-          title: tripData.title.trim(),
-          description: tripData.description.trim() || null,
-          start_date: tripData.isDateUncertain ? new Date() : tripData.startDate,
-          end_date: tripData.isDateUncertain ? new Date() : tripData.endDate,
-          budget: tripData.budget ? parseFloat(tripData.budget) : null,
-          accommodation_preference: tripData.accommodation || null,
-          transport_preference: tripData.transport || null,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        })
+        .insert(tripInsertData)
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating trip:', error);
-        Alert.alert('Error', 'No se pudo crear el viaje. Intenta de nuevo.');
+        console.error('❌ Error creando trip en Supabase:', error);
+        console.error('❌ Error details:', JSON.stringify(error, null, 2));
+        Alert.alert('Error', `No se pudo crear el viaje: ${error.message || 'Error desconocido'}`);
         return;
       }
+
+      console.log('✅ Trip creado exitosamente:', data);
 
       // Si tenemos datos adicionales, podríamos crear una tabla trip_details o similar
       // Por ahora, el viaje se crea con los campos básicos
