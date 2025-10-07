@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getTripStats, getCountryFlagByName, getCountryFlag, TripStats } from '~/lib/tripUtils';
+import TripDetailsModal from './TripDetailsModal';
 
 interface TripData {
   id: string;
@@ -37,6 +38,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
     collaborators: [],
     firstPlaceImage: undefined
   });
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     loadTripData();
@@ -422,7 +424,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           marginBottom: 16
         }}>
           <TouchableOpacity
-            onPress={() => router.push(`/trips/${trip.id}`)}
+            onPress={() => setShowModal(true)}
             style={{
               flex: 1,
               borderRadius: 16,
@@ -560,6 +562,17 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           </View>
         )}
       </View>
+
+      {/* Modal de detalles */}
+      <TripDetailsModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        trip={trip}
+        onTripUpdate={(updatedTrip) => {
+          // Aquí puedes manejar la actualización del trip si es necesario
+          console.log('Trip updated:', updatedTrip);
+        }}
+      />
     </View>
   );
 };
