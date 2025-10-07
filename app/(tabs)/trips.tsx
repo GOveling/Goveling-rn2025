@@ -365,6 +365,14 @@ export default function TripsTab() {
             <TripCard
               key={trip.id}
               trip={trip}
+              onTripUpdated={(updatedTrip) => {
+                // Actualizar el trip en el array local
+                setTrips(prevTrips => 
+                  prevTrips.map(t => t.id === updatedTrip.id ? updatedTrip : t)
+                );
+                // Recargar estadísticas para reflejar cambios
+                loadTripStats();
+              }}
             />
           ))
         )}

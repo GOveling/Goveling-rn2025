@@ -26,10 +26,12 @@ interface TripData {
 
 interface TripCardProps {
   trip: TripData;
+  onTripUpdated?: (updatedTrip: TripData) => void;
 }
 
-const TripCard: React.FC<TripCardProps> = ({ trip }) => {
+const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   const router = useRouter();
+  const [currentTrip, setCurrentTrip] = useState(trip);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
     placesCount: 0,
@@ -44,6 +46,11 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
   useEffect(() => {
     loadTripData();
   }, [trip.id]);
+
+  // Actualizar el trip local cuando se recibe una nueva prop
+  useEffect(() => {
+    setCurrentTrip(trip);
+  }, [trip]);
 
   const loadTripData = async () => {
     try {
@@ -65,11 +72,11 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
   };
 
   const getTripStatus = () => {
-    if (!trip.start_date || !trip.end_date) return 'planning';
+    if (!currentTrip.start_date || !currentTrip.end_date) return 'planning';
     
     const now = new Date();
-    const startDate = new Date(trip.start_date);
-    const endDate = new Date(trip.end_date);
+    const startDate = new Date(currentTrip.start_date);
+    const endDate = new Date(currentTrip.end_date);
     
     if (now < startDate) return 'upcoming';
     if (now >= startDate && now <= endDate) return 'traveling';
@@ -214,7 +221,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
               color: '#1A1A1A',
               marginBottom: 4
             }}>
-              {trip.title}
+              {currentTrip.title}
             </Text>
             
             <View style={{
@@ -298,8 +305,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
             color: '#1A1A1A',
             fontWeight: '500'
           }}>
-            {trip.start_date && trip.end_date 
-              ? `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`
+            {currentTrip.start_date && currentTrip.end_date 
+              ? `${formatDate(currentTrip.start_date)} - ${formatDate(currentTrip.end_date)}`
               : 'Fechas por confirmar'
             }
           </Text>
@@ -458,7 +465,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
         </View>
 
         {/* Descripción si existe */}
-        {trip.description && (
+        {currentTrip.description && (
           <View style={{
             marginTop: 16,
             padding: 12,
@@ -470,7 +477,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
               color: '#666666',
               lineHeight: 20
             }}>
-              {trip.description}
+              {currentTrip.description}
             </Text>
           </View>
         )}
@@ -480,10 +487,10 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
       <TripDetailsModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        trip={trip}
+        trip={currentTrip}
         onTripUpdate={(updatedTrip) => {
-          // Aquí puedes manejar la actualización del trip si es necesario
-          console.log('Trip updated:', updatedTrip);
+          setCurrentTrip(updatedTrip);
+          onTripUpdated?.(updatedTrip);
         }}
       />
     </View>

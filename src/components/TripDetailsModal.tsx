@@ -17,6 +17,31 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '~/lib/supabase';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import { getCurrentUser, getTripCollaborators, getTripOwner, UserProfile } from '~/lib/userUtils';
+import EditTripModal from './EditTripModal';
+
+// Mapas para obtener íconos de alojamiento y transporte
+const accommodationIcons: { [key: string]: string } = {
+  hotel: '🏨',
+  cabin: '🏘️',
+  resort: '🏖️',
+  hostel: '🏠',
+  apartment: '🏢',
+  camping: '⛺',
+  rural_house: '🏡',
+  other: '🏨'
+};
+
+const transportIcons: { [key: string]: string } = {
+  car: '🚗',
+  plane: '✈️',
+  train: '🚂',
+  bus: '🚌',
+  metro: '🚇',
+  boat: '⛵',
+  bike: '🚲',
+  walking: '🚶',
+  other: '🚗'
+};
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -32,6 +57,7 @@ interface TripData {
   budget?: number;
   accommodation_preference?: string;
   transport_preference?: string;
+  has_defined_dates?: boolean;
   timezone?: string;
   created_at: string;
   updated_at?: string;
@@ -68,6 +94,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [tripOwner, setTripOwner] = useState<UserProfile | null>(null);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (visible && trip.id) {
@@ -133,6 +160,13 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTripUpdate = (updatedTrip: TripData) => {
+    setEditableTrip(updatedTrip);
+    onTripUpdate?.(updatedTrip);
+    // Recargar los datos del viaje
+    loadTripStats();
   };
 
   const formatDate = (dateString?: string) => {
@@ -276,9 +310,79 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           </Text>
         </View>
         <Text style={{ fontSize: 16, color: '#6B7280' }}>
-          {editableTrip.budget ? `$${editableTrip.budget.toLocaleString()}` : '0'}
+          {editableTrip.budget ? `$${editableTrip.budget.toLocaleString()}` : 'No budget set'}
         </Text>
       </View>
+
+      {/* Accommodation */}
+      {editableTrip.accommodation_preference && (
+        <View style={{ marginBottom: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="bed-outline" size={20} color="#6B7280" />
+            <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginLeft: 8 }}>
+              Accommodation
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {editableTrip.accommodation_preference.split(',').map((acc, index) => {
+              const trimmedAcc = acc.trim();
+              const icon = accommodationIcons[trimmedAcc] || '🏨';
+              return (
+                <View key={index} style={{
+                  backgroundColor: '#F3F4F6',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  marginRight: 8,
+                  marginBottom: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}>
+                  <Text style={{ fontSize: 16, marginRight: 6 }}>{icon}</Text>
+                  <Text style={{ fontSize: 14, color: '#374151', fontWeight: '500' }}>
+                    {trimmedAcc.charAt(0).toUpperCase() + trimmedAcc.slice(1)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {/* Transport */}
+      {editableTrip.transport_preference && (
+        <View style={{ marginBottom: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="car-outline" size={20} color="#6B7280" />
+            <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginLeft: 8 }}>
+              Transport
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {editableTrip.transport_preference.split(',').map((transport, index) => {
+              const trimmedTransport = transport.trim();
+              const icon = transportIcons[trimmedTransport] || '🚗';
+              return (
+                <View key={index} style={{
+                  backgroundColor: '#F3F4F6',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  marginRight: 8,
+                  marginBottom: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}>
+                  <Text style={{ fontSize: 16, marginRight: 6 }}>{icon}</Text>
+                  <Text style={{ fontSize: 14, color: '#374151', fontWeight: '500' }}>
+                    {trimmedTransport.charAt(0).toUpperCase() + trimmedTransport.slice(1)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       {/* Descripción */}
       {editableTrip.description && (
@@ -294,7 +398,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {/* Botón de editar */}
       <TouchableOpacity
-        onPress={() => Alert.alert('Editar Trip', 'Funcionalidad de edición próximamente disponible')}
+        onPress={() => setShowEditModal(true)}
         style={{ marginTop: 20 }}
       >
         <LinearGradient
@@ -584,6 +688,14 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         {/* Tab Content */}
         {renderTabContent()}
       </View>
+
+      {/* Edit Trip Modal */}
+      <EditTripModal
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        trip={editableTrip}
+        onTripUpdated={handleTripUpdate}
+      />
     </Modal>
   );
 };
