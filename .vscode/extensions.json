@@ -1,0 +1,28 @@
+{
+  "recommendations": [
+    // ===== Esenciales para React Native =====
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    
+    // ===== React Native específico =====
+    "msjsdiag.vscode-react-native",
+    "ms-vscode.vscode-react-native-preview",
+    
+    // ===== Git optimizado =====
+    "eamodio.gitlens",
+    
+    // ===== Utilidades =====
+    "ms-vscode.vscode-json",
+    "bradlc.vscode-tailwindcss",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense"
+  ],
+  "unwantedRecommendations": [
+    // ===== Extensiones que pueden afectar el rendimiento =====
+    "ms-vscode.vscode-typescript-tslint-plugin",
+    "ms-vscode.typescript-importer",
+    "steoates.autoimport-es6-ts"
+  ]
+}
