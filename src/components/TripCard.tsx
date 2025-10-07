@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getTripStats, getCountryFlagByName, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import TripDetailsModal from './TripDetailsModal';
+import LiquidButton from './LiquidButton';
 
 interface TripData {
   id: string;
@@ -423,125 +424,37 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           gap: 12,
           marginBottom: 16
         }}>
-          <TouchableOpacity
+          <LiquidButton
+            title="Ver Detalles"
             onPress={() => setShowModal(true)}
-            style={{
-              flex: 1,
-              borderRadius: 16,
-              padding: 16,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 6,
-              elevation: 3
-            }}
-          >
-            <LinearGradient
-              colors={['#8B5CF6', '#EC4899']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{
-                borderRadius: 16,
-                padding: 16,
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Text style={{
-                color: '#FFFFFF',
-                fontWeight: '700',
-                fontSize: 16
-              }}>
-                Ver Detalles
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+            variant="primary"
+          />
 
-          <TouchableOpacity
+          <LiquidButton
+            title="Ver Mis lugares"
+            icon="❤️"
             onPress={() => router.push(`/trips/${trip.id}/places`)}
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: '#FF3B30',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 6,
-              elevation: 3
-            }}
-          >
-            <Text style={{
-              color: '#FF3B30',
-              fontWeight: '700',
-              fontSize: 16
-            }}>
-              ❤️ Ver Mis lugares
-            </Text>
-          </TouchableOpacity>
+            variant="accent"
+          />
         </View>
 
         <View style={{
           flexDirection: 'row',
           gap: 12
         }}>
-          <TouchableOpacity
+          <LiquidButton
+            title="Ruta Inteligente IA"
+            icon="🧠"
             onPress={() => router.push(`/trips/${trip.id}/route`)}
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: '#007AFF',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 6,
-              elevation: 3
-            }}
-          >
-            <Text style={{
-              color: '#007AFF',
-              fontWeight: '700',
-              fontSize: 16
-            }}>
-              🧠 Ruta Inteligente IA
-            </Text>
-          </TouchableOpacity>
+            variant="glass"
+          />
 
-          <TouchableOpacity
+          <LiquidButton
+            title="Estadía"
+            icon="🏠"
             onPress={() => router.push(`/trips/${trip.id}/accommodation`)}
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: '#34C759',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 6,
-              elevation: 3
-            }}
-          >
-            <Text style={{
-              color: '#34C759',
-              fontWeight: '700',
-              fontSize: 16
-            }}>
-              🏠 Estadía
-            </Text>
-          </TouchableOpacity>
+            variant="success"
+          />
         </View>
 
         {/* Descripción si existe */}
