@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getTripStats, getCountryFlagByName, TripStats } from '~/lib/tripUtils';
+import { getTripStats, getCountryFlagByName, getCountryFlag, TripStats } from '~/lib/tripUtils';
 
 interface TripData {
   id: string;
@@ -31,8 +31,11 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
     placesCount: 0,
-    countries: ['Chile'],
-    categories: []
+    countries: [],
+    countryCodes: [],
+    categories: [],
+    collaborators: [],
+    firstPlaceImage: undefined
   });
 
   useEffect(() => {
@@ -59,72 +62,82 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
   };
 
   const getTripStatus = () => {
-    if (!trip.start_date || !trip.end_date) return 'Planificando';
+    if (!trip.start_date || !trip.end_date) return 'planning';
     
     const now = new Date();
     const startDate = new Date(trip.start_date);
     const endDate = new Date(trip.end_date);
     
-    if (now < startDate) return 'Próximo';
-    if (now >= startDate && now <= endDate) return 'Viajando';
-    if (now > endDate) return 'Completado';
+    if (now < startDate) return 'upcoming';
+    if (now >= startDate && now <= endDate) return 'traveling';
+    if (now > endDate) return 'completed';
     
-    return 'Planificando';
+    return 'planning';
   };
 
-  const getStatusColor = () => {
+  const getStatusConfig = () => {
     const status = getTripStatus();
-    switch (status) {
-      case 'Viajando': return '#10B981';
-      case 'Próximo': return '#3B82F6';
-      case 'Completado': return '#6B7280';
-      default: return '#F59E0B';
-    }
+    const configs = {
+      completed: {
+        text: 'Completado',
+        bgColor: '#DCFCE7', // bg-green-100
+        textColor: '#166534', // text-green-800
+      },
+      upcoming: {
+        text: 'Próximo',
+        bgColor: '#DBEAFE', // bg-blue-100
+        textColor: '#1E40AF', // text-blue-800
+      },
+      planning: {
+        text: 'Planificando',
+        bgColor: '#F3E8FF', // bg-purple-100
+        textColor: '#6B21A8', // text-purple-800
+      },
+      traveling: {
+        text: 'Viajando',
+        bgColor: '#FED7AA', // bg-orange-100
+        textColor: '#C2410C', // text-orange-800
+      },
+      default: {
+        text: 'Sin estado',
+        bgColor: '#F3F4F6', // bg-gray-100
+        textColor: '#374151', // text-gray-800
+      },
+    };
+    
+    return configs[status as keyof typeof configs] || configs.default;
   };
 
   const getCountryFlags = () => {
-    if (tripData.countries.length === 0) return ['🌍'];
+    if (tripData.countryCodes.length === 0) return [];
     
-    return tripData.countries.map(country => 
-      getCountryFlagByName(country)
+    return tripData.countryCodes.map(code => 
+      getCountryFlag(code)
     );
   };
 
-  const getTripTypeColor = () => {
-    return tripData.collaboratorsCount > 1 ? '#8B5CF6' : '#059669';
+  const getFirstCountryFlag = () => {
+    if (tripData.countryCodes.length === 0) return '🌍';
+    return getCountryFlag(tripData.countryCodes[0]);
+  };
+
+  const getFirstCountryImage = () => {
+    return tripData.firstPlaceImage;
+  };
+
+  const getUserInitials = (fullName?: string) => {
+    if (!fullName) return 'U';
+    
+    const names = fullName.trim().split(' ');
+    if (names.length === 1) {
+      return names[0].charAt(0).toUpperCase();
+    }
+    
+    return (names[0].charAt(0) + (names[names.length - 1].charAt(0))).toUpperCase();
   };
 
   const getTripType = () => {
     return tripData.collaboratorsCount > 1 ? 'Grupo' : 'Individual';
-  };
-
-  const getAccommodationIcon = () => {
-    const accommodation = trip.accommodation_preference;
-    const iconMap: { [key: string]: string } = {
-      'hotel': '🏨',
-      'cabin': '🏘️',
-      'resort': '🏖️',
-      'hostel': '🏠',
-      'apartment': '🏢',
-      'camping': '⛺',
-      'rural_house': '🏡',
-    };
-    return iconMap[accommodation || ''] || '🏨';
-  };
-
-  const getTransportIcon = () => {
-    const transport = trip.transport_preference;
-    const iconMap: { [key: string]: string } = {
-      'car': '🚗',
-      'plane': '✈️',
-      'train': '🚂',
-      'bus': '🚌',
-      'metro': '🚇',
-      'boat': '⛵',
-      'bike': '🚲',
-      'walking': '🚶',
-    };
-    return iconMap[transport || ''] || '🚗';
   };
 
   return (
@@ -156,19 +169,30 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          {getCountryFlags().map((flag, index) => (
-            <Text key={index} style={{ fontSize: 32, marginHorizontal: 4 }}>
-              {flag}
-            </Text>
-          ))}
+          <Text style={{ fontSize: 48 }}>
+            {getFirstCountryFlag()}
+          </Text>
         </View>
-        <View style={{
-          marginLeft: 20,
-          alignItems: 'center'
-        }}>
-          <Text style={{ fontSize: 20 }}>{getAccommodationIcon()}</Text>
-          <Text style={{ fontSize: 18 }}>{getTransportIcon()}</Text>
-        </View>
+        
+        {getFirstCountryImage() && (
+          <View style={{
+            marginLeft: 20,
+            width: 60,
+            height: 60,
+            borderRadius: 12,
+            overflow: 'hidden',
+            backgroundColor: 'rgba(255,255,255,0.2)'
+          }}>
+            <Image
+              source={{ uri: getFirstCountryImage() }}
+              style={{
+                width: '100%',
+                height: '100%',
+                resizeMode: 'cover'
+              }}
+            />
+          </View>
+        )}
       </LinearGradient>
       
       {/* Contenido del Trip */}
@@ -189,31 +213,42 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
             }}>
               {trip.title}
             </Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#666666',
-              fontWeight: '500'
-            }}>
-              {getTripStatus()}
-            </Text>
+            
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
               marginTop: 4
             }}>
-              <Text style={{ fontSize: 16, color: getTripTypeColor(), marginRight: 8 }}>👥</Text>
+              <Text style={{ fontSize: 16, color: '#8B5CF6', marginRight: 8 }}>👥</Text>
               <Text style={{
                 fontSize: 16,
-                color: getTripTypeColor(),
+                color: '#8B5CF6',
                 fontWeight: '600'
               }}>
                 {getTripType()}
               </Text>
             </View>
           </View>
+          
+          {/* Badge de estado */}
+          <View style={{
+            backgroundColor: getStatusConfig().bgColor,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+            marginLeft: 12
+          }}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '600',
+              color: getStatusConfig().textColor
+            }}>
+              {getStatusConfig().text}
+            </Text>
+          </View>
         </View>
 
-        {/* Países/Destinos */}
+        {/* Países/Destinos - solo si hay lugares */}
         {tripData.countries.length > 0 && (
           <View style={{
             flexDirection: 'row',
@@ -248,23 +283,24 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           </View>
         )}
 
-        {/* Fechas */}
-        {trip.start_date && trip.end_date && (
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 16
+        {/* Fechas - con fallback "Fechas por confirmar" */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 16
+        }}>
+          <Text style={{ fontSize: 16, marginRight: 8 }}>📅</Text>
+          <Text style={{
+            fontSize: 16,
+            color: '#1A1A1A',
+            fontWeight: '500'
           }}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>📅</Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#1A1A1A',
-              fontWeight: '500'
-            }}>
-              {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
-            </Text>
-          </View>
-        )}
+            {trip.start_date && trip.end_date 
+              ? `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`
+              : 'Fechas por confirmar'
+            }
+          </Text>
+        </View>
 
         {/* Viajeros y Lugares */}
         <View style={{
@@ -301,7 +337,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           </View>
         </View>
 
-        {/* Miembros del Equipo (Avatares simulados) */}
+        {/* Miembros del Equipo con avatares reales */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -315,25 +351,59 @@ const TripCard: React.FC<TripCardProps> = ({ trip }) => {
           }}>
             Equipo:
           </Text>
-          {Array.from({ length: Math.min(tripData.collaboratorsCount, 3) }).map((_, index) => (
-            <View key={index} style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: index === 0 ? '#8B5CF6' : '#10B981',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 4
+          
+          {/* Dueño del trip (primera posición) */}
+          <View style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: '#8B5CF6',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 4
+          }}>
+            <Text style={{
+              color: '#FFFFFF',
+              fontWeight: '700',
+              fontSize: 12
             }}>
-              <Text style={{
-                color: '#FFFFFF',
-                fontWeight: '700',
-                fontSize: 14
-              }}>
-                {index === 0 ? 'YO' : `U${index + 1}`}
-              </Text>
+              YO
+            </Text>
+          </View>
+          
+          {/* Colaboradores */}
+          {tripData.collaborators.slice(0, 2).map((collaborator, index) => (
+            <View key={collaborator.id} style={{ marginRight: 4 }}>
+              {collaborator.avatar_url ? (
+                <Image
+                  source={{ uri: collaborator.avatar_url }}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                  }}
+                />
+              ) : (
+                <View style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: '#10B981',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Text style={{
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 11
+                  }}>
+                    {getUserInitials(collaborator.full_name)}
+                  </Text>
+                </View>
+              )}
             </View>
           ))}
+          
           {tripData.collaboratorsCount > 3 && (
             <Text style={{
               fontSize: 14,

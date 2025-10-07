@@ -10,7 +10,6 @@ const daysDiff = (a: Date, b: Date): number => Math.ceil((a.getTime() - b.getTim
 
 const CurrentTripCard = React.memo(function CurrentTripCard() {
   const { t } = useTranslation();
-
   const router = useRouter();
   const [loading, setLoading] = React.useState(true);
   const [trip, setTrip] = React.useState<Trip|null>(null);
@@ -32,60 +31,10 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
     })();
   }, []);
 
-  if (loading) return (
-    <View style={{ 
-      backgroundColor: 'white',
-      borderRadius: 16,
-      padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 5
-    }}>
-      <Skeleton width="50%" height={18} />
-      <Skeleton width="80%" height={14} />
-      <Skeleton width="40%" height={14} />
-    </View>
-  );
-
-  if (!trip) return (
-    <View style={{
-      backgroundColor: 'white',
-      borderRadius: 16,
-      padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 5
-    }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
-        {t('No tienes viajes')}
-      </Text>
-      <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
-        {t('Crea tu primer trip para comenzar')}
-      </Text>
-      <TouchableOpacity onPress={()=>Alert.alert('Nuevo Trip', 'Funcionalidad de crear trips próximamente disponible')}>
-        <LinearGradient
-          colors={['#10B981', '#059669']}
-          style={{
-            paddingVertical: 12,
-            borderRadius: 12,
-            alignItems: 'center'
-          }}
-        >
-          <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-            {t('+ New Trip')}
-          </Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-
-
-
+  // Memoized content - MUST be called before any conditional returns
   const memoizedContent = React.useMemo(() => {
+    if (!trip) return null;
+    
     const title = mode === 'active' ? '✈️ Viaje Activo' : `Próximo trip en ${countdown} días`;
     const tripName = trip?.name || 'ChileFranceJapan';
 
@@ -141,6 +90,59 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       </TouchableOpacity>
     );
   }, [trip, mode, countdown, router, t]);
+
+  // Loading state
+  if (loading) return (
+    <View style={{ 
+      backgroundColor: 'white',
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5
+    }}>
+      <Skeleton width="50%" height={18} />
+      <Skeleton width="80%" height={14} />
+      <Skeleton width="40%" height={14} />
+    </View>
+  );
+
+  // No trip state
+  if (!trip) return (
+    <View style={{
+      backgroundColor: 'white',
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5
+    }}>
+      <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
+        {t('No tienes viajes')}
+      </Text>
+      <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
+        {t('Crea tu primer trip para comenzar')}
+      </Text>
+      <TouchableOpacity onPress={()=>Alert.alert('Nuevo Trip', 'Funcionalidad de crear trips próximamente disponible')}>
+        <LinearGradient
+          colors={['#10B981', '#059669']}
+          style={{
+            paddingVertical: 12,
+            borderRadius: 12,
+            alignItems: 'center'
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+            {t('+ New Trip')}
+          </Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  );
 
   return memoizedContent;
 });
