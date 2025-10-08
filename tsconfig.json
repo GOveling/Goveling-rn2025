@@ -50,6 +50,5 @@
     "**/dist/**",
     "**/ios/Pods/**",
     "**/android/.gradle/**"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }
