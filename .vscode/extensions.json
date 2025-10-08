@@ -5,14 +5,11 @@
     "bradlc.vscode-tailwindcss",
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    
     // ===== React Native específico =====
     "msjsdiag.vscode-react-native",
     "ms-vscode.vscode-react-native-preview",
-    
     // ===== Git optimizado =====
     "eamodio.gitlens",
-    
     // ===== Utilidades =====
     "ms-vscode.vscode-json",
     "bradlc.vscode-tailwindcss",
