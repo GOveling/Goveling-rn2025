@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,14 +52,18 @@ export default function PersonalInfoScreen() {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
 
+  // Estados para optimización de ciudades
+  const [citySearchQuery, setCitySearchQuery] = useState('');
+  const [displayedCitiesCount, setDisplayedCitiesCount] = useState(50); // Mostrar 50 inicialmente
+
   // Hooks para países y ciudades
   const { countries, loading: countriesLoading, error: countriesError } = useCountries();
-  const { 
-    cities, 
-    loading: citiesLoading, 
+  const {
+    cities,
+    loading: citiesLoading,
     error: citiesError,
     loadCitiesForCountry,
-    clearResults 
+    clearResults
   } = useCitiesByCountry();
 
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -85,6 +90,69 @@ export default function PersonalInfoScreen() {
     country_code: '',
   });
 
+  // Filtrado y paginación optimizada de ciudades
+  const filteredAndPaginatedCities = useMemo(() => {
+    if (!cities || cities.length === 0) return [];
+
+    // Filtrar por búsqueda
+    let filtered = cities;
+    if (citySearchQuery.trim()) {
+      const query = citySearchQuery.toLowerCase().trim();
+      filtered = cities.filter(city =>
+        city.city.toLowerCase().includes(query)
+      );
+    }
+
+    // Ordenar por población (ciudades más grandes primero) y luego alfabéticamente
+    filtered.sort((a, b) => {
+      if (b.population !== a.population) {
+        return b.population - a.population;
+      }
+      return a.city.localeCompare(b.city, 'es', { sensitivity: 'base' });
+    });
+
+    // Limitar cantidad para renderizado
+    return filtered.slice(0, displayedCitiesCount);
+  }, [cities, citySearchQuery, displayedCitiesCount]);
+
+  // Reset city search cuando cambia el país
+  useEffect(() => {
+    setCitySearchQuery('');
+    setDisplayedCitiesCount(50);
+  }, [profileData.country]);
+
+  // Función para cargar más ciudades
+  const loadMoreCities = () => {
+    if (displayedCitiesCount < cities.length) {
+      setDisplayedCitiesCount(prev => Math.min(prev + 50, cities.length));
+    }
+  };
+
+  // Componente optimizado para renderizar cada ciudad
+  const CityItem = React.memo(({ item, isSelected, onPress }: {
+    item: CityResult;
+    isSelected: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[styles.pickerOption, isSelected && styles.pickerOptionSelected]}
+      onPress={onPress}
+    >
+      <Text style={styles.pickerOptionIcon}>🏙️</Text>
+      <View style={styles.cityOptionContent}>
+        <Text style={[styles.pickerOptionText, isSelected && styles.pickerOptionTextSelected]}>
+          {item.city}
+        </Text>
+        <Text style={styles.populationText}>
+          {item.population.toLocaleString()} habitantes
+        </Text>
+      </View>
+      {isSelected && (
+        <Ionicons name="checkmark" size={20} color="#6366F1" />
+      )}
+    </TouchableOpacity>
+  ));
+
   useEffect(() => {
     loadProfileData();
   }, []);
@@ -99,7 +167,7 @@ export default function PersonalInfoScreen() {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       return age - 1;
     }
@@ -213,7 +281,7 @@ export default function PersonalInfoScreen() {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
-    
+
     if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
       setShowDatePicker(false);
       return;
@@ -289,9 +357,9 @@ export default function PersonalInfoScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Información Personal</Text>
-        
+
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => {
@@ -313,7 +381,7 @@ export default function PersonalInfoScreen() {
         </TouchableOpacity>
       </LinearGradient>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -353,10 +421,10 @@ export default function PersonalInfoScreen() {
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Ionicons name="calendar" size={20} color="#6366F1" />
-                    <Text style={[styles.dateButtonText, { 
+                    <Text style={[styles.dateButtonText, {
                       color: profileData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
                     }]}>
-                      {profileData.birth_date 
+                      {profileData.birth_date
                         ? formatDate(profileData.birth_date)
                         : 'Seleccionar fecha'
                       }
@@ -369,7 +437,7 @@ export default function PersonalInfoScreen() {
                     </Text>
                   </View>
                 )}
-                
+
                 {/* Mostrar edad calculada */}
                 {profileData.age !== null && (
                   <View style={styles.ageContainer}>
@@ -451,22 +519,22 @@ export default function PersonalInfoScreen() {
                       styles.pickerButtonText,
                       (!profileData.country || citiesLoading) && styles.pickerButtonTextDisabled
                     ]}>
-                      {!profileData.country 
+                      {!profileData.country
                         ? '🌍 Selecciona un país primero'
-                        : citiesLoading 
-                        ? '⏳ Cargando ciudades...'
-                        : profileData.city_state 
-                        ? getCityLabel(profileData.city_state)
-                        : '🏙️ Seleccionar ciudad o estado'
+                        : citiesLoading
+                          ? '⏳ Cargando ciudades...'
+                          : profileData.city_state
+                            ? getCityLabel(profileData.city_state)
+                            : '🏙️ Seleccionar ciudad o estado'
                       }
                     </Text>
                     {citiesLoading ? (
                       <ActivityIndicator size="small" color="#6366F1" />
                     ) : (
-                      <Ionicons 
-                        name="chevron-down" 
-                        size={20} 
-                        color={!profileData.country ? "#ccc" : "#6366F1"} 
+                      <Ionicons
+                        name="chevron-down"
+                        size={20}
+                        color={!profileData.country ? "#ccc" : "#6366F1"}
                       />
                     )}
                   </TouchableOpacity>
@@ -536,7 +604,7 @@ export default function PersonalInfoScreen() {
                 ) : (
                   <View style={styles.displayField}>
                     <Text style={styles.displayText}>
-                      {profileData.country_code && profileData.mobile_phone 
+                      {profileData.country_code && profileData.mobile_phone
                         ? `${profileData.country_code} ${profileData.mobile_phone}`
                         : 'No especificado'
                       }
@@ -691,45 +759,90 @@ export default function PersonalInfoScreen() {
         <View style={styles.pickerOverlay}>
           <View style={styles.pickerContainer}>
             <View style={styles.pickerHeader}>
-              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+              <TouchableOpacity onPress={() => {
+                setShowCityPicker(false);
+                setCitySearchQuery('');
+                setDisplayedCitiesCount(50);
+              }}>
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Seleccionar Ciudad</Text>
               <View style={{ width: 60 }} />
             </View>
-            <ScrollView style={styles.pickerContent}>
-              {cities.length === 0 && !citiesLoading ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>
-                    No se encontraron ciudades para este país
-                  </Text>
-                </View>
-              ) : (
-                cities.map((city) => (
-                  <TouchableOpacity
-                    key={`${city.city}-${city.latitude}-${city.longitude}`}
-                    style={[styles.pickerOption, profileData.city_state === city.city && styles.pickerOptionSelected]}
-                    onPress={() => {
-                      updateField('city_state', city.city);
-                      setShowCityPicker(false);
-                    }}
-                  >
-                    <Text style={styles.pickerOptionIcon}>🏙️</Text>
-                    <View style={styles.cityOptionContent}>
-                      <Text style={[styles.pickerOptionText, profileData.city_state === city.city && styles.pickerOptionTextSelected]}>
-                        {city.city}
-                      </Text>
-                      <Text style={styles.populationText}>
-                        {city.population.toLocaleString()} habitantes
-                      </Text>
-                    </View>
-                    {profileData.city_state === city.city && (
-                      <Ionicons name="checkmark" size={20} color="#6366F1" />
-                    )}
-                  </TouchableOpacity>
-                ))
+
+            {/* Información y búsqueda */}
+            <View style={{ paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+              {cities.length > 10 && (
+                <TextInput
+                  value={citySearchQuery}
+                  onChangeText={setCitySearchQuery}
+                  placeholder="Buscar ciudad..."
+                  style={[styles.searchInput]}
+                  placeholderTextColor="#666"
+                  clearButtonMode="while-editing"
+                />
               )}
-            </ScrollView>
+              <Text style={styles.cityCountText}>
+                {citySearchQuery ?
+                  `🔍 ${filteredAndPaginatedCities.length} resultados` :
+                  `🏙️ Mostrando ${Math.min(displayedCitiesCount, cities.length)} de ${cities.length} ciudades`
+                }
+              </Text>
+            </View>
+
+            {cities.length === 0 && !citiesLoading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  No se encontraron ciudades para este país
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredAndPaginatedCities}
+                keyExtractor={(item) => `${item.city}-${item.latitude}-${item.longitude}`}
+                renderItem={({ item }) => (
+                  <CityItem
+                    item={item}
+                    isSelected={profileData.city_state === item.city}
+                    onPress={() => {
+                      updateField('city_state', item.city);
+                      setShowCityPicker(false);
+                      setCitySearchQuery('');
+                      setDisplayedCitiesCount(50);
+                    }}
+                  />
+                )}
+                style={styles.pickerContent}
+                initialNumToRender={20}
+                maxToRenderPerBatch={20}
+                windowSize={10}
+                removeClippedSubviews={true}
+                getItemLayout={(data, index) => ({
+                  length: 70, // altura aproximada de cada item
+                  offset: 70 * index,
+                  index,
+                })}
+                onEndReached={loadMoreCities}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={() => {
+                  if (displayedCitiesCount < cities.length && !citySearchQuery) {
+                    return (
+                      <View style={{ padding: 20, alignItems: 'center' }}>
+                        <TouchableOpacity
+                          style={styles.loadMoreButton}
+                          onPress={loadMoreCities}
+                        >
+                          <Text style={styles.loadMoreText}>
+                            Cargar más ciudades ({cities.length - displayedCitiesCount} restantes)
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  }
+                  return null;
+                }}
+              />
+            )}
           </View>
         </View>
       )}
@@ -1071,5 +1184,34 @@ const styles = {
   },
   datePicker: {
     backgroundColor: 'white',
+  },
+  searchInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+  },
+  cityCountText: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center' as const,
+  },
+  loadMoreButton: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  loadMoreText: {
+    fontSize: 14,
+    color: '#6366F1',
+    textAlign: 'center' as const,
+    fontWeight: '600' as const,
   },
 };

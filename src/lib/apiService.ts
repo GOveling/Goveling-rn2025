@@ -266,7 +266,7 @@ export const apiService = {
   async getCountries(): Promise<Country[]> {
     try {
       console.log('🌍 Fetching countries from Goveling API...');
-      
+
       const response = await fetch(`${API_BASE_URL}/geo/countries`, {
         method: 'GET',
         headers: {
@@ -279,7 +279,7 @@ export const apiService = {
       }
 
       const data = await response.json();
-      
+
       // Normalizar los códigos telefónicos
       const normalizedCountries = data.map((country: Country) => ({
         ...country,
@@ -287,7 +287,7 @@ export const apiService = {
       }));
 
       // Ordenar alfabéticamente por nombre del país
-      const sortedCountries = normalizedCountries.sort((a: Country, b: Country) => 
+      const sortedCountries = normalizedCountries.sort((a: Country, b: Country) =>
         a.country_name.localeCompare(b.country_name)
       );
 
@@ -296,7 +296,7 @@ export const apiService = {
 
     } catch (error) {
       console.warn('⚠️ Failed to fetch countries from API, using fallback list:', error);
-      
+
       // Normalizar códigos telefónicos en la lista de fallback
       const normalizedFallback = FALLBACK_COUNTRIES.map(country => ({
         ...country,
@@ -304,7 +304,7 @@ export const apiService = {
       }));
 
       // Ordenar alfabéticamente
-      const sortedFallback = normalizedFallback.sort((a, b) => 
+      const sortedFallback = normalizedFallback.sort((a, b) =>
         a.country_name.localeCompare(b.country_name)
       );
 
@@ -327,47 +327,70 @@ export const apiService = {
       // Verificar caché primero (24 horas de validez)
       const cacheKey = `cities_${normalizedCountryCode}`;
       const cachedData = this.getCachedData(cacheKey, 24 * 60 * 60 * 1000); // 24 horas en ms
-      
+
       if (cachedData) {
         console.log(`🎯 Using cached cities for ${normalizedCountryCode}: ${cachedData.length} cities`);
         return cachedData;
       }
 
       // URL corregida según la documentación
-      const response = await fetch(`${API_BASE_URL}/geo/countries/${normalizedCountryCode}/cities`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Timeout de 15 segundos para evitar cold starts prolongados
-        signal: AbortSignal.timeout(15000)
-      });
+      // Crear timeout compatible con React Native
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      try {
+        const response = await fetch(`${API_BASE_URL}/geo/countries/${normalizedCountryCode}/cities`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        // Limpiar el timeout si la request es exitosa
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const rawData = await response.json();
+
+        // Transformar los datos según la documentación
+        const transformedCities = rawData.map((city: any) => ({
+          city: city.city || city.name,
+          latitude: city.latitude || city.lat || 0,
+          longitude: city.longitude || city.lng || city.lon || 0,
+          population: city.population || 0,
+          country_code: normalizedCountryCode
+        }));
+
+        // Ordenar por población (más grandes primero) y luego alfabéticamente
+        const sortedCities = transformedCities.sort((a: CityResult, b: CityResult) => {
+          // Primero por población (descendente)
+          if (b.population !== a.population) {
+            return b.population - a.population;
+          }
+          // Luego alfabéticamente
+          return a.city.localeCompare(b.city, 'es', { sensitivity: 'base' });
+        });
+
+        // Para países con muchas ciudades, limitar a las más importantes
+        // Esto mejora el rendimiento en React Native
+        const optimizedCities = sortedCities.length > 2000
+          ? sortedCities.slice(0, 1000) // Solo las 1000 ciudades más pobladas
+          : sortedCities;
+
+        // Guardar en caché
+        this.setCachedData(cacheKey, optimizedCities);
+
+        console.log(`✅ Successfully loaded ${optimizedCities.length} cities for ${normalizedCountryCode}${optimizedCities.length < sortedCities.length ? ` (optimized from ${sortedCities.length})` : ''}`);
+        return optimizedCities;
+      } catch (fetchError) {
+        // Limpiar timeout en caso de error
+        clearTimeout(timeoutId);
+        throw fetchError;
       }
-
-      const rawData = await response.json();
-
-      // Transformar los datos según la documentación
-      const transformedCities = rawData.map((city: any) => ({
-        city: city.city || city.name,
-        latitude: city.latitude || city.lat || 0,
-        longitude: city.longitude || city.lng || city.lon || 0,
-        population: city.population || 0,
-        country_code: normalizedCountryCode
-      }));
-
-      // Ordenar ciudades alfabéticamente
-      const sortedCities = transformedCities.sort((a: CityResult, b: CityResult) => 
-        a.city.localeCompare(b.city, 'es', { sensitivity: 'base' })
-      );
-
-      // Guardar en caché
-      this.setCachedData(cacheKey, sortedCities);
-
-      console.log(`✅ Successfully loaded ${sortedCities.length} cities for ${normalizedCountryCode}`);
-      return sortedCities;
 
     } catch (error) {
       console.error(`❌ Failed to fetch cities for ${countryCode}:`, error);
@@ -381,18 +404,18 @@ export const apiService = {
   getCachedData(key: string, maxAgeMs: number): any[] | null {
     try {
       if (typeof localStorage === 'undefined') return null;
-      
+
       const cached = localStorage.getItem(key);
       if (!cached) return null;
 
       const { data, timestamp } = JSON.parse(cached);
       const now = Date.now();
-      
+
       if (now - timestamp > maxAgeMs) {
         localStorage.removeItem(key);
         return null;
       }
-      
+
       return data;
     } catch (error) {
       console.warn(`Error reading cache for ${key}:`, error);
@@ -406,12 +429,12 @@ export const apiService = {
   setCachedData(key: string, data: any[]): void {
     try {
       if (typeof localStorage === 'undefined') return;
-      
+
       const cacheEntry = {
         data,
         timestamp: Date.now()
       };
-      
+
       localStorage.setItem(key, JSON.stringify(cacheEntry));
     } catch (error) {
       console.warn(`Error saving cache for ${key}:`, error);
