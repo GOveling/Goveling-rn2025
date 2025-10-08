@@ -29,38 +29,55 @@ export default function TripsTab() {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) return;
 
-      // Get all trips for the user (both owned and collaborated)
+      // Get trips where user is owner (más simple y directo)
       const { data: userTrips, error: tripsError } = await supabase
         .from('trips')
-        .select(`
-          *,
-          trip_collaborators(count)
-        `)
-        .or(`owner_id.eq.${user.user.id},user_id.eq.${user.user.id}`);
+        .select('*')
+        .eq('owner_id', user.user.id);
 
       if (tripsError) {
         console.error('Error loading trips:', tripsError);
         return;
       }
 
-      console.log('🔍 Trips cargados:', userTrips);
 
-      // Set trips
-      setTrips(userTrips || []);
+      
+      // Get collaborators count for each trip separately
+      const tripsWithCollaborators = await Promise.all(
+        (userTrips || []).map(async (trip) => {
+          const { data: collaborators, error: collabError } = await supabase
+            .from('trip_collaborators')
+            .select('user_id, role')
+            .eq('trip_id', trip.id);
+          
+          if (collabError) {
+            console.error('Error loading collaborators for trip:', trip.id, collabError);
+            return { ...trip, collaborators: [] };
+          }
+          
+          return { ...trip, collaborators: collaborators || [] };
+        })
+      );
+
+      // Set trips with collaborators data
+      setTrips(tripsWithCollaborators || []);
 
       // Calculate stats
-      const totalTrips = userTrips?.length || 0;
+      const totalTrips = tripsWithCollaborators?.length || 0;
       
       // Get upcoming trips (start date is in the future)
-      const upcomingTrips = userTrips?.filter(trip => {
+      const upcomingTrips = tripsWithCollaborators?.filter(trip => {
         if (!trip.start_date) return false;
         return new Date(trip.start_date) > new Date();
       }).length || 0;
 
-      // Get group trips (trips with collaborators)
-      const groupTrips = userTrips?.filter(trip => 
-        trip.trip_collaborators && trip.trip_collaborators.length > 0
-      ).length || 0;
+      // Get group trips (trips with collaborators - more than just the owner)
+      // Get group trips (trips with collaborators - more than just the owner)
+      const groupTrips = tripsWithCollaborators?.filter(trip => {
+        // Un viaje es grupal si tiene colaboradores (además del owner)
+        const collaboratorsCount = trip.collaborators?.length || 0;
+        return collaboratorsCount > 0;
+      }).length || 0;
 
       setStats({
         totalTrips,
