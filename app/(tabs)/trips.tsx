@@ -41,7 +41,7 @@ export default function TripsTab() {
       }
 
 
-      
+
       // Get collaborators count for each trip separately
       const tripsWithCollaborators = await Promise.all(
         (userTrips || []).map(async (trip) => {
@@ -49,12 +49,12 @@ export default function TripsTab() {
             .from('trip_collaborators')
             .select('user_id, role')
             .eq('trip_id', trip.id);
-          
+
           if (collabError) {
             console.error('Error loading collaborators for trip:', trip.id, collabError);
             return { ...trip, collaborators: [] };
           }
-          
+
           return { ...trip, collaborators: collaborators || [] };
         })
       );
@@ -64,7 +64,7 @@ export default function TripsTab() {
 
       // Calculate stats
       const totalTrips = tripsWithCollaborators?.length || 0;
-      
+
       // Get upcoming trips (start date is in the future)
       const upcomingTrips = tripsWithCollaborators?.filter(trip => {
         if (!trip.start_date) return false;
@@ -98,9 +98,9 @@ export default function TripsTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ 
+        contentContainerStyle={{
           padding: 16,
           paddingTop: Platform.OS === 'ios' ? 60 : 20
         }}
@@ -108,15 +108,15 @@ export default function TripsTab() {
       >
         {/* Header */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ 
-            fontSize: 32, 
-            fontWeight: '900', 
+          <Text style={{
+            fontSize: 32,
+            fontWeight: '900',
             color: '#1A1A1A',
             marginBottom: 8
           }}>
             Mis Viajes
           </Text>
-          <Text style={{ 
+          <Text style={{
             fontSize: 16,
             color: '#666666',
             fontWeight: '500'
@@ -145,7 +145,7 @@ export default function TripsTab() {
             elevation: 3
           }}
         >
-          <Text style={{ 
+          <Text style={{
             fontSize: 18,
             fontWeight: '600',
             color: '#007AFF',
@@ -153,7 +153,7 @@ export default function TripsTab() {
           }}>
             🗺️
           </Text>
-          <Text style={{ 
+          <Text style={{
             fontSize: 18,
             fontWeight: '600',
             color: '#007AFF'
@@ -187,8 +187,8 @@ export default function TripsTab() {
               justifyContent: 'center'
             }}
           >
-            <Text style={{ 
-              color: '#FFFFFF', 
+            <Text style={{
+              color: '#FFFFFF',
               fontWeight: '700',
               fontSize: 18
             }}>
@@ -198,8 +198,8 @@ export default function TripsTab() {
         </TouchableOpacity>
 
         {/* Stats Cards */}
-        <View style={{ 
-          flexDirection: 'row', 
+        <View style={{
+          flexDirection: 'row',
           justifyContent: 'space-between',
           marginBottom: 24,
           gap: 12
@@ -384,7 +384,7 @@ export default function TripsTab() {
               trip={trip}
               onTripUpdated={(updatedTrip) => {
                 // Actualizar el trip en el array local
-                setTrips(prevTrips => 
+                setTrips(prevTrips =>
                   prevTrips.map(t => t.id === updatedTrip.id ? updatedTrip : t)
                 );
                 // Recargar estadísticas para reflejar cambios
