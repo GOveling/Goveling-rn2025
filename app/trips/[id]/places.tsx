@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
+import PlaceDetailModal from '../../../src/components/PlaceDetailModal';
 
 interface Place {
   id: string;
@@ -13,6 +14,7 @@ interface Place {
   lat: number;
   lng: number;
   category: string;
+  photo_url?: string;
   added_at: string;
 }
 
@@ -22,10 +24,19 @@ export default function TripPlacesScreen() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [tripTitle, setTripTitle] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     loadTripPlaces();
   }, [id]);
+
+  // Recargar cuando regresamos del explore
+  useFocusEffect(
+    useCallback(() => {
+      loadTripPlaces();
+    }, [id])
+  );
 
   const loadTripPlaces = async () => {
     try {
@@ -103,6 +114,103 @@ export default function TripPlacesScreen() {
     });
   };
 
+  const handleDeletePlace = async (placeId: string, placeName: string) => {
+    Alert.alert(
+      'Eliminar lugar',
+      `¿Estás seguro de que quieres eliminar "${placeName}" de tu viaje?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('trip_places')
+                .delete()
+                .eq('id', placeId);
+
+              if (error) {
+                console.error('Error deleting place:', error);
+                Alert.alert('Error', 'No se pudo eliminar el lugar');
+              } else {
+                // Actualizar la lista local
+                setPlaces(prev => prev.filter(p => p.id !== placeId));
+                Alert.alert('Éxito', 'Lugar eliminado del viaje');
+              }
+            } catch (error) {
+              console.error('Error deleting place:', error);
+              Alert.alert('Error', 'No se pudo eliminar el lugar');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleShowPlaceDetails = (place: Place) => {
+    setSelectedPlace(place);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedPlace(null);
+  };
+
+  // Convert Place to EnhancedPlace format for the modal
+  const convertPlaceToEnhanced = (place: Place) => ({
+    id: place.place_id,
+    name: place.name,
+    address: place.address,
+    coordinates: { lat: place.lat, lng: place.lng },
+    category: place.category,
+    photos: place.photo_url ? [place.photo_url] : undefined,
+    source: 'trip_places'
+  });
+
+  // Function to handle place removal from modal (via heart button)
+  const handleRemovePlaceFromModal = async (place: Place) => {
+    Alert.alert(
+      'Eliminar lugar',
+      `¿Estás seguro de que quieres eliminar "${place.name}" de tu viaje?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('trip_places')
+                .delete()
+                .eq('id', place.id);
+
+              if (error) {
+                console.error('Error deleting place:', error);
+                Alert.alert('Error', 'No se pudo eliminar el lugar');
+              } else {
+                // Actualizar la lista local y cerrar modal
+                setPlaces(prev => prev.filter(p => p.id !== place.id));
+                handleCloseModal();
+                Alert.alert('Éxito', 'Lugar eliminado del viaje');
+              }
+            } catch (error) {
+              console.error('Error deleting place:', error);
+              Alert.alert('Error', 'No se pudo eliminar el lugar');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
@@ -125,7 +233,7 @@ export default function TripPlacesScreen() {
             </Text>
           </View>
         </LinearGradient>
-        
+
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#8B5CF6" />
           <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>
@@ -192,7 +300,7 @@ export default function TripPlacesScreen() {
               Ve a la sección Explore y agrega lugares a este viaje
             </Text>
             <TouchableOpacity
-              onPress={() => router.push('/explore')}
+              onPress={() => router.push(`/explore?tripId=${id}&returnTo=trip-places`)}
               style={{
                 borderRadius: 16,
                 paddingHorizontal: 24,
@@ -223,14 +331,41 @@ export default function TripPlacesScreen() {
           </View>
         ) : (
           <View>
-            <Text style={{
-              fontSize: 16,
-              fontWeight: '600',
-              color: '#666666',
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               marginBottom: 16
             }}>
-              {places.length} {places.length === 1 ? 'lugar guardado' : 'lugares guardados'}
-            </Text>
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '600',
+                color: '#666666'
+              }}>
+                {places.length} {places.length === 1 ? 'lugar guardado' : 'lugares guardados'}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => router.push(`/explore?tripId=${id}&returnTo=trip-places`)}
+                style={{
+                  backgroundColor: '#10B981',
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+              >
+                <Ionicons name="add" size={16} color="white" style={{ marginRight: 4 }} />
+                <Text style={{
+                  color: 'white',
+                  fontWeight: '600',
+                  fontSize: 14
+                }}>
+                  Explorar Más
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {places.map((place) => (
               <View
@@ -251,7 +386,7 @@ export default function TripPlacesScreen() {
                   <Text style={{ fontSize: 24, marginRight: 12 }}>
                     {getCategoryIcon(place.category)}
                   </Text>
-                  
+
                   <View style={{ flex: 1 }}>
                     <Text style={{
                       fontSize: 18,
@@ -261,7 +396,7 @@ export default function TripPlacesScreen() {
                     }}>
                       {place.name}
                     </Text>
-                    
+
                     <Text style={{
                       fontSize: 14,
                       color: '#666666',
@@ -269,7 +404,7 @@ export default function TripPlacesScreen() {
                     }}>
                       {place.address}
                     </Text>
-                    
+
                     <View style={{
                       flexDirection: 'row',
                       justifyContent: 'space-between',
@@ -281,7 +416,7 @@ export default function TripPlacesScreen() {
                       }}>
                         Guardado el {formatDate(place.added_at)}
                       </Text>
-                      
+
                       <View style={{
                         backgroundColor: '#EBF4FF',
                         paddingHorizontal: 8,
@@ -299,10 +434,22 @@ export default function TripPlacesScreen() {
                       </View>
                     </View>
                   </View>
+
+                  <TouchableOpacity
+                    onPress={() => handleDeletePlace(place.id, place.name)}
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      backgroundColor: '#FEF2F2',
+                      marginLeft: 8
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                  </TouchableOpacity>
                 </View>
-                
+
                 <TouchableOpacity
-                  onPress={() => Alert.alert('Lugar', `Ver detalles de ${place.name}`)}
+                  onPress={() => handleShowPlaceDetails(place)}
                   style={{
                     marginTop: 12,
                     backgroundColor: '#F8F9FA',
@@ -326,6 +473,19 @@ export default function TripPlacesScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* Place Detail Modal */}
+      {selectedPlace && (
+        <PlaceDetailModal
+          visible={modalVisible}
+          place={convertPlaceToEnhanced(selectedPlace)}
+          onClose={handleCloseModal}
+          tripId={id}
+          tripTitle={tripTitle}
+          isAlreadyInTrip={true}
+          onRemoveFromTrip={() => handleRemovePlaceFromModal(selectedPlace)}
+        />
+      )}
     </View>
   );
 }

@@ -3,16 +3,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert, Animated, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache, PlacesSearchParams } from '../../src/lib/placesSearch';
+import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache, PlacesSearchParams } from '../src/lib/placesSearch';
 import * as Location from 'expo-location';
-import { allUICategories, uiCategoriesGeneral, uiCategoriesSpecific, categoryDisplayToInternal, UICategory } from '../../src/lib/categories';
-import { reverseGeocode } from '../../src/lib/geocoding';
-import PlaceDetailModal from '../../src/components/PlaceDetailModal';
-import PlaceCard from '../../src/components/PlaceCard';
+import { allUICategories, uiCategoriesGeneral, uiCategoriesSpecific, categoryDisplayToInternal, UICategory } from '../src/lib/categories';
+import { reverseGeocode } from '../src/lib/geocoding';
+import PlaceDetailModal from '../src/components/PlaceDetailModal';
+import PlaceCard from '../src/components/PlaceCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppMap from '../../src/components/AppMap';
-import { supabase } from '../../src/lib/supabase';
+import AppMap from '../src/components/AppMap';
+import { supabase } from '../src/lib/supabase';
 
 export default function ExploreScreen() {
   const { t, i18n } = useTranslation();
@@ -163,7 +163,6 @@ export default function ExploreScreen() {
           lat: place.coordinates?.lat || 0,
           lng: place.coordinates?.lng || 0,
           category: place.category || 'restaurant',
-          photo_url: place.photos && place.photos.length > 0 ? place.photos[0] : null,
           added_by: user.user.id
         });
 
@@ -224,7 +223,10 @@ export default function ExploreScreen() {
     }
   }, [search, selectedCategories, nearCurrentLocation, userCoords]);
 
-  // Manual search - no automatic search on text change
+  React.useEffect(() => {
+    const timeout = setTimeout(doSearch, 300);
+    return () => clearTimeout(timeout);
+  }, [doSearch]);
 
   const insets = useSafeAreaInsets();
 
@@ -307,26 +309,7 @@ export default function ExploreScreen() {
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
-              onSubmitEditing={doSearch}
             />
-            <TouchableOpacity
-              onPress={doSearch}
-              style={{
-                backgroundColor: tripId ? '#10B981' : '#8B5CF6',
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 12,
-                marginLeft: 8
-              }}
-            >
-              <Text style={{
-                color: 'white',
-                fontWeight: '600',
-                fontSize: 14
-              }}>
-                Buscar
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 

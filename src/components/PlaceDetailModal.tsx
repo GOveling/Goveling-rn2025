@@ -1,13 +1,13 @@
 // src/components/PlaceDetailModal.tsx
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  Modal, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
-  Dimensions, 
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Dimensions,
   StyleSheet,
   Linking,
   Platform,
@@ -34,9 +34,23 @@ interface PlaceDetailModalProps {
   visible: boolean;
   place: EnhancedPlace | null;
   onClose: () => void;
+  tripId?: string;
+  tripTitle?: string;
+  onAddToTrip?: (place: EnhancedPlace) => void;
+  isAlreadyInTrip?: boolean;
+  onRemoveFromTrip?: () => void;
 }
 
-export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetailModalProps) {
+export default function PlaceDetailModal({
+  visible,
+  place,
+  onClose,
+  tripId,
+  tripTitle,
+  onAddToTrip,
+  isAlreadyInTrip = false,
+  onRemoveFromTrip
+}: PlaceDetailModalProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
@@ -74,6 +88,13 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
   };
 
   const handleSavePlace = async () => {
+    // If this place is already in a trip and we have a remove function, use it
+    if (isAlreadyInTrip && onRemoveFromTrip) {
+      onRemoveFromTrip();
+      return;
+    }
+
+    // Otherwise, handle normal favorite toggle
     const success = await toggleFavorite(place);
     if (!success) {
       Alert.alert('Error', 'No se pudo actualizar los favoritos');
@@ -81,12 +102,18 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
   };
 
   const handleAddToTrip = () => {
-    router.push(`/explore/add-to-trip?placeId=${place.id}&name=${encodeURIComponent(place.name)}`);
+    if (tripId && onAddToTrip) {
+      // Si venimos de un trip específico, agregar directamente
+      onAddToTrip(place);
+    } else {
+      // Si venimos del explore general, ir a la pantalla de selección de trip
+      router.push(`/explore/add-to-trip?placeId=${place.id}&name=${encodeURIComponent(place.name)}`);
+    }
   };
 
   const renderStatusBadge = () => {
     if (place.openNow === undefined) return null;
-    
+
     return (
       <View style={[
         styles.statusBadge,
@@ -116,21 +143,21 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
     const photosToShow = place.photos.slice(0, 5);
 
     return (
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.photosContainer}
         contentContainerStyle={styles.photosContent}
       >
         {photosToShow.map((photo, index) => (
-          <TouchableOpacity 
-            key={index} 
+          <TouchableOpacity
+            key={index}
             style={styles.photoContainer}
             onPress={() => setSelectedPhotoIndex(index)}
             activeOpacity={0.8}
           >
-            <Image 
-              source={{ uri: photo }} 
+            <Image
+              source={{ uri: photo }}
               style={[
                 styles.photo,
                 selectedPhotoIndex === index && styles.photoSelected
@@ -164,8 +191,8 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
         {/* Header con foto y botón cerrar */}
         <View style={styles.header}>
           {place.photos && place.photos.length > 0 ? (
-            <Image 
-              source={{ uri: place.photos[selectedPhotoIndex] || place.photos[0] }} 
+            <Image
+              source={{ uri: place.photos[selectedPhotoIndex] || place.photos[0] }}
               style={styles.headerImage}
               resizeMode="cover"
             />
@@ -177,26 +204,26 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
               <Text style={styles.headerPlaceholder}>📍</Text>
             </LinearGradient>
           )}
-          
+
           {/* Blur overlay con controles o fallback */}
           <View style={styles.headerOverlay}>
-            <TouchableOpacity 
-              style={styles.closeButton} 
+            <TouchableOpacity
+              style={styles.closeButton}
               onPress={onClose}
             >
               <View style={styles.closeButtonBlur}>
                 <Text style={styles.closeButtonText}>✕</Text>
               </View>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.saveButton} 
+
+            <TouchableOpacity
+              style={styles.saveButton}
               onPress={handleSavePlace}
-              disabled={favLoading}
+              disabled={favLoading || (!isAlreadyInTrip && !isFavorite(place.id))}
             >
               <View style={styles.saveButtonBlur}>
                 <Text style={styles.saveButtonText}>
-                  {isFavorite(place.id) ? '❤️' : '🤍'}
+                  {isAlreadyInTrip ? '❤️' : (isFavorite(place.id) ? '❤️' : '🤍')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -204,7 +231,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
         </View>
 
         {/* Contenido principal */}
-        <ScrollView 
+        <ScrollView
           style={styles.content}
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -215,7 +242,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
               <Text style={styles.placeName}>{place.name}</Text>
               {renderStatusBadge()}
             </View>
-            
+
             {place.address && (
               <View style={styles.addressRow}>
                 <Text style={styles.addressIcon}>📍</Text>
@@ -277,7 +304,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Acciones</Text>
             <View style={styles.actionsGrid}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={handleDirections}
               >
@@ -287,7 +314,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
                 <Text style={styles.actionText}>Cómo llegar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={handleCall}
                 disabled={!place.phone}
@@ -300,7 +327,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={handleWebsite}
                 disabled={!place.website}
@@ -313,7 +340,7 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => Alert.alert('Compartir', 'Funcionalidad próximamente')}
               >
@@ -329,21 +356,25 @@ export default function PlaceDetailModal({ visible, place, onClose }: PlaceDetai
           <View style={styles.bottomSpacing} />
         </ScrollView>
 
-        {/* Botón principal flotante */}
-        <View style={styles.floatingButtonContainer}>
-          <TouchableOpacity 
-            style={styles.floatingButton}
-            onPress={handleAddToTrip}
-          >
-            <LinearGradient
-              colors={['#8B5CF6', '#EC4899']}
-              style={styles.floatingButtonGradient}
+        {/* Botón principal flotante - Solo mostrar si no está ya en un viaje */}
+        {!isAlreadyInTrip && (
+          <View style={styles.floatingButtonContainer}>
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={handleAddToTrip}
             >
-              <Text style={styles.floatingButtonIcon}>➕</Text>
-              <Text style={styles.floatingButtonText}>Añadir al viaje</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              <LinearGradient
+                colors={['#8B5CF6', '#EC4899']}
+                style={styles.floatingButtonGradient}
+              >
+                <Text style={styles.floatingButtonIcon}>➕</Text>
+                <Text style={styles.floatingButtonText}>
+                  {tripId ? `Agregar a ${tripTitle || 'viaje'}` : 'Añadir al viaje'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </Modal>
   );

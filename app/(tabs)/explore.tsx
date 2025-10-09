@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Switch, Alert, Animated, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
 import * as Location from 'expo-location';
 import { allUICategories, uiCategoriesGeneral, uiCategoriesSpecific, categoryDisplayToInternal } from '../../src/lib/categories';
@@ -12,24 +12,27 @@ import PlaceCard from '../../src/components/PlaceCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppMap from '../../src/components/AppMap';
+import { supabase } from '../../src/lib/supabase';
 
 export default function ExploreTab() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  
+  const { tripId, returnTo } = useLocalSearchParams<{ tripId?: string; returnTo?: string }>();
+
   const [search, setSearch] = React.useState('');
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
   const [expandedCategories, setExpandedCategories] = React.useState(false);
   const [nearCurrentLocation, setNearCurrentLocation] = React.useState(false); // inicia apagado
   const [showMap, setShowMap] = React.useState(false);
   const [currentLocation, setCurrentLocation] = React.useState('Ubicación desactivada');
-  const [userCoords, setUserCoords] = React.useState<{lat:number; lng:number} | undefined>(undefined);
+  const [userCoords, setUserCoords] = React.useState<{ lat: number; lng: number } | undefined>(undefined);
   const [searchResults, setSearchResults] = React.useState<EnhancedPlace[]>([]);
   const [hasSearched, setHasSearched] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [locLoading, setLocLoading] = React.useState(false);
   const [selectedPlace, setSelectedPlace] = React.useState<EnhancedPlace | null>(null);
   const [modalVisible, setModalVisible] = React.useState(false);
+  const [tripTitle, setTripTitle] = React.useState<string>('');
   const abortRef = React.useRef<AbortController | null>(null);
 
   // Location handling functions for the map
@@ -47,8 +50,8 @@ export default function ExploreTab() {
   const specificCategories = uiCategoriesSpecific;
 
   const toggleCategory = (categoryName: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryName) 
+    setSelectedCategories(prev =>
+      prev.includes(categoryName)
         ? prev.filter(c => c !== categoryName)
         : [...prev, categoryName]
     );
@@ -87,6 +90,31 @@ export default function ExploreTab() {
     }
   }, [nearCurrentLocation, userCoords, locLoading, ensureLocation]);
 
+  // Load trip information if tripId is provided
+  React.useEffect(() => {
+    const loadTripInfo = async () => {
+      if (tripId) {
+        try {
+          const { data: trip, error } = await supabase
+            .from('trips')
+            .select('title')
+            .eq('id', tripId)
+            .single();
+
+          if (error) {
+            console.error('Error loading trip info:', error);
+          } else if (trip) {
+            setTripTitle(trip.title);
+          }
+        } catch (error) {
+          console.error('Error loading trip info:', error);
+        }
+      }
+    };
+
+    loadTripInfo();
+  }, [tripId]);
+
   const handlePlacePress = (place: EnhancedPlace) => {
     setSelectedPlace(place);
     setModalVisible(true);
@@ -95,6 +123,82 @@ export default function ExploreTab() {
   const handleCloseModal = () => {
     setModalVisible(false);
     setSelectedPlace(null);
+  };
+
+  // Function to add place to trip
+  const addPlaceToTrip = async (place: EnhancedPlace) => {
+    if (!tripId) {
+      Alert.alert('Error', 'No se pudo identificar el viaje');
+      return;
+    }
+
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) {
+        Alert.alert('Error', 'Usuario no autenticado');
+        return;
+      }
+
+      // Check if place already exists in trip
+      const { data: existingPlace } = await supabase
+        .from('trip_places')
+        .select('id')
+        .eq('trip_id', tripId)
+        .eq('place_id', place.id)
+        .maybeSingle();
+
+      if (existingPlace) {
+        Alert.alert('Lugar ya agregado', 'Este lugar ya está en tu viaje');
+        return;
+      }
+
+      // Add place to trip
+      const { error } = await supabase
+        .from('trip_places')
+        .insert({
+          trip_id: tripId,
+          place_id: place.id,
+          name: place.name,
+          address: place.address || '',
+          lat: place.coordinates?.lat || 0,
+          lng: place.coordinates?.lng || 0,
+          category: place.types?.[0] || place.category || 'establishment',
+          added_by: user.user.id,
+          added_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error adding place to trip:', error);
+        Alert.alert('Error', 'No se pudo agregar el lugar al viaje');
+        return;
+      }
+
+      Alert.alert(
+        'Lugar agregado',
+        `${place.name} ha sido agregado a ${tripTitle}`,
+        [
+          {
+            text: 'Continuar explorando',
+            style: 'default'
+          },
+          {
+            text: 'Ver lugares del viaje',
+            style: 'default',
+            onPress: () => {
+              if (returnTo === 'trip-places') {
+                router.back(); // Go back to trip places
+              } else {
+                router.push(`/trips/${tripId}/places`);
+              }
+            }
+          }
+        ]
+      );
+
+    } catch (error) {
+      console.error('Error adding place to trip:', error);
+      Alert.alert('Error', 'Ocurrió un error inesperado');
+    }
   };
 
   const performSearch = async () => {
@@ -109,15 +213,15 @@ export default function ExploreTab() {
       hasSearched,
       loading
     });
-    
+
     if (!search.trim()) {
       console.log('[performSearch] Empty search, returning early');
       return;
     }
-    
+
     // Clear cache for fresh data
     clearPlacesCache();
-    
+
     if (nearCurrentLocation && !userCoords) {
       console.log('[performSearch] Need location, calling ensureLocation');
       await ensureLocation();
@@ -126,32 +230,32 @@ export default function ExploreTab() {
       console.log('[performSearch] Still no location after ensureLocation, aborting');
       return; // still not available
     }
-    
+
     // Cancelar búsqueda previa
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setLoading(true);
-    
+
     try {
       const locale = (i18n?.language || 'es').split('-')[0];
-      const internalCats = selectedCategories.map(c=>categoryDisplayToInternal[c]).filter(Boolean);
+      const internalCats = selectedCategories.map(c => categoryDisplayToInternal[c]).filter(Boolean);
       const userLocation = nearCurrentLocation && userCoords ? userCoords : undefined;
-      
+
       console.log('[performSearch] Calling searchPlacesEnhanced with:', {
         input: search,
         selectedCategories: internalCats,
         userLocation,
         locale
       });
-      
+
       const resp = await searchPlacesEnhanced({ input: search, selectedCategories: internalCats, userLocation, locale }, controller.signal);
-      
+
       console.log('[performSearch] Got response:', resp);
       console.log('[performSearch] Response status:', resp?.status);
       console.log('[performSearch] Response predictions count:', resp?.predictions?.length);
       console.log('[performSearch] First prediction:', resp?.predictions?.[0]);
-      
+
       if (resp?.status === 'ERROR') {
         console.error('[performSearch] API returned error:', resp.error);
         Alert.alert('Error de búsqueda', resp.error || 'Error desconocido en la búsqueda');
@@ -160,7 +264,7 @@ export default function ExploreTab() {
         setSearchResults(resp.predictions || []);
       }
       setHasSearched(true);
-    } catch (e:any) {
+    } catch (e: any) {
       console.error('[performSearch] Error during search:', e);
       console.error('[performSearch] Error stack:', e.stack);
       if (e.name !== 'AbortError') {
@@ -206,13 +310,16 @@ export default function ExploreTab() {
             }}>
               <Text style={{ fontSize: 24 }}>🔍</Text>
             </View>
-            
+
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}>
-                Explorar Lugares
+                {tripId ? 'Agregar Lugares' : 'Explorar Lugares'}
               </Text>
               <Text style={{ fontSize: 14, color: '#6B7280' }}>
-                Descubre destinos de ensueño para tu próxima aventura
+                {tripId
+                  ? `Agregando lugares a: ${tripTitle}`
+                  : 'Descubre destinos de ensueño para tu próxima aventura'
+                }
               </Text>
             </View>
 
@@ -245,10 +352,18 @@ export default function ExploreTab() {
           </View>
 
           <TouchableOpacity
-            onPress={() => Alert.alert('Explorar', 'Ya estás en la sección de explorar')}
+            onPress={() => {
+              if (tripId && returnTo === 'trip-places') {
+                router.back(); // Volver a lugares del trip
+              } else if (tripId) {
+                router.push(`/trips/${tripId}/places`); // Ir a lugares del trip
+              } else {
+                Alert.alert('Explorar', 'Ya estás en la sección de explorar');
+              }
+            }}
           >
             <LinearGradient
-              colors={['#8B5CF6', '#7C3AED']}
+              colors={tripId ? ['#10B981', '#059669'] : ['#8B5CF6', '#7C3AED']}
               style={{
                 paddingVertical: 12,
                 paddingHorizontal: 20,
@@ -259,9 +374,11 @@ export default function ExploreTab() {
               }}
             >
               <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginRight: 8 }}>
-                Explorar Ahora
+                {tripId ? 'Ver Lugares del Viaje' : 'Explorar Ahora'}
               </Text>
-              <Text style={{ color: 'white', fontSize: 16 }}>↗</Text>
+              <Text style={{ color: 'white', fontSize: 16 }}>
+                {tripId ? '📍' : '↗'}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -517,7 +634,7 @@ export default function ExploreTab() {
                 ios_backgroundColor="#CBD5E1"
                 style={{ marginRight: 12 }}
               />
-              
+
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 16, fontWeight: '500', color: '#1F2937' }}>
                   Cerca de mi ubicación actual
@@ -638,21 +755,24 @@ export default function ExploreTab() {
         visible={modalVisible}
         place={selectedPlace}
         onClose={handleCloseModal}
+        tripId={tripId}
+        tripTitle={tripTitle}
+        onAddToTrip={tripId ? addPlaceToTrip : undefined}
       />
 
       {/* Modal de mapa */}
       {showMap && (
         <Modal visible={showMap} animationType="slide" presentationStyle="fullScreen">
           <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              paddingHorizontal: 16, 
-              paddingTop: 50, 
-              paddingBottom: 12, 
-              borderBottomWidth: 1, 
-              borderBottomColor: '#e5e5e5' 
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 16,
+              paddingTop: 50,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: '#e5e5e5'
             }}>
               <TouchableOpacity onPress={() => setShowMap(false)} style={{ padding: 8 }}>
                 <Ionicons name="arrow-back" size={24} color="#333" />
@@ -660,21 +780,21 @@ export default function ExploreTab() {
               <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>Mapa de Lugares</Text>
               <View style={{ width: 40 }} />
             </View>
-            <AppMap 
-              center={userCoords ? { 
-                latitude: userCoords.lat, 
-                longitude: userCoords.lng 
-              } : searchResults[0]?.coordinates ? { 
-                latitude: searchResults[0].coordinates.lat, 
-                longitude: searchResults[0].coordinates.lng 
+            <AppMap
+              center={userCoords ? {
+                latitude: userCoords.lat,
+                longitude: userCoords.lng
+              } : searchResults[0]?.coordinates ? {
+                latitude: searchResults[0].coordinates.lat,
+                longitude: searchResults[0].coordinates.lng
               } : { latitude: 40.4168, longitude: -3.7038 }}
-              markers={searchResults.filter(p => p.coordinates).map((p, idx) => ({ 
-                id: `p-${idx}`, 
-                coord: { 
-                  latitude: p.coordinates!.lat, 
-                  longitude: p.coordinates!.lng 
-                }, 
-                title: p.name || `Lugar ${idx + 1}` 
+              markers={searchResults.filter(p => p.coordinates).map((p, idx) => ({
+                id: `p-${idx}`,
+                coord: {
+                  latitude: p.coordinates!.lat,
+                  longitude: p.coordinates!.lng
+                },
+                title: p.name || `Lugar ${idx + 1}`
               }))}
               showUserLocation={true}
               onLocationFound={handleLocationFound}
