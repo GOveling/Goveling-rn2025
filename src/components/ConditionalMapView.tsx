@@ -1,5 +1,5 @@
 import React from 'react';
-import SimpleMap from './SimpleMap';
+import MapTilerMap from './MapTilerMap';
 
 interface Accommodation {
   id: string;
@@ -21,13 +21,30 @@ interface ConditionalMapViewProps {
   };
 }
 
-// Native version (iOS/Android) - Always use SimpleMap for now to avoid bundling issues
-export default function ConditionalMapView({ accommodations, style }: ConditionalMapViewProps) {
-  // For now, always use SimpleMap to avoid Metro bundling issues
+export default function ConditionalMapView({ accommodations, style, mapRegion }: ConditionalMapViewProps) {
+  // Convertir accommodations a markers para MapTilerMap
+  const markers = accommodations.map(acc => ({
+    id: acc.id,
+    coordinate: {
+      latitude: acc.latitude,
+      longitude: acc.longitude
+    },
+    title: acc.name,
+    description: `${acc.type} - ${acc.address}`
+  }));
+
+  // Usar el centro de la región si está disponible
+  const center = mapRegion ? {
+    latitude: mapRegion.latitude,
+    longitude: mapRegion.longitude
+  } : undefined;
+
   return (
-    <SimpleMap 
-      accommodations={accommodations}
+    <MapTilerMap
+      markers={markers}
+      center={center}
       style={style}
+      showUserLocation={true}
     />
   );
 }

@@ -90,7 +90,7 @@ const quickBookingOptions = [
 export default function AccommodationExplorer() {
   const { id: tripId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  
+
   // State
   const [activeTab, setActiveTab] = useState<'explore' | 'saved'>('explore');
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -108,7 +108,7 @@ export default function AccommodationExplorer() {
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
-  
+
   // Custom address state
   const [customAddress, setCustomAddress] = useState({
     name: '',
@@ -126,14 +126,14 @@ export default function AccommodationExplorer() {
 
   const loadTripInfo = async () => {
     if (!tripId) return;
-    
+
     try {
       const { data: trip } = await supabase
         .from('trips')
         .select('title, destination')
         .eq('id', tripId)
         .single();
-      
+
       if (trip?.destination) {
         setTripDestination(trip.destination);
         setSearchQuery(trip.destination);
@@ -162,13 +162,13 @@ export default function AccommodationExplorer() {
 
   const loadSavedAccommodations = async () => {
     if (!tripId) return;
-    
+
     try {
       const { data } = await supabase
         .from('trip_accommodations')
         .select('*')
         .eq('trip_id', tripId);
-      
+
       setSavedAccommodations(data || []);
     } catch (error) {
       console.error('Error loading saved accommodations:', error);
@@ -326,7 +326,7 @@ export default function AccommodationExplorer() {
 
   const openExternalBooking = (accommodation: Accommodation) => {
     const { contact_info } = accommodation;
-    
+
     if (contact_info?.website) {
       Linking.openURL(contact_info.website);
     } else if (contact_info?.phone) {
@@ -362,7 +362,7 @@ export default function AccommodationExplorer() {
 
   const renderAccommodationCard = (accommodation: Accommodation, isSaved = false) => {
     const typeConfig = accommodationTypes.find(t => t.type === accommodation.type) || accommodationTypes[0];
-    
+
     return (
       <View key={accommodation.id} style={styles.accommodationCard}>
         <View style={styles.cardHeader}>
@@ -410,7 +410,7 @@ export default function AccommodationExplorer() {
               <Text style={styles.saveButtonText}>Guardar</Text>
             </TouchableOpacity>
           )}
-          
+
           <TouchableOpacity
             style={styles.contactButton}
             onPress={() => openExternalBooking(accommodation)}
@@ -447,34 +447,34 @@ export default function AccommodationExplorer() {
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Información Básica</Text>
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Nombre del alojamiento *"
                 value={customAddress.name}
-                onChangeText={(text) => setCustomAddress({...customAddress, name: text})}
+                onChangeText={(text) => setCustomAddress({ ...customAddress, name: text })}
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Dirección completa *"
                 value={customAddress.address}
-                onChangeText={(text) => setCustomAddress({...customAddress, address: text})}
+                onChangeText={(text) => setCustomAddress({ ...customAddress, address: text })}
                 multiline
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Ciudad *"
                 value={customAddress.city}
-                onChangeText={(text) => setCustomAddress({...customAddress, city: text})}
+                onChangeText={(text) => setCustomAddress({ ...customAddress, city: text })}
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="País *"
                 value={customAddress.country}
-                onChangeText={(text) => setCustomAddress({...customAddress, country: text})}
+                onChangeText={(text) => setCustomAddress({ ...customAddress, country: text })}
               />
             </View>
 
@@ -489,7 +489,7 @@ export default function AccommodationExplorer() {
                         styles.typeOption,
                         customAddress.type === type.type && styles.typeOptionSelected
                       ]}
-                      onPress={() => setCustomAddress({...customAddress, type: type.type as any})}
+                      onPress={() => setCustomAddress({ ...customAddress, type: type.type as any })}
                     >
                       <Text style={styles.typeOptionIcon}>{type.icon}</Text>
                       <Text style={[
@@ -587,7 +587,7 @@ export default function AccommodationExplorer() {
               <>
                 {/* Map View */}
                 <View style={styles.mapContainer}>
-                  <ConditionalMapView 
+                  <ConditionalMapView
                     accommodations={accommodations}
                     style={styles.map}
                     mapRegion={mapRegion}
@@ -637,7 +637,7 @@ export default function AccommodationExplorer() {
 
       {/* Modals */}
       {renderCustomAddressModal()}
-      
+
       <HotelBookingModal
         visible={showHotelBookingModal}
         onClose={() => setShowHotelBookingModal(false)}

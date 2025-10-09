@@ -25,6 +25,33 @@ const config = getDefaultConfig(__dirname);
 // Configure for web compatibility
 config.resolver.platforms = ['web', 'native', 'ios', 'android'];
 
+// Configure web-specific module resolution
+const isWeb = process.env.EXPO_PLATFORM === 'web' || process.env.PLATFORM === 'web';
+
+// Custom resolver for platform-specific modules
+const originalResolverRequest = config.resolver.resolverMainFields;
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Override react-native-maps for web platform
+  if (moduleName === 'react-native-maps' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'src/stubs/react-native-maps-stub.js'),
+      type: 'sourceFile'
+    };
+  }
+
+  // Use default resolver for other modules
+  return context.resolveRequest(context, moduleName, platform);
+};
+
+config.resolver.alias = {
+  ...(config.resolver.alias || {}),
+  // Map react-native-maps to stub for web only
+  ...(isWeb ? {
+    'react-native-maps': path.resolve(__dirname, 'src/stubs/react-native-maps-stub.js')
+  } : {})
+};
+
 // Performance optimizations (compatible with Bolt)
 if (process.env.NODE_ENV === 'production') {
   config.transformer.minifierConfig = {

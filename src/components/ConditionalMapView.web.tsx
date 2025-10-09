@@ -24,7 +24,7 @@ interface ConditionalMapViewProps {
 // Web version always uses SimpleMap
 export default function ConditionalMapView({ accommodations, style }: ConditionalMapViewProps) {
   return (
-    <SimpleMap 
+    <SimpleMap
       accommodations={accommodations}
       style={style}
     />

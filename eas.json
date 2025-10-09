@@ -20,6 +20,7 @@
     },
     "expo-go": {
       "distribution": "internal",
+      "developmentClient": false,
       "channel": "expo-go"
     },
     "production": {

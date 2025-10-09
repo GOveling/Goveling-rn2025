@@ -8,20 +8,20 @@ const getMaptilerKey = (): string | null => {
 // Safe URL generation - only create URL if key is available
 export const getMapStyleURL = (): string => {
   const key = getMaptilerKey();
-  
-  if (!key) {
-    console.warn('⚠️ Maptiler no configurado, usando fallback');
-    // Return OpenStreetMap style as fallback
+
+  if (!key || key === 'get_your_key_at_maptiler_dot_com') {
+    console.warn('⚠️ Maptiler no configurado, usando OpenStreetMap style');
+    // Return OpenStreetMap style as fallback (no API key required)
     return 'https://api.maptiler.com/maps/openstreetmap/style.json';
   }
-  
+
   return `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}`;
 };
 
 // Alternative styles generator
 export const getAlternativeMapStyles = () => {
   const key = getMaptilerKey();
-  
+
   if (!key) {
     return {
       basic: 'https://api.maptiler.com/maps/openstreetmap/style.json',
@@ -29,7 +29,7 @@ export const getAlternativeMapStyles = () => {
       hybrid: 'https://api.maptiler.com/maps/openstreetmap/style.json'
     };
   }
-  
+
   return {
     basic: `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`,
     satellite: `https://api.maptiler.com/maps/satellite/style.json?key=${key}`,

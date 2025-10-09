@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 // Intent: Estrategia multiplataforma optimizada:
@@ -30,9 +30,8 @@ interface UniversalMapProps {
 
 let NativeMapLibre: any = null;
 try {
-  // Solo existirá en builds nativas prebuild (no en Expo Go).
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  NativeMapLibre = require('react-native-maplibre-gl/maps');
+  // @maplibre/maplibre-react-native es el paquete correcto instalado
+  NativeMapLibre = require('@maplibre/maplibre-react-native');
 } catch (e) {
   NativeMapLibre = null;
 }
@@ -178,29 +177,46 @@ const WebViewMap: React.FC<UniversalMapProps> = ({ userLocation, places, style }
 
 /* ============= NATIVE MAPLIBRE (Producción) ============= */
 const NativeMapLibreComponent: React.FC<UniversalMapProps> = ({ userLocation, places, style }) => {
-  const Mapbox = NativeMapLibre; // alias
-  if (!Mapbox) return null;
+  if (!NativeMapLibre) return null;
 
   const center = getInitialCenter(userLocation, places);
 
   return (
     <View style={[styles.flex, style]}>
-      <Mapbox.MapView style={styles.flex} styleURL="https://demotiles.maplibre.org/style.json">
-        <Mapbox.Camera
+      <NativeMapLibre.MapView
+        style={styles.flex}
+        styleURL="https://demotiles.maplibre.org/style.json"
+        logoEnabled={false}
+        attributionEnabled={false}
+      >
+        <NativeMapLibre.Camera
           zoomLevel={12}
           centerCoordinate={center}
+          animationMode="moveTo"
+          animationDuration={1000}
         />
+
         {userLocation && (
-          <Mapbox.PointAnnotation id="user" coordinate={[userLocation.longitude, userLocation.latitude]}>
+          <NativeMapLibre.PointAnnotation
+            id="user-location"
+            coordinate={[userLocation.longitude, userLocation.latitude]}
+          >
             <View style={styles.userDot} />
-          </Mapbox.PointAnnotation>
+          </NativeMapLibre.PointAnnotation>
         )}
-        {places.filter(p => p.coordinates).map((p, idx) => (
-          <Mapbox.PointAnnotation id={`p-${idx}`} key={idx} coordinate={[p.coordinates!.lng, p.coordinates!.lat]}>
-            <View style={styles.placeDot}><View style={styles.placeDotInner} /></View>
-          </Mapbox.PointAnnotation>
+
+        {places.filter(p => p.coordinates).map((place, idx) => (
+          <NativeMapLibre.PointAnnotation
+            id={`place-${idx}`}
+            key={`place-${idx}`}
+            coordinate={[place.coordinates!.lng, place.coordinates!.lat]}
+          >
+            <View style={styles.placeDot}>
+              <Text style={styles.placeDotText}>{idx + 1}</Text>
+            </View>
+          </NativeMapLibre.PointAnnotation>
         ))}
-      </Mapbox.MapView>
+      </NativeMapLibre.MapView>
     </View>
   );
 };
@@ -250,6 +266,11 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  placeDotText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600'
   },
   placeDotInner: {
     width: 8,

@@ -20,7 +20,7 @@ export default function SimpleMap({ accommodations, style }: SimpleMapProps) {
   const openInMaps = (accommodation: Accommodation) => {
     const { latitude, longitude, name } = accommodation;
     const query = encodeURIComponent(name);
-    
+
     if (Platform.OS === 'ios') {
       Linking.openURL(`maps://0,0?q=${query}&ll=${latitude},${longitude}`);
     } else if (Platform.OS === 'android') {
@@ -36,7 +36,7 @@ export default function SimpleMap({ accommodations, style }: SimpleMapProps) {
         <Ionicons name="map-outline" size={24} color="#6B7280" />
         <Text style={styles.title}>Ubicaciones de Alojamientos</Text>
       </View>
-      
+
       {accommodations.length > 0 ? (
         <View style={styles.locationsList}>
           {accommodations.map((accommodation, index) => (
@@ -55,8 +55,8 @@ export default function SimpleMap({ accommodations, style }: SimpleMapProps) {
               <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
             </TouchableOpacity>
           ))}
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.viewAllButton}
             onPress={() => {
               const center = accommodations[0];

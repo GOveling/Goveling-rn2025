@@ -1,33 +1,31 @@
 import React from 'react';
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
+import MapTilerMap from '../MapTilerMap';
 import type { AppMapProps } from './types';
 
 export default function AppMap(props: AppMapProps) {
-  // Web: cargar implementación DOM (usa maplibre-gl) sólo en web
-  if (Platform.OS === 'web') {
-    const WebDomMap = require('./web/WebDomMap').default as React.ComponentType<AppMapProps>;
-    return <WebDomMap {...props} />;
-  }
+  // Convertir AppMapProps a MapTilerMapProps
+  const markers = props.markers?.map((marker, index) => ({
+    id: `marker-${index}`,
+    coordinate: {
+      latitude: marker.coord.latitude,
+      longitude: marker.coord.longitude
+    },
+    title: marker.title || `Marcador ${index + 1}`,
+    description: `Marcador ${index + 1}` // AppMap markers no tienen description
+  })) || [];
 
-  // Expo Go: forzar WebView (sin módulo nativo)
-  if (Constants.appOwnership === 'expo') {
-    const WebViewMap = require('./webview/WebViewMap').default as React.ComponentType<AppMapProps>;
-    return <WebViewMap {...props} />;
-  }
+  const center = {
+    latitude: props.center.latitude,
+    longitude: props.center.longitude
+  };
 
-  // Intentar nativo (Dev Client / build)
-  let NativeMapComp: React.ComponentType<AppMapProps> | null = null;
-  try {
-    NativeMapComp = require('./native/NativeMap').default;
-  } catch {
-    NativeMapComp = null;
-  }
-
-  if (!NativeMapComp) {
-    const WebViewMap = require('./webview/WebViewMap').default as React.ComponentType<AppMapProps>;
-    return <WebViewMap {...props} />;
-  }
-
-  return <NativeMapComp {...props} />;
+  return (
+    <MapTilerMap
+      center={center}
+      markers={markers}
+      zoom={props.zoom}
+      showUserLocation={props.showUserLocation}
+      style={{ flex: 1 }}
+    />
+  );
 }
