@@ -38,10 +38,13 @@ export default function MapModal({ visible, onClose, places, title = 'Mapa de Lu
   };
 
   const center = userLocation || (places[0]?.coordinates ? { latitude: places[0].coordinates.lat, longitude: places[0].coordinates.lng } : { latitude: 40.4168, longitude: -3.7038 });
-  const markers = [
-    ...(userLocation ? [{ id: 'user', coord: userLocation, title: 'Tú' as const }] : []),
-    ...places.filter(p => p.coordinates).map((p, idx) => ({ id: `p-${idx}`, coord: { latitude: p.coordinates!.lat, longitude: p.coordinates!.lng }, title: p.name || `Lugar ${idx + 1}` }))
-  ];
+
+  // Solo incluir marcadores de lugares, NO la ubicación del usuario
+  const markers = places.filter(p => p.coordinates).map((p, idx) => ({
+    id: `p-${idx}`,
+    coord: { latitude: p.coordinates!.lat, longitude: p.coordinates!.lng },
+    title: p.name || `Lugar ${idx + 1}`
+  }));
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
@@ -55,10 +58,15 @@ export default function MapModal({ visible, onClose, places, title = 'Mapa de Lu
             <Ionicons name={loadingLocation ? 'time' : 'locate'} size={20} color="#333" />
           </TouchableOpacity>
         </View>
-        <AppMap center={center} markers={markers} style={styles.map} />
+        <AppMap
+          center={center}
+          markers={markers}
+          showUserLocation={true}
+          style={styles.map}
+        />
         {Platform.OS !== 'web' && (
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Marcadores: {markers.length}</Text>
+            <Text style={styles.footerText}>Lugares: {markers.length}</Text>
           </View>
         )}
       </View>

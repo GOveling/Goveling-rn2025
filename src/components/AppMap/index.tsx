@@ -25,6 +25,8 @@ export default function AppMap(props: AppMapProps) {
       markers={markers}
       zoom={props.zoom}
       showUserLocation={props.showUserLocation}
+      onLocationFound={props.onLocationFound}
+      onLocationError={props.onLocationError}
       style={{ flex: 1 }}
     />
   );

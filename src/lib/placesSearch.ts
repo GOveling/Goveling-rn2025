@@ -29,6 +29,7 @@ export interface EnhancedPlace {
   confidence_score?: number;
   geocoded?: boolean;
   opening_hours_raw?: any;
+  openingHours?: string[];
 }
 
 export interface PlacesSearchResponse {
@@ -58,7 +59,7 @@ export function clearSearchCache() {
 function cacheKey(p: PlacesSearchParams) {
   return JSON.stringify({
     i: p.input.trim().toLowerCase(),
-    c: (p.selectedCategories||[]).sort(),
+    c: (p.selectedCategories || []).sort(),
     u: p.userLocation ? [p.userLocation.lat.toFixed(3), p.userLocation.lng.toFixed(3)] : null,
     l: p.locale
   });
@@ -71,7 +72,7 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
     isWeb: typeof window !== 'undefined',
     hasSupabase: !!supabase
   });
-  
+
   if (!params.input || params.input.trim().length < 2) {
     console.log('[placesSearch] Input too short, returning empty');
     return { predictions: [], status: 'OK', source: 'google_places_enhanced' };
@@ -90,24 +91,24 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
 
   try {
     console.log('[placesSearch] Invoking edge function google-places-enhanced');
-    
+
     // En desarrollo web (localhost), usar fetch directo para evitar problemas de CORS
     const isWebDev = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost';
-    
+
     if (isWebDev) {
       console.log('[placesSearch] Using direct fetch for web development');
       console.log('[placesSearch] Window location:', window.location?.href);
-      
+
       // En web, usar las variables de entorno explícitamente
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iwsuyrlrbmnbfyfkqowl.supabase.co';
       const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-      
+
       if (!anonKey) {
         throw new Error('EXPO_PUBLIC_SUPABASE_ANON_KEY not configured');
       }
-      
+
       console.log('[placesSearch] Using URLs:', { supabaseUrl, hasAnonKey: !!anonKey });
-      
+
       const response = await fetch(`${supabaseUrl}/functions/v1/google-places-enhanced`, {
         method: 'POST',
         mode: 'cors',
@@ -124,11 +125,11 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[placesSearch] HTTP error:', response.status, errorText);
-        const resp: PlacesSearchResponse = { 
-          predictions: [], 
-          status: 'ERROR', 
-          source: 'google_places_enhanced', 
-          error: `HTTP ${response.status}: ${errorText}` 
+        const resp: PlacesSearchResponse = {
+          predictions: [],
+          status: 'ERROR',
+          source: 'google_places_enhanced',
+          error: `HTTP ${response.status}: ${errorText}`
         };
         memoryCache.set(key, { ts: now, data: resp });
         return resp;
@@ -161,11 +162,11 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
     }
   } catch (networkError) {
     console.error('[placesSearch] Network error:', networkError);
-    const resp: PlacesSearchResponse = { 
-      predictions: [], 
-      status: 'ERROR', 
-      source: 'google_places_enhanced', 
-      error: `Network error: ${networkError.message}` 
+    const resp: PlacesSearchResponse = {
+      predictions: [],
+      status: 'ERROR',
+      source: 'google_places_enhanced',
+      error: `Network error: ${networkError.message}`
     };
     memoryCache.set(key, { ts: now, data: resp });
     return resp;

@@ -14,9 +14,11 @@ import {
   Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import LottieView from 'lottie-react-native';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useRouter } from 'expo-router';
 import { useFavorites } from '../lib/useFavorites';
+import MapModal from './MapModal';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 
 // Conditional BlurView import
@@ -54,15 +56,38 @@ export default function PlaceDetailModal({
   const router = useRouter();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
+  const [showMapModal, setShowMapModal] = React.useState(false);
+
+  // Referencias para controlar las animaciones Lottie
+  const directionsLottieRef = React.useRef<LottieView>(null);
+  const callLottieRef = React.useRef<LottieView>(null);
+  const websiteLottieRef = React.useRef<LottieView>(null);
+  const scheduleLottieRef = React.useRef<LottieView>(null);
 
   // Reset selected photo when place changes
   React.useEffect(() => {
     setSelectedPhotoIndex(0);
   }, [place?.id]);
 
+  // Reproducir animaciones cuando el modal se abre
+  React.useEffect(() => {
+    if (visible) {
+      // Pequeño delay para asegurar que los componentes estén montados
+      setTimeout(() => {
+        directionsLottieRef.current?.play();
+        callLottieRef.current?.play();
+        websiteLottieRef.current?.play();
+        scheduleLottieRef.current?.play();
+      }, 300);
+    }
+  }, [visible]);
+
   if (!place) return null;
 
   const handleCall = () => {
+    // Reproducir animación al hacer clic
+    callLottieRef.current?.play();
+
     if (place.phone) {
       const phoneNumber = place.phone.replace(/[^\d+]/g, '');
       Linking.openURL(`tel:${phoneNumber}`);
@@ -71,20 +96,109 @@ export default function PlaceDetailModal({
     }
   };
 
+  const handleLocation = () => {
+    // Reproducir animación al hacer clic
+    callLottieRef.current?.play();
+
+    if (place.coordinates) {
+      setShowMapModal(true);
+    } else {
+      Alert.alert('Ubicación no disponible', 'No hay coordenadas para mostrar este lugar en el mapa');
+    }
+  };
+
   const handleWebsite = () => {
-    if (place.website) {
-      Linking.openURL(place.website);
+    // Reproducir animación al hacer clic
+    websiteLottieRef.current?.play();
+
+    console.log('Website data:', {
+      website: place.website,
+      hasWebsite: !!place.website,
+      websiteType: typeof place.website,
+      placeKeys: Object.keys(place),
+      place: place
+    });
+
+    if (place.website && place.website.trim()) {
+      let url = place.website.trim();
+      // Asegurar que la URL tenga protocolo
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      console.log('Opening URL:', url);
+      Linking.openURL(url);
     } else {
       Alert.alert('Sitio web no disponible', 'No hay sitio web para este lugar');
     }
   };
 
+  const handleSchedule = () => {
+    // Reproducir animación al hacer clic
+    scheduleLottieRef.current?.play();
+
+    console.log('Schedule data:', {
+      openingHours: place.openingHours,
+      opening_hours_raw: place.opening_hours_raw,
+      openNow: place.openNow,
+      hasOpeningHours: !!place.openingHours,
+      hasOpeningHoursRaw: !!place.opening_hours_raw,
+      openingHoursType: typeof place.openingHours,
+      openingHoursRawType: typeof place.opening_hours_raw,
+      placeKeys: Object.keys(place),
+      place: place
+    });
+
+    let scheduleText = '';
+
+    // Intentar obtener horarios de diferentes fuentes
+    if (place.openingHours && Array.isArray(place.openingHours) && place.openingHours.length > 0) {
+      scheduleText = place.openingHours.join('\n');
+    } else if (place.opening_hours_raw) {
+      if (typeof place.opening_hours_raw === 'string') {
+        scheduleText = place.opening_hours_raw;
+      } else if (place.opening_hours_raw.weekday_text && Array.isArray(place.opening_hours_raw.weekday_text)) {
+        scheduleText = place.opening_hours_raw.weekday_text.join('\n');
+      } else if (place.opening_hours_raw.periods) {
+        scheduleText = 'Horarios disponibles (ver detalles en el lugar)';
+      } else {
+        scheduleText = JSON.stringify(place.opening_hours_raw, null, 2);
+      }
+    } else if (place.openNow !== undefined) {
+      scheduleText = `Estado actual: ${place.openNow ? 'Abierto' : 'Cerrado'}`;
+    }
+
+    if (scheduleText.trim()) {
+      Alert.alert(
+        'Horarios de funcionamiento',
+        scheduleText,
+        [{ text: 'Cerrar', style: 'default' }]
+      );
+    } else {
+      Alert.alert('Horarios no disponibles', 'No hay información de horarios para este lugar');
+    }
+  };
+
   const handleDirections = () => {
+    // Reproducir animación al hacer clic
+    directionsLottieRef.current?.play();
+
+    // Mostrar notificación de funcionalidad próximamente
+    Alert.alert(
+      'Funcionalidad próxima',
+      'Las direcciones paso a paso llegarán pronto a Goveling. Por ahora puedes usar tu app de mapas favorita.',
+      [
+        { text: 'Entendido', style: 'default' }
+      ]
+    );
+
+    // Código original comentado para futuro uso
+    /*
     if (place.coordinates) {
       router.push(`/trips/directions?dest=${place.coordinates.lat},${place.coordinates.lng}&name=${encodeURIComponent(place.name)}`);
     } else {
       Alert.alert('Ubicación no disponible', 'No se puede obtener direcciones para este lugar');
     }
+    */
   };
 
   const handleSavePlace = async () => {
@@ -109,6 +223,35 @@ export default function PlaceDetailModal({
       // Si venimos del explore general, ir a la pantalla de selección de trip
       router.push(`/explore/add-to-trip?placeId=${place.id}&name=${encodeURIComponent(place.name)}`);
     }
+  };
+
+  // Componente para renderizar icono con fallback
+  const renderActionIcon = (
+    lottieRef: React.RefObject<LottieView>,
+    animationSource: any,
+    fallbackEmoji: string,
+    disabled: boolean = false
+  ) => {
+    return (
+      <View style={[styles.actionIcon, disabled && styles.actionIconDisabled]}>
+        <LottieView
+          ref={lottieRef}
+          source={animationSource}
+          style={[styles.lottieIcon, disabled && styles.lottieIconDisabled]}
+          loop={false}
+          autoPlay={false}
+          onAnimationFailure={() => {
+            console.log('Lottie animation failed, using fallback emoji');
+          }}
+        />
+        {/* Fallback emoji positioned behind Lottie - solo mostrar si hay emoji */}
+        {fallbackEmoji && (
+          <Text style={[styles.fallbackEmoji, disabled && styles.lottieIconDisabled]}>
+            {fallbackEmoji}
+          </Text>
+        )}
+      </View>
+    );
   };
 
   const renderStatusBadge = () => {
@@ -181,202 +324,226 @@ export default function PlaceDetailModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={styles.container}>
-        {/* Header con foto y botón cerrar */}
-        <View style={styles.header}>
-          {place.photos && place.photos.length > 0 ? (
-            <Image
-              source={{ uri: place.photos[selectedPhotoIndex] || place.photos[0] }}
-              style={styles.headerImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <LinearGradient
-              colors={['#F3F4F6', '#E5E7EB']}
-              style={styles.headerImage}
-            >
-              <Text style={styles.headerPlaceholder}>📍</Text>
-            </LinearGradient>
-          )}
-
-          {/* Blur overlay con controles o fallback */}
-          <View style={styles.headerOverlay}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-            >
-              <View style={styles.closeButtonBlur}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSavePlace}
-              disabled={favLoading || (!isAlreadyInTrip && !isFavorite(place.id))}
-            >
-              <View style={styles.saveButtonBlur}>
-                <Text style={styles.saveButtonText}>
-                  {isAlreadyInTrip ? '❤️' : (isFavorite(place.id) ? '❤️' : '🤍')}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Contenido principal */}
-        <ScrollView
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          {/* Información básica */}
-          <View style={styles.basicInfo}>
-            <View style={styles.titleRow}>
-              <Text style={styles.placeName}>{place.name}</Text>
-              {renderStatusBadge()}
-            </View>
-
-            {place.address && (
-              <View style={styles.addressRow}>
-                <Text style={styles.addressIcon}>📍</Text>
-                <Text style={styles.addressText}>{place.address}</Text>
-              </View>
-            )}
-
-            {/* Rating y reviews */}
-            {place.rating && (
-              <View style={styles.ratingRow}>
-                <Text style={styles.starIcon}>⭐</Text>
-                <Text style={styles.ratingText}>{place.rating}</Text>
-                {place.reviews_count && (
-                  <Text style={styles.reviewsText}>({place.reviews_count})</Text>
-                )}
-                {place.distance_km && (
-                  <>
-                    <Text style={styles.separator}>•</Text>
-                    <Text style={styles.distanceText}>
-                      {place.distance_km.toFixed(2)} km
-                    </Text>
-                  </>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Fotos adicionales */}
-          {place.photos && place.photos.length > 1 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Fotos</Text>
-              {renderPhotos()}
-            </View>
-          )}
-
-          {/* Descripción */}
-          {place.description && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Descripción</Text>
-              <Text style={styles.description}>{place.description}</Text>
-            </View>
-          )}
-
-          {/* Información adicional */}
-          {(place.category || place.types) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Categorías</Text>
-              <View style={styles.tagsContainer}>
-                {processPlaceCategories(place.types || [], place.category, 4).map((category, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{category}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Acciones rápidas */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Acciones</Text>
-            <View style={styles.actionsGrid}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleDirections}
-              >
-                <View style={styles.actionIcon}>
-                  <Text style={styles.actionIconText}>🧭</Text>
-                </View>
-                <Text style={styles.actionText}>Cómo llegar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleCall}
-                disabled={!place.phone}
-              >
-                <View style={[styles.actionIcon, !place.phone && styles.actionIconDisabled]}>
-                  <Text style={styles.actionIconText}>📞</Text>
-                </View>
-                <Text style={[styles.actionText, !place.phone && styles.actionTextDisabled]}>
-                  Llamar
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleWebsite}
-                disabled={!place.website}
-              >
-                <View style={[styles.actionIcon, !place.website && styles.actionIconDisabled]}>
-                  <Text style={styles.actionIconText}>🌐</Text>
-                </View>
-                <Text style={[styles.actionText, !place.website && styles.actionTextDisabled]}>
-                  Sitio web
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => Alert.alert('Compartir', 'Funcionalidad próximamente')}
-              >
-                <View style={styles.actionIcon}>
-                  <Text style={styles.actionIconText}>📤</Text>
-                </View>
-                <Text style={styles.actionText}>Compartir</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Espacio inferior para evitar que se corte el contenido */}
-          <View style={styles.bottomSpacing} />
-        </ScrollView>
-
-        {/* Botón principal flotante - Solo mostrar si no está ya en un viaje */}
-        {!isAlreadyInTrip && (
-          <View style={styles.floatingButtonContainer}>
-            <TouchableOpacity
-              style={styles.floatingButton}
-              onPress={handleAddToTrip}
-            >
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={onClose}
+      >
+        <View style={styles.container}>
+          {/* Header con foto y botón cerrar */}
+          <View style={styles.header}>
+            {place.photos && place.photos.length > 0 ? (
+              <Image
+                source={{ uri: place.photos[selectedPhotoIndex] || place.photos[0] }}
+                style={styles.headerImage}
+                resizeMode="cover"
+              />
+            ) : (
               <LinearGradient
-                colors={['#8B5CF6', '#EC4899']}
-                style={styles.floatingButtonGradient}
+                colors={['#F3F4F6', '#E5E7EB']}
+                style={styles.headerImage}
               >
-                <Text style={styles.floatingButtonIcon}>➕</Text>
-                <Text style={styles.floatingButtonText}>
-                  {tripId ? `Agregar a ${tripTitle || 'viaje'}` : 'Añadir al viaje'}
-                </Text>
+                <Text style={styles.headerPlaceholder}>📍</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            )}
+
+            {/* Blur overlay con controles o fallback */}
+            <View style={styles.headerOverlay}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={onClose}
+              >
+                <View style={styles.closeButtonBlur}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSavePlace}
+                disabled={favLoading || (!isAlreadyInTrip && !isFavorite(place.id))}
+              >
+                <View style={styles.saveButtonBlur}>
+                  <Text style={styles.saveButtonText}>
+                    {isAlreadyInTrip ? '❤️' : (isFavorite(place.id) ? '❤️' : '🤍')}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-      </View>
-    </Modal>
+
+          {/* Contenido principal */}
+          <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {/* Información básica */}
+            <View style={styles.basicInfo}>
+              <View style={styles.titleRow}>
+                <Text style={styles.placeName}>{place.name}</Text>
+                {renderStatusBadge()}
+              </View>
+
+              {place.address && (
+                <View style={styles.addressRow}>
+                  <Text style={styles.addressIcon}>📍</Text>
+                  <Text style={styles.addressText}>{place.address}</Text>
+                </View>
+              )}
+
+              {/* Rating y reviews */}
+              {place.rating && (
+                <View style={styles.ratingRow}>
+                  <Text style={styles.starIcon}>⭐</Text>
+                  <Text style={styles.ratingText}>{place.rating}</Text>
+                  {place.reviews_count && (
+                    <Text style={styles.reviewsText}>({place.reviews_count})</Text>
+                  )}
+                  {place.distance_km && (
+                    <>
+                      <Text style={styles.separator}>•</Text>
+                      <Text style={styles.distanceText}>
+                        {place.distance_km.toFixed(2)} km
+                      </Text>
+                    </>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* Fotos adicionales */}
+            {place.photos && place.photos.length > 1 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Fotos</Text>
+                {renderPhotos()}
+              </View>
+            )}
+
+            {/* Descripción */}
+            {place.description && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Descripción</Text>
+                <Text style={styles.description}>{place.description}</Text>
+              </View>
+            )}
+
+            {/* Información adicional */}
+            {(place.category || place.types) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Categorías</Text>
+                <View style={styles.tagsContainer}>
+                  {processPlaceCategories(place.types || [], place.category, 4).map((category, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{category}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Acciones rápidas */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Acciones</Text>
+              <View style={styles.actionsGrid}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleDirections}
+                >
+                  {renderActionIcon(
+                    directionsLottieRef,
+                    require('../../assets/animations/cycle.json'),
+                    '' // Sin emoji de fallback por ahora
+                  )}
+                  <Text style={styles.actionText}>Cómo llegar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleLocation}
+                  disabled={!place.coordinates}
+                >
+                  {renderActionIcon(
+                    callLottieRef,
+                    require('../../assets/animations/location-circle.json'),
+                    '', // Sin emoji de fallback
+                    !place.coordinates
+                  )}
+                  <Text style={[styles.actionText, !place.coordinates && styles.actionTextDisabled]}>
+                    Ubicación
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleWebsite}
+                  disabled={!place.website}
+                >
+                  {renderActionIcon(
+                    websiteLottieRef,
+                    require('../../assets/animations/globe.json'),
+                    '', // Sin emoji de fallback por ahora
+                    !place.website
+                  )}
+                  <Text style={[styles.actionText, !place.website && styles.actionTextDisabled]}>
+                    Sitio web
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleCall}
+                  disabled={!place.phone}
+                >
+                  {renderActionIcon(
+                    scheduleLottieRef,
+                    require('../../assets/animations/clock.json'),
+                    '', // Sin emoji de fallback
+                    !place.phone
+                  )}
+                  <Text style={[styles.actionText, !place.phone && styles.actionTextDisabled]}>
+                    Llamar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Espacio inferior para evitar que se corte el contenido */}
+            <View style={styles.bottomSpacing} />
+          </ScrollView>
+
+          {/* Botón principal flotante - Solo mostrar si no está ya en un viaje */}
+          {!isAlreadyInTrip && (
+            <View style={styles.floatingButtonContainer}>
+              <TouchableOpacity
+                style={styles.floatingButton}
+                onPress={handleAddToTrip}
+              >
+                <LinearGradient
+                  colors={['#8B5CF6', '#EC4899']}
+                  style={styles.floatingButtonGradient}
+                >
+                  <Text style={styles.floatingButtonIcon}>➕</Text>
+                  <Text style={styles.floatingButtonText}>
+                    {tripId ? `Agregar a ${tripTitle || 'viaje'}` : 'Añadir al viaje'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
+
+      {/* Modal del mapa para mostrar la ubicación */}
+      <MapModal
+        visible={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        places={[place]}
+        title={`Ubicación de ${place.name}`}
+      />
+    </>
   );
 }
 
@@ -639,6 +806,18 @@ const styles = StyleSheet.create({
   },
   actionTextDisabled: {
     color: '#9CA3AF',
+  },
+  lottieIcon: {
+    width: 36,
+    height: 36,
+  },
+  lottieIconDisabled: {
+    opacity: 0.5,
+  },
+  fallbackEmoji: {
+    position: 'absolute',
+    fontSize: 24,
+    zIndex: -1,
   },
   bottomSpacing: {
     height: 100,

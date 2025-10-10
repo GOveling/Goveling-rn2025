@@ -23,6 +23,8 @@ interface MapTilerMapProps {
   zoom?: number;
   showUserLocation?: boolean;
   userLocation?: MapLocation | null;
+  onLocationFound?: (location: MapLocation) => void;
+  onLocationError?: (error: string) => void;
   onError?: (error: string) => void;
   style?: any;
 }
@@ -32,6 +34,8 @@ export default function MapTilerMap({
   markers = [],
   zoom = 12,
   showUserLocation = true,
+  onLocationFound,
+  onLocationError,
   style
 }: MapTilerMapProps) {
   const [userLocationActive, setUserLocationActive] = useState(false);
@@ -77,6 +81,11 @@ export default function MapTilerMap({
 
           setUserLocation(userLoc);
           console.log('[MapTilerMap] Real user location obtained:', userLoc);
+
+          // Llamar al callback si existe
+          if (onLocationFound) {
+            onLocationFound(userLoc);
+          }
           return;
         }
 
@@ -91,11 +100,21 @@ export default function MapTilerMap({
               };
               setUserLocation(location);
               console.log('[MapTilerMap] Web user location found:', location);
+
+              // Llamar al callback si existe
+              if (onLocationFound) {
+                onLocationFound(location);
+              }
             },
             (error) => {
               console.error('[MapTilerMap] Error getting location:', error);
               setUserLocationActive(false);
               setMapError(`Error de ubicación: ${error.message}`);
+
+              // Llamar al callback de error si existe
+              if (onLocationError) {
+                onLocationError(error.message);
+              }
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
           );
@@ -104,6 +123,11 @@ export default function MapTilerMap({
         console.error('[MapTilerMap] Location error:', error);
         setUserLocationActive(false);
         setMapError(`Error obteniendo ubicación: ${error.message}`);
+
+        // Llamar al callback de error si existe
+        if (onLocationError) {
+          onLocationError(error.message);
+        }
       }
     } else {
       setUserLocation(null);

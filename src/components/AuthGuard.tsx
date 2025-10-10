@@ -1,21 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Text } from 'r  return (
-    <>
-      {children}
-      
-      {/* Onboarding Modals - Temporalmente desactivados */}
-      {/* <WelcomeModal 
-        isOpen={showWelcome} 
-        onClose={completeWelcome} 
-      />
-      
-      <PersonalInfoModal 
-        isOpen={showPersonalInfo} 
-        onClose={closePersonalInfo} 
-        user={onboardingUser || user}
-      /> */}
-    </>
-  );ort { useAuth } from '~/contexts/AuthContext';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { useAuth } from '~/contexts/AuthContext';
 import { router, useSegments, useRootNavigationState } from 'expo-router';
 // import { useOnboarding } from '~/hooks/useOnboarding';
 // import WelcomeModal from './onboarding/WelcomeModal';
@@ -29,7 +14,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading: authLoading } = useAuth();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
-  
+
   // Temporalmente desactivado el onboarding automático
   // const {
   //   showWelcome,
@@ -66,13 +51,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
     } else {
       // User is authenticated
       console.log('✅ User authenticated, checking onboarding status');
-      
+
       // If showing onboarding modals, don't redirect
       // if (showWelcome || showPersonalInfo) {
       //   console.log('🎉 Showing onboarding modals, staying in place');
       //   return;
       // }
-      
+
       if (inAuthGroup) {
         // User is on auth screen but already authenticated, redirect to main app
         console.log('🔄 User already authenticated, redirecting to main app');
@@ -106,18 +91,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
   return (
     <>
       {children}
-      
-      {/* Onboarding Modals */}
-      <WelcomeModal 
+
+      {/* Onboarding Modals - Temporalmente desactivados */}
+      {/* <WelcomeModal 
         isOpen={showWelcome} 
         onClose={completeWelcome} 
       />
       
       <PersonalInfoModal 
         isOpen={showPersonalInfo} 
-        onClose={closePersonalInfo}
+        onClose={closePersonalInfo} 
         user={onboardingUser || user}
-      />
+      /> */}
     </>
   );
 }
