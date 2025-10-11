@@ -11,4 +11,5 @@ export type AppMapProps = {
   showUserLocation?: boolean;
   onLocationFound?: (location: LatLng) => void;
   onLocationError?: (error: string) => void;
+  onMarkerPress?: (markerId: string, markerData: { id: string; coord: LatLng; title?: string }) => void;
 };

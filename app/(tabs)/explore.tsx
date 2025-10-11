@@ -350,37 +350,6 @@ export default function ExploreTab() {
               }} />
             </View>
           </View>
-
-          <TouchableOpacity
-            onPress={() => {
-              if (tripId && returnTo === 'trip-places') {
-                router.back(); // Volver a lugares del trip
-              } else if (tripId) {
-                router.push(`/trips/${tripId}/places`); // Ir a lugares del trip
-              } else {
-                Alert.alert('Explorar', 'Ya estás en la sección de explorar');
-              }
-            }}
-          >
-            <LinearGradient
-              colors={tripId ? ['#10B981', '#059669'] : ['#8B5CF6', '#7C3AED']}
-              style={{
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                borderRadius: 12,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center'
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginRight: 8 }}>
-                {tripId ? 'Ver Lugares del Viaje' : 'Explorar Ahora'}
-              </Text>
-              <Text style={{ color: 'white', fontSize: 16 }}>
-                {tripId ? '📍' : '↗'}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
@@ -750,19 +719,21 @@ export default function ExploreTab() {
         </ScrollView>
       </View>
 
-      {/* Modal de detalles del lugar */}
-      <PlaceDetailModal
-        visible={modalVisible}
-        place={selectedPlace}
-        onClose={handleCloseModal}
-        tripId={tripId}
-        tripTitle={tripTitle}
-        onAddToTrip={tripId ? addPlaceToTrip : undefined}
-      />
+      {/* Modal de detalles del lugar - Aparece por encima del mapa si está abierto */}
+      {!showMap && (
+        <PlaceDetailModal
+          visible={modalVisible}
+          place={selectedPlace}
+          onClose={handleCloseModal}
+          tripId={tripId}
+          tripTitle={tripTitle}
+          onAddToTrip={tripId ? addPlaceToTrip : undefined}
+        />
+      )}
 
       {/* Modal de mapa */}
       {showMap && (
-        <Modal visible={showMap} animationType="slide" presentationStyle="fullScreen">
+        <Modal visible={showMap} animationType="slide" presentationStyle="pageSheet" transparent={false}>
           <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <View style={{
               flexDirection: 'row',
@@ -799,8 +770,43 @@ export default function ExploreTab() {
               showUserLocation={true}
               onLocationFound={handleLocationFound}
               onLocationError={handleLocationError}
+              onMarkerPress={(markerId, markerData) => {
+                console.log('[Explore] Marker pressed:', markerId, markerData);
+                // Encontrar el lugar correspondiente al marcador
+                const markerIndex = parseInt(markerId.split('-')[1]);
+                if (!isNaN(markerIndex) && markerIndex < searchResults.length) {
+                  const place = searchResults[markerIndex];
+                  if (place) {
+                    console.log('[Explore] Opening place:', place.name);
+                    // Abrir la ficha directamente encima del mapa
+                    handlePlacePress(place);
+                  }
+                }
+              }}
               style={{ flex: 1 }}
             />
+
+            {/* Modal de detalles del lugar - Overlay encima del mapa */}
+            {modalVisible && (
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 9999,
+                elevation: 9999, // Para Android
+              }}>
+                <PlaceDetailModal
+                  visible={modalVisible}
+                  place={selectedPlace}
+                  onClose={handleCloseModal}
+                  tripId={tripId}
+                  tripTitle={tripTitle}
+                  onAddToTrip={tripId ? addPlaceToTrip : undefined}
+                />
+              </View>
+            )}
           </View>
         </Modal>
       )}

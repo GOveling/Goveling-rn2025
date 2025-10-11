@@ -19,6 +19,18 @@ export default function AppMap(props: AppMapProps) {
     longitude: props.center.longitude
   };
 
+  // Manejar el clic en marcador
+  const handleMarkerPress = (markerId: string) => {
+    if (props.onMarkerPress && props.markers) {
+      // Extraer el índice del ID del marcador (formato: marker-0, marker-1, etc.)
+      const markerIndex = parseInt(markerId.split('-')[1]);
+      if (!isNaN(markerIndex) && markerIndex < props.markers.length) {
+        const markerData = props.markers[markerIndex];
+        props.onMarkerPress(markerId, markerData);
+      }
+    }
+  };
+
   return (
     <MapTilerMap
       center={center}
@@ -27,6 +39,7 @@ export default function AppMap(props: AppMapProps) {
       showUserLocation={props.showUserLocation}
       onLocationFound={props.onLocationFound}
       onLocationError={props.onLocationError}
+      onMarkerPress={handleMarkerPress}
       style={{ flex: 1 }}
     />
   );

@@ -26,6 +26,7 @@ interface MapTilerMapProps {
   onLocationFound?: (location: MapLocation) => void;
   onLocationError?: (error: string) => void;
   onError?: (error: string) => void;
+  onMarkerPress?: (markerId: string) => void;
   style?: any;
 }
 
@@ -36,6 +37,7 @@ export default function MapTilerMap({
   showUserLocation = true,
   onLocationFound,
   onLocationError,
+  onMarkerPress,
   style
 }: MapTilerMapProps) {
   const [userLocationActive, setUserLocationActive] = useState(false);
@@ -123,6 +125,7 @@ export default function MapTilerMap({
 
   // 1. Web: MapLibre GL JS directo con MapTiler
   if (Platform.OS === 'web') {
+    console.log('[MapTilerMap] Using WebDirectMapTiler for web');
     return (
       <View style={[styles.flex, style]}>
         {mapError && (
@@ -138,6 +141,7 @@ export default function MapTilerMap({
           userLocation={userLocation}
           style={styles.flex}
           onError={setMapError}
+          onMarkerPress={onMarkerPress}
         />
         <LocationButton
           onLocationPress={handleLocationPress}
@@ -149,7 +153,7 @@ export default function MapTilerMap({
 
   // 2. iOS: Para Expo Go usamos WebView, para desarrollo usa Apple Maps
   if (Platform.OS === 'ios') {
-    console.log('[MapTilerMap] Using WebView for iOS (Expo Go compatible)');
+    console.log('[MapTilerMap] Using WebViewMapTiler for iOS (Expo Go compatible)');
     return (
       <View style={[styles.flex, style]}>
         {mapError && (
@@ -165,6 +169,7 @@ export default function MapTilerMap({
           userLocation={userLocation}
           style={styles.flex}
           onError={setMapError}
+          onMarkerPress={onMarkerPress}
         />
         <LocationButton
           onLocationPress={handleLocationPress}
@@ -175,6 +180,7 @@ export default function MapTilerMap({
   }
 
   // 3. Android y Expo Go: WebView con MapTiler
+  console.log('[MapTilerMap] Using WebViewMapTiler for Android/Expo Go');
   return (
     <View style={[styles.flex, style]}>
       {mapError && (
@@ -190,6 +196,7 @@ export default function MapTilerMap({
         userLocation={userLocation}
         style={styles.flex}
         onError={setMapError}
+        onMarkerPress={onMarkerPress}
       />
       <LocationButton
         onLocationPress={handleLocationPress}
@@ -200,7 +207,7 @@ export default function MapTilerMap({
 }
 
 /* ================= WEB (DOM) ================= */
-const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, showUserLocation, userLocation, onError, style }) => {
+const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, showUserLocation, userLocation, onError, onMarkerPress, style }) => {
   const divRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -317,37 +324,67 @@ const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, 
           // Marcadores lugares
           markers.forEach((marker, idx) => {
             const el = document.createElement('div');
-            el.style.width = '40px';
-            el.style.height = '40px';
+            el.style.width = '28px';  // Reducido de 40px a 28px
+            el.style.height = '28px'; // Reducido de 40px a 28px
             el.style.background = '#FF3B30';
             el.style.color = '#fff';
-            el.style.fontSize = '18px';
-            el.style.fontWeight = '800';
+            el.style.fontSize = '14px'; // Reducido de 18px a 14px
+            el.style.fontWeight = '700'; // Reducido de 800 a 700
             el.style.display = 'flex';
             el.style.alignItems = 'center';
             el.style.justifyContent = 'center';
             el.style.borderRadius = '50%';
-            el.style.border = '4px solid #fff';
-            el.style.boxShadow = '0 3px 12px rgba(255, 59, 48, 0.4), 0 1px 4px rgba(0,0,0,0.3)';
+            el.style.border = '3px solid #fff'; // Reducido de 4px a 3px
+            el.style.boxShadow = '0 2px 8px rgba(255, 59, 48, 0.3), 0 1px 3px rgba(0,0,0,0.2)'; // Sombra más sutil
             el.style.cursor = 'pointer';
             el.style.position = 'relative';
             el.style.zIndex = '1000';
+            el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease'; // Animación suave
+            el.style.transformOrigin = 'center center'; // Asegurar transformaciones desde el centro
             el.innerText = String(idx + 1);
 
-            const popup = new maplibregl.Popup({
-              offset: 30,
-              closeButton: true,
-              closeOnClick: true
-            })
-              .setHTML(`<div style="padding: 8px;"><strong>${marker.title || 'Marcador'}</strong>${marker.description ? `<br/>${marker.description}` : ''}</div>`);
+            // Agregar efectos hover
+            el.onmouseenter = () => {
+              el.style.transform = 'translate(-50%, -50%) scale(1.1)'; // Mantener el anclaje central
+              el.style.boxShadow = '0 4px 12px rgba(255, 59, 48, 0.4), 0 2px 6px rgba(0,0,0,0.3)';
+            };
+            el.onmouseleave = () => {
+              el.style.transform = 'translate(-50%, -50%) scale(1)'; // Mantener el anclaje central
+              el.style.boxShadow = '0 2px 8px rgba(255, 59, 48, 0.3), 0 1px 3px rgba(0,0,0,0.2)';
+            };
 
-            new maplibregl.Marker({
-              element: el,
-              anchor: 'center'
-            })
-              .setLngLat([marker.coordinate.longitude, marker.coordinate.latitude])
-              .setPopup(popup)
-              .addTo(map);
+            // Manejar clic en marcador
+            el.onclick = (e) => {
+              e.stopPropagation();
+              if (onMarkerPress) {
+                onMarkerPress(marker.id);
+              }
+            };
+
+            // Popup solo se muestra si no hay onMarkerPress (fallback)
+            if (!onMarkerPress) {
+              const popup = new maplibregl.Popup({
+                offset: 30,
+                closeButton: true,
+                closeOnClick: true
+              })
+                .setHTML(`<div style="padding: 8px;"><strong>${marker.title || 'Marcador'}</strong>${marker.description ? `<br/>${marker.description}` : ''}</div>`);
+
+              new maplibregl.Marker({
+                element: el,
+                anchor: 'center'
+              })
+                .setLngLat([marker.coordinate.longitude, marker.coordinate.latitude])
+                .setPopup(popup)
+                .addTo(map);
+            } else {
+              new maplibregl.Marker({
+                element: el,
+                anchor: 'center'
+              })
+                .setLngLat([marker.coordinate.longitude, marker.coordinate.latitude])
+                .addTo(map);
+            }
           });
 
           // Ajustar vista si hay marcadores (pero no cuando se muestra ubicación de usuario)
@@ -371,7 +408,7 @@ const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, 
 };
 
 /* ============= WEBVIEW FALLBACK (Android/Expo Go) ============= */
-const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, showUserLocation, userLocation, onError, style }) => {
+const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, showUserLocation, userLocation, onError, onMarkerPress, style }) => {
   const mapCenter = getInitialCenter(center, markers);
   const mapData = {
     center: mapCenter,
@@ -417,19 +454,25 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
       transform: none !important;
     } 
     .marker {
-      width: 40px;
-      height: 40px;
+      width: 28px;
+      height: 28px;
       background: #FF3B30;
       color: #fff;
-      font-size: 18px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      border: 4px solid #fff;
-      box-shadow: 0 3px 12px rgba(255, 59, 48, 0.4), 0 1px 4px rgba(0,0,0,0.3);
+      border: 3px solid #fff;
+      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3), 0 1px 3px rgba(0,0,0,0.2);
       cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transform-origin: center center; /* Asegurar que las transformaciones sean desde el centro */
+    }
+    .marker:hover {
+      transform: translate(-50%, -50%) scale(1.1) !important; /* Forzar el anclaje correcto */
+      box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4), 0 2px 6px rgba(0,0,0,0.3);
     } 
     .user-location {
       width: 28px;
@@ -582,9 +625,9 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
             'type': 'circle',
             'source': 'places',
             'paint': {
-              'circle-radius': 20,
+              'circle-radius': 14, // Reducido de 20 a 14
               'circle-color': '#FF3B30',
-              'circle-stroke-width': 4,
+              'circle-stroke-width': 3, // Reducido de 4 a 3
               'circle-stroke-color': '#fff'
             }
           });
@@ -597,7 +640,7 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
             'layout': {
               'text-field': ['get', 'number'],
               'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-              'text-size': 16,
+              'text-size': 12, // Reducido de 16 a 12
               'text-anchor': 'center'
             },
             'paint': {
@@ -605,17 +648,45 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
             }
           });
           
-          // Add click interaction for places
+          // Add click interaction for places (tanto círculos como números)
           map.on('click', 'places-circle', function(e) {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            const title = e.features[0].properties.title;
-            const description = e.features[0].properties.description;
+            const number = e.features[0].properties.number;
+            const markerId = 'marker-' + (parseInt(number) - 1); // Convertir número a ID
             
-            new maplibregl.Popup({ offset: 25 })
-              .setLngLat(coordinates)
-              .setHTML('<div style="padding: 8px;"><strong>' + title + '</strong>' + 
-                      (description ? '<br/>' + description : '') + '</div>')
-              .addTo(map);
+            // Enviar mensaje a React Native si está disponible
+            if (window.ReactNativeWebView) {
+              console.log('[WebView] Sending marker press:', markerId);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'markerPress',
+                markerId: markerId
+              }));
+            } else {
+              console.log('[WebView] No ReactNativeWebView available, showing popup');
+              // Fallback: mostrar popup si no hay manejo en React Native
+              const coordinates = e.features[0].geometry.coordinates.slice();
+              const title = e.features[0].properties.title;
+              const description = e.features[0].properties.description;
+              
+              new maplibregl.Popup({ offset: 25 })
+                .setLngLat(coordinates)
+                .setHTML('<div style="padding: 8px;"><strong>' + title + '</strong>' + 
+                        (description ? '<br/>' + description : '') + '</div>')
+                .addTo(map);
+            }
+          });
+
+          // También agregar clic a los números
+          map.on('click', 'places-numbers', function(e) {
+            const number = e.features[0].properties.number;
+            const markerId = 'marker-' + (parseInt(number) - 1);
+            
+            if (window.ReactNativeWebView) {
+              console.log('[WebView] Sending marker press from number:', markerId);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'markerPress',
+                markerId: markerId
+              }));
+            }
           });
           
           // Change cursor on hover
@@ -687,13 +758,25 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
         onLoadEnd={() => {
           // WebView load completed
         }}
+        onMessage={(event) => {
+          try {
+            console.log('[MapTilerMap] Received WebView message:', event.nativeEvent.data);
+            const message = JSON.parse(event.nativeEvent.data);
+            if (message.type === 'markerPress' && onMarkerPress) {
+              console.log('[MapTilerMap] Calling onMarkerPress with:', message.markerId);
+              onMarkerPress(message.markerId);
+            }
+          } catch (error) {
+            console.error('Error parsing WebView message:', error);
+          }
+        }}
       />
     </View>
   );
 };
 
 /* ============= APPLE MAPS FALLBACK (iOS) ============= */
-const AppleMapsFallback: React.FC<MapTilerMapProps> = ({ center, markers, style }) => {
+const AppleMapsFallback: React.FC<MapTilerMapProps> = ({ center, markers, onMarkerPress, style }) => {
   // Intentar cargar Apple Maps si está disponible
   let AppleMap: any = null;
   try {
@@ -718,7 +801,7 @@ const AppleMapsFallback: React.FC<MapTilerMapProps> = ({ center, markers, style 
   }
 
   // Fallback si Apple Maps no está disponible
-  return <WebViewMapTiler center={center} markers={markers} style={style} />;
+  return <WebViewMapTiler center={center} markers={markers} onMarkerPress={onMarkerPress} style={style} />;
 };
 
 /* ============= Helpers ============= */
