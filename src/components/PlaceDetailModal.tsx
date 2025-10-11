@@ -19,6 +19,7 @@ import { EnhancedPlace } from '../lib/placesSearch';
 import { useRouter } from 'expo-router';
 import { useFavorites } from '../lib/useFavorites';
 import MapModal from './MapModal';
+import MiniMapModal from './MiniMapModal';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 
 // Conditional BlurView import
@@ -57,6 +58,14 @@ export default function PlaceDetailModal({
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
   const [showMapModal, setShowMapModal] = React.useState(false);
+  const [showMiniMap, setShowMiniMap] = React.useState(false);
+  const [tempHideMainModal, setTempHideMainModal] = React.useState(false);
+
+  // Estados para controlar errores de Lottie
+  const [directionsLottieError, setDirectionsLottieError] = React.useState(false);
+  const [locationLottieError, setLocationLottieError] = React.useState(false);
+  const [websiteLottieError, setWebsiteLottieError] = React.useState(false);
+  const [callLottieError, setCallLottieError] = React.useState(false);
 
   // Referencias para controlar las animaciones Lottie
   const directionsLottieRef = React.useRef<LottieView>(null);
@@ -69,9 +78,24 @@ export default function PlaceDetailModal({
     setSelectedPhotoIndex(0);
   }, [place?.id]);
 
-  // Reproducir animaciones cuando el modal se abre
+  // Debug logging para showMiniMap
+  React.useEffect(() => {
+    console.log('showMiniMap state changed:', showMiniMap);
+  }, [showMiniMap]);
+
+  // Resetear estados de error y reproducir animaciones cuando el modal se abre
   React.useEffect(() => {
     if (visible) {
+      // Resetear estados de error
+      setDirectionsLottieError(false);
+      setLocationLottieError(false);
+      setWebsiteLottieError(false);
+      setCallLottieError(false);
+
+      // Resetear estados de modales
+      setShowMiniMap(false);
+      setTempHideMainModal(false);
+
       // Pequeño delay para asegurar que los componentes estén montados
       setTimeout(() => {
         directionsLottieRef.current?.play();
@@ -100,9 +124,20 @@ export default function PlaceDetailModal({
     // Reproducir animación al hacer clic
     callLottieRef.current?.play();
 
-    if (place.coordinates) {
-      setShowMapModal(true);
+    console.log('Opening location modal for place:', {
+      name: place.name,
+      coordinates: place.coordinates,
+      hasCoordinates: !!place.coordinates,
+      lat: place.coordinates?.lat,
+      lng: place.coordinates?.lng
+    });
+
+    if (place.coordinates && place.coordinates.lat && place.coordinates.lng) {
+      console.log('Setting showMiniMap to true and hiding main modal');
+      setTempHideMainModal(true);
+      setShowMiniMap(true);
     } else {
+      console.log('No valid coordinates found');
       Alert.alert('Ubicación no disponible', 'No hay coordenadas para mostrar este lugar en el mapa');
     }
   };
@@ -225,28 +260,34 @@ export default function PlaceDetailModal({
     }
   };
 
-  // Componente para renderizar icono con fallback
+  // Componente para renderizar icono Lottie centrado con fallback
   const renderActionIcon = (
     lottieRef: React.RefObject<LottieView>,
     animationSource: any,
     fallbackEmoji: string,
+    errorState: boolean,
+    setErrorState: (error: boolean) => void,
     disabled: boolean = false
   ) => {
+    const handleAnimationFailure = (error: any) => {
+      console.log('Lottie animation failed:', error);
+      setErrorState(true);
+    };
+
     return (
       <View style={[styles.actionIcon, disabled && styles.actionIconDisabled]}>
-        <LottieView
-          ref={lottieRef}
-          source={animationSource}
-          style={[styles.lottieIcon, disabled && styles.lottieIconDisabled]}
-          loop={false}
-          autoPlay={false}
-          onAnimationFailure={() => {
-            console.log('Lottie animation failed, using fallback emoji');
-          }}
-        />
-        {/* Fallback emoji positioned behind Lottie - solo mostrar si hay emoji */}
-        {fallbackEmoji && (
-          <Text style={[styles.fallbackEmoji, disabled && styles.lottieIconDisabled]}>
+        {!errorState ? (
+          <LottieView
+            ref={lottieRef}
+            source={animationSource}
+            style={[styles.lottieIcon, disabled && styles.lottieIconDisabled]}
+            loop={false}
+            autoPlay={false}
+            resizeMode="contain"
+            onAnimationFailure={handleAnimationFailure}
+          />
+        ) : (
+          <Text style={[styles.fallbackEmoji, disabled && styles.fallbackEmojiDisabled]}>
             {fallbackEmoji}
           </Text>
         )}
@@ -326,7 +367,7 @@ export default function PlaceDetailModal({
   return (
     <>
       <Modal
-        visible={visible}
+        visible={visible && !tempHideMainModal}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={onClose}
@@ -455,7 +496,9 @@ export default function PlaceDetailModal({
                   {renderActionIcon(
                     directionsLottieRef,
                     require('../../assets/animations/cycle.json'),
-                    '' // Sin emoji de fallback por ahora
+                    '🚴‍♂️', // Emoji de fallback para direcciones
+                    directionsLottieError,
+                    setDirectionsLottieError
                   )}
                   <Text style={styles.actionText}>Cómo llegar</Text>
                 </TouchableOpacity>
@@ -468,7 +511,9 @@ export default function PlaceDetailModal({
                   {renderActionIcon(
                     callLottieRef,
                     require('../../assets/animations/location-circle.json'),
-                    '', // Sin emoji de fallback
+                    '📍', // Emoji de fallback para ubicación
+                    locationLottieError,
+                    setLocationLottieError,
                     !place.coordinates
                   )}
                   <Text style={[styles.actionText, !place.coordinates && styles.actionTextDisabled]}>
@@ -484,7 +529,9 @@ export default function PlaceDetailModal({
                   {renderActionIcon(
                     websiteLottieRef,
                     require('../../assets/animations/globe.json'),
-                    '', // Sin emoji de fallback por ahora
+                    '🌐', // Emoji de fallback para sitio web
+                    websiteLottieError,
+                    setWebsiteLottieError,
                     !place.website
                   )}
                   <Text style={[styles.actionText, !place.website && styles.actionTextDisabled]}>
@@ -500,7 +547,9 @@ export default function PlaceDetailModal({
                   {renderActionIcon(
                     scheduleLottieRef,
                     require('../../assets/animations/clock.json'),
-                    '', // Sin emoji de fallback
+                    '📞', // Emoji de fallback para llamar
+                    callLottieError,
+                    setCallLottieError,
                     !place.phone
                   )}
                   <Text style={[styles.actionText, !place.phone && styles.actionTextDisabled]}>
@@ -542,6 +591,19 @@ export default function PlaceDetailModal({
         onClose={() => setShowMapModal(false)}
         places={[place]}
         title={`Ubicación de ${place.name}`}
+      />
+
+      {/* Mini mapa modal para mostrar ubicación específica */}
+      <MiniMapModal
+        visible={showMiniMap}
+        onClose={() => {
+          console.log('Closing MiniMapModal and restoring main modal');
+          setShowMiniMap(false);
+          setTempHideMainModal(false);
+        }}
+        placeName={place.name}
+        latitude={place.coordinates?.lat || 0}
+        longitude={place.coordinates?.lng || 0}
       />
     </>
   );
@@ -808,16 +870,18 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   lottieIcon: {
-    width: 36,
-    height: 36,
+    width: 32, // Tamaño optimizado para que quepa bien centrado
+    height: 32,
   },
   lottieIconDisabled: {
     opacity: 0.5,
   },
   fallbackEmoji: {
-    position: 'absolute',
     fontSize: 24,
-    zIndex: -1,
+    textAlign: 'center',
+  },
+  fallbackEmojiDisabled: {
+    opacity: 0.5,
   },
   bottomSpacing: {
     height: 100,
