@@ -14,7 +14,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: false,
-  signOut: async () => {},
+  signOut: async () => { },
 });
 
 export const useAuth = () => {
@@ -71,16 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🔐 AuthContext signOut called');
     console.log('🔐 Current user before signOut:', user?.email);
     console.log('🔐 Current session before signOut:', session?.user?.email);
-    
+
     try {
       console.log('🔐 Calling supabase.auth.signOut()...');
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         console.error('🔐 ❌ Supabase signOut error:', error);
         throw error;
       }
-      
+
       console.log('🔐 ✅ Supabase signOut completed successfully');
       // Clear local state immediately
       setSession(null);
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Navigate to auth screen to show login/signup immediately
       try {
         router.replace('/auth');
-      } catch {}
+      } catch { }
     } catch (error) {
       console.error('🔐 ❌ Error in AuthContext signOut:', error);
       throw error;

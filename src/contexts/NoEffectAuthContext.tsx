@@ -11,7 +11,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: false, // Set to false immediately
-  signOut: async () => {},
+  signOut: async () => { },
 });
 
 export const useAuth = () => {
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log('🚀 NO-EFFECT AuthProvider initial state - loading:', false);
 
   // NO useEffect - just immediate state
-  
+
   const signOut = async () => {
     console.log('🔐 NO-EFFECT AuthContext signOut called');
   };

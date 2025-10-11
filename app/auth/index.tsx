@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
   Dimensions,
   Image,
   KeyboardAvoidingView,
@@ -22,7 +22,7 @@ import { router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
-export default function AuthScreen(){
+export default function AuthScreen() {
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +34,7 @@ export default function AuthScreen(){
   const [rememberMe, setRememberMe] = useState(false);
   const [isDark, setIsDark] = useState(Appearance.getColorScheme() === 'dark');
   const [authError, setAuthError] = useState<string | null>(null);
-  
+
   // Referencias para los TextInputs
   const emailInputRef = React.useRef<TextInput>(null);
   const passwordInputRef = React.useRef<TextInput>(null);
@@ -57,7 +57,7 @@ export default function AuthScreen(){
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
@@ -67,9 +67,9 @@ export default function AuthScreen(){
     try {
       // Send confirmation email with Resend
       const response = await supabase.functions.invoke('send-confirmation-email', {
-        body: { 
+        body: {
           email,
-          fullName 
+          fullName
         }
       });
 
@@ -83,7 +83,7 @@ export default function AuthScreen(){
 
       // Check the response data
       const emailData = response.data;
-      
+
       if (emailData?.ok) {
         // Success case - email sent
         console.log('✅ Email sent successfully');
@@ -95,7 +95,7 @@ export default function AuthScreen(){
         }));
 
         Alert.alert(
-          '¡Casi listo!', 
+          '¡Casi listo!',
           `Hemos enviado un código de verificación a ${email}. Revisa tu correo e ingresa el código para completar tu registro.`,
           [
             {
@@ -130,7 +130,7 @@ export default function AuthScreen(){
       }
     } catch (error: any) {
       console.error('❌ Signup error:', error);
-      
+
       // Handle specific error cases
       if (error.message?.includes('user_already_exists')) {
         Alert.alert(
@@ -172,7 +172,7 @@ export default function AuthScreen(){
       });
 
       if (error) throw error;
-      
+
       // The AuthProvider will handle navigation
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -181,13 +181,13 @@ export default function AuthScreen(){
     }
   };
 
-  const backgroundColors = isDark 
+  const backgroundColors = isDark
     ? ['#1A1B3C', '#2D1B69', '#4A154B'] as const
     : ['#6366F1', '#8B5CF6', '#EC4899'] as const;
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'light-content'} />
@@ -196,21 +196,21 @@ export default function AuthScreen(){
         style={styles.gradient}
       >
         {/* Theme Toggle */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.themeToggle, 
+            styles.themeToggle,
             { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)' }
-          ]} 
+          ]}
           onPress={toggleTheme}
         >
-          <Ionicons 
-            name={isDark ? 'sunny' : 'moon'} 
-            size={24} 
-            color="rgba(255,255,255,0.8)" 
+          <Ionicons
+            name={isDark ? 'sunny' : 'moon'}
+            size={24}
+            color="rgba(255,255,255,0.8)"
           />
         </TouchableOpacity>
 
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
@@ -226,14 +226,14 @@ export default function AuthScreen(){
               </TouchableOpacity>
             </View>
           )}
-          
+
           {/* Card Container */}
           <View style={[styles.card, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' }]}>
-            
+
             {/* Logo */}
             <View style={styles.logoContainer}>
-              <Image 
-                source={require('../../assets/branding-zeppeling.png')} 
+              <Image
+                source={require('../../assets/branding-zeppeling.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -244,7 +244,7 @@ export default function AuthScreen(){
               {mode === 'signup' && (
                 <View style={styles.inputContainer}>
                   <TextInput
-                    style={[styles.input, { 
+                    style={[styles.input, {
                       borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                       color: isDark ? '#fff' : '#000',
                       backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
@@ -263,7 +263,7 @@ export default function AuthScreen(){
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={emailInputRef}
-                  style={[styles.input, { 
+                  style={[styles.input, {
                     borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                     color: isDark ? '#fff' : '#000',
                     backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
@@ -282,7 +282,7 @@ export default function AuthScreen(){
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={passwordInputRef}
-                  style={[styles.input, { 
+                  style={[styles.input, {
                     borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                     color: isDark ? '#fff' : '#000',
                     backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
@@ -295,14 +295,14 @@ export default function AuthScreen(){
                   onSubmitEditing={mode === 'signin' ? signIn : () => confirmPasswordInputRef.current?.focus()}
                   returnKeyType={mode === 'signin' ? 'done' : 'next'}
                 />
-                <TouchableOpacity 
-                  style={styles.eyeIcon} 
+                <TouchableOpacity
+                  style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Ionicons 
-                    name={showPassword ? 'eye' : 'eye-off'} 
-                    size={24} 
-                    color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} 
+                  <Ionicons
+                    name={showPassword ? 'eye' : 'eye-off'}
+                    size={24}
+                    color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
                   />
                 </TouchableOpacity>
               </View>
@@ -311,7 +311,7 @@ export default function AuthScreen(){
                 <View style={styles.inputContainer}>
                   <TextInput
                     ref={confirmPasswordInputRef}
-                    style={[styles.input, { 
+                    style={[styles.input, {
                       borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
                       color: isDark ? '#fff' : '#000',
                       backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
@@ -324,14 +324,14 @@ export default function AuthScreen(){
                     onSubmitEditing={signUp}
                     returnKeyType="done"
                   />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    <Ionicons 
-                      name={showConfirmPassword ? 'eye' : 'eye-off'} 
-                      size={24} 
-                      color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} 
+                    <Ionicons
+                      name={showConfirmPassword ? 'eye' : 'eye-off'}
+                      size={24}
+                      color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
                     />
                   </TouchableOpacity>
                 </View>
@@ -339,12 +339,12 @@ export default function AuthScreen(){
 
               {mode === 'signin' && (
                 <View style={styles.rememberRow}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.checkboxContainer}
                     onPress={() => setRememberMe(!rememberMe)}
                   >
                     <View style={[
-                      styles.checkbox, 
+                      styles.checkbox,
                       { borderColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)' },
                       rememberMe && styles.checkboxChecked
                     ]}>
@@ -356,7 +356,7 @@ export default function AuthScreen(){
                       Remember me
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity onPress={() => router.push('/auth/forgot-password' as any)}>
                     <Text style={[styles.forgotText, { color: isDark ? '#fff' : '#6366F1' }]}>
                       Forgot password?
@@ -366,7 +366,7 @@ export default function AuthScreen(){
               )}
 
               {/* Main Button */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.mainButton, { opacity: loading ? 0.6 : 1 }]}
                 onPress={mode === 'signup' ? signUp : signIn}
                 disabled={loading}

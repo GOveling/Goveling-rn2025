@@ -11,7 +11,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
-  signOut: async () => {},
+  signOut: async () => { },
 });
 
 export const useAuth = () => {
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('🚀 SIMPLE AuthProvider useEffect executing...');
     console.log('🚀 SIMPLE AuthProvider setting loading to false in 2 seconds...');
-    
+
     setTimeout(() => {
       console.log('🚀 SIMPLE AuthProvider loading set to false');
       setLoading(false);

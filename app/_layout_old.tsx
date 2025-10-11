@@ -10,32 +10,32 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 // AuthGuard inline para evitar problemas de caché
-  function InlineAuthGuard({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
-    const segments = useSegments();
-    const router = useRouter();
-    
-    const inAuthGroup = segments[0] === '(auth)' || segments[0] === 'auth';
-    
-    console.log('🔍 Inline AuthGuard - user:', user);
-    console.log('🔍 Inline AuthGuard - loading:', loading);
-    console.log('🔍 Inline AuthGuard - segments:', segments);
-    console.log('🔍 Inline AuthGuard - inAuthGroup:', inAuthGroup);
-    
-    // Forzar navegación inmediata sin useEffect
-    if (!loading) {
-      if (!user && !inAuthGroup) {
-        console.log('� FORCE Redirecting to auth/index...');
-        router.replace('/auth/index');
-      } else if (user && inAuthGroup) {
-        console.log('� FORCE Redirecting to (tabs)...');
-        router.replace('/(tabs)');
-      }
+function InlineAuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  const inAuthGroup = segments[0] === '(auth)' || segments[0] === 'auth';
+
+  console.log('🔍 Inline AuthGuard - user:', user);
+  console.log('🔍 Inline AuthGuard - loading:', loading);
+  console.log('🔍 Inline AuthGuard - segments:', segments);
+  console.log('🔍 Inline AuthGuard - inAuthGroup:', inAuthGroup);
+
+  // Forzar navegación inmediata sin useEffect
+  if (!loading) {
+    if (!user && !inAuthGroup) {
+      console.log('� FORCE Redirecting to auth/index...');
+      router.replace('/auth/index');
+    } else if (user && inAuthGroup) {
+      console.log('� FORCE Redirecting to (tabs)...');
+      router.replace('/(tabs)');
     }
-    
-    console.log('🔍 Inline AuthGuard - rendering children');
-    return <>{children}</>;
   }
+
+  console.log('🔍 Inline AuthGuard - rendering children');
+  return <>{children}</>;
+}
 
 // @ts-nocheck
 export default function Root() {

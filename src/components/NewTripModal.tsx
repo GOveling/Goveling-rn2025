@@ -101,7 +101,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         Alert.alert('Error', 'Debes iniciar sesión para crear un viaje');
         return;
@@ -158,7 +158,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -170,7 +170,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
           <Text style={styles.headerTitle}>Nuevo Viaje</Text>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.content}
           showsVerticalScrollIndicator={false}
         >
@@ -208,15 +208,15 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
           {/* Fechas del viaje */}
           <View style={styles.section}>
             <Text style={styles.label}>Fechas del Viaje</Text>
-            
+
             <TouchableOpacity
               style={[styles.uncertainButton, tripData.isDateUncertain && styles.uncertainButtonActive]}
               onPress={() => setTripData({ ...tripData, isDateUncertain: !tripData.isDateUncertain })}
             >
-              <Ionicons 
-                name={tripData.isDateUncertain ? "checkmark-circle" : "ellipse-outline"} 
-                size={20} 
-                color={tripData.isDateUncertain ? "#007AFF" : "#999"} 
+              <Ionicons
+                name={tripData.isDateUncertain ? "checkmark-circle" : "ellipse-outline"}
+                size={20}
+                color={tripData.isDateUncertain ? "#007AFF" : "#999"}
               />
               <Text style={[styles.uncertainButtonText, tripData.isDateUncertain && styles.uncertainButtonTextActive]}>
                 No estoy seguro de las fechas
