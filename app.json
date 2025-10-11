@@ -81,9 +81,7 @@
       }
     },
     "owner": "goveling",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/082d74f5-5463-424d-b8a3-0f2330c03846"
     }

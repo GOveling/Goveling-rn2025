@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
-import { router, useSegments, useRootNavigationState } from 'expo-router';
+import { router, useSegments, useRootNavigationState, Redirect } from 'expo-router';
 // import { useOnboarding } from '~/hooks/useOnboarding';
 // import WelcomeModal from './onboarding/WelcomeModal';
 // import PersonalInfoModal from './onboarding/PersonalInfoModal';
@@ -28,44 +28,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   const loading = authLoading; // || onboardingLoading;
 
-  useEffect(() => {
-    if (!navigationState?.key || loading) {
-      // Wait for navigation to be ready and auth loading to complete
-      return;
-    }
-
-    console.log('🛡️ AuthGuard: Checking authentication state');
-    console.log('👤 User:', user?.email || 'Not authenticated');
-    console.log('📍 Current segments:', segments);
-    // console.log('🎯 Onboarding state:', { showWelcome, showPersonalInfo });
-
-    const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
-
-    if (!user) {
-      // User is not authenticated
-      console.log('🔒 User not authenticated, redirecting to auth');
-      if (!inAuthGroup) {
-        router.replace('/auth');
-      }
-    } else {
-      // User is authenticated
-      console.log('✅ User authenticated, checking onboarding status');
-
-      // If showing onboarding modals, don't redirect
-      // if (showWelcome || showPersonalInfo) {
-      //   console.log('🎉 Showing onboarding modals, staying in place');
-      //   return;
-      // }
-
-      if (inAuthGroup) {
-        // User is on auth screen but already authenticated, redirect to main app
-        console.log('🔄 User already authenticated, redirecting to main app');
-        router.replace('/(tabs)');
-      }
-    }
-  }, [user, loading, segments, navigationState?.key]); // showWelcome, showPersonalInfo
-
   // Show loading screen while checking authentication
   if (loading || !navigationState?.key) {
     return (
@@ -86,6 +48,25 @@ export function AuthGuard({ children }: AuthGuardProps) {
         </Text>
       </View>
     );
+  }
+
+  console.log('🛡️ AuthGuard: Checking authentication state');
+  console.log('👤 User:', user?.email || 'Not authenticated');
+  console.log('📍 Current segments:', segments);
+
+  const inAuthGroup = segments[0] === 'auth';
+  const inTabsGroup = segments[0] === '(tabs)';
+
+  if (!user && !inAuthGroup) {
+    // User is not authenticated and not in auth group
+    console.log('🔒 User not authenticated, redirecting to auth with Redirect component');
+    return <Redirect href="/auth" />;
+  }
+
+  if (user && inAuthGroup) {
+    // User is authenticated but still in auth group
+    console.log('🔄 User already authenticated, redirecting to main app with Redirect component');
+    return <Redirect href="/(tabs)" />;
   }
 
   return (

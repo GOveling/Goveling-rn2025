@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '~/lib/supabase';
+import { router } from 'expo-router';
+import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -12,7 +13,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
-  loading: true,
+  loading: false,
   signOut: async () => {},
 });
 
@@ -25,55 +26,45 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log('🚀 AuthProvider component mounting...');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize session and subscribe to auth state changes
   useEffect(() => {
-    console.log('🚀 AuthProvider initializing...');
-    
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('❌ Error getting initial session:', error);
+    let isMounted = true;
+
+    const init = async () => {
+      try {
+        // 1) Get initial session from storage
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('[Auth] getSession error:', error.message);
+        }
+        if (!isMounted) return;
+        setSession(data?.session ?? null);
+        setUser(data?.session?.user ?? null);
+      } catch (e) {
+        console.warn('[Auth] init error:', e);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      console.log('🔍 Initial session check:', session?.user?.email || 'No session');
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    };
+
+    init();
+
+    // 2) Subscribe to auth state changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      // Update local state on any auth event
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
     });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state change:', event, session?.user?.email || 'No user');
-      
-      // Special handling for OAuth callback completion
-      if (event === 'SIGNED_IN' && session) {
-        console.log('✅ User signed in via OAuth:', session.user.email);
-        console.log('🔗 Auth metadata:', session.user.app_metadata);
-      }
-      
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed for:', session?.user?.email);
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-
-      // Log events but don't handle navigation here - AuthGuard will handle it
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in successfully');
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out successfully');
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
@@ -91,6 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log('🔐 ✅ Supabase signOut completed successfully');
+      // Clear local state immediately
+      setSession(null);
+      setUser(null);
+      // Navigate to auth screen to show login/signup immediately
+      try {
+        router.replace('/auth');
+      } catch {}
     } catch (error) {
       console.error('🔐 ❌ Error in AuthContext signOut:', error);
       throw error;

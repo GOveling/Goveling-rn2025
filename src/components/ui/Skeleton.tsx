@@ -16,6 +16,6 @@ export function Skeleton({ height=16, width='100%', style }:{ height?:number; wi
     return ()=> anim.stop();
   }, []);
   return (
-    <Animated.View style={[{ height, width, backgroundColor: colors.border, borderRadius: radius.md, opacity: o }, style]} />
+    <Animated.View style={[{ height, width: width as any, backgroundColor: colors.border, borderRadius: radius.md, opacity: o }, style]} />
   );
 }

@@ -10,7 +10,10 @@ import {
   Platform,
   Dimensions,
   StyleSheet,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  ViewStyle,
+  TextStyle,
+  ImageStyle
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -20,55 +23,46 @@ import { supabase } from '~/lib/supabase';
 interface NewTripModalProps {
   visible: boolean;
   onClose: () => void;
-  onTripCreated: () => void;
+  onTripCreated: (tripId: string) => void;
 }
 
 interface TripData {
-  title: string;
+  name: string;
   description: string;
   startDate: Date | null;
   endDate: Date | null;
+  isDateUncertain: boolean;
   budget: string;
   accommodation: string;
   transport: string;
-  isDateUncertain: boolean;
 }
 
-const { width, height } = Dimensions.get('window');
-
-const accommodationTypes = [
-  { label: 'Hotel', value: 'hotel', icon: '🏨' },
-  { label: 'Cabaña', value: 'cabin', icon: '🏘️' },
-  { label: 'Resort', value: 'resort', icon: '🏖️' },
-  { label: 'Hostal', value: 'hostel', icon: '🏠' },
-  { label: 'Apartamento', value: 'apartment', icon: '🏢' },
-  { label: 'Camping', value: 'camping', icon: '⛺' },
-  { label: 'Casa Rural', value: 'rural_house', icon: '🏡' },
-  { label: 'Otro', value: 'other', icon: '🏨' }
+const ACCOMMODATION_TYPES = [
+  { value: 'hotel', label: 'Hotel', icon: '🏨' },
+  { value: 'hostel', label: 'Hostel', icon: '🏠' },
+  { value: 'apartment', label: 'Apartamento', icon: '🏢' },
+  { value: 'camping', label: 'Camping', icon: '⛺' },
+  { value: 'other', label: 'Otro', icon: '🎯' },
 ];
 
-const transportTypes = [
-  { label: 'Auto', value: 'car', icon: '🚗' },
-  { label: 'Avión', value: 'plane', icon: '✈️' },
-  { label: 'Tren', value: 'train', icon: '🚂' },
-  { label: 'Bus', value: 'bus', icon: '🚌' },
-  { label: 'Metro', value: 'metro', icon: '🚇' },
-  { label: 'Barco', value: 'boat', icon: '⛵' },
-  { label: 'Bicicleta', value: 'bike', icon: '🚲' },
-  { label: 'A pie', value: 'walking', icon: '🚶' },
-  { label: 'Otro', value: 'other', icon: '🚗' }
+const TRANSPORT_TYPES = [
+  { value: 'car', label: 'Auto', icon: '🚗' },
+  { value: 'plane', label: 'Avión', icon: '✈️' },
+  { value: 'bus', label: 'Autobús', icon: '🚌' },
+  { value: 'train', label: 'Tren', icon: '🚊' },
+  { value: 'other', label: 'Otro', icon: '🎯' },
 ];
 
 export default function NewTripModal({ visible, onClose, onTripCreated }: NewTripModalProps) {
   const [tripData, setTripData] = useState<TripData>({
-    title: '',
+    name: '',
     description: '',
     startDate: null,
     endDate: null,
+    isDateUncertain: false,
     budget: '',
     accommodation: '',
     transport: '',
-    isDateUncertain: false
   });
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -77,71 +71,71 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
   const [showTransportPicker, setShowTransportPicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const resetForm = () => {
+  const descriptionInputRef = React.useRef<TextInput>(null);
+
+  const handleClose = () => {
     setTripData({
-      title: '',
+      name: '',
       description: '',
       startDate: null,
       endDate: null,
+      isDateUncertain: false,
       budget: '',
       accommodation: '',
       transport: '',
-      isDateUncertain: false
     });
-    setShowStartDatePicker(false);
-    setShowEndDatePicker(false);
-    setShowAccommodationPicker(false);
-    setShowTransportPicker(false);
-  };
-
-  const handleClose = () => {
-    resetForm();
     onClose();
   };
 
-  const handleStartDateChange = (event: any, selectedDate?: Date) => {
-    console.log('Start date change event:', event?.type, selectedDate);
-    
-    if (Platform.OS === 'android') {
-      setShowStartDatePicker(false);
+  const validateForm = () => {
+    if (!tripData.name.trim()) {
+      Alert.alert('Error', 'El nombre del viaje es obligatorio');
+      return false;
     }
-    
-    if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
-      console.log('Start date picker dismissed');
-      setShowStartDatePicker(false);
-      return;
-    }
-
-    if (selectedDate && event.type === 'set') {
-      console.log('Setting start date:', selectedDate);
-      setTripData(prev => ({ ...prev, startDate: selectedDate }));
-      // En iOS, el modal se cierra manualmente con los botones Done/Cancel
-      if (Platform.OS === 'android') {
-        setShowStartDatePicker(false);
-      }
-    }
+    return true;
   };
 
-  const handleEndDateChange = (event: any, selectedDate?: Date) => {
-    console.log('End date change event:', event?.type, selectedDate);
-    
-    if (Platform.OS === 'android') {
-      setShowEndDatePicker(false);
-    }
-    
-    if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
-      console.log('End date picker dismissed');
-      setShowEndDatePicker(false);
-      return;
-    }
+  const handleCreateTrip = async () => {
+    if (!validateForm()) return;
 
-    if (selectedDate && event.type === 'set') {
-      console.log('Setting end date:', selectedDate);
-      setTripData(prev => ({ ...prev, endDate: selectedDate }));
-      // En iOS, el modal se cierra manualmente con los botones Done/Cancel
-      if (Platform.OS === 'android') {
-        setShowEndDatePicker(false);
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        Alert.alert('Error', 'Debes iniciar sesión para crear un viaje');
+        return;
       }
+
+      const tripToCreate = {
+        name: tripData.name.trim(),
+        description: tripData.description.trim() || null,
+        start_date: tripData.startDate?.toISOString() || null,
+        end_date: tripData.endDate?.toISOString() || null,
+        is_date_uncertain: tripData.isDateUncertain,
+        budget: tripData.budget ? parseFloat(tripData.budget) : null,
+        accommodation_preference: tripData.accommodation || null,
+        transport_preference: tripData.transport || null,
+        user_id: user.id,
+        status: 'planning',
+        privacy: 'private',
+      };
+
+      const { data, error } = await supabase
+        .from('trips')
+        .insert([tripToCreate])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      onTripCreated(data.id);
+      handleClose();
+    } catch (error) {
+      console.error('Error creating trip:', error);
+      Alert.alert('Error', 'No se pudo crear el viaje. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,107 +143,13 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
     if (!date) return '';
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+      month: '2-digit',
+      year: 'numeric',
     });
   };
 
-  const getAccommodationLabel = (value: string) => {
-    const type = accommodationTypes.find(t => t.value === value);
-    return type ? `${type.icon} ${type.label}` : '';
-  };
-
-  const getTransportLabel = (value: string) => {
-    const type = transportTypes.find(t => t.value === value);
-    return type ? `${type.icon} ${type.label}` : '';
-  };
-
-  const handleCreateTrip = async () => {
-    console.log('🎯 handleCreateTrip iniciado');
-    console.log('📝 Datos del trip:', JSON.stringify(tripData, null, 2));
-    
-    if (!tripData.title.trim()) {
-      Alert.alert('Error', 'El nombre del viaje es obligatorio');
-      return;
-    }
-
-    if (!tripData.isDateUncertain && (!tripData.startDate || !tripData.endDate)) {
-      Alert.alert('Error', 'Por favor selecciona las fechas del viaje o marca "Aún no estoy seguro"');
-      return;
-    }
-
-    if (tripData.startDate && tripData.endDate && tripData.startDate > tripData.endDate) {
-      Alert.alert('Error', 'La fecha de inicio no puede ser posterior a la fecha de fin');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      console.log('🔍 Obteniendo usuario autenticado...');
-      const { data: user } = await supabase.auth.getUser();
-      console.log('👤 Usuario obtenido:', user?.user?.email, 'ID:', user?.user?.id);
-      
-      if (!user?.user?.id) {
-        console.error('❌ No hay usuario autenticado');
-        Alert.alert('Error', 'Debes estar autenticado para crear un viaje');
-        return;
-      }
-
-      // Crear el viaje en Supabase
-      const now = new Date();
-      const tentativeEndDate = new Date(now);
-      tentativeEndDate.setDate(now.getDate() + 7); // 7 días después como fecha tentativa
-      
-      const tripInsertData = {
-        user_id: user.user.id,
-        owner_id: user.user.id,
-        title: tripData.title.trim(),
-        description: tripData.description.trim() || null,
-        start_date: tripData.isDateUncertain ? now : tripData.startDate,
-        end_date: tripData.isDateUncertain ? tentativeEndDate : tripData.endDate,
-        budget: tripData.budget ? parseFloat(tripData.budget) : null,
-        accommodation_preference: tripData.accommodation || null,
-        transport_preference: tripData.transport || null,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      };
-
-      console.log('💾 Datos a insertar en Supabase:', JSON.stringify(tripInsertData, null, 2));
-      
-      const { data, error } = await supabase
-        .from('trips')
-        .insert(tripInsertData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Error creando trip en Supabase:', error);
-        console.error('❌ Error details:', JSON.stringify(error, null, 2));
-        Alert.alert('Error', `No se pudo crear el viaje: ${error.message || 'Error desconocido'}`);
-        return;
-      }
-
-      console.log('✅ Trip creado exitosamente:', data);
-
-      // Si tenemos datos adicionales, podríamos crear una tabla trip_details o similar
-      // Por ahora, el viaje se crea con los campos básicos
-
-      Alert.alert(
-        'Éxito', 
-        'Viaje creado exitosamente',
-        [{ text: 'OK', onPress: () => {
-          onTripCreated();
-          handleClose();
-        }}]
-      );
-
-    } catch (error) {
-      console.error('Error creating trip:', error);
-      Alert.alert('Error', 'Ocurrió un error inesperado. Intenta de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const selectedAccommodation = ACCOMMODATION_TYPES.find(type => type.value === tripData.accommodation);
+  const selectedTransport = TRANSPORT_TYPES.find(type => type.value === tripData.transport);
 
   return (
     <Modal
@@ -268,26 +168,26 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
             <Ionicons name="close" size={24} color="#666" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Nuevo Viaje</Text>
-          <View style={{ width: 24 }} />
         </View>
 
         <ScrollView 
           style={styles.content}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
         >
-          {/* Nombre del Viaje */}
+          {/* Nombre del viaje */}
           <View style={styles.section}>
             <Text style={styles.label}>
               Nombre del Viaje <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.textInput}
-              value={tripData.title}
-              onChangeText={(text) => setTripData(prev => ({ ...prev, title: text }))}
-              placeholder="Ej: Aventura en Chile"
-              placeholderTextColor="#999"
-              maxLength={100}
+              placeholder="Ej: Vacaciones en el sur"
+              value={tripData.name}
+              onChangeText={text => setTripData({ ...tripData, name: text })}
+              autoFocus
+              returnKeyType="next"
+              onSubmitEditing={() => descriptionInputRef.current?.focus()}
+              blurOnSubmit={false}
             />
           </View>
 
@@ -296,74 +196,53 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
             <Text style={styles.label}>Descripción</Text>
             <TextInput
               style={[styles.textInput, styles.textArea]}
+              placeholder="Agrega una breve descripción (opcional)"
               value={tripData.description}
-              onChangeText={(text) => setTripData(prev => ({ ...prev, description: text }))}
-              placeholder="Describe tu viaje..."
-              placeholderTextColor="#999"
+              onChangeText={text => setTripData({ ...tripData, description: text })}
               multiline
-              numberOfLines={3}
-              maxLength={500}
+              numberOfLines={4}
+              ref={descriptionInputRef}
             />
           </View>
 
-          {/* Fechas del Viaje */}
+          {/* Fechas del viaje */}
           <View style={styles.section}>
             <Text style={styles.label}>Fechas del Viaje</Text>
             
-            {/* Botón "Aún no estoy seguro" */}
             <TouchableOpacity
               style={[styles.uncertainButton, tripData.isDateUncertain && styles.uncertainButtonActive]}
-              onPress={() => setTripData(prev => ({ 
-                ...prev, 
-                isDateUncertain: !prev.isDateUncertain,
-                startDate: null,
-                endDate: null
-              }))}
+              onPress={() => setTripData({ ...tripData, isDateUncertain: !tripData.isDateUncertain })}
             >
               <Ionicons 
-                name={tripData.isDateUncertain ? "checkmark-circle" : "help-circle-outline"} 
+                name={tripData.isDateUncertain ? "checkmark-circle" : "ellipse-outline"} 
                 size={20} 
-                color={tripData.isDateUncertain ? "#007AFF" : "#666"} 
+                color={tripData.isDateUncertain ? "#007AFF" : "#999"} 
               />
               <Text style={[styles.uncertainButtonText, tripData.isDateUncertain && styles.uncertainButtonTextActive]}>
-                Aún no estoy seguro
+                No estoy seguro de las fechas
               </Text>
             </TouchableOpacity>
 
             {!tripData.isDateUncertain && (
               <View style={styles.dateContainer}>
-                {/* Fecha de inicio */}
                 <TouchableOpacity
+                  onPress={() => setShowStartDatePicker(true)}
                   style={styles.dateButton}
-                  onPress={() => {
-                    console.log('Start date button pressed');
-                    setShowStartDatePicker(true);
-                  }}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons name="calendar-outline" size={20} color="#007AFF" />
                   <Text style={[styles.dateButtonText, !tripData.startDate && { color: '#999' }]}>
-                    {tripData.startDate ? formatDate(tripData.startDate) : 'Seleccionar fecha de inicio'}
+                    {tripData.startDate ? formatDate(tripData.startDate) : 'Fecha inicio'}
                   </Text>
-                  <Ionicons name="chevron-down" size={16} color="#007AFF" />
                 </TouchableOpacity>
 
-                {/* Fecha de fin */}
                 <TouchableOpacity
+                  onPress={() => setShowEndDatePicker(true)}
                   style={styles.dateButton}
-                  onPress={() => {
-                    console.log('End date button pressed');
-                    setShowEndDatePicker(true);
-                  }}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons name="calendar-outline" size={20} color="#007AFF" />
                   <Text style={[styles.dateButtonText, !tripData.endDate && { color: '#999' }]}>
-                    {tripData.endDate ? formatDate(tripData.endDate) : 'Seleccionar fecha de fin'}
+                    {tripData.endDate ? formatDate(tripData.endDate) : 'Fecha fin'}
                   </Text>
-                  <Ionicons name="chevron-down" size={16} color="#007AFF" />
                 </TouchableOpacity>
               </View>
             )}
@@ -375,18 +254,13 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
             <TextInput
               style={styles.textInput}
               value={tripData.budget}
-              onChangeText={(text) => {
-                // Solo permitir números y punto decimal
-                const cleanText = text.replace(/[^0-9.]/g, '');
-                setTripData(prev => ({ ...prev, budget: cleanText }));
-              }}
-              placeholder="Ej: 150000"
-              placeholderTextColor="#999"
+              onChangeText={text => setTripData({ ...tripData, budget: text })}
+              placeholder="Ej: 500000"
               keyboardType="numeric"
             />
           </View>
 
-          {/* Preferencias de Alojamiento */}
+          {/* Alojamiento */}
           <View style={styles.section}>
             <Text style={styles.label}>Preferencias de Alojamiento</Text>
             <TouchableOpacity
@@ -394,13 +268,13 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
               onPress={() => setShowAccommodationPicker(true)}
             >
               <Text style={[styles.pickerButtonText, tripData.accommodation && styles.pickerButtonTextSelected]}>
-                {tripData.accommodation ? getAccommodationLabel(tripData.accommodation) : 'Seleccionar tipo de alojamiento'}
+                {selectedAccommodation ? `${selectedAccommodation.icon} ${selectedAccommodation.label}` : 'Seleccionar tipo'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#666" />
+              <Ionicons name="chevron-down" size={20} color="#999" />
             </TouchableOpacity>
           </View>
 
-          {/* Preferencias de Transporte */}
+          {/* Transporte */}
           <View style={styles.section}>
             <Text style={styles.label}>Preferencias de Transporte</Text>
             <TouchableOpacity
@@ -408,20 +282,20 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
               onPress={() => setShowTransportPicker(true)}
             >
               <Text style={[styles.pickerButtonText, tripData.transport && styles.pickerButtonTextSelected]}>
-                {tripData.transport ? getTransportLabel(tripData.transport) : 'Seleccionar tipo de transporte'}
+                {selectedTransport ? `${selectedTransport.icon} ${selectedTransport.label}` : 'Seleccionar tipo'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#666" />
+              <Ionicons name="chevron-down" size={20} color="#999" />
             </TouchableOpacity>
           </View>
 
-          {/* Botón Crear Viaje */}
+          {/* Botón crear */}
           <TouchableOpacity
             style={[styles.createButton, loading && styles.createButtonDisabled]}
             onPress={handleCreateTrip}
             disabled={loading}
           >
             <LinearGradient
-              colors={loading ? ['#CCC', '#999'] : ['#8B5CF6', '#EC4899']}
+              colors={['#007AFF', '#5856D6']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.createButtonGradient}
@@ -431,37 +305,18 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
               </Text>
             </LinearGradient>
           </TouchableOpacity>
-
-          <View style={{ height: 50 }} />
         </ScrollView>
 
         {/* Date Pickers para iOS */}
-        {showStartDatePicker && Platform.OS === 'ios' && (
-          <Modal
-            visible={showStartDatePicker}
-            animationType="slide"
-            presentationStyle="formSheet"
-            transparent={false}
-          >
+        {Platform.OS === 'ios' && showStartDatePicker && (
+          <Modal animationType="slide" transparent={false}>
             <View style={styles.iosDatePickerContainer}>
               <View style={styles.iosDatePickerHeader}>
-                <TouchableOpacity 
-                  onPress={() => {
-                    console.log('Start date picker cancelled');
-                    setShowStartDatePicker(false);
-                  }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
+                <TouchableOpacity onPress={() => setShowStartDatePicker(false)}>
                   <Text style={styles.datePickerCancel}>Cancelar</Text>
                 </TouchableOpacity>
                 <Text style={styles.datePickerTitle}>Fecha de Inicio</Text>
-                <TouchableOpacity 
-                  onPress={() => {
-                    console.log('Start date picker done');
-                    setShowStartDatePicker(false);
-                  }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
+                <TouchableOpacity onPress={() => setShowStartDatePicker(false)}>
                   <Text style={styles.datePickerDone}>Listo</Text>
                 </TouchableOpacity>
               </View>
@@ -469,57 +324,28 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
                 <DateTimePicker
                   value={tripData.startDate || new Date()}
                   mode="date"
-                  display="inline"
-                  onChange={handleStartDateChange}
-                  minimumDate={new Date()}
-                  maximumDate={new Date(new Date().getFullYear() + 10, 11, 31)}
-                  locale="es-ES"
+                  display="spinner"
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) {
+                      setTripData({ ...tripData, startDate: selectedDate });
+                    }
+                  }}
                   style={styles.iosDatePicker}
-                  textColor="#FFFFFF"
-                  accentColor="#64B5F6"
                 />
               </View>
             </View>
           </Modal>
         )}
 
-        {showStartDatePicker && Platform.OS === 'android' && (
-          <DateTimePicker
-            value={tripData.startDate || new Date()}
-            mode="date"
-            display="default"
-            onChange={handleStartDateChange}
-            minimumDate={new Date()}
-            maximumDate={new Date(new Date().getFullYear() + 10, 11, 31)}
-          />
-        )}
-
-        {showEndDatePicker && Platform.OS === 'ios' && (
-          <Modal
-            visible={showEndDatePicker}
-            animationType="slide"
-            presentationStyle="formSheet"
-            transparent={false}
-          >
+        {Platform.OS === 'ios' && showEndDatePicker && (
+          <Modal animationType="slide" transparent={false}>
             <View style={styles.iosDatePickerContainer}>
               <View style={styles.iosDatePickerHeader}>
-                <TouchableOpacity 
-                  onPress={() => {
-                    console.log('End date picker cancelled');
-                    setShowEndDatePicker(false);
-                  }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
+                <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
                   <Text style={styles.datePickerCancel}>Cancelar</Text>
                 </TouchableOpacity>
                 <Text style={styles.datePickerTitle}>Fecha de Fin</Text>
-                <TouchableOpacity 
-                  onPress={() => {
-                    console.log('End date picker done');
-                    setShowEndDatePicker(false);
-                  }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
+                <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
                   <Text style={styles.datePickerDone}>Listo</Text>
                 </TouchableOpacity>
               </View>
@@ -527,32 +353,51 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
                 <DateTimePicker
                   value={tripData.endDate || tripData.startDate || new Date()}
                   mode="date"
-                  display="inline"
-                  onChange={handleEndDateChange}
-                  minimumDate={tripData.startDate || new Date()}
-                  maximumDate={new Date(new Date().getFullYear() + 10, 11, 31)}
-                  locale="es-ES"
+                  display="spinner"
+                  minimumDate={tripData.startDate || undefined}
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) {
+                      setTripData({ ...tripData, endDate: selectedDate });
+                    }
+                  }}
                   style={styles.iosDatePicker}
-                  textColor="#FFFFFF"
-                  accentColor="#64B5F6"
                 />
               </View>
             </View>
           </Modal>
         )}
 
-        {showEndDatePicker && Platform.OS === 'android' && (
+        {/* Date Pickers para Android */}
+        {Platform.OS === 'android' && showStartDatePicker && (
+          <DateTimePicker
+            value={tripData.startDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowStartDatePicker(false);
+              if (selectedDate) {
+                setTripData({ ...tripData, startDate: selectedDate });
+              }
+            }}
+          />
+        )}
+
+        {Platform.OS === 'android' && showEndDatePicker && (
           <DateTimePicker
             value={tripData.endDate || tripData.startDate || new Date()}
             mode="date"
             display="default"
-            onChange={handleEndDateChange}
-            minimumDate={tripData.startDate || new Date()}
-            maximumDate={new Date(new Date().getFullYear() + 10, 11, 31)}
+            minimumDate={tripData.startDate || undefined}
+            onChange={(event, selectedDate) => {
+              setShowEndDatePicker(false);
+              if (selectedDate) {
+                setTripData({ ...tripData, endDate: selectedDate });
+              }
+            }}
           />
         )}
 
-        {/* Accommodation Picker Modal */}
+        {/* Picker de Alojamiento */}
         <Modal
           visible={showAccommodationPicker}
           animationType="slide"
@@ -564,15 +409,15 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Tipo de Alojamiento</Text>
-              <View style={{ width: 60 }} />
+              <View />
             </View>
             <ScrollView style={styles.pickerContent}>
-              {accommodationTypes.map((type) => (
+              {ACCOMMODATION_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.value}
                   style={[styles.pickerOption, tripData.accommodation === type.value && styles.pickerOptionSelected]}
                   onPress={() => {
-                    setTripData(prev => ({ ...prev, accommodation: type.value }));
+                    setTripData({ ...tripData, accommodation: type.value });
                     setShowAccommodationPicker(false);
                   }}
                 >
@@ -589,7 +434,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
           </View>
         </Modal>
 
-        {/* Transport Picker Modal */}
+        {/* Picker de Transporte */}
         <Modal
           visible={showTransportPicker}
           animationType="slide"
@@ -601,15 +446,15 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Tipo de Transporte</Text>
-              <View style={{ width: 60 }} />
+              <View />
             </View>
             <ScrollView style={styles.pickerContent}>
-              {transportTypes.map((type) => (
+              {TRANSPORT_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.value}
                   style={[styles.pickerOption, tripData.transport === type.value && styles.pickerOptionSelected]}
                   onPress={() => {
-                    setTripData(prev => ({ ...prev, transport: type.value }));
+                    setTripData({ ...tripData, transport: type.value });
                     setShowTransportPicker(false);
                   }}
                 >
@@ -630,245 +475,48 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  section: {
-    marginTop: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  required: {
-    color: '#FF3B30',
-  },
-  textInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    color: '#1A1A1A',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  uncertainButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 16,
-  },
-  uncertainButtonActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
-  },
-  uncertainButtonText: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 8,
-  },
-  uncertainButtonTextActive: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dateButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    minHeight: 56,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#1A1A1A',
-    marginLeft: 8,
-    flex: 1,
-    fontWeight: '500',
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  pickerButtonText: {
-    fontSize: 16,
-    color: '#999',
-  },
-  pickerButtonTextSelected: {
-    color: '#1A1A1A',
-  },
-  createButton: {
-    marginTop: 32,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  createButtonDisabled: {
-    opacity: 0.6,
-  },
-  createButtonGradient: {
-    padding: 18,
-    alignItems: 'center',
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  pickerModal: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  pickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  pickerCancel: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  pickerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  pickerContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  pickerOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  pickerOptionSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
-  },
-  pickerOptionIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  pickerOptionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1A1A1A',
-  },
-  pickerOptionTextSelected: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  // Estilos para DatePicker en iOS
-  iosDatePickerContainer: {
-    flex: 1,
-    backgroundColor: '#1a237e', // Azul marino oscuro
-    justifyContent: 'space-between', // Distribuir espacio uniformemente
-  },
-  iosDatePickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30, // Reducir padding superior
-    paddingBottom: 15, // Reducir padding inferior
-    backgroundColor: '#1a237e', // Azul marino oscuro
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#3949ab', // Azul más claro para el borde
-  },
-  datePickerContent: {
-    flex: 1,
-    backgroundColor: '#1a237e', // Azul marino oscuro
-    justifyContent: 'center', // Centrar el calendario verticalmente
-    alignItems: 'center', // Centrar horizontalmente
-    paddingVertical: 10, // Reducir padding vertical
-    paddingHorizontal: 0, // Eliminar padding horizontal para máximo ancho
-  },
-  datePickerCancel: {
-    fontSize: 17,
-    color: '#ffffff', // Blanco para contraste
-  },
-  datePickerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#ffffff', // Blanco para contraste
-  },
-  datePickerDone: {
-    fontSize: 17,
-    color: '#ffffff', // Blanco para contraste
-    fontWeight: '600',
-  },
-  iosDatePicker: {
-    backgroundColor: '#1a237e', // Azul marino oscuro
-    width: '95%', // Usar casi todo el ancho disponible
-    maxWidth: 400, // Límite máximo para pantallas grandes
-    alignSelf: 'center', // Centrar el calendario
-    transform: [{ scaleX: 1.1 }, { scaleY: 1.05 }], // Escalar para mejor uso del espacio
-  },
-});
+const styleObj = {
+  container: { flex: 1, backgroundColor: '#F8F9FA' } as ViewStyle,
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' } as ViewStyle,
+  closeButton: { padding: 4 } as ViewStyle,
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' } as TextStyle,
+  content: { flex: 1, paddingHorizontal: 20 } as ViewStyle,
+  section: { marginTop: 24 } as ViewStyle,
+  label: { fontSize: 16, fontWeight: '600', color: '#1A1A1A', marginBottom: 8 } as TextStyle,
+  required: { color: '#FF3B30' } as TextStyle,
+  textInput: { backgroundColor: '#fff', borderRadius: 12, padding: 16, fontSize: 16, borderWidth: 1, borderColor: '#E5E7EB', color: '#1A1A1A' } as TextStyle,
+  textArea: { height: 80, textAlignVertical: 'top' } as TextStyle,
+  uncertainButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16 } as ViewStyle,
+  uncertainButtonActive: { borderColor: '#007AFF', backgroundColor: '#F0F8FF' } as ViewStyle,
+  uncertainButtonText: { fontSize: 16, color: '#666', marginLeft: 8 } as TextStyle,
+  uncertainButtonTextActive: { color: '#007AFF', fontWeight: '600' } as TextStyle,
+  dateContainer: { flexDirection: 'row', gap: 12 } as ViewStyle,
+  dateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', minHeight: 56, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 } as ViewStyle,
+  dateButtonText: { fontSize: 16, color: '#1A1A1A', marginLeft: 8, flex: 1, fontWeight: '500' } as TextStyle,
+  pickerButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' } as ViewStyle,
+  pickerButtonText: { fontSize: 16, color: '#999' } as TextStyle,
+  pickerButtonTextSelected: { color: '#1A1A1A' } as TextStyle,
+  createButton: { marginTop: 32, borderRadius: 16, overflow: 'hidden' } as ViewStyle,
+  createButtonDisabled: { opacity: 0.6 } as ViewStyle,
+  createButtonGradient: { padding: 18, alignItems: 'center' } as ViewStyle,
+  createButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' } as TextStyle,
+  pickerModal: { flex: 1, backgroundColor: '#F8F9FA' } as ViewStyle,
+  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' } as ViewStyle,
+  pickerCancel: { fontSize: 16, color: '#007AFF' } as TextStyle,
+  pickerTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' } as TextStyle,
+  pickerContent: { flex: 1, paddingHorizontal: 20 } as ViewStyle,
+  pickerOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginTop: 12, borderWidth: 1, borderColor: '#E5E7EB' } as ViewStyle,
+  pickerOptionSelected: { borderColor: '#007AFF', backgroundColor: '#F0F8FF' } as ViewStyle,
+  pickerOptionIcon: { fontSize: 20, marginRight: 12 } as TextStyle,
+  pickerOptionText: { flex: 1, fontSize: 16, color: '#1A1A1A' } as TextStyle,
+  pickerOptionTextSelected: { color: '#007AFF', fontWeight: '600' } as TextStyle,
+  iosDatePickerContainer: { flex: 1, backgroundColor: '#1a237e', justifyContent: 'space-between' } as ViewStyle,
+  iosDatePickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 30, paddingBottom: 15, backgroundColor: '#1a237e', borderBottomWidth: 0.5, borderBottomColor: '#3949ab' } as ViewStyle,
+  datePickerContent: { flex: 1, backgroundColor: '#1a237e', justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 0 } as ViewStyle,
+  datePickerCancel: { fontSize: 17, color: '#ffffff' } as TextStyle,
+  datePickerTitle: { fontSize: 17, fontWeight: '600', color: '#ffffff' } as TextStyle,
+  datePickerDone: { fontSize: 17, color: '#ffffff', fontWeight: '600' } as TextStyle,
+  iosDatePicker: { backgroundColor: '#1a237e', width: '95%', maxWidth: 400, alignSelf: 'center', transform: [{ scaleX: 1.1 }, { scaleY: 1.05 }] } as ViewStyle,
+};
+
+const styles = StyleSheet.create(styleObj);

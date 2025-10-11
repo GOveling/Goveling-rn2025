@@ -945,7 +945,7 @@ const styles = {
   helperText: { marginTop: 6, fontSize: 12, color: '#6366F1', fontWeight: '500' as const },
   overlay: { position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' as const },
   pickerSheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  pickerSheetLarge: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: 0.7 * 800, flex: 1, flexDirection: 'column' },
+  pickerSheetLarge: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: 0.7 * 800, flex: 1, flexDirection: 'column' as const },
   sheetHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   sheetTitle: { fontSize: 16, fontWeight: '600' as const, color: '#1f2937' },
   cancel: { fontSize: 16, color: '#6366F1' },

@@ -17,7 +17,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '~/lib/supabase';
+import { supabase } from '../../src/lib/supabase';
 import { router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');

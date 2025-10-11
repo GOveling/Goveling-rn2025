@@ -8,9 +8,9 @@ import { useTheme } from '../../lib/theme';
 type BtnProps = { title:string; onPress:(e:GestureResponderEvent)=>void; kind?:'primary'|'tonal'|'plain'; size?:'compact'|'regular'|'large'; loading?:boolean; style?:ViewStyle; testID?:string; accessibilityLabel?:string; haptic?: boolean };
 export function ThemedButton({ title, onPress, kind='primary', size='regular', loading=false, style, testID, accessibilityLabel, haptic=true }: BtnProps){
   const { colors, radius, spacing } = useTheme();
-  const bg = kind==='primary'? colors.primary : (kind==='tonal'? (colors.mode==='dark'? '#222329' : '#F2F2F6') : 'transparent');
+  const bg = kind==='primary'? colors.primary : (kind==='tonal'? '#F2F2F6' : 'transparent');
   const border = kind==='plain'? 'transparent' : colors.border;
-  const color = kind==='primary'? colors.primaryText : (kind==='plain'? colors.accent : colors.text);
+  const color = kind==='primary'? colors.primaryText : (kind==='plain'? colors.primary : colors.text);
   return (
     <TouchableOpacity
       accessibilityRole="button"
