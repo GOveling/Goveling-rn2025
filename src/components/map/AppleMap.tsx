@@ -42,11 +42,11 @@ interface MapRegion {
 function calculateRegion(userLocation: { latitude: number; longitude: number } | null, places: PlaceLike[]): MapRegion {
   // Recopilar todas las coordenadas
   const coordinates: { latitude: number; longitude: number }[] = [];
-  
+
   if (userLocation) {
     coordinates.push(userLocation);
   }
-  
+
   places.forEach(place => {
     if (place.coordinates) {
       coordinates.push({
@@ -104,7 +104,6 @@ function calculateRegion(userLocation: { latitude: number; longitude: number } |
 export const AppleMap: React.FC<AppleMapProps> = ({ userLocation, places, style }) => {
   // Si react-native-maps no está disponible, retornar null para usar fallback
   if (!MapView || !Marker || !PROVIDER_DEFAULT) {
-    console.log('[AppleMap] react-native-maps not available, using fallback');
     return null;
   }
 

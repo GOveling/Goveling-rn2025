@@ -42,22 +42,13 @@ export default function MapTilerMap({
   const [userLocation, setUserLocation] = useState<MapLocation | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
 
-  console.log('[MapTilerMap] Platform:', Platform.OS);
-  console.log('[MapTilerMap] MapTiler style URL:', getMapStyleURL());
-  console.log('[MapTilerMap] Center:', center);
-  console.log('[MapTilerMap] Markers count:', markers.length);
-
   const handleLocationPress = async () => {
-    console.log('[MapTilerMap] Location button pressed, current state:', userLocationActive);
     setUserLocationActive(!userLocationActive);
 
     if (!userLocationActive) {
-      console.log('[MapTilerMap] Requesting geolocation...');
-
       try {
         // Para React Native (Expo Go), usar expo-location
         if (Platform.OS !== 'web') {
-          console.log('[MapTilerMap] Using expo-location for mobile...');
 
           // Pedir permisos
           const { status } = await Location.requestForegroundPermissionsAsync();
@@ -69,7 +60,6 @@ export default function MapTilerMap({
           }
 
           // Obtener ubicación actual
-          console.log('[MapTilerMap] Getting current position...');
           const location = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High,
           });
@@ -80,7 +70,6 @@ export default function MapTilerMap({
           };
 
           setUserLocation(userLoc);
-          console.log('[MapTilerMap] Real user location obtained:', userLoc);
 
           // Llamar al callback si existe
           if (onLocationFound) {
@@ -91,7 +80,6 @@ export default function MapTilerMap({
 
         // Para web, usar geolocation nativa
         if (typeof navigator !== 'undefined' && navigator.geolocation) {
-          console.log('[MapTilerMap] Using web geolocation...');
           navigator.geolocation.getCurrentPosition(
             (position) => {
               const location = {
@@ -99,7 +87,6 @@ export default function MapTilerMap({
                 longitude: position.coords.longitude
               };
               setUserLocation(location);
-              console.log('[MapTilerMap] Web user location found:', location);
 
               // Llamar al callback si existe
               if (onLocationFound) {
@@ -131,13 +118,11 @@ export default function MapTilerMap({
       }
     } else {
       setUserLocation(null);
-      console.log('[MapTilerMap] Location disabled');
     }
   };
 
   // 1. Web: MapLibre GL JS directo con MapTiler
   if (Platform.OS === 'web') {
-    console.log('[MapTilerMap] Using WebDirectMap for web');
     return (
       <View style={[styles.flex, style]}>
         {mapError && (
@@ -190,7 +175,6 @@ export default function MapTilerMap({
   }
 
   // 3. Android y Expo Go: WebView con MapTiler
-  console.log('[MapTilerMap] Using WebViewMapTiler for Android/Expo Go');
   return (
     <View style={[styles.flex, style]}>
       {mapError && (
@@ -388,8 +372,6 @@ const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, 
 
 /* ============= WEBVIEW FALLBACK (Android/Expo Go) ============= */
 const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, showUserLocation, userLocation, onError, style }) => {
-  console.log('[WebViewMapTiler] Initializing with:', { center, markersCount: markers?.length, zoom, showUserLocation, userLocation });
-
   const mapCenter = getInitialCenter(center, markers);
   const mapData = {
     center: mapCenter,
@@ -403,10 +385,8 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
     userLocation: userLocation,
     zoom: zoom || 12,
     styleUrl: getMapStyleURL(),
-    debug: true // Activar temporalmente para verificar la ubicación del usuario
+    debug: false // Debug desactivado para producción
   };
-
-  console.log('[WebViewMapTiler] Map data:', mapData);
 
   const html = `<!DOCTYPE html>
 <html lang='en'>
@@ -497,17 +477,6 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
         opacity: 0;
       }
     }
-    .debug {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 5px;
-      font-size: 12px;
-      z-index: 1000;
-      border-radius: 3px;
-    }
     .loading {
       position: absolute;
       top: 50%;
@@ -523,22 +492,12 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
 </head>
 <body>
   <div id='loading' class='loading'>Cargando mapa...</div>
-  <div id='debug' class='debug' style='display: none;'></div>
   <div id='map'></div>
   
   <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
   <script>
     const DATA = ${JSON.stringify(mapData)};
-    const debugEl = document.getElementById('debug');
     const loadingEl = document.getElementById('loading');
-    
-    function log(message) {
-      console.log('[WebViewMapTiler]', message);
-      if (DATA.debug && debugEl) {
-        debugEl.innerHTML += '<div>' + message + '</div>';
-        debugEl.style.display = 'block';
-      }
-    }
     
     function hideLoading() {
       if (loadingEl) {
@@ -547,8 +506,6 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
     }
     
     try {
-      log('Initializing map with data: ' + JSON.stringify(DATA));
-      
       if (!maplibregl) {
         throw new Error('MapLibre GL JS not loaded');
       }
@@ -561,18 +518,13 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
         attributionControl: false
       });
       
-      log('Map created, adding controls...');
       map.addControl(new maplibregl.NavigationControl({showCompass: true}), 'top-right');
       
       map.on('load', function() {
-        log('Map loaded successfully');
         hideLoading();
         
         // Add user location with animated DOM marker
         if (DATA.showUserLocation && DATA.userLocation) {
-          log('Adding user location marker at: ' + DATA.userLocation.longitude + ', ' + DATA.userLocation.latitude);
-          log('This should be DIFFERENT from place markers');
-          
           const userEl = document.createElement('div');
           userEl.className = 'user-location';
           
@@ -585,11 +537,8 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
           .setLngLat([DATA.userLocation.longitude, DATA.userLocation.latitude])
           .addTo(map);
           
-          log('User marker created, about to zoom to: ' + DATA.userLocation.longitude + ', ' + DATA.userLocation.latitude);
-          
           // Auto zoom to user location with smooth animation
           setTimeout(function() {
-            log('Executing flyTo for user location');
             map.flyTo({
               center: [DATA.userLocation.longitude, DATA.userLocation.latitude],
               zoom: 15,
@@ -600,10 +549,6 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
               }
             });
           }, 500);
-          
-          log('User location marker added with auto zoom');
-        } else {
-          log('No user location to show: showUserLocation=' + DATA.showUserLocation + ', userLocation=' + JSON.stringify(DATA.userLocation));
         }
         
         // Add place markers as symbols (more stable than DOM markers)
@@ -682,7 +627,6 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
             map.getCanvas().style.cursor = '';
           });
           
-          log('Place markers added as native layers');
         }
         
         // Fit bounds if needed (only if no user location is being shown)
@@ -700,20 +644,18 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
           });
           map.fitBounds(bounds, {padding: 40, maxZoom: 15, duration: 600});
         }
-        
-        log('Map setup completed');
       });
       
       map.on('error', function(e) {
         const errorMsg = 'Map error: ' + (e.error ? e.error.message : 'Unknown error');
-        log(errorMsg);
+        console.error('[WebViewMapTiler]', errorMsg);
         hideLoading();
         document.getElementById('map').innerHTML = '<div class="loading">Error cargando mapa: ' + errorMsg + '</div>';
       });
       
     } catch (error) {
       const errorMsg = 'Initialization error: ' + error.message;
-      log(errorMsg);
+      console.error('[WebViewMapTiler]', errorMsg);
       hideLoading();
       document.getElementById('map').innerHTML = '<div class="loading">Error: ' + errorMsg + '</div>';
     }
@@ -743,7 +685,7 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({ center, markers, zoom, sh
           onError?.(`HTTP error: ${nativeEvent.statusCode}`);
         }}
         onLoadEnd={() => {
-          console.log('[WebViewMapTiler] WebView load completed');
+          // WebView load completed
         }}
       />
     </View>
