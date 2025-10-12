@@ -163,6 +163,7 @@ export default function ExploreTab() {
           lat: place.coordinates?.lat || 0,
           lng: place.coordinates?.lng || 0,
           category: place.types?.[0] || place.category || 'establishment',
+          photo_url: (place.photos && place.photos.length > 0) ? place.photos[0] : null,
           added_by: user.user.id,
           added_at: new Date().toISOString()
         });

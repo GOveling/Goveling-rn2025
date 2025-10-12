@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { useFavorites } from '../lib/useFavorites';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
+import AddToTripModal from './AddToTripModal';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 
 // Conditional BlurView import
@@ -60,6 +61,7 @@ export default function PlaceDetailModal({
   const [showMapModal, setShowMapModal] = React.useState(false);
   const [showMiniMap, setShowMiniMap] = React.useState(false);
   const [tempHideMainModal, setTempHideMainModal] = React.useState(false);
+  const [showAddToTrip, setShowAddToTrip] = React.useState(false);
 
   // Estados para controlar errores de Lottie
   const [directionsLottieError, setDirectionsLottieError] = React.useState(false);
@@ -255,8 +257,9 @@ export default function PlaceDetailModal({
       // Si venimos de un trip específico, agregar directamente
       onAddToTrip(place);
     } else {
-      // Si venimos del explore general, ir a la pantalla de selección de trip
-      router.push(`/explore/add-to-trip?placeId=${place.id}&name=${encodeURIComponent(place.name)}`);
+      // Abrir modal superior para seleccionar/crear viaje
+      setTempHideMainModal(true);
+      setShowAddToTrip(true);
     }
   };
 
@@ -604,6 +607,20 @@ export default function PlaceDetailModal({
         placeName={place.name}
         latitude={place.coordinates?.lat || 0}
         longitude={place.coordinates?.lng || 0}
+      />
+
+      {/* Add To Trip stacked modal */}
+      <AddToTripModal
+        visible={showAddToTrip}
+        place={place}
+        onClose={() => {
+          setShowAddToTrip(false);
+          setTempHideMainModal(false);
+        }}
+        onAdded={() => {
+          setShowAddToTrip(false);
+          setTempHideMainModal(false);
+        }}
       />
     </>
   );

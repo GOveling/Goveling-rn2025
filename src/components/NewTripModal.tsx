@@ -24,6 +24,12 @@ interface NewTripModalProps {
   visible: boolean;
   onClose: () => void;
   onTripCreated: (tripId: string) => void;
+  // Nuevos props para el contexto de añadir lugar
+  addPlaceContext?: {
+    placeId: string;
+    placeName: string;
+    onPlaceAdded?: () => void;
+  };
 }
 
 interface TripData {
@@ -53,7 +59,7 @@ const TRANSPORT_TYPES = [
   { value: 'other', label: 'Otro', icon: '🎯' },
 ];
 
-export default function NewTripModal({ visible, onClose, onTripCreated }: NewTripModalProps) {
+export default function NewTripModal({ visible, onClose, onTripCreated, addPlaceContext }: NewTripModalProps) {
   const [tripData, setTripData] = useState<TripData>({
     name: '',
     description: '',
@@ -179,8 +185,39 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
       }
 
       console.log('✅ Viaje creado con ID:', data.id);
-      console.log('📞 Llamando onTripCreated...');
 
+      // Si hay contexto de añadir lugar, añadir el lugar al viaje recién creado
+      if (addPlaceContext) {
+        console.log('📍 Añadiendo lugar al viaje recién creado...');
+        try {
+          const { error: placeError } = await supabase
+            .from('trip_places')
+            .insert({
+              trip_id: data.id,
+              place_id: addPlaceContext.placeId,
+              name: addPlaceContext.placeName,
+              address: '',
+              lat: 0,
+              lng: 0,
+              category: 'establishment',
+              photo_url: null,
+              added_by: user.id,
+              added_at: new Date().toISOString()
+            });
+
+          if (placeError) {
+            console.error('❌ Error añadiendo lugar:', placeError);
+            // No mostramos error fatal, el viaje se creó exitosamente
+          } else {
+            console.log('✅ Lugar añadido exitosamente al viaje');
+            addPlaceContext.onPlaceAdded?.();
+          }
+        } catch (placeError) {
+          console.error('❌ Error al añadir lugar:', placeError);
+        }
+      }
+
+      console.log('📞 Llamando onTripCreated...');
       onTripCreated(data.id);
 
       console.log('🚪 Cerrando modal...');
@@ -222,7 +259,12 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#666" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Nuevo Viaje</Text>
+          <Text style={styles.headerTitle}>
+            {addPlaceContext && addPlaceContext.placeName
+              ? `Crear Viaje para ${addPlaceContext.placeName}`
+              : 'Nuevo Viaje'
+            }
+          </Text>
         </View>
 
         <ScrollView
