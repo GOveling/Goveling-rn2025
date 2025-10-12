@@ -102,11 +102,11 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
   useEffect(() => {
     if (visible && trip) {
       // Convertir string separado por comas a array para múltiples selecciones
-      const accommodationArray = trip.accommodation_preference 
-        ? trip.accommodation_preference.split(',').map(item => item.trim()) 
+      const accommodationArray = trip.accommodation_preference
+        ? trip.accommodation_preference.split(',').map(item => item.trim())
         : [];
-      const transportArray = trip.transport_preference 
-        ? trip.transport_preference.split(',').map(item => item.trim()) 
+      const transportArray = trip.transport_preference
+        ? trip.transport_preference.split(',').map(item => item.trim())
         : [];
 
       setTripData({
@@ -192,6 +192,56 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
     }
   };
 
+  const handleDeleteTrip = async () => {
+    Alert.alert(
+      'Eliminar Viaje',
+      '¿Estás seguro de que quieres eliminar este viaje? Esta acción es irreversible y eliminará todos los datos relacionados (lugares guardados, colaboradores, etc.).',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              // Estrategia de eliminación lógica: cambiar status a 'cancelled'
+              const { error } = await supabase
+                .from('trips')
+                .update({
+                  status: 'cancelled',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', trip.id);
+
+              if (error) {
+                console.error('Error deleting trip:', error);
+                Alert.alert('Error', 'No se pudo eliminar el viaje. Inténtalo de nuevo.');
+                return;
+              }
+
+              Alert.alert('Éxito', 'El viaje ha sido eliminado exitosamente.');
+              onClose();
+
+              // Opcional: Llamar callback para refrescar la lista de trips
+              if (onTripUpdated) {
+                onTripUpdated({ ...trip, status: 'cancelled' });
+              }
+            } catch (error) {
+              console.error('Error deleting trip:', error);
+              Alert.alert('Error', 'Ocurrió un error inesperado.');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const formatDate = (date: Date | null) => {
     if (!date) return 'Seleccionar fecha';
     return date.toLocaleDateString('es-ES', {
@@ -226,8 +276,8 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.container}>
@@ -237,8 +287,8 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Editar Viaje</Text>
-            <TouchableOpacity 
-              onPress={handleSave} 
+            <TouchableOpacity
+              onPress={handleSave}
               disabled={loading}
               style={[styles.saveButton, loading && styles.saveButtonDisabled]}
             >
@@ -278,9 +328,9 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             {/* Fechas */}
             <View style={styles.section}>
               <Text style={styles.label}>Fechas del Viaje</Text>
-              
+
               {/* Opción "Sin fechas" */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.checkboxContainer, tripData.hasNoDates && styles.checkboxSelected]}
                 onPress={() => setTripData(prev => ({ ...prev, hasNoDates: !prev.hasNoDates }))}
               >
@@ -292,7 +342,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
 
               {!tripData.hasNoDates && (
                 <View style={styles.dateContainer}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.dateButton, styles.dateButtonStart]}
                     onPress={() => setShowStartDatePicker(true)}
                   >
@@ -304,7 +354,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                     <Ionicons name="arrow-forward" size={20} color="#666" />
                   </View>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.dateButton, styles.dateButtonEnd]}
                     onPress={() => setShowEndDatePicker(true)}
                   >
@@ -336,7 +386,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             {/* Alojamiento */}
             <View style={styles.section}>
               <Text style={styles.label}>Tipo de Alojamiento Preferido</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.picker}
                 onPress={() => setShowAccommodationPicker(true)}
               >
@@ -350,7 +400,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             {/* Transporte */}
             <View style={styles.section}>
               <Text style={styles.label}>Tipo de Transporte Preferido</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.picker}
                 onPress={() => setShowTransportPicker(true)}
               >
@@ -363,6 +413,17 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
 
             <View style={{ height: 50 }} />
           </ScrollView>
+
+          {/* Botón Eliminar Viaje */}
+          <View style={styles.deleteSection}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeleteTrip}
+            >
+              <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              <Text style={styles.deleteButtonText}>Eliminar Viaje</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Date Pickers */}
@@ -718,5 +779,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#374151',
     fontWeight: '500',
+  },
+  deleteSection: {
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#DC2626',
+    marginLeft: 8,
   },
 });

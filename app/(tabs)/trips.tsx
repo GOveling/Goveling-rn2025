@@ -33,7 +33,8 @@ export default function TripsTab() {
       const { data: userTrips, error: tripsError } = await supabase
         .from('trips')
         .select('*')
-        .eq('owner_id', user.user.id);
+        .eq('owner_id', user.user.id)
+        .neq('status', 'cancelled'); // Filtrar viajes eliminados
 
       if (tripsError) {
         console.error('Error loading trips:', tripsError);
@@ -383,10 +384,15 @@ export default function TripsTab() {
               key={trip.id}
               trip={trip}
               onTripUpdated={(updatedTrip) => {
-                // Actualizar el trip en el array local
-                setTrips(prevTrips =>
-                  prevTrips.map(t => t.id === updatedTrip.id ? updatedTrip : t)
-                );
+                // Si el viaje fue eliminado (status = 'cancelled'), removerlo de la lista
+                if (updatedTrip.status === 'cancelled') {
+                  setTrips(prevTrips => prevTrips.filter(t => t.id !== updatedTrip.id));
+                } else {
+                  // Actualizar el trip en el array local
+                  setTrips(prevTrips =>
+                    prevTrips.map(t => t.id === updatedTrip.id ? updatedTrip : t)
+                  );
+                }
                 // Recargar estadísticas para reflejar cambios
                 loadTripStats();
               }}
