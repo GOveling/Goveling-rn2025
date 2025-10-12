@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '~/lib/supabase';
 import NewTripModal from '../../src/components/NewTripModal';
 import TripCard from '../../src/components/TripCard';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function TripsTab() {
   const { colors, spacing } = useTheme();
@@ -26,6 +27,7 @@ export default function TripsTab() {
   // Load trip statistics and trips from database
   const loadTripStats = async () => {
     try {
+      setLoading(true);
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) return;
 
@@ -95,6 +97,41 @@ export default function TripsTab() {
 
   useEffect(() => {
     loadTripStats();
+  }, []);
+
+  // Refrescar cada vez que la pestaña gana foco
+  useFocusEffect(
+    useCallback(() => {
+      loadTripStats();
+    }, [])
+  );
+
+  // Suscripción en tiempo real a cambios en "trips" para auto-actualizar
+  useEffect(() => {
+    let isActive = true;
+    let channel: any;
+    (async () => {
+      const { data: user } = await supabase.auth.getUser();
+      const userId = user?.user?.id;
+      if (!userId) return;
+
+      channel = supabase
+        .channel('trips-tab-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, (payload) => {
+          if (!isActive) return;
+          const newOwnerId = (payload as any)?.new?.owner_id;
+          const oldOwnerId = (payload as any)?.old?.owner_id;
+          if (newOwnerId === userId || oldOwnerId === userId) {
+            loadTripStats();
+          }
+        })
+        .subscribe();
+    })();
+
+    return () => {
+      isActive = false;
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   return (

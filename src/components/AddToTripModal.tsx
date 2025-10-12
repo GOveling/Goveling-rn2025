@@ -8,7 +8,8 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  InteractionManager
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -86,9 +87,23 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         .maybeSingle();
 
       if (existing) {
-        Alert.alert('Ya agregado', `${place.name} ya está en "${tripTitle}"`);
-        onAdded?.(tripId, tripTitle);
-        onClose();
+        Alert.alert(
+          'Ya agregado',
+          `${place.name} ya está en "${tripTitle}"`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Cerrar después de que el usuario cierre la alerta
+                setTimeout(() => {
+                  onAdded?.(tripId, tripTitle);
+                  onClose();
+                }, 50);
+              }
+            }
+          ],
+          { cancelable: true }
+        );
         return;
       }
 
@@ -113,9 +128,24 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         return;
       }
 
-      Alert.alert('¡Listo!', `${place.name} agregado a "${tripTitle}"`);
-      onAdded?.(tripId, tripTitle);
-      onClose();
+      Alert.alert(
+        '¡Listo!',
+        `${place.name} agregado a "${tripTitle}"`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              InteractionManager.runAfterInteractions(() => {
+                setTimeout(() => {
+                  onAdded?.(tripId, tripTitle);
+                  onClose();
+                }, 30);
+              });
+            }
+          }
+        ],
+        { cancelable: true }
+      );
     } catch (e) {
       console.error('Add place error', e);
       Alert.alert('Error', 'Ocurrió un error inesperado');
@@ -125,11 +155,14 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   };
 
   const handleCreateTrip = (newTripId: string) => {
-    // Buscar el viaje y completar el agregado
+    // Cerrar primero el modal de creación
+    setShowNewTripModal(false);
     const created = trips.find(t => t.id === newTripId);
     const title = created?.title || 'Nuevo viaje';
-    addPlaceToTrip(newTripId, title);
-    setShowNewTripModal(false);
+    // Pequeño delay para asegurar desmontaje del modal antes de continuar
+    setTimeout(() => {
+      addPlaceToTrip(newTripId, title);
+    }, 120);
   };
 
   const formatDate = (d?: string) => {
@@ -141,7 +174,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   return (
     <>
       <Modal
-        visible={visible}
+        visible={visible && !showNewTripModal}
         animationType="slide"
         transparent
         presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : 'overFullScreen'}

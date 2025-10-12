@@ -220,8 +220,13 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
       console.log('📞 Llamando onTripCreated...');
       onTripCreated(data.id);
 
-      console.log('🚪 Cerrando modal...');
-      handleClose();
+      // Importante: no cerrar el modal inmediatamente si hay alguna alerta por mostrarse;
+      // delegamos el cierre al contenedor (AddToTripModal) vía onTripCreated -> handleCreateTrip.
+      // Si no hay contenedor, mantenemos el cierre normal como fallback con un pequeño delay.
+      setTimeout(() => {
+        console.log('🚪 Cerrando modal (delay de seguridad)');
+        handleClose();
+      }, 50);
     } catch (error) {
       console.error('❌ Error creating trip:', error);
       Alert.alert('Error', `No se pudo crear el viaje: ${error.message || error}`);
@@ -246,8 +251,10 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType={Platform.OS === 'ios' ? 'slide' : 'fade'}
+      transparent={false}
+      statusBarTranslucent
+      presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : 'overFullScreen'}
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
