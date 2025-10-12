@@ -6,6 +6,9 @@ import { useRouter } from 'expo-router';
 import { getTripStats, getCountryFlagByName, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import TripDetailsModal from './TripDetailsModal';
 import LiquidButton from './LiquidButton';
+import { useAuth } from '~/contexts/AuthContext';
+import { getCurrentUser } from '~/lib/userUtils';
+import { supabase } from '~/lib/supabase';
 
 interface TripData {
   id: string;
@@ -31,6 +34,7 @@ interface TripCardProps {
 
 const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   const router = useRouter();
+  const { user } = useAuth();
   const [currentTrip, setCurrentTrip] = useState(trip);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
@@ -42,9 +46,15 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     firstPlaceImage: undefined
   });
   const [showModal, setShowModal] = useState(false);
+  const [ownerProfile, setOwnerProfile] = useState<{
+    id: string;
+    full_name?: string;
+    avatar_url?: string;
+  } | null>(null);
 
   useEffect(() => {
     loadTripData();
+    loadOwnerProfile();
   }, [trip.id]);
 
   // Actualizar el trip local cuando se recibe una nueva prop
@@ -61,6 +71,27 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     }
   };
 
+  const loadOwnerProfile = async () => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('id', trip.user_id)
+        .single();
+
+      if (error) {
+        console.error('Error loading owner profile:', error);
+        return;
+      }
+
+      if (profile) {
+        setOwnerProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading owner profile:', error);
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -73,15 +104,15 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const getTripStatus = () => {
     if (!currentTrip.start_date || !currentTrip.end_date) return 'planning';
-    
+
     const now = new Date();
     const startDate = new Date(currentTrip.start_date);
     const endDate = new Date(currentTrip.end_date);
-    
+
     if (now < startDate) return 'upcoming';
     if (now >= startDate && now <= endDate) return 'traveling';
     if (now > endDate) return 'completed';
-    
+
     return 'planning';
   };
 
@@ -114,14 +145,14 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         textColor: '#374151', // text-gray-800
       },
     };
-    
+
     return configs[status as keyof typeof configs] || configs.default;
   };
 
   const getCountryFlags = () => {
     if (tripData.countryCodes.length === 0) return [];
-    
-    return tripData.countryCodes.map(code => 
+
+    return tripData.countryCodes.map(code =>
       getCountryFlag(code)
     );
   };
@@ -137,13 +168,85 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const getUserInitials = (fullName?: string) => {
     if (!fullName) return 'U';
-    
+
     const names = fullName.trim().split(' ');
     if (names.length === 1) {
       return names[0].charAt(0).toUpperCase();
     }
-    
+
     return (names[0].charAt(0) + (names[names.length - 1].charAt(0))).toUpperCase();
+  };
+
+  const renderOwnerAvatar = () => {
+    const isCurrentUserOwner = user?.id === trip.user_id;
+
+    // Si el usuario actual es el dueño del trip
+    if (isCurrentUserOwner) {
+      if (ownerProfile?.avatar_url) {
+        return (
+          <Image
+            source={{ uri: ownerProfile.avatar_url }}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+            }}
+          />
+        );
+      } else {
+        return (
+          <View style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: '#8B5CF6',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Text style={{
+              color: '#FFFFFF',
+              fontWeight: '700',
+              fontSize: 12
+            }}>
+              YO
+            </Text>
+          </View>
+        );
+      }
+    } else {
+      // Si es otro usuario (colaborador), mostrar su avatar o iniciales
+      if (ownerProfile?.avatar_url) {
+        return (
+          <Image
+            source={{ uri: ownerProfile.avatar_url }}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+            }}
+          />
+        );
+      } else {
+        return (
+          <View style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: '#8B5CF6',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Text style={{
+              color: '#FFFFFF',
+              fontWeight: '700',
+              fontSize: 12
+            }}>
+              {getUserInitials(ownerProfile?.full_name)}
+            </Text>
+          </View>
+        );
+      }
+    }
   };
 
   const getTripType = () => {
@@ -183,7 +286,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             {getFirstCountryFlag()}
           </Text>
         </View>
-        
+
         {getFirstCountryImage() && (
           <View style={{
             marginLeft: 20,
@@ -204,7 +307,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           </View>
         )}
       </LinearGradient>
-      
+
       {/* Contenido del Trip */}
       <View style={{ padding: 20 }}>
         {/* Título y Estado */}
@@ -223,7 +326,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             }}>
               {currentTrip.title}
             </Text>
-            
+
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -239,7 +342,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               </Text>
             </View>
           </View>
-          
+
           {/* Badge de estado */}
           <View style={{
             backgroundColor: getStatusConfig().bgColor,
@@ -305,7 +408,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             color: '#1A1A1A',
             fontWeight: '500'
           }}>
-            {currentTrip.start_date && currentTrip.end_date 
+            {currentTrip.start_date && currentTrip.end_date
               ? `${formatDate(currentTrip.start_date)} - ${formatDate(currentTrip.end_date)}`
               : 'Fechas por confirmar'
             }
@@ -331,7 +434,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               {tripData.collaboratorsCount} {tripData.collaboratorsCount === 1 ? 'viajero' : 'viajeros'}
             </Text>
           </View>
-          
+
           <View style={{
             flexDirection: 'row',
             alignItems: 'center'
@@ -361,26 +464,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           }}>
             Equipo:
           </Text>
-          
+
           {/* Dueño del trip (primera posición) */}
-          <View style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: '#8B5CF6',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 4
-          }}>
-            <Text style={{
-              color: '#FFFFFF',
-              fontWeight: '700',
-              fontSize: 12
-            }}>
-              YO
-            </Text>
+          <View style={{ marginRight: 4 }}>
+            {renderOwnerAvatar()}
           </View>
-          
+
           {/* Colaboradores */}
           {tripData.collaborators.slice(0, 2).map((collaborator, index) => (
             <View key={collaborator.id} style={{ marginRight: 4 }}>
@@ -413,7 +502,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               )}
             </View>
           ))}
-          
+
           {tripData.collaboratorsCount > 3 && (
             <Text style={{
               fontSize: 14,
