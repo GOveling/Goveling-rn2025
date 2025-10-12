@@ -62,8 +62,14 @@ export const getTripOwner = async (tripId: string): Promise<UserProfile | null> 
     const { data: trip } = await supabase
       .from('trips')
       .select(`
+        owner_id,
         user_id,
-        profiles:user_id (
+        profiles_owner:owner_id (
+          id,
+          full_name,
+          avatar_url
+        ),
+        profiles_user:user_id (
           id,
           full_name,
           avatar_url
@@ -74,10 +80,16 @@ export const getTripOwner = async (tripId: string): Promise<UserProfile | null> 
 
     if (!trip) return null;
 
+    // Priorizar owner_id sobre user_id
+    const ownerId = trip.owner_id || trip.user_id;
+    const ownerProfile = (trip.profiles_owner as any) || (trip.profiles_user as any);
+
+    if (!ownerId || !ownerProfile) return null;
+
     return {
-      id: trip.user_id,
-      full_name: (trip.profiles as any)?.full_name,
-      avatar_url: (trip.profiles as any)?.avatar_url,
+      id: ownerId,
+      full_name: ownerProfile.full_name,
+      avatar_url: ownerProfile.avatar_url,
     };
   } catch (error) {
     console.error('Error getting trip owner:', error);

@@ -3,12 +3,13 @@ import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getTripStats, getCountryFlagByName, getCountryFlag, TripStats } from '~/lib/tripUtils';
+import { getTripStats, getCountryFlagByName, getCountryFlag, getCountryName, TripStats } from '~/lib/tripUtils';
 import TripDetailsModal from './TripDetailsModal';
 import LiquidButton from './LiquidButton';
 import { useAuth } from '~/contexts/AuthContext';
 import { getCurrentUser } from '~/lib/userUtils';
 import { supabase } from '~/lib/supabase';
+import { CountryImage } from './CountryImage';
 
 interface TripData {
   id: string;
@@ -33,6 +34,8 @@ interface TripCardProps {
 }
 
 const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
+  console.log('🎨 TripCard: Rendering TripCard for trip:', { id: trip.id, title: trip.title });
+
   const router = useRouter();
   const { user } = useAuth();
   const [currentTrip, setCurrentTrip] = useState(trip);
@@ -64,19 +67,54 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const loadTripData = async () => {
     try {
+      console.log('🔍 TripCard: Loading trip data for trip ID:', trip.id);
+
+      // Diagnóstico adicional: verificar directamente los lugares de la base de datos
+      const { data: directPlaces, error: directError } = await supabase
+        .from('trip_places')
+        .select('*')
+        .eq('trip_id', trip.id);
+
+      console.log('🔍 TripCard: Direct places query result:', { directPlaces, directError });
+      console.log('🔍 TripCard: Direct places found:', directPlaces?.length || 0);
+
+      if (directPlaces) {
+        directPlaces.forEach((place, index) => {
+          console.log(`🔍 Direct Place ${index + 1}:`, {
+            id: place.id,
+            name: place.name,
+            country_code: place.country_code,
+            country: place.country,
+            city: place.city,
+            full_address: place.full_address
+          });
+        });
+      }
+
       const stats = await getTripStats(trip.id);
+      console.log('📊 TripCard: Trip stats loaded:', stats);
+      console.log('🌍 TripCard: Countries found:', stats.countries);
+      console.log('🏷️ TripCard: Country codes found:', stats.countryCodes);
       setTripData(stats);
     } catch (error) {
-      console.error('Error loading trip data:', error);
+      console.error('❌ TripCard: Error loading trip data:', error);
     }
   };
 
   const loadOwnerProfile = async () => {
     try {
+      // Usar owner_id si está disponible, sino usar user_id como fallback
+      const ownerId = trip.owner_id || trip.user_id;
+
+      if (!ownerId || ownerId === 'null') {
+        console.warn('TripCard: No owner ID found for trip', trip.id);
+        return;
+      }
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
-        .eq('id', trip.user_id)
+        .eq('id', ownerId)
         .single();
 
       if (error) {
@@ -178,7 +216,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   };
 
   const renderOwnerAvatar = () => {
-    const isCurrentUserOwner = user?.id === trip.user_id;
+    const ownerId = trip.owner_id || trip.user_id;
+    const isCurrentUserOwner = user?.id === ownerId;
 
     // Si el usuario actual es el dueño del trip
     if (isCurrentUserOwner) {
@@ -249,7 +288,96 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     }
   };
 
-  const getTripType = () => {
+  const renderCountryBadges = () => {
+    console.log('🎯 TripCard: renderCountryBadges called');
+    console.log('🎯 TripCard: tripData.countryCodes:', tripData.countryCodes);
+    console.log('🎯 TripCard: tripData.countries:', tripData.countries);
+
+    if (!tripData.countryCodes || tripData.countryCodes.length === 0) {
+      console.log('⚠️ TripCard: No country codes found, returning null');
+      return null;
+    }
+
+    console.log('✅ TripCard: Rendering country badges for:', tripData.countryCodes);
+
+    // Limitar a máximo 3 países para mantener el diseño limpio
+    const displayCountries = tripData.countryCodes.slice(0, 3);
+    const remainingCount = tripData.countryCodes.length - 3;
+
+    return (
+      <View style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        marginBottom: 20,
+        gap: 6
+      }}>
+        <Text style={{
+          fontSize: 14,
+          color: '#666666',
+          fontWeight: '500',
+          marginRight: 8
+        }}>
+          Destinos:
+        </Text>
+
+        {displayCountries.map((countryCode, index) => {
+          const countryName = getCountryName(countryCode);
+          const flag = getCountryFlag(countryCode);
+
+          return (
+            <View key={`${countryCode}-${index}`} style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              borderRadius: 16,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderWidth: 1,
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.05,
+              shadowRadius: 2,
+              elevation: 1
+            }}>
+              <Text style={{ fontSize: 14, marginRight: 4 }}>
+                {flag}
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                color: '#374151',
+                fontWeight: '600',
+                letterSpacing: 0.2
+              }}>
+                {countryName || countryCode}
+              </Text>
+            </View>
+          );
+        })}
+
+        {remainingCount > 0 && (
+          <View style={{
+            backgroundColor: 'rgba(156, 163, 175, 0.15)',
+            borderRadius: 16,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderWidth: 1,
+            borderColor: 'rgba(156, 163, 175, 0.2)'
+          }}>
+            <Text style={{
+              fontSize: 12,
+              color: '#6B7280',
+              fontWeight: '600',
+              letterSpacing: 0.2
+            }}>
+              +{remainingCount} más
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  }; const getTripType = () => {
     return tripData.collaboratorsCount > 1 ? 'Grupo' : 'Individual';
   };
 
@@ -287,24 +415,14 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           </Text>
         </View>
 
-        {getFirstCountryImage() && (
-          <View style={{
-            marginLeft: 20,
-            width: 60,
-            height: 60,
-            borderRadius: 12,
-            overflow: 'hidden',
-            backgroundColor: 'rgba(255,255,255,0.2)'
-          }}>
-            <Image
-              source={{ uri: getFirstCountryImage() }}
-              style={{
-                width: '100%',
-                height: '100%',
-                resizeMode: 'cover'
-              }}
-            />
-          </View>
+        {tripData.countryCodes.length > 0 && (
+          <CountryImage
+            countryCode={tripData.countryCodes[0]}
+            width={60}
+            height={60}
+            borderRadius={12}
+            style={{ marginLeft: 20 }}
+          />
         )}
       </LinearGradient>
 
@@ -513,6 +631,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             </Text>
           )}
         </View>
+
+        {/* Badges de Países */}
+        {renderCountryBadges()}
 
         {/* Botones de Acción */}
         <View style={{

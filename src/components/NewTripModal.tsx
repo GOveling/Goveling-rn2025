@@ -96,30 +96,69 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
   };
 
   const handleCreateTrip = async () => {
-    if (!validateForm()) return;
+    console.log('🚀 Iniciando creación de viaje...');
+    if (!validateForm()) {
+      console.log('❌ Validación falló');
+      return;
+    }
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔐 Verificando autenticación...');
 
-      if (!user) {
-        Alert.alert('Error', 'Debes iniciar sesión para crear un viaje');
+      // Primero verificar el estado de la sesión
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('📋 Datos de sesión:', {
+        hasSession: !!sessionData?.session,
+        hasUser: !!sessionData?.session?.user,
+        userId: sessionData?.session?.user?.id,
+        userEmail: sessionData?.session?.user?.email,
+        error: sessionError
+      });
+
+      if (sessionError) {
+        console.log('❌ Error al obtener sesión:', sessionError);
+        Alert.alert('Error', 'Error de autenticación. Por favor, inicia sesión nuevamente.');
+        setLoading(false);
         return;
       }
 
+      if (!sessionData?.session?.user) {
+        console.log('❌ No hay sesión activa');
+        Alert.alert('Error', 'Debes iniciar sesión para crear un viaje. Por favor, ve a la sección de autenticación.');
+        setLoading(false);
+        return;
+      }
+
+      const user = sessionData.session.user;
+      console.log('👤 Usuario autenticado:', { id: user.id, email: user.email });
+
+      // Verificar si podemos leer trips existentes como prueba
+      console.log('🔍 Probando consulta de trips existentes...');
+      const { data: existingTrips, error: readError } = await supabase
+        .from('trips')
+        .select('id, title')
+        .limit(1);
+
+      console.log('📖 Resultado consulta existente:', {
+        tripsCount: existingTrips?.length || 0,
+        readError: readError?.message || null
+      });
+
       const tripToCreate = {
-        name: tripData.name.trim(),
+        title: tripData.name.trim(),
         description: tripData.description.trim() || null,
-        start_date: tripData.startDate?.toISOString() || null,
-        end_date: tripData.endDate?.toISOString() || null,
-        is_date_uncertain: tripData.isDateUncertain,
+        start_date: tripData.startDate?.toISOString().split('T')[0] || null, // Solo fecha, sin hora
+        end_date: tripData.endDate?.toISOString().split('T')[0] || null, // Solo fecha, sin hora
         budget: tripData.budget ? parseFloat(tripData.budget) : null,
         accommodation_preference: tripData.accommodation || null,
         transport_preference: tripData.transport || null,
-        user_id: user.id,
-        status: 'planning',
+        owner_id: user.id,
+        status: 'active',
         privacy: 'private',
       };
+
+      console.log('📝 Datos a insertar:', tripToCreate);
 
       const { data, error } = await supabase
         .from('trips')
@@ -127,14 +166,30 @@ export default function NewTripModal({ visible, onClose, onTripCreated }: NewTri
         .select('id')
         .single();
 
-      if (error) throw error;
+      console.log('📊 Respuesta de Supabase:', { data, error });
+
+      if (error) {
+        console.log('❌ Error de Supabase:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+
+      console.log('✅ Viaje creado con ID:', data.id);
+      console.log('📞 Llamando onTripCreated...');
 
       onTripCreated(data.id);
+
+      console.log('🚪 Cerrando modal...');
       handleClose();
     } catch (error) {
-      console.error('Error creating trip:', error);
-      Alert.alert('Error', 'No se pudo crear el viaje. Inténtalo de nuevo.');
+      console.error('❌ Error creating trip:', error);
+      Alert.alert('Error', `No se pudo crear el viaje: ${error.message || error}`);
     } finally {
+      console.log('🏁 Finalizando...');
       setLoading(false);
     }
   };

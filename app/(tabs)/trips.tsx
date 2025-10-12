@@ -402,8 +402,14 @@ export default function TripsTab() {
       <NewTripModal
         visible={showNewTripModal}
         onClose={() => setShowNewTripModal(false)}
-        onTripCreated={() => {
-          loadTripStats(); // Recargar estadísticas
+        onTripCreated={(tripId) => {
+          console.log('✅ Viaje creado con ID:', tripId);
+          // Cerrar el modal
+          setShowNewTripModal(false);
+          // Recargar la lista de trips y estadísticas
+          loadTripStats();
+          // Mostrar mensaje de éxito
+          Alert.alert('¡Éxito!', 'Tu viaje ha sido creado exitosamente');
         }}
       />
     </View>
