@@ -18,6 +18,8 @@ import { supabase } from '~/lib/supabase';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import { getCurrentUser, getTripCollaborators, getTripOwner, UserProfile } from '~/lib/userUtils';
 import EditTripModal from './EditTripModal';
+import ManageTeamModal from './teams/ManageTeamModal';
+import i18n from '~/i18n';
 
 // Mapas para obtener íconos de alojamiento y transporte
 const accommodationIcons: { [key: string]: string } = {
@@ -95,6 +97,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const [tripOwner, setTripOwner] = useState<UserProfile | null>(null);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showManageTeam, setShowManageTeam] = useState(false);
+  const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
 
   useEffect(() => {
     if (visible && trip.id) {
@@ -120,10 +124,23 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         getTripOwner(trip.id),
         getTripCollaborators(trip.id),
       ]);
-      
+
       setCurrentUser(user);
       setTripOwner(owner);
       setCollaborators(collabs);
+
+      // Derive current user's role relative to this trip
+      let role: 'owner' | 'editor' | 'viewer' = 'viewer';
+      if (user && owner && user.id === owner.id) {
+        role = 'owner';
+      } else if (user) {
+        const me = collabs.find((c) => c.id === user.id);
+        const r = (me as any)?.role;
+        if (r === 'editor' || r === 'viewer') {
+          role = r;
+        }
+      }
+      setCurrentRole(role);
     } catch (error) {
       console.error('Error loading users:', error);
     }
@@ -181,15 +198,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const getTripStatus = () => {
     if (!editableTrip.start_date || !editableTrip.end_date) return 'Planning';
-    
+
     const now = new Date();
     const startDate = new Date(editableTrip.start_date);
     const endDate = new Date(editableTrip.end_date);
-    
+
     if (now < startDate) return 'Upcoming';
     if (now >= startDate && now <= endDate) return 'Traveling';
     if (now > endDate) return 'Completed';
-    
+
     return 'Planning';
   };
 
@@ -202,6 +219,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       Traveling: { bgColor: '#FED7AA', textColor: '#C2410C' },
     };
     return configs[status as keyof typeof configs] || configs.Planning;
+  };
+
+  const getRoleConfig = () => {
+    const role = currentRole;
+    const configs: Record<'owner' | 'editor' | 'viewer', { bgColor: string; textColor: string; label: string }> = {
+      owner: { bgColor: '#FEF3C7', textColor: '#92400E', label: 'Owner' },
+      editor: { bgColor: '#DBEAFE', textColor: '#1E40AF', label: 'Editor' },
+      viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: 'Viewer' },
+    };
+    return configs[role];
   };
 
   const getUserInitials = (fullName?: string) => {
@@ -236,26 +263,42 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const OverviewTab = () => (
     <ScrollView style={{ flex: 1, padding: 20 }}>
-      {/* Header con badge de estado */}
+      {/* Header con badges: estado del viaje + rol del usuario */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
             {editableTrip.title}
           </Text>
         </View>
-        <View style={{
-          backgroundColor: getStatusConfig().bgColor,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 12,
-        }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: '600',
-            color: getStatusConfig().textColor,
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{
+            backgroundColor: getStatusConfig().bgColor,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
           }}>
-            {getTripStatus()}
-          </Text>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '600',
+              color: getStatusConfig().textColor,
+            }}>
+              {getTripStatus()}
+            </Text>
+          </View>
+          <View style={{
+            backgroundColor: getRoleConfig().bgColor,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+          }}>
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '600',
+              color: getRoleConfig().textColor,
+            }}>
+              {getRoleConfig().label}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -268,7 +311,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           </Text>
         </View>
         <Text style={{ fontSize: 16, color: '#6B7280' }}>
-          {editableTrip.start_date && editableTrip.end_date 
+          {editableTrip.start_date && editableTrip.end_date
             ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
             : 'No dates set'
           }
@@ -572,7 +615,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => Alert.alert('Manage Team', 'Funcionalidad de gestión de equipo próximamente disponible')}
+          onPress={() => setShowManageTeam(true)}
         >
           <LinearGradient
             colors={['#8B5CF6', '#EC4899']}
@@ -588,7 +631,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="people" size={20} color="white" />
               <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
-                Manage Team
+                {i18n.t('trips.manageTeam', 'Manage Team')}
               </Text>
             </View>
           </LinearGradient>
@@ -658,7 +701,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="calendar-outline" size={16} color="#6B7280" />
               <Text style={{ fontSize: 14, color: '#6B7280', marginLeft: 4 }}>
-                {editableTrip.start_date && editableTrip.end_date 
+                {editableTrip.start_date && editableTrip.end_date
                   ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
                   : 'No dates set'
                 }
@@ -695,6 +738,18 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         onClose={() => setShowEditModal(false)}
         trip={editableTrip}
         onTripUpdated={handleTripUpdate}
+      />
+
+      {/* Manage Team Modal */}
+      <ManageTeamModal
+        visible={showManageTeam}
+        onClose={() => setShowManageTeam(false)}
+        tripId={trip.id}
+        onChanged={() => {
+          // Refresh team-related data
+          loadTripStats();
+          loadUsers();
+        }}
       />
     </Modal>
   );

@@ -13,45 +13,46 @@ import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
 import { registerDeviceToken } from '~/lib/push';
 import { useRouter } from 'expo-router';
+import NotificationBell from '~/components/home/NotificationBell';
 
-export default function HomeTab(){
+export default function HomeTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
   const { units, setUnits } = useSettingsStore();
   const toggleUnits = () => setUnits(units === 'c' ? 'f' : 'c');
   const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
-  
+
   const [city, setCity] = React.useState<string>('—');
-  const [temp, setTemp] = React.useState<number|undefined>(undefined);
-  const [pos, setPos] = React.useState<{lat:number;lng:number}|null>(null);
+  const [temp, setTemp] = React.useState<number | undefined>(undefined);
+  const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
   const [currentTrip, setCurrentTrip] = React.useState<any>(null);
 
-  React.useEffect(()=>{
-    registerDeviceToken().catch(()=>{});
-    (async()=>{
+  React.useEffect(() => {
+    registerDeviceToken().catch(() => { });
+    (async () => {
       const p = await getCurrentPosition();
-      if (p){ 
-        setPos(p); 
+      if (p) {
+        setPos(p);
         // Don't set city here, let the weather API effect handle it
       }
     })();
   }, []);
 
-  React.useEffect(()=>{
-    (async()=>{
+  React.useEffect(() => {
+    (async () => {
       if (!pos) return;
-      
-      try{ 
-        const w = await getWeatherCached(pos.lat, pos.lng, units); 
-        
-        if(w) {
+
+      try {
+        const w = await getWeatherCached(pos.lat, pos.lng, units);
+
+        if (w) {
           setTemp(w.temp);
-          
+
           // Use location data from Weather API if available
-          if(w.location && w.location.city) {
+          if (w.location && w.location.city) {
             setCity(w.location.city);
           } else {
             // Fallback 1: try to get city from reverse geocoding
@@ -77,7 +78,7 @@ export default function HomeTab(){
             }
           }
         }
-      } catch(error){
+      } catch (error) {
         // Fallback: try to get city from reverse geocoding even if weather fails
         try {
           const fallbackCity = await reverseCityCached(pos.lat, pos.lng);
@@ -103,18 +104,18 @@ export default function HomeTab(){
     })();
   }, [pos, units]);
 
-  React.useEffect(()=>{
-    (async()=>{
+  React.useEffect(() => {
+    (async () => {
       try {
         const savedPlaces = await getSavedPlaces();
         setSavedPlacesCount(savedPlaces.length);
-        
+
         const trip = await getActiveOrNextTrip();
         setCurrentTrip(trip);
-        
+
         // For now, assume 1 upcoming trip if there's an active/next trip
         setUpcomingTripsCount(trip ? 1 : 0);
-      } catch(e) {
+      } catch (e) {
         console.log('Error loading stats:', e);
       }
     })();
@@ -144,7 +145,7 @@ export default function HomeTab(){
                 <Text style={{ fontSize: 16, color: 'white', marginLeft: 8 }}>• {new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}</Text>
               </View>
             </View>
-            
+
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TouchableOpacity onPress={toggleUnits} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
                 <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
@@ -152,23 +153,8 @@ export default function HomeTab(){
                   {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°{units === 'c' ? 'C' : 'F'}
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity onPress={() => Alert.alert('Notificaciones', 'Funcionalidad de inbox próximamente disponible')} style={{ position: 'relative' }}>
-                <Text style={{ fontSize: 24 }}>🔔</Text>
-                <View style={{ 
-                  position: 'absolute', 
-                  top: -2, 
-                  right: -2, 
-                  backgroundColor: '#FF4444', 
-                  borderRadius: 10, 
-                  width: 20, 
-                  height: 20, 
-                  justifyContent: 'center', 
-                  alignItems: 'center' 
-                }}>
-                  <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>7</Text>
-                </View>
-              </TouchableOpacity>
+
+              <NotificationBell iconColor="#fff" />
             </View>
           </View>
         </LinearGradient>
@@ -176,7 +162,7 @@ export default function HomeTab(){
         <View style={{ padding: 16, gap: 16 }}>
           {/* Cards de estadísticas */}
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{ flex: 1 }}
               onPress={() => router.push('/(tabs)/explore')}
             >
@@ -200,7 +186,7 @@ export default function HomeTab(){
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{ flex: 1 }}
               onPress={() => router.push('/(tabs)/trips')}
             >
@@ -250,8 +236,8 @@ export default function HomeTab(){
                   borderRadius: 12,
                   backgroundColor: !travelModeEnabled ? '#E5E7EB' : 'transparent'
                 }}>
-                  <Text style={{ 
-                    fontSize: 12, 
+                  <Text style={{
+                    fontSize: 12,
                     color: !travelModeEnabled ? '#6B7280' : '#9CA3AF',
                     fontWeight: !travelModeEnabled ? '600' : '400'
                   }}>
@@ -264,8 +250,8 @@ export default function HomeTab(){
                   borderRadius: 12,
                   backgroundColor: travelModeEnabled ? '#D1FAE5' : 'transparent'
                 }}>
-                  <Text style={{ 
-                    fontSize: 12, 
+                  <Text style={{
+                    fontSize: 12,
                     color: travelModeEnabled ? '#059669' : '#9CA3AF',
                     fontWeight: travelModeEnabled ? '600' : '400'
                   }}>
@@ -385,7 +371,7 @@ export default function HomeTab(){
               }}>
                 <Text style={{ fontSize: 24 }}>🌅</Text>
               </View>
-              
+
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                   <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 }}>

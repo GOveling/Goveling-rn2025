@@ -75,6 +75,16 @@
 			"type": "shell",
 			"command": "npx tsc --noEmit",
 			"group": "build"
+		},
+		{
+			"label": "ESLint Check",
+			"type": "shell",
+			"command": "npx eslint ."
+		},
+		{
+			"label": "ESLint Check",
+			"type": "shell",
+			"command": "npx eslint ."
 		}
 	]
 }
