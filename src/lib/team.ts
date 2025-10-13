@@ -86,6 +86,64 @@ export async function rejectInvitation(invitation_id: number) {
 }
 
 export async function removeCollaborator(trip_id: string, user_id: string) {
-  await supabase.from('trip_collaborators').delete().eq('trip_id', trip_id).eq('user_id', user_id);
-  await sendPush([user_id], 'Removed from trip', 'You were removed from a collaborative trip', { type: 'removed', trip_id });
+  console.log('removeCollaborator called with:', { trip_id, user_id });
+
+  // Get trip details and all participants before removing
+  const [tripRes, removedUserRes, allParticipantsRes] = await Promise.all([
+    supabase.from('trips').select('title, owner_id').eq('id', trip_id).maybeSingle(),
+    supabase.from('profiles').select('display_name, email').eq('id', user_id).maybeSingle(),
+    supabase.from('trip_collaborators').select('user_id').eq('trip_id', trip_id)
+  ]);
+
+  console.log('removeCollaborator - fetched data:', {
+    trip: tripRes.data,
+    removedUser: removedUserRes.data,
+    participants: allParticipantsRes.data
+  });
+
+  const tripName = (tripRes.data as any)?.title;
+  const ownerId = (tripRes.data as any)?.owner_id;
+  const removedUserName = (removedUserRes.data as any)?.display_name || (removedUserRes.data as any)?.email || 'User';
+  const allParticipants = (allParticipantsRes.data || []).map((p: any) => p.user_id).filter((id: string) => id !== user_id);
+
+  // Add owner to participants if not already included
+  if (ownerId && !allParticipants.includes(ownerId)) {
+    allParticipants.push(ownerId);
+  }
+
+  console.log('removeCollaborator - processed data:', {
+    tripName,
+    ownerId,
+    removedUserName,
+    allParticipants
+  });
+
+  // Remove the collaborator
+  const { error } = await supabase.from('trip_collaborators').delete().eq('trip_id', trip_id).eq('user_id', user_id);
+  if (error) {
+    console.error('removeCollaborator - delete failed:', error);
+    throw error;
+  }
+
+  console.log('removeCollaborator - delete successful, sending notifications...');
+
+  // Notify the removed user
+  await sendPush(
+    [user_id],
+    'Removed from trip',
+    tripName ? `You were removed from "${tripName}"` : 'You were removed from a collaborative trip',
+    { type: 'removed', trip_id, trip_name: tripName }
+  );
+
+  // Notify all remaining participants (owner + other collaborators)
+  if (allParticipants.length > 0) {
+    await sendPush(
+      allParticipants,
+      'Team member removed',
+      tripName ? `${removedUserName} was removed from "${tripName}"` : `${removedUserName} was removed from the trip`,
+      { type: 'member_removed', trip_id, trip_name: tripName, removed_user: removedUserName }
+    );
+  }
+
+  console.log('removeCollaborator - notifications sent, operation complete');
 }

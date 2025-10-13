@@ -107,6 +107,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
       const inviterName = data?.inviter_name || data?.inviterName || data?.inviter;
       const invitedEmail = data?.email || data?.invited_email;
       const role = data?.role;
+      const removedUser = data?.removed_user || data?.removedUser;
 
       // Customize messages based on notification type
       switch (type) {
@@ -137,6 +138,13 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             body: tripName
               ? t('notifications.removed_body_named', 'You were removed from {{trip}}', { trip: tripName })
               : t('notifications.removed_body', 'You were removed from a collaborative trip')
+          };
+        case 'member_removed':
+          return {
+            title: t('notifications.member_removed_title', 'Team member removed'),
+            body: tripName && removedUser
+              ? t('notifications.member_removed_body_named', '{{user}} was removed from {{trip}}', { user: removedUser, trip: tripName })
+              : t('notifications.member_removed_body', 'A team member was removed from the trip')
           };
         default:
           // If this looks like an invite-sent (owner side) notification from DB trigger

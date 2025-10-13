@@ -222,6 +222,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
   };
 
   const onRemoveMember = async (member: MemberItem) => {
+    console.log('onRemoveMember called with:', member);
+    console.log('canManage:', canManage, 'isOwner:', isOwner, 'currentRole:', currentRole);
+
     Alert.alert(
       t('trips.remove_collaborator', 'Remove collaborator'),
       t('trips.remove_collaborator_confirm', 'Do you want to remove {{name}} from the trip?', { name: member.profile?.full_name || member.profile?.email || t('trips.this_user', 'this user') }),
@@ -231,11 +234,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
           text: t('trips.remove', 'Remove'),
           style: 'destructive',
           onPress: async () => {
+            console.log('Remove confirmed, executing removeCollaborator...');
             try {
               await removeCollaborator(tripId, member.user_id);
+              console.log('removeCollaborator successful, refreshing data...');
               await fetchMembers();
               onChanged?.();
             } catch (e: any) {
+              console.error('removeCollaborator failed:', e);
               Alert.alert(t('common.error', 'Error'), e?.message || t('trips.remove_collaborator_failed', 'Could not remove collaborator'));
             }
           },
@@ -318,7 +324,18 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
         )}
         {/* Remove button (owner only) */}
         {canManage && (
-          <TouchableOpacity onPress={() => onRemoveMember(item)}>
+          <TouchableOpacity
+            onPress={() => {
+              console.log('Delete button pressed for user:', item.user_id);
+              onRemoveMember(item);
+            }}
+            style={{
+              padding: 8,
+              borderRadius: 4,
+              ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {})
+            }}
+            activeOpacity={0.7}
+          >
             <Ionicons name="trash-outline" size={20} color="#EF4444" />
           </TouchableOpacity>
         )}
