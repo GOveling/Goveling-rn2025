@@ -7,24 +7,30 @@ export async function inviteToTrip(trip_id: string, email: string, role: 'viewer
   const { data: inv, error } = await supabase.from('trip_invitations').insert({ trip_id, email, role }).select('id, trip_id, email, role').single();
   if (error) throw error;
 
+  // Resolve inviter name and trip title for richer notifications/emails
+  const { data: me } = await supabase.auth.getUser();
+  const inviterName = me?.user?.user_metadata?.full_name || me?.user?.email || 'Goveling user';
+  const { data: tripRow } = await supabase
+    .from('trips')
+    .select('title')
+    .eq('id', trip_id)
+    .maybeSingle();
+  const tripName = (tripRow as any)?.title as string | undefined;
+
   // Try to find an existing user by email to push
   const { data: userProfile } = await supabase.from('profiles').select('id, display_name').ilike('email', email).maybeSingle();
   if (userProfile?.id) {
-    // Notify user
-    await sendPush([userProfile.id], 'Invitation to collaborate', 'You have been invited to a trip', { type: 'trip_invite', trip_id, role });
+    // Notify user with richer payload including inviter and trip
+    await sendPush(
+      [userProfile.id],
+      'Invitation to collaborate',
+      tripName && inviterName ? `${inviterName} invited you to "${tripName}"` : (tripName ? `You have been invited to "${tripName}"` : 'You have been invited to a trip'),
+      { type: 'trip_invite', trip_id, role, trip_name: tripName, inviter_name: inviterName }
+    );
   }
 
   // Send email via Edge Function (Resend) with SQL RPC fallback
   try {
-    const { data: me } = await supabase.auth.getUser();
-    const inviterName = me?.user?.user_metadata?.full_name || me?.user?.email || 'Goveling user';
-    // Fetch trip title to include in email
-    const { data: tripRow } = await supabase
-      .from('trips')
-      .select('title')
-      .eq('id', trip_id)
-      .maybeSingle();
-    const tripName = (tripRow as any)?.title as string | undefined;
     // Deep link to the trip inside the app (scheme defined in app.json)
     const inviteLink = `goveling://trips/${trip_id}`;
     const edgeRes = await supabase.functions.invoke('send-invite-email', {
@@ -62,7 +68,10 @@ export async function acceptInvitation(invitation_id: number) {
 
   // Notify owner
   if (inv.owner_id) {
-    await sendPush([inv.owner_id], 'Invitation accepted', 'A collaborator accepted your invitation', { type: 'invite_accepted', trip_id: inv.trip_id });
+    // Fetch trip title for richer payload
+    const { data: tripRow } = await supabase.from('trips').select('title').eq('id', inv.trip_id).maybeSingle();
+    const tripName = (tripRow as any)?.title as string | undefined;
+    await sendPush([inv.owner_id], 'Invitation accepted', tripName ? `Accepted for "${tripName}"` : 'A collaborator accepted your invitation', { type: 'invite_accepted', trip_id: inv.trip_id, trip_name: tripName });
   }
 }
 
@@ -70,7 +79,9 @@ export async function rejectInvitation(invitation_id: number) {
   const { data: inv } = await supabase.from('trip_invitations').select('trip_id, owner_id').eq('id', invitation_id).single();
   await supabase.from('trip_invitations').delete().eq('id', invitation_id);
   if (inv?.owner_id) {
-    await sendPush([inv.owner_id], 'Invitation declined', 'A collaborator declined your invitation', { type: 'invite_declined', trip_id: inv.trip_id });
+    const { data: tripRow } = await supabase.from('trips').select('title').eq('id', inv.trip_id).maybeSingle();
+    const tripName = (tripRow as any)?.title as string | undefined;
+    await sendPush([inv.owner_id], 'Invitation declined', tripName ? `Declined for "${tripName}"` : 'A collaborator declined your invitation', { type: 'invite_declined', trip_id: inv.trip_id, trip_name: tripName });
   }
 }
 
