@@ -1,10 +1,14 @@
 import { supabase } from './supabase';
 
+// Forzar reload de Metro - versión 2.0
+const FORCE_RELOAD_V2 = Date.now();
+
 export interface UserProfile {
   id: string;
   full_name?: string;
   avatar_url?: string;
   email?: string;
+  role?: string; // Para colaboradores
 }
 
 export type UserRole = 'owner' | 'editor' | 'viewer';
@@ -33,28 +37,88 @@ export const getCurrentUser = async (): Promise<UserProfile | null> => {
 };
 
 export const getTripCollaborators = async (tripId: string): Promise<UserProfile[]> => {
+  console.log('🚀🚀🚀 UPDATED VERSION 2.0 - getTripCollaborators FUNCTION STARTED!!!', { tripId, timestamp: Date.now() });
+  console.log('🆕🆕🆕 THIS IS THE NEW FUNCTION - CHECK IF YOU SEE THIS LOG!!!');
+  console.log('🔥🔥🔥 FORCE_RELOAD_V2:', FORCE_RELOAD_V2);
+  
   try {
-    const { data: collaborators } = await supabase
+    console.log('🔍 getTripCollaborators: Starting query for trip:', tripId);
+    console.log('🔍 getTripCollaborators: Trip ID length:', tripId?.length);
+    console.log('🔍 getTripCollaborators: Trip ID type:', typeof tripId);
+    console.log('🔍 getTripCollaborators: Function called at:', new Date().toISOString());
+    
+    // Primero obtenemos los IDs de los colaboradores
+    console.log('🔍 getTripCollaborators: About to query trip_collaborators table');
+    const { data: collaboratorIds, error: collabError } = await supabase
       .from('trip_collaborators')
-      .select(`
-        user_id,
-        role,
-        profiles:user_id (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select('user_id, role')
       .eq('trip_id', tripId);
 
-    return collaborators?.map(collab => ({
-      id: collab.user_id,
-      full_name: (collab.profiles as any)?.full_name,
-      avatar_url: (collab.profiles as any)?.avatar_url,
-      role: collab.role,
-    })) || [];
+    console.log('🔍 getTripCollaborators: Query completed, checking results...');
+    
+    if (collabError) {
+      console.error('❌ getTripCollaborators: Collaborators query error:', collabError);
+      console.error('❌ getTripCollaborators: Error details:', JSON.stringify(collabError, null, 2));
+      return [];
+    }
+
+    console.log('🔍 getTripCollaborators: Collaborator IDs:', collaboratorIds);
+    console.log('🔍 getTripCollaborators: Collaborator IDs count:', collaboratorIds?.length || 0);
+
+    if (!collaboratorIds || collaboratorIds.length === 0) {
+      console.log('❌ getTripCollaborators: No collaborators found');
+      return [];
+    }
+
+    // Luego obtenemos los perfiles de esos usuarios
+    const userIds = collaboratorIds.map(c => c.user_id);
+    console.log('🔍 getTripCollaborators: User IDs to fetch:', userIds);
+    
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, email')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('❌ getTripCollaborators: Profiles query error:', profilesError);
+      return [];
+    }
+
+    console.log('🔍 getTripCollaborators: Raw profiles:', profiles);
+    console.log('🔍 getTripCollaborators: Raw profiles stringified:', JSON.stringify(profiles, null, 2));
+
+    if (!profiles || profiles.length === 0) {
+      console.log('❌ getTripCollaborators: No profiles found for collaborators');
+      return [];
+    }
+
+    // Combinar la información de colaboradores con perfiles
+    const result = collaboratorIds.map(collab => {
+      const profile = profiles.find(p => p.id === collab.user_id);
+      
+      console.log(`👤 getTripCollaborators: Processing collaborator ${collab.user_id}:`, {
+        profile_data: profile,
+        has_profile: !!profile,
+        full_name: profile?.full_name,
+        email: profile?.email,
+        role: collab.role
+      });
+      
+      return {
+        id: collab.user_id,
+        full_name: profile?.full_name || profile?.email?.split('@')[0] || null,
+        avatar_url: profile?.avatar_url || null,
+        email: profile?.email || null,
+        role: collab.role,
+      };
+    });
+
+    console.log('✅ getTripCollaborators: Final result:', result);
+    return result;
   } catch (error) {
-    console.error('Error getting trip collaborators:', error);
+    console.error('❌ getTripCollaborators: CATCH ERROR:', error);
+    console.error('❌ getTripCollaborators: Error details:', JSON.stringify(error, null, 2));
+    console.error('❌ getTripCollaborators: Stack trace:', error instanceof Error ? error.stack : 'No stack');
     return [];
   }
 };

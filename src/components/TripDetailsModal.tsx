@@ -105,6 +105,24 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       loadTripStats();
       loadUsers();
       setEditableTrip(trip);
+
+      // Suscripción en tiempo real para cambios en colaboradores
+      const channel = supabase
+        .channel(`trip-collaborators-${trip.id}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'trip_collaborators', 
+          filter: `trip_id=eq.${trip.id}` 
+        }, () => {
+          console.log('🔄 TripDetailsModal: Collaborators changed, reloading...');
+          loadUsers(); // Recargar usuarios cuando cambien los colaboradores
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [visible, trip.id]);
 
@@ -119,11 +137,20 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const loadUsers = async () => {
     try {
+      console.log('🔄 TripDetailsModal: Loading users for trip:', trip.id);
+      
       const [user, owner, collabs] = await Promise.all([
         getCurrentUser(),
         getTripOwner(trip.id),
         getTripCollaborators(trip.id),
       ]);
+
+      console.log('👥 TripDetailsModal: Loaded data:', {
+        user_id: user?.id,
+        owner_id: owner?.id,
+        collaborators_count: collabs?.length || 0,
+        collaborators: collabs?.map(c => ({ id: c.id, name: c.full_name, role: c.role }))
+      });
 
       setCurrentUser(user);
       setTripOwner(owner);
@@ -138,9 +165,17 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       // Safety net: direct owner-id fallback in case of any weirdness
       const ownerId = (trip.owner_id || trip.user_id || owner?.id) ?? null;
       const finalRole = user?.id && ownerId && user.id === ownerId ? 'owner' : resolved;
+      
+      console.log('🔑 TripDetailsModal: Role resolution:', {
+        current_user_id: user?.id,
+        owner_id: ownerId,
+        resolved_role: resolved,
+        final_role: finalRole
+      });
+      
       setCurrentRole(finalRole);
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('❌ TripDetailsModal: Error loading users:', error);
     }
   };
 
@@ -531,6 +566,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       )}
 
       {/* Colaboradores */}
+      {(() => {
+        console.log('🎭 TeamTab: About to render collaborators:', {
+          collaborators_count: collaborators?.length || 0,
+          collaborators_data: collaborators,
+          trip_id: trip?.id
+        });
+        return null;
+      })()}
+      
       {collaborators.map((collaborator) => (
         <View key={collaborator.id} style={{
           backgroundColor: '#F9FAFB',
