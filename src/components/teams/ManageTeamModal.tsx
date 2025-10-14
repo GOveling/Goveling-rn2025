@@ -282,7 +282,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     ) : null
   );
 
-  const MemberRow: React.FC<{ item: MemberItem }> = ({ item }) => (
+  const renderMemberRow = (item: MemberItem) => (
     <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {item.profile?.avatar_url ? (
@@ -332,7 +332,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     </View>
   );
 
-  const InvitationRow: React.FC<{ item: InvitationItem }> = ({ item }) => (
+  const renderInvitationRow = (item: InvitationItem) => (
     <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#93C5FD', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
@@ -351,7 +351,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     </View>
   );
 
-  const MembersTab = () => (
+  const renderMembersTab = () => (
     <View style={{ flex: 1 }}>
       {renderOwner()}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -359,7 +359,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
           <FlatList
             data={members}
             keyExtractor={(m) => m.user_id}
-            renderItem={({ item }) => <MemberRow item={item} />}
+            renderItem={({ item }) => renderMemberRow(item)}
             keyboardShouldPersistTaps="always"
             keyboardDismissMode="on-drag"
             contentContainerStyle={{ paddingBottom: 160 }}
@@ -416,12 +416,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     </View>
   );
 
-  const InvitationsTab = () => (
+  const renderInvitationsTab = () => (
     <View style={{ flex: 1 }}>
       <FlatList
         data={invitations.filter(i => (i.status || 'pending') === 'pending')}
         keyExtractor={(i) => String(i.id)}
-        renderItem={({ item }) => <InvitationRow item={item} />}
+        renderItem={({ item }) => renderInvitationRow(item)}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', paddingVertical: 24 }}>
             <Ionicons name="mail-open-outline" size={28} color="#9CA3AF" />
@@ -432,7 +432,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     </View>
   );
 
-  const HistoryRow: React.FC<{ item: InvitationItem }> = ({ item }) => {
+  const renderHistoryRow = (item: InvitationItem) => {
     const accepted = (item.status || '') === 'accepted';
     const declined = (item.status || '') === 'declined';
     const bg = accepted ? '#DCFCE7' : declined ? '#FFE4E6' : '#F3F4F6';
@@ -452,12 +452,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     );
   };
 
-  const HistoryTab = () => (
+  const renderHistoryTab = () => (
     <View style={{ flex: 1 }}>
       <FlatList
         data={invitations.filter(i => (i.status || '') === 'accepted' || (i.status || '') === 'declined')}
         keyExtractor={(i) => String(i.id)}
-        renderItem={({ item }) => <HistoryRow item={item} />}
+        renderItem={({ item }) => renderHistoryRow(item)}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', paddingVertical: 24 }}>
             <Ionicons name="time-outline" size={28} color="#9CA3AF" />
@@ -505,11 +505,11 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
                 <Text style={{ marginTop: 8, color: '#6B7280' }}>{t('common.loading', 'Loading...')}</Text>
               </View>
             ) : activeIndex === 0 ? (
-              <MembersTab />
+              renderMembersTab()
             ) : activeIndex === 1 ? (
-              <InvitationsTab />
+              renderInvitationsTab()
             ) : (
-              <HistoryTab />
+              renderHistoryTab()
             )}
           </View>
         </KeyboardAvoidingView>
