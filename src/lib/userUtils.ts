@@ -95,7 +95,17 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
     // Combinar la información de colaboradores con perfiles
     const result = collaboratorIds.map(collab => {
       const profile = profiles.find(p => p.id === collab.user_id);
-      
+
+      const minimal = !profile?.full_name && !profile?.avatar_url;
+      if (minimal) {
+        console.log('🩺 getTripCollaborators: Minimal/incomplete profile detected (likely backfill).', {
+          user_id: collab.user_id,
+          has_profile_row: !!profile,
+          email: profile?.email,
+          role: collab.role
+        });
+      }
+
       console.log(`👤 getTripCollaborators: Processing collaborator ${collab.user_id}:`, {
         profile_data: profile,
         has_profile: !!profile,
@@ -103,7 +113,7 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
         email: profile?.email,
         role: collab.role
       });
-      
+
       return {
         id: collab.user_id,
         full_name: profile?.full_name || profile?.email?.split('@')[0] || null,
@@ -200,3 +210,32 @@ export const resolveUserRoleForTrip = async (
     return 'viewer';
   }
 };
+
+/**
+ * Convenience helper: resolves the current authenticated user's role for a trip id.
+ * Uses a minimal select on trips (id, owner_id, user_id) + resolveUserRoleForTrip.
+ * Falls back to 'viewer' if user not logged in or trip not found.
+ */
+export async function resolveCurrentUserRoleForTripId(tripId: string): Promise<UserRole> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) return 'viewer';
+
+    const { data: tripRow, error: tripErr } = await supabase
+      .from('trips')
+      .select('id, owner_id, user_id')
+      .eq('id', tripId)
+      .maybeSingle();
+    if (tripErr || !tripRow) return 'viewer';
+
+    return resolveUserRoleForTrip(uid, {
+      id: (tripRow as any).id,
+      owner_id: (tripRow as any).owner_id,
+      user_id: (tripRow as any).user_id,
+    });
+  } catch (e) {
+    console.warn('resolveCurrentUserRoleForTripId unexpected error', e);
+    return 'viewer';
+  }
+}

@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '~/lib/supabase';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import { getCurrentUser, getTripCollaborators, getTripOwner, resolveUserRoleForTrip, UserProfile } from '~/lib/userUtils';
+import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
 import i18n from '~/i18n';
@@ -96,27 +97,53 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [tripOwner, setTripOwner] = useState<UserProfile | null>(null);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
+  const [hasMinimalProfiles, setHasMinimalProfiles] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showManageTeam, setShowManageTeam] = useState(false);
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
+  const [pendingInvites, setPendingInvites] = useState(0);
+
+  const fetchPendingInvites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trip_invitations')
+        .select('id')
+        .eq('trip_id', trip.id);
+      if (error) throw error;
+      setPendingInvites(data?.length || 0);
+    } catch (e) {
+      console.warn('⚠️ TripDetailsModal: Failed to fetch pending invites', e);
+    }
+  };
 
   useEffect(() => {
     if (visible && trip.id) {
       loadTripStats();
       loadUsers();
+      fetchPendingInvites();
       setEditableTrip(trip);
 
-      // Suscripción en tiempo real para cambios en colaboradores
+      // Suscripciones en tiempo real para colaboradores e invitaciones
       const channel = supabase
-        .channel(`trip-collaborators-${trip.id}`)
-        .on('postgres_changes', { 
-          event: '*', 
-          schema: 'public', 
-          table: 'trip_collaborators', 
-          filter: `trip_id=eq.${trip.id}` 
+        .channel(`trip-details-team-${trip.id}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'trip_collaborators',
+          filter: `trip_id=eq.${trip.id}`
         }, () => {
-          console.log('🔄 TripDetailsModal: Collaborators changed, reloading...');
-          loadUsers(); // Recargar usuarios cuando cambien los colaboradores
+          console.log('🔄 TripDetailsModal: Collaborators changed, reloading users & stats...');
+          loadUsers();
+          loadTripStats();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'trip_invitations',
+          filter: `trip_id=eq.${trip.id}`
+        }, () => {
+          console.log('🔄 TripDetailsModal: Invitations changed, reloading pending invites...');
+          fetchPendingInvites();
         })
         .subscribe();
 
@@ -137,45 +164,31 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const loadUsers = async () => {
     try {
-      console.log('🔄 TripDetailsModal: Loading users for trip:', trip.id);
-      
-      const [user, owner, collabs] = await Promise.all([
-        getCurrentUser(),
-        getTripOwner(trip.id),
-        getTripCollaborators(trip.id),
-      ]);
-
-      console.log('👥 TripDetailsModal: Loaded data:', {
-        user_id: user?.id,
-        owner_id: owner?.id,
-        collaborators_count: collabs?.length || 0,
-        collaborators: collabs?.map(c => ({ id: c.id, name: c.full_name, role: c.role }))
-      });
+      console.log('🔄 TripDetailsModal: Loading users (unified) for trip:', trip.id);
+      const user = await getCurrentUser();
+  const useRPC = true; // flag to enable RPC path if function deployed
+  const team = useRPC ? await getTripWithTeamRPC(trip.id) : await getTripWithTeam(trip.id);
 
       setCurrentUser(user);
-      setTripOwner(owner);
-      setCollaborators(collabs);
+      setTripOwner(team.owner);
+      setCollaborators(team.collaborators);
 
-      // Centralized role resolution
+      // Detect minimal profiles (sin full_name y sin avatar_url)
+      const minimal = team.collaborators.some(c => !c.full_name && !c.avatar_url);
+      setHasMinimalProfiles(minimal);
+
+      const ownerId = team.owner?.id || trip.owner_id || trip.user_id || null;
       const resolved = await resolveUserRoleForTrip(user?.id, {
         id: trip.id,
-        owner_id: trip.owner_id ?? owner?.id ?? null,
+        owner_id: ownerId,
         user_id: trip.user_id ?? null,
       });
-      // Safety net: direct owner-id fallback in case of any weirdness
-      const ownerId = (trip.owner_id || trip.user_id || owner?.id) ?? null;
-      const finalRole = user?.id && ownerId && user.id === ownerId ? 'owner' : resolved;
-      
-      console.log('🔑 TripDetailsModal: Role resolution:', {
-        current_user_id: user?.id,
-        owner_id: ownerId,
-        resolved_role: resolved,
-        final_role: finalRole
-      });
-      
+      const finalRole = (user?.id && ownerId && user.id === ownerId) ? 'owner' : resolved;
+
+      console.log('🔑 TripDetailsModal: Role resolution (unified):', { ownerId, finalRole });
       setCurrentRole(finalRole);
     } catch (error) {
-      console.error('❌ TripDetailsModal: Error loading users:', error);
+      console.error('❌ TripDetailsModal: Error loading users (unified):', error);
     }
   };
 
@@ -353,13 +366,26 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </Text>
       </View>
 
-      {/* Viajeros */}
+      {/* Viajeros + Invitaciones pendientes */}
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
           <Ionicons name="people-outline" size={20} color="#6B7280" />
           <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginLeft: 8 }}>
             Travelers
           </Text>
+          {pendingInvites > 0 && (
+            <View style={{
+              marginLeft: 8,
+              backgroundColor: '#F59E0B',
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: 12
+            }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
+                {pendingInvites} pending
+              </Text>
+            </View>
+          )}
         </View>
         <Text style={{ fontSize: 16, color: '#6B7280' }}>
           {tripData.collaboratorsCount} {tripData.collaboratorsCount === 1 ? 'traveler' : 'travelers'}
@@ -508,6 +534,28 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937', marginBottom: 20 }}>
         Trip Collaborators
       </Text>
+
+      {hasMinimalProfiles && (
+        <View style={{
+          backgroundColor: '#FFF7ED',
+          borderRadius: 12,
+          padding: 14,
+          borderWidth: 1,
+          borderColor: '#FDBA74',
+          marginBottom: 20,
+          flexDirection: 'row'
+        }}>
+          <Ionicons name="warning-outline" size={22} color="#EA580C" style={{ marginRight: 10, marginTop: 2 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#9A3412', marginBottom: 4 }}>
+              Perfiles incompletos
+            </Text>
+            <Text style={{ fontSize: 13, color: '#9A3412', lineHeight: 18 }}>
+              Uno o más colaboradores aún no completan su perfil (sin nombre ni avatar). Invítalos a actualizarlo para una mejor experiencia.
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Owner */}
       {tripOwner && (

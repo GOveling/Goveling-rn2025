@@ -2,10 +2,12 @@ import { useTranslation } from 'react-i18next';
 export const options = { headerShown: false };
 import { useTheme } from '~/lib/theme';
 import React from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
 import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
+import { supabase } from '~/lib/supabase';
 import { getWeatherCached } from '~/lib/weather';
 import { useSettingsStore } from '~/lib/settingsStore';
 import { useTravel } from '~/lib/travelStore';
@@ -29,6 +31,14 @@ export default function HomeTab() {
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
   const [currentTrip, setCurrentTrip] = React.useState<any>(null);
+  const recomputeSavedPlaces = React.useCallback(async () => {
+    try {
+      const savedPlaces = await getSavedPlaces();
+      setSavedPlacesCount(savedPlaces.length);
+    } catch (e) {
+      console.log('Error recomputing saved places:', e);
+    }
+  }, []);
 
   React.useEffect(() => {
     registerDeviceToken().catch(() => { });
@@ -107,8 +117,7 @@ export default function HomeTab() {
   React.useEffect(() => {
     (async () => {
       try {
-        const savedPlaces = await getSavedPlaces();
-        setSavedPlacesCount(savedPlaces.length);
+        await recomputeSavedPlaces();
 
         const trip = await getActiveOrNextTrip();
         setCurrentTrip(trip);
@@ -120,6 +129,28 @@ export default function HomeTab() {
       }
     })();
   }, []);
+
+  // Recompute when screen gains focus
+  useFocusEffect(React.useCallback(() => {
+    recomputeSavedPlaces();
+  }, [recomputeSavedPlaces]));
+
+  // Realtime subscription to trip_places changes for any trip the user is involved in
+  React.useEffect(() => {
+    let channel: any;
+    (async () => {
+      try {
+        channel = supabase
+          .channel('home-saved-places')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_places' }, () => {
+            // Lightweight debounce if many rapid changes (timeout 120ms)
+            if ((channel as any)._pending) return; (channel as any)._pending = true; setTimeout(() => { (channel as any)._pending = false; recomputeSavedPlaces(); }, 120);
+          })
+          .subscribe();
+      } catch (e) { console.log('Realtime subscription error (trip_places):', e); }
+    })();
+    return () => { try { if (channel) supabase.removeChannel(channel); } catch {} };
+  }, [recomputeSavedPlaces]);
 
   return (
     <>

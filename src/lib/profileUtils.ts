@@ -50,7 +50,11 @@ export async function ensureMultipleUserProfiles(userIds: string[]): Promise<voi
     const existingIds = new Set((existingProfiles || []).map(p => p.id));
     const missingIds = userIds.filter(id => !existingIds.has(id));
     
-    if (missingIds.length === 0) return;
+    if (missingIds.length === 0) {
+      // Health log: none missing
+      console.log('🩺 profileUtils.ensureMultipleUserProfiles: No missing profiles to backfill. Total existing:', existingIds.size);
+      return;
+    }
     
     // Create minimal profiles for missing users
     const now = new Date().toISOString();
@@ -63,8 +67,8 @@ export async function ensureMultipleUserProfiles(userIds: string[]): Promise<voi
       updated_at: now,
     }));
     
-    await supabase.from('profiles').upsert(newProfiles, { onConflict: 'id' });
-    console.log('Backfilled profiles for users:', missingIds);
+  await supabase.from('profiles').upsert(newProfiles, { onConflict: 'id' });
+  console.log('🩺 profileUtils.ensureMultipleUserProfiles: Backfilled minimal profiles for users:', missingIds);
   } catch (error) {
     console.log('Could not backfill profiles - non-blocking:', error);
   }

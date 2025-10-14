@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getTripCollaborators, getTripOwner } from './userUtils';
 
 export interface TripStats {
   collaboratorsCount: number;
@@ -47,20 +48,10 @@ export const getTripStats = async (tripId: string): Promise<TripStats> => {
   try {
     console.log('🔍 getTripStats: Starting for trip ID:', tripId);
 
-    // Obtener colaboradores con información de perfil
-    const { data: collaborators } = await supabase
-      .from('trip_collaborators')
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
-      .eq('trip_id', tripId);
-
-    console.log('👥 getTripStats: Collaborators found:', collaborators?.length || 0);
+    // Obtener colaboradores (usando la misma lógica consolidada que en userUtils para evitar problemas de relaciones)
+    console.log('👥 getTripStats: Fetching collaborators via getTripCollaborators utility...');
+    const collaboratorsSafe = await getTripCollaborators(tripId);
+    console.log('👥 getTripStats: Collaborators (safe fetch) count:', collaboratorsSafe.length);
 
     // Obtener lugares del trip
     const { data: places, error: placesError } = await supabase
@@ -120,12 +111,12 @@ export const getTripStats = async (tripId: string): Promise<TripStats> => {
       )
     ) as string[];
 
-    // Formatear colaboradores
-    const formattedCollaborators = collaborators?.map(collab => ({
-      id: collab.user_id,
-      full_name: (collab.profiles as any)?.full_name,
-      avatar_url: (collab.profiles as any)?.avatar_url,
-    })) || [];
+    // Formatear colaboradores en el shape esperado (ya vienen formateados en collaboratorsSafe)
+    const formattedCollaborators = collaboratorsSafe.map(c => ({
+      id: c.id,
+      full_name: c.full_name,
+      avatar_url: c.avatar_url
+    }));
 
     // Obtener imagen del primer lugar (si existe)
     let firstPlaceImage: string | undefined;
@@ -134,7 +125,7 @@ export const getTripStats = async (tripId: string): Promise<TripStats> => {
     }
 
     const result = {
-      collaboratorsCount: (collaborators?.length || 0) + 1, // +1 for owner
+      collaboratorsCount: (collaboratorsSafe.length) + 1, // +1 por el owner
       placesCount: places?.length || 0,
       countries: countries.length > 0 ? countries : [],
       countryCodes: countryCodes.length > 0 ? countryCodes : [],

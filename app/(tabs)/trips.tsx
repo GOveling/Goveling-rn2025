@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
 import { useRouter } from 'expo-router';
 import { supabase } from '~/lib/supabase';
+import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import NewTripModal from '../../src/components/NewTripModal';
 import TripCard from '../../src/components/TripCard';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,19 +32,23 @@ export default function TripsTab() {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) return;
 
-      // Get trips where user is owner
-      const { data: ownTrips, error: ownTripsError } = await supabase
+      // Obtener tanto los trips propios como los trips donde es colaborador usando consultas más simples
+      const { data: allRelevantTrips, error: tripsError } = await supabase
         .from('trips')
         .select('*')
-        .eq('owner_id', user.user.id)
-        .neq('status', 'cancelled'); // Filtrar viajes eliminados
+        .or(`owner_id.eq.${user.user.id},user_id.eq.${user.user.id}`) // fallback por si aún se usa user_id
+        .neq('status', 'cancelled');
 
-      if (ownTripsError) {
-        console.error('Error loading own trips:', ownTripsError);
+      if (tripsError) {
+        console.error('Error loading trips:', tripsError);
         return;
       }
 
-      // Get trips where user is collaborator
+      console.log('🧪 TripsTab Debug: Raw trips for current user (owner_id/user_id match):',
+        (allRelevantTrips || []).map(t => ({ id: t.id, title: t.title, owner_id: t.owner_id, user_id: t.user_id }))
+      );
+
+      // También buscar trips donde es colaborador (y no owner) para incluirlos
       const { data: collabTripIds, error: collabError } = await supabase
         .from('trip_collaborators')
         .select('trip_id')
@@ -51,75 +56,53 @@ export default function TripsTab() {
 
       if (collabError) {
         console.error('Error loading collaborator trips:', collabError);
-        return;
       }
 
-      // Fetch collaborative trips details
-      let collabTrips: any[] = [];
-      if (collabTripIds && collabTripIds.length > 0) {
-        const tripIds = collabTripIds.map(c => c.trip_id);
-        const { data: collabTripsData, error: collabTripsError } = await supabase
-          .from('trips')
-          .select('*')
-          .in('id', tripIds)
-          .neq('status', 'cancelled');
+      const collabSet = new Set((collabTripIds || []).map(c => c.trip_id));
+  console.log('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
 
-        if (collabTripsError) {
-          console.error('Error loading collaborative trip details:', collabTripsError);
-        } else {
-          collabTrips = collabTripsData || [];
+      // Unificar: trips directos + placeholders para collab-only (si alguno no estaba en la lista inicial)
+      const baseTripsMap = new Map<string, any>();
+      (allRelevantTrips || []).forEach(t => baseTripsMap.set(t.id, t));
+      collabSet.forEach(id => {
+        if (!baseTripsMap.has(id)) baseTripsMap.set(id, { id, owner_id: null });
+      });
+      console.log('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
+      const unifiedTrips = Array.from(baseTripsMap.values());
+
+      // Obtener team data para cada trip (owner, collaborators, count) en paralelo
+      const useRPC = true; // toggle to false if RPC not deployed yet
+      const tripsWithTeam = await Promise.all(unifiedTrips.map(async (t) => {
+        const team = useRPC ? await getTripWithTeamRPC(t.id) : await getTripWithTeam(t.id);
+        if (!team.trip) {
+          console.warn('🧪 TripsTab Debug: team.trip is null for id', t.id, 'team data:', team);
         }
-      }
+        return {
+          ...t,
+            // Campos para compatibilidad con componentes actuales
+          collaborators: team.collaborators.map(c => ({ user_id: c.id, role: c.role })),
+          collaboratorsCount: team.collaboratorsCount,
+          isOwner: (team.owner?.id && team.owner.id === user.user.id) || t.owner_id === user.user.id
+        };
+      }));
 
-      // Combine both owned and collaborative trips
-      const allTrips = [...(ownTrips || []), ...collabTrips];
+      console.log('🧪 TripsTab Debug: tripsWithTeam summary:', tripsWithTeam.map(t => ({ id: t.id, collaboratorsCount: t.collaboratorsCount, isOwner: t.isOwner })) );
 
-      // Remove duplicates (in case user is both owner and collaborator)
-      const uniqueTrips = allTrips.filter((trip, index, self) =>
-        index === self.findIndex(t => t.id === trip.id)
-      );
+      setTrips(tripsWithTeam);
 
-
-
-      // Get collaborators count for each trip separately
-      const tripsWithCollaborators = await Promise.all(
-        uniqueTrips.map(async (trip) => {
-          const { data: collaborators, error: collabError } = await supabase
-            .from('trip_collaborators')
-            .select('user_id, role')
-            .eq('trip_id', trip.id);
-
-          if (collabError) {
-            console.error('Error loading collaborators for trip:', trip.id, collabError);
-            return { ...trip, collaborators: [], isOwner: trip.owner_id === user.user.id };
-          }
-
-          return {
-            ...trip,
-            collaborators: collaborators || [],
-            isOwner: trip.owner_id === user.user.id
-          };
-        })
-      );
-
-      // Set trips with collaborators data
-      setTrips(tripsWithCollaborators || []);
-
-      // Calculate stats
-      const totalTrips = tripsWithCollaborators?.length || 0;
+      const totalTrips = tripsWithTeam.length || 0;
 
       // Get upcoming trips (start date is in the future)
-      const upcomingTrips = tripsWithCollaborators?.filter(trip => {
+      const upcomingTrips = tripsWithTeam?.filter(trip => {
         if (!trip.start_date) return false;
         return new Date(trip.start_date) > new Date();
       }).length || 0;
 
-      // Get group trips (trips with collaborators - more than just the owner)
-      // Get group trips (trips with collaborators - more than just the owner)
-      const groupTrips = tripsWithCollaborators?.filter(trip => {
-        // Un viaje es grupal si tiene colaboradores (además del owner)
-        const collaboratorsCount = trip.collaborators?.length || 0;
-        return collaboratorsCount > 0;
+      // Group trips: collaboratorsCount includes owner (+1 baked in team helper logic).
+      // We consider group if total participants > 1.
+      const groupTrips = tripsWithTeam?.filter(trip => {
+        const count = trip.collaboratorsCount ?? (1 + (trip.collaborators?.length || 0));
+        return count > 1;
       }).length || 0;
 
       setStats({
@@ -146,10 +129,21 @@ export default function TripsTab() {
     }, [])
   );
 
-  // Suscripción en tiempo real a cambios en "trips" y "trip_collaborators" para auto-actualizar
+  // Suscripción en tiempo real a cambios en trips y trip_collaborators para refrescar owner y colaboradores.
   useEffect(() => {
     let isActive = true;
     let channel: any;
+    let pendingReload = false;
+    const safeReload = () => {
+      if (pendingReload) return;
+      pendingReload = true;
+      setTimeout(() => {
+        if (!isActive) return;
+        loadTripStats();
+        pendingReload = false;
+      }, 120);
+    };
+
     (async () => {
       const { data: user } = await supabase.auth.getUser();
       const userId = user?.user?.id;
@@ -157,21 +151,42 @@ export default function TripsTab() {
 
       channel = supabase
         .channel('trips-tab-realtime')
+        // Cambios directos en trips (owner transfiere, etc.)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, (payload) => {
           if (!isActive) return;
           const newOwnerId = (payload as any)?.new?.owner_id;
           const oldOwnerId = (payload as any)?.old?.owner_id;
-          if (newOwnerId === userId || oldOwnerId === userId) {
-            loadTripStats();
-          }
+            if (newOwnerId === userId || oldOwnerId === userId) {
+              safeReload();
+            }
         })
+        // Cambios en colaboradores: refrescar si afecta al usuario directamente o a un trip que es suyo
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_collaborators' }, (payload) => {
           if (!isActive) return;
           const newUserId = (payload as any)?.new?.user_id;
           const oldUserId = (payload as any)?.old?.user_id;
-          // Refresh if user was added/removed as collaborator
+          const tripId = (payload as any)?.new?.trip_id || (payload as any)?.old?.trip_id;
           if (newUserId === userId || oldUserId === userId) {
-            loadTripStats();
+            safeReload();
+            return;
+          }
+          if (tripId) {
+            // Verificar si el trip afectado pertenece al usuario (owner) para reflejar nuevos contadores
+            (async () => {
+              try {
+                const { data } = await supabase
+                  .from('trips')
+                  .select('owner_id')
+                  .eq('id', tripId)
+                  .maybeSingle();
+                if (!isActive) return;
+                if ((data as any)?.owner_id === userId) {
+                  safeReload();
+                }
+              } catch {
+                // noop
+              }
+            })();
           }
         })
         .subscribe();
@@ -182,7 +197,6 @@ export default function TripsTab() {
       if (channel) supabase.removeChannel(channel);
     };
   }, []);
-
   return (
     <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
       <ScrollView

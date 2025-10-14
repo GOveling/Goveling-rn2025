@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
 import { inviteToTrip, removeCollaborator } from '~/lib/team';
 import { ensureMultipleUserProfiles } from '~/lib/profileUtils';
+import { getTripCollaborators, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 import { useTranslation } from 'react-i18next';
 
 type Role = 'owner' | 'editor' | 'viewer';
@@ -102,50 +103,31 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
       setOwnerProfile(null);
     }
 
-    if (uid && tOwnerId && uid === tOwnerId) {
-      setCurrentRole('owner');
-    } else if (uid) {
-      const { data: collab } = await supabase
-        .from('trip_collaborators')
-        .select('role')
-        .eq('trip_id', tripId)
-        .eq('user_id', uid)
-        .maybeSingle();
-      setCurrentRole(((collab as any)?.role as any) || 'viewer');
-    } else {
-      setCurrentRole('viewer');
-    }
+    // Centralized role resolution
+    const role = await resolveCurrentUserRoleForTripId(tripId);
+    setCurrentRole(role);
   }, [tripId]);
 
   const fetchMembers = useCallback(async () => {
-    // Fetch collaborators first
-    const { data, error } = await supabase
-      .from('trip_collaborators')
-      .select('user_id, role')
-      .eq('trip_id', tripId)
-      .order('user_id');
-    if (error) throw error;
-    const collabs = (data || []) as Array<{ user_id: string; role: Exclude<Role, 'owner'> }>;
-    if (collabs.length === 0) { setMembers([]); return; }
+    console.log('👥 ManageTeamModal.fetchMembers: Using getTripCollaborators utility for trip', tripId);
+    const collabs = await getTripCollaborators(tripId);
+    if (!collabs || collabs.length === 0) { setMembers([]); return; }
 
-    const ids = collabs.map(c => c.user_id);
-
-    // Ensure all collaborators have profile entries
+    // Asegurarnos de que los perfiles existan (por si la función devolvió algún perfil parcial)
+    const ids = collabs.map(c => c.id);
     await ensureMultipleUserProfiles(ids);
 
-    // Fetch profiles after ensuring they exist
-    const { data: profs } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, email')
-      .in('id', ids);
-    const profMap = new Map<string, Profile>();
-    (profs || []).forEach((p: any) => profMap.set(p.id, p as Profile));
-
     const mapped: MemberItem[] = collabs.map(c => ({
-      user_id: c.user_id,
-      role: c.role,
-      profile: profMap.get(c.user_id) || null,
+      user_id: c.id,
+      role: (c.role as Exclude<Role, 'owner'>) || 'viewer',
+      profile: {
+        id: c.id,
+        full_name: c.full_name || null,
+        avatar_url: c.avatar_url || null,
+        email: c.email || null,
+      }
     }));
+    console.log('👥 ManageTeamModal.fetchMembers: Final mapped members', mapped.map(m => ({ id: m.user_id, name: m.profile?.full_name, role: m.role })));
     setMembers(mapped);
   }, [tripId]);
 

@@ -7,7 +7,7 @@ import { getTripStats, getCountryFlagByName, getCountryFlag, getCountryName, Tri
 import TripDetailsModal from './TripDetailsModal';
 import LiquidButton from './LiquidButton';
 import { useAuth } from '~/contexts/AuthContext';
-import { getCurrentUser, resolveUserRoleForTrip } from '~/lib/userUtils';
+import { getCurrentUser, resolveUserRoleForTrip, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 import { supabase } from '~/lib/supabase';
 import { CountryImage } from './CountryImage';
 
@@ -55,11 +55,51 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     avatar_url?: string;
   } | null>(null);
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
+  const [pendingInvites, setPendingInvites] = useState(0);
+
+  const fetchPendingInvites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trip_invitations')
+        .select('id')
+        .eq('trip_id', trip.id);
+      if (error) throw error;
+      setPendingInvites(data?.length || 0);
+    } catch (e) {
+      console.warn('TripCard: Failed to fetch pending invites', e);
+    }
+  };
 
   useEffect(() => {
     loadTripData();
     loadOwnerProfile();
     deriveCurrentRole();
+    fetchPendingInvites();
+  }, [trip.id]);
+
+  // Realtime subscription to reflect collaborator role & invitations changes promptly
+  useEffect(() => {
+    let channel: any;
+    (async () => {
+      try {
+        channel = supabase
+          .channel(`tripcard-role-${trip.id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_collaborators', filter: `trip_id=eq.${trip.id}` }, () => {
+            // Re-derive role and possibly stats (collaborators count)
+            deriveCurrentRole();
+            loadTripData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_invitations', filter: `trip_id=eq.${trip.id}` }, () => {
+            fetchPendingInvites();
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn('TripCard realtime subscription failed', e);
+      }
+    })();
+    return () => {
+      try { if (channel) supabase.removeChannel(channel); } catch {}
+    };
   }, [trip.id]);
 
   // Actualizar el trip local cuando se recibe una nueva prop
@@ -167,12 +207,13 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   };
 
   const deriveCurrentRole = async () => {
-    const role = await resolveUserRoleForTrip(user?.id, {
-      id: currentTrip.id,
-      owner_id: currentTrip.owner_id,
-      user_id: currentTrip.user_id,
-    });
-    setCurrentRole(role);
+    try {
+      const role = await resolveCurrentUserRoleForTripId(currentTrip.id);
+      setCurrentRole(role);
+    } catch (e) {
+      console.warn('TripCard deriveCurrentRole failed, defaulting to viewer', e);
+      setCurrentRole('viewer');
+    }
   };
 
   const getStatusConfig = () => {
@@ -576,18 +617,24 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           justifyContent: 'space-between',
           marginBottom: 24
         }}>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center'
-          }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>👥</Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#1A1A1A',
-              fontWeight: '500'
-            }}>
+            <Text style={{ fontSize: 16, color: '#1A1A1A', fontWeight: '500' }}>
               {tripData.collaboratorsCount} {tripData.collaboratorsCount === 1 ? 'viajero' : 'viajeros'}
             </Text>
+            {pendingInvites > 0 && (
+              <View style={{
+                marginLeft: 8,
+                backgroundColor: '#F59E0B',
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 12
+              }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
+                  {pendingInvites}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={{
