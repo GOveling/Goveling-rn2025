@@ -18,25 +18,78 @@ export interface TripStats {
 // Helper function to get country from coordinates using reverse geocoding
 const getCountryFromCoordinates = async (lat: number, lng: number): Promise<string | null> => {
   try {
+    console.log(`🗺️ getCountryFromCoordinates: Checking coordinates lat: ${lat}, lng: ${lng}`);
+    
     // Note: In a real implementation, you would use Google Geocoding API
     // For now, we'll implement a simple heuristic based on coordinates
 
     // Mexico coordinate ranges (approximate)
     if (lat >= 14.5 && lat <= 32.7 && lng >= -118.4 && lng <= -86.7) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Mexico (MX)');
       return 'MX';
     }
 
     // USA coordinate ranges (approximate)
     if (lat >= 24.5 && lat <= 49.4 && lng >= -125.0 && lng <= -66.9) {
+      console.log('🗺️ getCountryFromCoordinates: Matched USA (US)');
       return 'US';
+    }
+
+    // Brazil coordinate ranges (approximate)
+    if (lat >= -33.7 && lat <= 5.3 && lng >= -73.9 && lng <= -28.6) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Brazil (BR)');
+      return 'BR';
+    }
+
+    // Turkey coordinate ranges (approximate)
+    if (lat >= 35.8 && lat <= 42.1 && lng >= 25.7 && lng <= 44.8) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Turkey (TR)');
+      return 'TR';
     }
 
     // Chile coordinate ranges (approximate)
     if (lat >= -56.0 && lat <= -17.5 && lng >= -75.6 && lng <= -66.4) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Chile (CL)');
       return 'CL';
     }
 
-    // Add more countries as needed
+    // Argentina coordinate ranges (approximate)
+    if (lat >= -55.1 && lat <= -21.8 && lng >= -73.6 && lng <= -53.6) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Argentina (AR)');
+      return 'AR';
+    }
+
+    // France coordinate ranges (approximate)
+    if (lat >= 41.3 && lat <= 51.1 && lng >= -5.2 && lng <= 9.6) {
+      console.log('🗺️ getCountryFromCoordinates: Matched France (FR)');
+      return 'FR';
+    }
+
+    // Spain coordinate ranges (approximate)
+    if (lat >= 27.6 && lat <= 43.8 && lng >= -18.2 && lng <= 4.3) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Spain (ES)');
+      return 'ES';
+    }
+
+    // Italy coordinate ranges (approximate)
+    if (lat >= 35.5 && lat <= 47.1 && lng >= 6.6 && lng <= 18.5) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Italy (IT)');
+      return 'IT';
+    }
+
+    // Germany coordinate ranges (approximate)
+    if (lat >= 47.3 && lat <= 55.1 && lng >= 5.9 && lng <= 15.0) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Germany (DE)');
+      return 'DE';
+    }
+
+    // United Kingdom coordinate ranges (approximate)
+    if (lat >= 49.9 && lat <= 60.9 && lng >= -8.2 && lng <= 1.8) {
+      console.log('🗺️ getCountryFromCoordinates: Matched United Kingdom (GB)');
+      return 'GB';
+    }
+
+    console.log('🗺️ getCountryFromCoordinates: No country match found');
     return null;
   } catch (error) {
     console.error('Error getting country from coordinates:', error);
@@ -75,32 +128,56 @@ export const getTripStats = async (tripId: string): Promise<TripStats> => {
       });
     }
 
-    // Obtener códigos de país - intentar desde country_code primero, luego coordenadas
-    const countryCodesPromises = places?.map(async (place) => {
-      // Si ya tiene country_code, usarlo
+    // Obtener códigos de país únicos por lugar usando múltiples fuentes (code, nombre, coordenadas)
+    const countryCodesPromises = places?.map(async (place, index) => {
+      console.log(`🔍 Processing place ${index + 1}: ${place.name}`);
+      
+      // 1) Usar country_code si viene en el registro
       if (place.country_code) {
-        return place.country_code;
+        console.log(`✅ Place ${index + 1}: Found country_code: ${place.country_code}`);
+        return String(place.country_code).toUpperCase();
       }
 
-      // Si no, intentar obtenerlo de las coordenadas
+      // 2) Intentar inferir desde el nombre del país si existe
+      if (place.country) {
+        const inferred = getCountryCodeByName(String(place.country));
+        if (inferred) {
+          console.log(`✅ Place ${index + 1}: Inferred from country name "${place.country}": ${inferred}`);
+          return inferred.toUpperCase();
+        }
+        console.log(`⚠️ Place ${index + 1}: Could not infer from country name: ${place.country}`);
+      }
+
+      // 3) Fallback: inferir desde coordenadas (heurístico)
       if (place.lat && place.lng) {
+        console.log(`🌍 Place ${index + 1}: Trying coordinates lat: ${place.lat}, lng: ${place.lng}`);
         const countryFromCoords = await getCountryFromCoordinates(place.lat, place.lng);
-        return countryFromCoords;
+        if (countryFromCoords) {
+          console.log(`✅ Place ${index + 1}: Found country from coordinates: ${countryFromCoords}`);
+          return countryFromCoords.toUpperCase();
+        }
+        console.log(`❌ Place ${index + 1}: No country found from coordinates`);
       }
 
+      console.log(`❌ Place ${index + 1}: No country found using any method`);
       return null;
     }) || [];
 
     const resolvedCountryCodes = await Promise.all(countryCodesPromises);
 
-    // Extraer países únicos
+    // Normalizar y extraer códigos únicos (en mayúsculas)
     const countryCodes = Array.from(
-      new Set(resolvedCountryCodes.filter(Boolean))
-    ) as string[];
+      new Set(
+        (resolvedCountryCodes.filter(Boolean) as string[])
+          .map((c) => c.toUpperCase())
+      )
+    );
 
     console.log('🌍 getTripStats: Extracted country codes:', countryCodes);
 
-    const countries = countryCodes.map(code => getCountryName(code)).filter(Boolean) as string[];
+    const countries = countryCodes
+      .map(code => getCountryName(code))
+      .filter(Boolean) as string[];
 
     console.log('🌍 getTripStats: Country names:', countries);
 
@@ -193,6 +270,82 @@ export const getCountryName = (countryCode?: string): string | null => {
   };
 
   return countryMap[countryCode.toUpperCase()] || null;
+};
+
+// Intentar obtener el código de país (ISO-2) a partir de un nombre de país
+export const getCountryCodeByName = (countryName?: string): string | null => {
+  if (!countryName) return null;
+
+  // Normalizar: minúsculas, quitar acentos/diacríticos y espacios extra
+  const normalize = (s: string) => s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}+/gu, '')
+    .trim();
+
+  const name = normalize(countryName);
+
+  const map: { [key: string]: string } = {
+    // Inglés
+    'chile': 'CL',
+    'france': 'FR',
+    'japan': 'JP',
+    'spain': 'ES',
+    'italy': 'IT',
+    'united states': 'US',
+    'united states of america': 'US',
+    'usa': 'US',
+    'brazil': 'BR',
+    'argentina': 'AR',
+    'peru': 'PE',
+    'colombia': 'CO',
+    'mexico': 'MX',
+    'canada': 'CA',
+    'united kingdom': 'GB',
+    'great britain': 'GB',
+    'germany': 'DE',
+    'netherlands': 'NL',
+    'belgium': 'BE',
+    'switzerland': 'CH',
+  'austria': 'AT',
+  'portugal': 'PT',
+    'greece': 'GR',
+    'turkey': 'TR',
+    'russia': 'RU',
+  'china': 'CN',
+  'india': 'IN',
+    'thailand': 'TH',
+  'vietnam': 'VN',
+    'south korea': 'KR',
+    'korea, republic of': 'KR',
+  'australia': 'AU',
+    'new zealand': 'NZ',
+    'south africa': 'ZA',
+    'egypt': 'EG',
+    'morocco': 'MA',
+    'kenya': 'KE',
+  'tanzania': 'TZ',
+
+    // Español
+    'estados unidos': 'US',
+    'reino unido': 'GB',
+    'alemania': 'DE',
+    'paises bajos': 'NL',
+    'belgica': 'BE',
+    'suiza': 'CH',
+    'grecia': 'GR',
+    'turquia': 'TR',
+    'rusia': 'RU',
+    'tailandia': 'TH',
+    'corea del sur': 'KR',
+    'nueva zelanda': 'NZ',
+    'sudafrica': 'ZA',
+    'egipto': 'EG',
+    'marruecos': 'MA',
+    'kenia': 'KE',
+  };
+
+  return map[name] || null;
 };
 
 // Obtener emoji de bandera basado en código de país
