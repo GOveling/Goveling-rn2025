@@ -67,6 +67,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
   const [loading, setLoading] = useState(true);
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<Role>('viewer');
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
   const [members, setMembers] = useState<MemberItem[]>([]);
@@ -78,9 +79,11 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
 
   // Basics: owner/current user, owner profile, current role
   const fetchBasics = useCallback(async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData?.user?.id ?? null;
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData?.user?.id ?? null;
+  const uemail = userData?.user?.email ?? null;
     setCurrentUserId(uid);
+  setCurrentUserEmail(uemail);
 
     const { data: tripData, error: tripErr } = await supabase
       .from('trips')
@@ -180,8 +183,25 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
 
   const onInvite = async () => {
     const email = inviteEmail.trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const lowered = email.toLowerCase();
+    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const isSelf = !!currentUserEmail && lowered === currentUserEmail.toLowerCase();
+    const pendingExists = invitations.some(i => (i.status || 'pending') === 'pending' && (i.email || '').toLowerCase() === lowered);
+    const alreadyMember = !!(ownerProfile?.email && ownerProfile.email.toLowerCase() === lowered) || members.some(m => (m.profile?.email || '').toLowerCase() === lowered);
+    if (!isValid) {
       Alert.alert(t('common.invalid_email', 'Invalid email'), t('common.enter_valid_email', 'Please enter a valid email address'));
+      return;
+    }
+    if (isSelf) {
+      Alert.alert(t('trips.self_invite_title', 'Invalid invitation'), t('trips.self_invite_desc', 'You cannot invite yourself'));
+      return;
+    }
+    if (alreadyMember) {
+      Alert.alert(t('trips.already_member_title', 'Already a member'), t('trips.already_member_desc', 'This user is already part of the trip'));
+      return;
+    }
+    if (pendingExists) {
+      Alert.alert(t('trips.already_invited_title', 'Invitation pending'), t('trips.already_invited_desc', 'You already sent an invitation to this email'));
       return;
     }
     setInviting(true);
@@ -351,6 +371,21 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     </View>
   );
 
+  const inviteValidation = useMemo(() => {
+    const email = inviteEmail.trim();
+    if (email.length === 0) return { valid: false, reason: 'empty' as const };
+    const lowered = email.toLowerCase();
+    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isValid) return { valid: false, reason: 'format' as const };
+    if (currentUserEmail && lowered === currentUserEmail.toLowerCase()) return { valid: false, reason: 'self' as const };
+    if (ownerProfile?.email && ownerProfile.email.toLowerCase() === lowered) return { valid: false, reason: 'member' as const };
+    if (members.some(m => (m.profile?.email || '').toLowerCase() === lowered)) return { valid: false, reason: 'member' as const };
+    if (invitations.some(i => (i.status || 'pending') === 'pending' && (i.email || '').toLowerCase() === lowered)) return { valid: false, reason: 'pending' as const };
+    return { valid: true as const };
+  }, [inviteEmail, currentUserEmail, ownerProfile?.email, members, invitations]);
+
+  const inviteDisabled = !canInvite || inviting || !inviteValidation.valid;
+
   const renderMembersTab = () => (
     <View style={{ flex: 1 }}>
       {renderOwner()}
@@ -392,6 +427,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
                 }}
                 style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: Platform.OS === 'ios' ? 12 : 8 }}
               />
+              {inviteEmail.length > 0 && !inviteValidation.valid && (
+                <Text style={{ color: '#EF4444', marginTop: 6, fontSize: 12 }}>
+                  {inviteValidation.reason === 'format' && t('trips.invalid_email_format', 'Invalid email format')}
+                  {inviteValidation.reason === 'self' && t('trips.cannot_invite_self', 'You cannot invite yourself')}
+                  {inviteValidation.reason === 'member' && t('trips.user_already_member', 'This user is already a member of the trip')}
+                  {inviteValidation.reason === 'pending' && t('trips.invitation_already_pending', 'There is already a pending invitation for this email')}
+                </Text>
+              )}
             </View>
             <TouchableOpacity
               onPress={() => { Keyboard.dismiss(); setInviteRole(inviteRole === 'viewer' ? 'editor' : 'viewer'); }}
@@ -400,9 +443,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
               <Text style={{ fontWeight: '700', color: '#374151' }}>{inviteRole === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => { Keyboard.dismiss(); onInvite(); }}
-              disabled={inviting}
-              style={{ backgroundColor: '#8B5CF6', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10, opacity: inviting ? 0.7 : 1 }}
+              onPress={() => { if (!inviteDisabled) { Keyboard.dismiss(); onInvite(); } }}
+              disabled={inviteDisabled}
+              style={{ backgroundColor: '#8B5CF6', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10, opacity: inviteDisabled ? 0.5 : 1 }}
             >
               {inviting ? (
                 <ActivityIndicator color="#fff" />
