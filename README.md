@@ -1,5 +1,6 @@
 
 ## v125 — Home 1:1 (Current Trip + Nearby Alerts + Weather header con toggle °C/°F)
+> Nota (Oct 2025): Se consolidó el Home. El archivo activo único es `app/(tabs)/index.tsx`. Se eliminó la versión legacy `app/home/index.tsx` (y su Inbox huérfano) para evitar duplicidad. Si necesitas un Inbox futuro, crear nueva ruta/tab o modal dedicada.
 - **Weather header**: ciudad (reverse geocode), fecha local y temperatura **tap-to-toggle** entre **°C/°F** (usa Edge Function `weather_now` con Open‑Meteo, sin API key).
 - **Current Trip**: detecta **trip activo** o **próximo** (countdown), muestra nombre y **botones** a **Lugares del Trip** y **Modo Travel** (si activo). Con **skeleton shimmer**.
 - **Nearby Alerts**: interruptor **Travel Mode**; muestra **mapa MapLibre** con marcadores numerados y **lista** ordenada por distancia de **lugares guardados** o del **trip activo**.
