@@ -95,13 +95,39 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
     // Try to navigate using data payload
     try {
       const data = typeof n.data === 'string' ? JSON.parse(n.data) : n.data || {};
+      const type = data?.type;
       const tripId = data?.trip_id || data?.tripId || data?.trip?.id;
       const route = data?.route;
+      
+      // Handle specific notification types with different navigation
       if (tripId) {
         onClose();
+        
+        // For invitation sent notifications - redirect to Manage Team > Invitations tab
+        if (type === 'trip_invite' || 
+            (type === 'invite_sent') || 
+            (!type && data?.invited_email && data?.role && !data?.inviter_name)) {
+          // Navigate to trip with query parameter to open manage team modal with invitations tab
+          router.push(`/trips/${tripId}?openManageTeam=true&tab=invitations`);
+          return;
+        }
+        
+        // For trip acceptance/member added notifications - redirect directly to trip
+        if (type === 'invite_accepted' || 
+            type === 'member_added' || 
+            type === 'added_to_trip' || 
+            type === 'trip_member_added' || 
+            type === 'added' ||
+            (!type && data?.role && (data?.inviter_name || data?.inviter_id || data?.owner_id || data?.actor_id || data?.added_by))) {
+          router.push(`/trips/${tripId}`);
+          return;
+        }
+        
+        // Default: navigate to trip
         router.push(`/trips/${tripId}`);
         return;
       }
+      
       if (typeof route === 'string') {
         onClose();
         router.push(route as any);
@@ -212,12 +238,12 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
         case 'added': {
           const roleLabel = role === 'editor' ? t('trips.editor', 'Editor') : t('trips.viewer', 'Viewer');
           return {
-            title: tripName
-              ? t('notifications.added_to_trip_title_named', 'Te agregaron al viaje "{{trip}}"', { trip: tripName })
-              : t('notifications.added_to_trip_title', 'Te agregaron a un viaje'),
-            body: inviterName
-              ? t('notifications.added_to_trip_body_named', 'Fuiste agregado por {{inviter}} como {{role}}', { inviter: inviterName, role: roleLabel })
-              : t('notifications.added_to_trip_body', 'Fuiste agregado como {{role}}', { role: roleLabel })
+            title: inviterName && tripName
+              ? t('notifications.added_to_trip_with_details', '{{inviter}} te ha agregado al trip {{trip}}', { inviter: inviterName, trip: tripName })
+              : tripName
+                ? t('notifications.added_to_trip_title_named', 'Te agregaron al viaje "{{trip}}"', { trip: tripName })
+                : t('notifications.added_to_trip_title', 'Te agregaron a un viaje'),
+            body: t('notifications.added_to_trip_role', 'Fuiste agregado como {{role}}', { role: roleLabel })
           };
         }
         default:
@@ -234,12 +260,12 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
           if (!type && role && (inviterName || data?.inviter_id || data?.owner_id || data?.actor_id || data?.added_by)) {
             const roleLabel = role === 'editor' ? t('trips.editor', 'Editor') : t('trips.viewer', 'Viewer');
             return {
-              title: tripName
-                ? t('notifications.added_to_trip_title_named', 'Te agregaron al viaje "{{trip}}"', { trip: tripName })
-                : t('notifications.added_to_trip_title', 'Te agregaron a un viaje'),
-              body: inviterName
-                ? t('notifications.added_to_trip_body_named', 'Fuiste agregado por {{inviter}} como {{role}}', { inviter: inviterName, role: roleLabel })
-                : t('notifications.added_to_trip_body', 'Fuiste agregado como {{role}}', { role: roleLabel })
+              title: inviterName && tripName
+                ? t('notifications.added_to_trip_with_details', '{{inviter}} te ha agregado al trip {{trip}}', { inviter: inviterName, trip: tripName })
+                : tripName
+                  ? t('notifications.added_to_trip_title_named', 'Te agregaron al viaje "{{trip}}"', { trip: tripName })
+                  : t('notifications.added_to_trip_title', 'Te agregaron a un viaje'),
+              body: t('notifications.added_to_trip_role', 'Fuiste agregado como {{role}}', { role: roleLabel })
             };
           }
           // Fallback to original text if no specific formatting
@@ -375,7 +401,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
               <Ionicons name={iconMeta.name} size={18} color={iconMeta.color} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: n.is_read ? '500' : '700', color: n.is_read ? '#111827' : iconMeta.border }}>{formattedText.title}</Text>
+              <Text style={{ fontWeight: n.is_read ? '500' : '700', color: n.is_read ? '#6B7280' : '#1F2937' }}>{formattedText.title}</Text>
               {formattedText.body ? <Text style={{ color: '#6B7280', marginTop: 2 }}>{formattedText.body}</Text> : null}
               {n.created_at && (
                 <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 4 }}>

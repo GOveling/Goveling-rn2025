@@ -71,6 +71,9 @@ interface TripDetailsModalProps {
   onClose: () => void;
   trip: TripData;
   onTripUpdate?: (updatedTrip: TripData) => void;
+  initialTab?: TabType; // Support for initial tab
+  openManageTeam?: boolean; // Support for opening manage team directly
+  manageTeamTab?: 'members' | 'invitations' | 'history'; // Support for specific manage team tab
 }
 
 type TabType = 'overview' | 'itinerary' | 'team';
@@ -80,8 +83,11 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   onClose,
   trip,
   onTripUpdate,
+  initialTab = 'overview',
+  openManageTeam = false,
+  manageTeamTab = 'invitations',
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
     placesCount: 0,
@@ -99,9 +105,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   const [hasMinimalProfiles, setHasMinimalProfiles] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showManageTeam, setShowManageTeam] = useState(false);
+  const [showManageTeam, setShowManageTeam] = useState(openManageTeam);
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
   const [pendingInvites, setPendingInvites] = useState(0);
+
+  // Set initial tab and manage team state when props change
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+    setShowManageTeam(openManageTeam);
+  }, [initialTab, openManageTeam]);
 
   const fetchPendingInvites = async () => {
     try {
@@ -841,6 +853,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         visible={showManageTeam}
         onClose={() => setShowManageTeam(false)}
         tripId={trip.id}
+        initialTab={manageTeamTab}
         onChanged={() => {
           // Refresh team-related data
           loadTripStats();

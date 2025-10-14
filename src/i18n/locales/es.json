@@ -36,6 +36,12 @@
     "documents": "Documentos de viaje",
     "achievements": "Logros de viaje"
   },
+  "notifications": {
+    "added_to_trip_with_details": "{{inviter}} te ha agregado al trip {{trip}}",
+    "added_to_trip_title_named": "Te agregaron al viaje \"{{trip}}\"",
+    "added_to_trip_title": "Te agregaron a un viaje",
+    "added_to_trip_role": "Fuiste agregado como {{role}}"
+  },
   "auto": {
     "+ New Trip": "+ New Trip",
     "/g,'')||''}": "/g,'')||''}",
@@ -90,6 +96,7 @@
     "Invitar": "Invitar",
     "Logros": "Logros",
     "Manage Team": "Manage Team",
+    "Mark all as read": "Marcar todo como leído",
     "Marcar visitado": "Marcar visitado",
     "Modo Travel": "Modo Travel",
     "Mostrar minimapas": "Mostrar minimapas",

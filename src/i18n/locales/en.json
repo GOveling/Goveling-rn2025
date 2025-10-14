@@ -131,6 +131,7 @@
     "Invitar": "Invitar",
     "Logros": "Logros",
     "Manage Team": "Manage Team",
+    "Mark all as read": "Mark all as read",
     "Marcar visitado": "Marcar visitado",
     "Modo Travel": "Modo Travel",
     "Mostrar minimapas": "Mostrar minimapas",
@@ -212,6 +213,10 @@
     "invite_sent_body_named": "Invitation sent to {{email}} as {{role}} for {{trip}}",
     "invited_by_to_trip": "By {{inviter}} to {{trip}}",
     "someone": "Someone",
-    "a_trip": "a trip"
+    "a_trip": "a trip",
+    "added_to_trip_with_details": "{{inviter}} has added you to the trip {{trip}}",
+    "added_to_trip_title_named": "You were added to trip \"{{trip}}\"",
+    "added_to_trip_title": "You were added to a trip",
+    "added_to_trip_role": "You were added as {{role}}"
   }
 }

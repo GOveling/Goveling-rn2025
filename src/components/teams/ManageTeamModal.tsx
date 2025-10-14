@@ -51,6 +51,7 @@ interface ManageTeamModalProps {
   onClose: () => void;
   tripId: string;
   onChanged?: () => void;
+  initialTab?: 'members' | 'invitations' | 'history'; // Add support for initial tab
 }
 
 const getInitials = (name?: string | null, email?: string | null) => {
@@ -61,7 +62,7 @@ const getInitials = (name?: string | null, email?: string | null) => {
   if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? 'U';
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
-const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tripId, onChanged }) => {
+const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tripId, onChanged, initialTab }) => {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0); // 0: Members, 1: Invitations, 2: History
   const [loading, setLoading] = useState(true);
@@ -76,6 +77,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Exclude<Role, 'owner'>>('viewer');
   const [inviting, setInviting] = useState(false);
+
+  // Set initial tab based on prop
+  React.useEffect(() => {
+    if (initialTab) {
+      const tabIndex = initialTab === 'members' ? 0 : initialTab === 'invitations' ? 1 : 2;
+      setActiveIndex(tabIndex);
+    }
+  }, [initialTab]);
 
   // Basics: owner/current user, owner profile, current role
   const fetchBasics = useCallback(async () => {

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getTripStats, getCountryFlagByName, getCountryFlag, getCountryName, TripStats } from '~/lib/tripUtils';
+import { getTripStats, getCountryFlagByName, getCountryFlag, getCountryName, getCountryImage, TripStats } from '~/lib/tripUtils';
 import TripDetailsModal from './TripDetailsModal';
 import LiquidButton from './LiquidButton';
 import { useAuth } from '~/contexts/AuthContext';
@@ -455,38 +455,84 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       elevation: 6,
       marginBottom: 24
     }}>
-      {/* Header con gradiente y país principal */}
-      <LinearGradient
-        colors={['#4A90E2', '#7B68EE']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          width: '100%',
-          height: 120,
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'row'
-        }}
-      >
-        <View style={{
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Text style={{ fontSize: 48 }}>
-            {getFirstCountryFlag()}
-          </Text>
-        </View>
-
-        {tripData.countryCodes.length > 0 && (
-          <CountryImage
-            countryCode={tripData.countryCodes[0]}
-            width={60}
-            height={60}
-            borderRadius={12}
-            style={{ marginLeft: 20 }}
+      {/* Header con imagen de país de fondo y overlay de texto */}
+      <View style={{
+        width: '100%',
+        height: 120,
+        position: 'relative',
+        overflow: 'hidden',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+      }}>
+        {/* Imagen de fondo del país */}
+        {tripData.countryCodes.length > 0 && getCountryImage(tripData.countryCodes[0]) && (
+          <Image
+            source={{ uri: getCountryImage(tripData.countryCodes[0]) }}
+            style={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+            resizeMode="cover"
           />
         )}
-      </LinearGradient>
+        
+        {/* Overlay con gradiente para mejorar legibilidad del texto */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+        />
+        
+        {/* Contenido superpuesto: bandera y nombre del país */}
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {tripData.countryCodes.length > 0 && (
+            <View style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Text style={{ 
+                fontSize: 32, 
+                marginBottom: 8,
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 3,
+              }}>
+                {getFirstCountryFlag()}
+              </Text>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#FFFFFF',
+                textAlign: 'center',
+                textShadowColor: 'rgba(0,0,0,0.8)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 4,
+                letterSpacing: 1,
+              }}>
+                {getCountryName(tripData.countryCodes[0]) || tripData.countryCodes[0]}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
 
       {/* Contenido del Trip */}
       <View style={{ padding: 20 }}>
