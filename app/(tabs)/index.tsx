@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
-import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
+import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip, getUpcomingTripsCount } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getWeatherCached } from '~/lib/weather';
 import { useSettingsStore } from '~/lib/settingsStore';
@@ -32,11 +32,14 @@ export default function HomeTab() {
   const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
   const [currentTrip, setCurrentTrip] = React.useState<any>(null);
   const recomputeSavedPlaces = React.useCallback(async () => {
+    console.log('🏠 HomeTab: recomputeSavedPlaces called');
     try {
       const savedPlaces = await getSavedPlaces();
+      console.log('🏠 HomeTab: getSavedPlaces returned', savedPlaces.length, 'places');
       setSavedPlacesCount(savedPlaces.length);
+      console.log('🏠 HomeTab: savedPlacesCount state updated to', savedPlaces.length);
     } catch (e) {
-      console.log('Error recomputing saved places:', e);
+      console.log('🏠 HomeTab: Error recomputing saved places:', e);
     }
   }, []);
 
@@ -117,21 +120,27 @@ export default function HomeTab() {
   React.useEffect(() => {
     (async () => {
       try {
+        console.log('🏠 HomeTab: Initial data loading started');
         await recomputeSavedPlaces();
 
         const trip = await getActiveOrNextTrip();
         setCurrentTrip(trip);
 
-        // For now, assume 1 upcoming trip if there's an active/next trip
-        setUpcomingTripsCount(trip ? 1 : 0);
+        // Get the actual count of upcoming and planning trips
+        const upcomingCount = await getUpcomingTripsCount();
+        setUpcomingTripsCount(upcomingCount);
+        console.log('🏠 HomeTab: Upcoming trips count set to:', upcomingCount);
+        
+        console.log('🏠 HomeTab: Initial data loading completed');
       } catch (e) {
-        console.log('Error loading stats:', e);
+        console.log('🏠 HomeTab: Error loading stats:', e);
       }
     })();
   }, []);
 
   // Recompute when screen gains focus
   useFocusEffect(React.useCallback(() => {
+    console.log('🏠 HomeTab: Screen gained focus, recomputing saved places');
     recomputeSavedPlaces();
   }, [recomputeSavedPlaces]));
 
@@ -140,16 +149,38 @@ export default function HomeTab() {
     let channel: any;
     (async () => {
       try {
+        console.log('🏠 HomeTab: Setting up realtime subscription for trip_places changes');
         channel = supabase
           .channel('home-saved-places')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_places' }, () => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_places' }, (payload) => {
+            console.log('🏠 HomeTab: Realtime change detected in trip_places:', payload.eventType);
             // Lightweight debounce if many rapid changes (timeout 120ms)
-            if ((channel as any)._pending) return; (channel as any)._pending = true; setTimeout(() => { (channel as any)._pending = false; recomputeSavedPlaces(); }, 120);
+            if ((channel as any)._pending) {
+              console.log('🏠 HomeTab: Debouncing rapid changes...');
+              return;
+            }
+            (channel as any)._pending = true;
+            setTimeout(() => {
+              (channel as any)._pending = false;
+              console.log('🏠 HomeTab: Triggering recomputeSavedPlaces after realtime change');
+              recomputeSavedPlaces();
+            }, 120);
           })
           .subscribe();
-      } catch (e) { console.log('Realtime subscription error (trip_places):', e); }
+      } catch (e) {
+        console.log('🏠 HomeTab: Realtime subscription error (trip_places):', e);
+      }
     })();
-    return () => { try { if (channel) supabase.removeChannel(channel); } catch {} };
+    return () => {
+      try {
+        if (channel) {
+          console.log('🏠 HomeTab: Cleaning up realtime subscription');
+          supabase.removeChannel(channel);
+        }
+      } catch (e) {
+        console.log('🏠 HomeTab: Error cleaning up subscription:', e);
+      }
+    };
   }, [recomputeSavedPlaces]);
 
   return (

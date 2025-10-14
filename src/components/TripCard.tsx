@@ -716,9 +716,6 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           )}
         </View>
 
-        {/* Badges de Países */}
-        {renderCountryBadges()}
-
         {/* Botones de Acción */}
         <View style={{
           flexDirection: 'row',

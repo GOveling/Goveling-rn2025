@@ -92,11 +92,47 @@ export default function TripsTab() {
 
       const totalTrips = tripsWithTeam.length || 0;
 
-      // Get upcoming trips (start date is in the future)
+      // Get upcoming trips (future trips + planning trips without dates)
+      // Exclude: completed trips and currently traveling trips
+      console.log('🧪 TripsTab: Analyzing upcoming trips...');
       const upcomingTrips = tripsWithTeam?.filter(trip => {
-        if (!trip.start_date) return false;
-        return new Date(trip.start_date) > new Date();
+        console.log(`🧪 Evaluating trip "${trip.title}":`, {
+          start_date: trip.start_date,
+          end_date: trip.end_date
+        });
+
+        // Planning trips (no dates set) - these count as upcoming
+        if (!trip.start_date || !trip.end_date) {
+          console.log(`  ✅ Planning trip (no dates): ${trip.title}`);
+          return true;
+        }
+
+        const now = new Date();
+        const startDate = new Date(trip.start_date);
+        const endDate = new Date(trip.end_date);
+
+        // Future trips (start date is in the future) - these count as upcoming
+        if (now < startDate) {
+          console.log(`  ✅ Future trip: ${trip.title} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`);
+          return true;
+        }
+
+        // Currently traveling (between start and end dates) - don't count
+        if (now >= startDate && now <= endDate) {
+          console.log(`  ❌ Currently traveling: ${trip.title}`);
+          return false;
+        }
+
+        // Completed trips (end date is in the past) - don't count
+        if (now > endDate) {
+          console.log(`  ❌ Completed trip: ${trip.title} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`);
+          return false;
+        }
+
+        return false;
       }).length || 0;
+
+      console.log('🧪 TripsTab: Upcoming trips count:', upcomingTrips);
 
       // Group trips: collaboratorsCount includes owner (+1 baked in team helper logic).
       // We consider group if total participants > 1.
