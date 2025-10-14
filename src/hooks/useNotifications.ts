@@ -58,14 +58,18 @@ export function useNotifications() {
       .limit(20);
     if (!error && data) {
       const rows = data as InboxNotification[];
-      // Collect trip_ids missing trip_name in data
+      // Collect trip_ids missing trip_name in data and inviter ids missing inviter_name
       const needTrip: string[] = [];
+      const needInviter: string[] = [];
       const parsedData: any[] = [];
       for (const n of rows) {
         const d = typeof (n as any).data === 'string' ? safeParse((n as any).data as any) : (n as any).data || {};
         parsedData.push(d);
         if (d && d.trip_id && !d.trip_name) needTrip.push(d.trip_id);
+        const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
+        if (inviterId && !d?.inviter_name) needInviter.push(inviterId);
       }
+
       let tripMap = new Map<string, string>();
       if (needTrip.length > 0) {
         const unique = Array.from(new Set(needTrip));
@@ -74,13 +78,29 @@ export function useNotifications() {
           for (const t of tripsRes as any[]) tripMap.set(t.id, t.title || null);
         }
       }
+
+      let inviterMap = new Map<string, string>();
+      if (needInviter.length > 0) {
+        const uniqueInviters = Array.from(new Set(needInviter));
+        const { data: ownersRes } = await supabase.from('profiles').select('id,display_name,email').in('id', uniqueInviters);
+        if (Array.isArray(ownersRes)) {
+          for (const row of ownersRes as any[]) {
+            if (row?.id) inviterMap.set(row.id, row.display_name || row.email || null);
+          }
+        }
+      }
+
       const enriched = rows.map((n, idx) => {
         const d = parsedData[idx] || {};
+        let newData = d;
         if (d && d.trip_id && !d.trip_name && tripMap.has(d.trip_id)) {
-          const newData = { ...d, trip_name: tripMap.get(d.trip_id) };
-          return { ...n, data: newData } as InboxNotification;
+          newData = { ...newData, trip_name: tripMap.get(d.trip_id) };
         }
-        return { ...n, data: d } as InboxNotification;
+        const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
+        if (inviterId && !d?.inviter_name && inviterMap.has(inviterId)) {
+          newData = { ...newData, inviter_name: inviterMap.get(inviterId) };
+        }
+        return { ...n, data: newData } as InboxNotification;
       });
       setNotifications(enriched);
     }

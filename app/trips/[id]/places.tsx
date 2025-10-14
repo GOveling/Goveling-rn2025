@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
+import { resolveUserRoleForTrip } from '~/lib/userUtils';
+import { useAuth } from '~/contexts/AuthContext';
 import PlaceDetailModal from '../../../src/components/PlaceDetailModal';
 
 interface Place {
@@ -21,15 +23,48 @@ interface Place {
 export default function TripPlacesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [tripTitle, setTripTitle] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
+  const [tripData, setTripData] = useState<any>(null);
+
+  // Verificar si el usuario puede editar (owner o editor)
+  const canEdit = currentRole === 'owner' || currentRole === 'editor';
+  const canDelete = currentRole === 'owner' || currentRole === 'editor';
 
   useEffect(() => {
     loadTripPlaces();
+    loadUserRole();
   }, [id]);
+
+  const loadUserRole = async () => {
+    if (!id || !user?.id) return;
+    
+    try {
+      // Obtener datos del trip para determinar el rol
+      const { data: trip } = await supabase
+        .from('trips')
+        .select('id, owner_id, user_id')
+        .eq('id', id)
+        .single();
+
+      if (trip) {
+        setTripData(trip);
+        const role = await resolveUserRoleForTrip(user.id, {
+          id: trip.id,
+          owner_id: trip.owner_id,
+          user_id: trip.user_id,
+        });
+        setCurrentRole(role);
+      }
+    } catch (error) {
+      console.error('Error loading user role:', error);
+    }
+  };
 
   // Recargar cuando regresamos del explore
   useFocusEffect(
@@ -115,6 +150,12 @@ export default function TripPlacesScreen() {
   };
 
   const handleDeletePlace = async (placeId: string, placeName: string) => {
+    // Verificar permisos antes de eliminar
+    if (!canDelete) {
+      Alert.alert('Sin permisos', 'No tienes permisos para eliminar lugares de este viaje. Solo el propietario y editores pueden eliminar lugares.');
+      return;
+    }
+
     Alert.alert(
       'Eliminar lugar',
       `¿Estás seguro de que quieres eliminar "${placeName}" de tu viaje?`,
@@ -435,17 +476,19 @@ export default function TripPlacesScreen() {
                     </View>
                   </View>
 
-                  <TouchableOpacity
-                    onPress={() => handleDeletePlace(place.id, place.name)}
-                    style={{
-                      padding: 8,
-                      borderRadius: 8,
-                      backgroundColor: '#FEF2F2',
-                      marginLeft: 8
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                  </TouchableOpacity>
+                  {canDelete && (
+                    <TouchableOpacity
+                      onPress={() => handleDeletePlace(place.id, place.name)}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        backgroundColor: '#FEF2F2',
+                        marginLeft: 8
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 <TouchableOpacity

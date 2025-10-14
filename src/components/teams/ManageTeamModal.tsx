@@ -18,6 +18,7 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
 import { inviteToTrip, removeCollaborator } from '~/lib/team';
+import { ensureMultipleUserProfiles } from '~/lib/profileUtils';
 import { useTranslation } from 'react-i18next';
 
 type Role = 'owner' | 'editor' | 'viewer';
@@ -51,9 +52,11 @@ interface ManageTeamModalProps {
   onChanged?: () => void;
 }
 
-const getInitials = (name?: string | null) => {
-  if (!name) return 'U';
-  const parts = name.trim().split(' ');
+const getInitials = (name?: string | null, email?: string | null) => {
+  const src = (name && name.trim().length > 0) ? name : (email || 'User');
+  const from = src.trim();
+  if (from.length === 0) return 'U';
+  const parts = from.split(/\s+/);
   if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? 'U';
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
@@ -125,8 +128,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
     const collabs = (data || []) as Array<{ user_id: string; role: Exclude<Role, 'owner'> }>;
     if (collabs.length === 0) { setMembers([]); return; }
 
-    // Fetch profiles in a second query (no FK dependency)
     const ids = collabs.map(c => c.user_id);
+
+    // Ensure all collaborators have profile entries
+    await ensureMultipleUserProfiles(ids);
+
+    // Fetch profiles after ensuring they exist
     const { data: profs } = await supabase
       .from('profiles')
       .select('id, full_name, avatar_url, email')
@@ -274,7 +281,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
             <Image source={{ uri: ownerProfile.avatar_url }} style={{ width: 48, height: 48, borderRadius: 24, marginRight: 12 }} />
           ) : (
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-              <Text style={{ color: 'white', fontWeight: '700' }}>{getInitials(ownerProfile.full_name)}</Text>
+              <Text style={{ color: 'white', fontWeight: '700' }}>{getInitials(ownerProfile.full_name, ownerProfile.email)}</Text>
             </View>
           )}
           <View style={{ flex: 1 }}>
@@ -300,14 +307,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ visible, onClose, tri
           <Image source={{ uri: item.profile.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 12 }} />
         ) : (
           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#6B7280', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-            <Text style={{ color: 'white', fontWeight: '700' }}>{getInitials(item.profile?.full_name)}</Text>
+            <Text style={{ color: 'white', fontWeight: '700' }}>{getInitials(item.profile?.full_name, item.profile?.email)}</Text>
           </View>
         )}
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
-            {item.profile?.full_name || t('trips.member', 'Member')} {item.user_id === currentUserId ? `(${t('trips.you', 'You')})` : ''}
+            {item.profile?.full_name || item.profile?.email || t('trips.member', 'Member')} {item.user_id === currentUserId ? `(${t('trips.you', 'You')})` : ''}
           </Text>
-          {!!item.profile?.email && <Text style={{ color: '#6B7280' }}>{item.profile.email}</Text>}
+          {!!item.profile?.email && item.profile?.full_name && <Text style={{ color: '#6B7280' }}>{item.profile.email}</Text>}
         </View>
         {/* Role selector (owner only) */}
         {canManage ? (

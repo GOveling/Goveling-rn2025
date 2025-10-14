@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNotifications } from '~/hooks/useNotifications';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,25 @@ interface Props {
   iconColor?: string;
 }
 
+// Utility: darken a hex color by given factor (0-1)
+function darkenHex(hex: string, factor = 0.12): string {
+  try {
+    if (!hex || typeof hex !== 'string') return hex as any;
+    if (!hex.startsWith('#')) return hex as any;
+    const clean = hex.replace('#', '');
+    const full = clean.length === 3
+      ? clean.split('').map((c) => c + c).join('')
+      : clean.padEnd(6, '0').slice(0, 6);
+    const r = Math.max(0, Math.min(255, Math.floor(parseInt(full.slice(0, 2), 16) * (1 - factor))));
+    const g = Math.max(0, Math.min(255, Math.floor(parseInt(full.slice(2, 4), 16) * (1 - factor))));
+    const b = Math.max(0, Math.min(255, Math.floor(parseInt(full.slice(4, 6), 16) * (1 - factor))));
+    const toHex = (n: number) => n.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  } catch {
+    return hex as any;
+  }
+}
+
 const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
   const { t } = useTranslation();
   const { loading, notifications, invitations, totalCount, markNotificationsAsViewed, markAllAsRead, markOneAsRead, acceptInvitation, rejectInvitation } = useNotifications();
@@ -16,9 +35,29 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
   const router = useRouter();
+  const [batchSignal, setBatchSignal] = useState(0);
 
   const pendingInv = useMemo(() => invitations.filter(i => (i.status || 'pending') === 'pending'), [invitations]);
   const historyInv = useMemo(() => invitations.filter(i => (i.status || '') === 'accepted' || (i.status || '') === 'declined'), [invitations]);
+  // Badge color based on types present
+  const badgeColor = useMemo(() => {
+    // Classify notifications
+    const hasAlert = notifications.some(n => {
+      try {
+        const d = typeof n.data === 'string' ? JSON.parse(n.data) : n.data || {};
+        return d?.type === 'removed' || d?.type === 'invite_declined' || d?.type === 'member_removed';
+      } catch { return false; }
+    });
+    const hasInviteOnly = pendingInv.length > 0 && notifications.every(n => {
+      try {
+        const d = typeof n.data === 'string' ? JSON.parse(n.data) : n.data || {};
+        return !d?.type || d?.type === 'trip_invite' || d?.type === 'member_added' || d?.type === 'added_to_trip' || d?.type === 'trip_member_added' || d?.type === 'added';
+      } catch { return true; }
+    });
+    if (hasAlert) return '#EF4444'; // red
+    if (hasInviteOnly) return '#F59E0B'; // amber
+    return '#3B82F6'; // blue as default info
+  }, [notifications, pendingInv]);
 
   const onOpen = () => {
     setOpen(true);
@@ -26,6 +65,27 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
   };
 
   const onClose = () => setOpen(false);
+
+  const handleMarkAllAsRead = async () => {
+    // Trigger immediate visual feedback
+    setBatchSignal((v) => v + 1);
+    try { await markAllAsRead(); } catch {}
+  };
+
+  // Badge bounce when totalCount decreases
+  const badgeScale = useRef(new Animated.Value(1)).current;
+  const prevCountRef = useRef<number | null>(null);
+  React.useEffect(() => {
+    const prev = prevCountRef.current;
+    if (typeof prev === 'number' && totalCount < prev) {
+      Animated.sequence([
+        Animated.timing(badgeScale, { toValue: 1.15, duration: 90, useNativeDriver: true }),
+        Animated.timing(badgeScale, { toValue: 0.95, duration: 90, useNativeDriver: true }),
+        Animated.spring(badgeScale, { toValue: 1, useNativeDriver: true, stiffness: 140, damping: 12, mass: 0.6 })
+      ]).start();
+    }
+    prevCountRef.current = totalCount;
+  }, [totalCount, badgeScale]);
 
   const handleNotificationPress = (n: any) => {
     // Mark as read first
@@ -146,14 +206,40 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
               ? t('notifications.member_removed_body_named', '{{user}} was removed from {{trip}}', { user: removedUser, trip: tripName })
               : t('notifications.member_removed_body', 'A team member was removed from the trip')
           };
+        case 'member_added':
+        case 'added_to_trip':
+        case 'trip_member_added':
+        case 'added': {
+          const roleLabel = role === 'editor' ? t('trips.editor', 'Editor') : t('trips.viewer', 'Viewer');
+          return {
+            title: tripName
+              ? t('notifications.added_to_trip_title_named', 'Te agregaron al viaje "{{trip}}"', { trip: tripName })
+              : t('notifications.added_to_trip_title', 'Te agregaron a un viaje'),
+            body: inviterName
+              ? t('notifications.added_to_trip_body_named', 'Fuiste agregado por {{inviter}} como {{role}}', { inviter: inviterName, role: roleLabel })
+              : t('notifications.added_to_trip_body', 'Fuiste agregado como {{role}}', { role: roleLabel })
+          };
+        }
         default:
           // If this looks like an invite-sent (owner side) notification from DB trigger
-          if (!type && (invitedEmail || role) && (data?.trip_id)) {
+          if (!type && (invitedEmail || role) && (data?.trip_id) && !inviterName) {
             return {
               title: notification.title || t('notifications.invite_accepted_title', 'Invitation'),
               body: tripName
                 ? t('notifications.invite_sent_body_named', 'Invitation sent to {{email}} as {{role}} for {{trip}}', { email: invitedEmail || '—', role, trip: tripName })
                 : (notification.body || t('notifications.no_content', 'No additional content'))
+            };
+          }
+          // Heuristic: if it has role and inviter info but no explicit type, treat as member added
+          if (!type && role && (inviterName || data?.inviter_id || data?.owner_id || data?.actor_id || data?.added_by)) {
+            const roleLabel = role === 'editor' ? t('trips.editor', 'Editor') : t('trips.viewer', 'Viewer');
+            return {
+              title: tripName
+                ? t('notifications.added_to_trip_title_named', 'Te agregaron al viaje "{{trip}}"', { trip: tripName })
+                : t('notifications.added_to_trip_title', 'Te agregaron a un viaje'),
+              body: inviterName
+                ? t('notifications.added_to_trip_body_named', 'Fuiste agregado por {{inviter}} como {{role}}', { inviter: inviterName, role: roleLabel })
+                : t('notifications.added_to_trip_body', 'Fuiste agregado como {{role}}', { role: roleLabel })
             };
           }
           // Fallback to original text if no specific formatting
@@ -171,14 +257,165 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
     }
   };
 
+  const getNotificationIcon = (notification: any) => {
+    try {
+      const data = typeof notification.data === 'string' ? JSON.parse(notification.data) : notification.data || {};
+      const type = data?.type;
+      const role = data?.role;
+
+      // Defaults
+      let name: any = 'notifications';
+  let bg = '#E5E7EB';
+  let border = '#E5E7EB';
+      let color = '#1F2937';
+
+      switch (type) {
+        case 'trip_invite':
+          name = 'person-add';
+          bg = '#DBEAFE'; // blue-100
+          border = '#3B82F6'; // blue-500
+          break;
+        case 'invite_accepted':
+          name = 'checkmark-circle';
+          bg = '#D1FAE5'; // green-100
+          border = '#10B981'; // green-500
+          break;
+        case 'invite_declined':
+          name = 'close-circle';
+          bg = '#FEE2E2'; // red-100
+          border = '#EF4444'; // red-500
+          break;
+        case 'removed':
+          name = 'person-remove';
+          bg = '#FEE2E2';
+          border = '#EF4444';
+          break;
+        case 'member_removed':
+          name = 'person-remove-outline';
+          bg = '#FEF3C7'; // amber-100
+          border = '#F59E0B'; // amber-500
+          break;
+        case 'member_added':
+        case 'added_to_trip':
+        case 'trip_member_added':
+        case 'added':
+          name = 'person-add';
+          bg = '#DBEAFE';
+          border = '#3B82F6';
+          break;
+        default:
+          // Heurística: si trae rol y parece agregado
+          if (role && (data?.inviter_name || data?.inviter_id || data?.owner_id || data?.actor_id || data?.added_by)) {
+            name = 'person-add';
+            bg = '#DBEAFE';
+            border = '#3B82F6';
+          }
+      }
+      return { name, bg, color, border };
+    } catch {
+      return { name: 'notifications' as any, bg: '#E5E7EB', color: '#1F2937', border: '#E5E7EB' };
+    }
+  };
+
+  // Row component with fade feedback when read state changes
+  const NotificationRow: React.FC<{ n: any; batchSignal: number }> = ({ n, batchSignal }) => {
+    const iconMeta = getNotificationIcon(n);
+    const formattedText = formatNotificationText(n);
+    const opacity = useRef(new Animated.Value(1)).current;
+    const prevRead = useRef<boolean>(!!n.is_read);
+
+    // Animate a subtle fade when item transitions to read
+    React.useEffect(() => {
+      const nowRead = !!n.is_read;
+      if (prevRead.current === false && nowRead === true) {
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 0.65, duration: 120, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true })
+        ]).start();
+      }
+      prevRead.current = nowRead;
+    }, [n.is_read, opacity]);
+
+    // Batch effect: when batchSignal changes and item is unread, run the same fade
+    React.useEffect(() => {
+      if (!n.is_read) {
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 0.65, duration: 100, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true })
+        ]).start();
+      }
+    }, [batchSignal, n.is_read, opacity]);
+
+    return (
+      <Animated.View style={{ opacity }}>
+        <Pressable
+          onPress={() => handleNotificationPress(n)}
+          style={({ pressed }) => ({
+            backgroundColor: 'white',
+            borderWidth: 1,
+            borderColor: pressed ? darkenHex(iconMeta.border, 0.12) : iconMeta.border,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 10,
+            opacity: pressed ? 0.9 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+            // Left accent (slightly thicker)
+            borderLeftWidth: 4,
+            borderLeftColor: pressed ? darkenHex(iconMeta.border, 0.12) : iconMeta.border,
+            // subtle highlight
+            shadowColor: iconMeta.border,
+            shadowOpacity: pressed ? 0.25 : (n.viewed_at == null ? 0.18 : 0),
+            shadowRadius: pressed ? 8 : (n.viewed_at == null ? 6 : 0),
+            shadowOffset: { width: 0, height: 2 },
+            elevation: pressed ? 4 : (n.viewed_at == null ? 2 : 0),
+          })}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: iconMeta.bg, alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+              <Ionicons name={iconMeta.name} size={18} color={iconMeta.color} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: n.is_read ? '500' : '700', color: n.is_read ? '#111827' : iconMeta.border }}>{formattedText.title}</Text>
+              {formattedText.body ? <Text style={{ color: '#6B7280', marginTop: 2 }}>{formattedText.body}</Text> : null}
+              {n.created_at && (
+                <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 4 }}>
+                  {new Date(n.created_at).toLocaleString()}
+                </Text>
+              )}
+            </View>
+            {!n.is_read && (
+              <View style={{ width: 8, height: 8, backgroundColor: '#EF4444', borderRadius: 4 }} />
+            )}
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
   return (
     <>
-      <TouchableOpacity onPress={onOpen} style={{ padding: 8, position: 'relative' }} accessibilityRole="button" accessibilityLabel={t('home.inbox', 'Inbox')}>
+      {/** Accessibility: dynamic label by type mix */}
+      <TouchableOpacity
+        onPress={onOpen}
+        style={{ padding: 8, position: 'relative' }}
+        accessibilityRole="button"
+        accessibilityLabel={(() => {
+          if (totalCount <= 0) return t('home.inbox', 'Inbox');
+          // Classify
+          const alertCount = notifications.filter(n => {
+            try { const d = typeof n.data === 'string' ? JSON.parse(n.data) : n.data || {}; return d?.type === 'removed' || d?.type === 'invite_declined' || d?.type === 'member_removed'; } catch { return false; }
+          }).length;
+          const inviteCount = pendingInv.length;
+          if (alertCount > 0) return t('accessibility.alert_notifications', 'You have {{count}} alert notifications', { count: alertCount });
+          if (inviteCount > 0 && alertCount === 0) return t('accessibility.pending_invitations', 'You have {{count}} pending invitations', { count: inviteCount });
+          return t('accessibility.unread_notifications', 'You have {{count}} unread notifications', { count: totalCount });
+        })()}
+      >
         <Ionicons name="notifications-outline" size={24} color={iconColor} />
         {totalCount > 0 && (
-          <View style={{ position: 'absolute', top: 2, right: 2, backgroundColor: '#EF4444', minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+          <Animated.View style={{ position: 'absolute', top: 2, right: 2, backgroundColor: badgeColor, minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, transform: [{ scale: badgeScale }] }}>
             <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>{totalCount > 9 ? '9+' : totalCount}</Text>
-          </View>
+          </Animated.View>
         )}
       </TouchableOpacity>
 
@@ -189,7 +426,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t('home.inbox', 'Inbox')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               {notifications.some(n => !n.is_read) && (
-                <TouchableOpacity onPress={markAllAsRead}>
+                <TouchableOpacity onPress={handleMarkAllAsRead}>
                   <Text style={{ color: '#2563EB', fontWeight: '600' }}>{t('auto.Mark all as read', 'Mark all as read')}</Text>
                 </TouchableOpacity>
               )}
@@ -267,30 +504,9 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                 )}
 
                 {/* General Notifications */}
-                {notifications.map(n => {
-                  const formattedText = formatNotificationText(n);
-                  return (
-                    <Pressable key={n.id} onPress={() => handleNotificationPress(n)} style={({ pressed }) => ({ backgroundColor: n.viewed_at == null ? 'rgba(37, 99, 235, 0.08)' : 'white', borderWidth: 1, borderColor: n.viewed_at == null ? 'rgba(37,99,235,0.2)' : '#E5E7EB', borderRadius: 12, padding: 12, marginBottom: 10, opacity: pressed ? 0.9 : 1 })}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                          <Ionicons name="notifications" size={18} color="#1F2937" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontWeight: n.is_read ? '500' : '700', color: '#111827' }}>{formattedText.title}</Text>
-                          {formattedText.body ? <Text style={{ color: '#6B7280', marginTop: 2 }}>{formattedText.body}</Text> : null}
-                          {n.created_at && (
-                            <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 4 }}>
-                              {new Date(n.created_at).toLocaleString()}
-                            </Text>
-                          )}
-                        </View>
-                        {!n.is_read && (
-                          <View style={{ width: 8, height: 8, backgroundColor: '#EF4444', borderRadius: 4 }} />
-                        )}
-                      </View>
-                    </Pressable>
-                  );
-                })}
+                {notifications.map(n => (
+                  <NotificationRow key={n.id} n={n} batchSignal={batchSignal} />
+                ))}
 
                 {/* History of invitations (accepted/declined) */}
                 {historyInv.length > 0 && (

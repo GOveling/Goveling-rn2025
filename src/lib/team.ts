@@ -63,6 +63,27 @@ export async function acceptInvitation(invitation_id: number) {
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id!;
 
+  // Ensure the accepting user has a profile row so UI can render name/avatar
+  try {
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', uid)
+      .maybeSingle();
+    if (!existingProfile) {
+      const full_name = (u?.user as any)?.user_metadata?.full_name || (u?.user?.email?.split('@')[0] ?? null);
+      const avatar_url = (u?.user as any)?.user_metadata?.avatar_url || (u?.user as any)?.user_metadata?.picture || null;
+      await supabase.from('profiles').upsert({
+        id: uid,
+        email: u?.user?.email ?? null,
+        full_name,
+        avatar_url,
+      }, { onConflict: 'id' });
+    }
+  } catch (profileErr) {
+    console.log('ensure profile for accepting user failed (non-blocking):', profileErr);
+  }
+
   await supabase.from('trip_collaborators').insert({ trip_id: inv.trip_id, user_id: uid, role: inv.role });
   await supabase.from('trip_invitations').delete().eq('id', invitation_id);
 

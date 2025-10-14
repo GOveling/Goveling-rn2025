@@ -7,7 +7,7 @@ import { getTripStats, getCountryFlagByName, getCountryFlag, getCountryName, Tri
 import TripDetailsModal from './TripDetailsModal';
 import LiquidButton from './LiquidButton';
 import { useAuth } from '~/contexts/AuthContext';
-import { getCurrentUser } from '~/lib/userUtils';
+import { getCurrentUser, resolveUserRoleForTrip } from '~/lib/userUtils';
 import { supabase } from '~/lib/supabase';
 import { CountryImage } from './CountryImage';
 
@@ -167,25 +167,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   };
 
   const deriveCurrentRole = async () => {
-    try {
-      const ownerId = currentTrip.owner_id || currentTrip.user_id;
-      if (user?.id && ownerId && user.id === ownerId) {
-        setCurrentRole('owner');
-        return;
-      }
-      if (!user?.id) { setCurrentRole('viewer'); return; }
-      const { data } = await supabase
-        .from('trip_collaborators')
-        .select('role')
-        .eq('trip_id', currentTrip.id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const r = (data as any)?.role;
-      if (r === 'editor' || r === 'viewer') setCurrentRole(r);
-      else setCurrentRole('viewer');
-    } catch {
-      setCurrentRole('viewer');
-    }
+    const role = await resolveUserRoleForTrip(user?.id, {
+      id: currentTrip.id,
+      owner_id: currentTrip.owner_id,
+      user_id: currentTrip.user_id,
+    });
+    setCurrentRole(role);
   };
 
   const getStatusConfig = () => {

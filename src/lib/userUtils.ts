@@ -7,6 +7,8 @@ export interface UserProfile {
   email?: string;
 }
 
+export type UserRole = 'owner' | 'editor' | 'viewer';
+
 export const getCurrentUser = async (): Promise<UserProfile | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -84,15 +86,53 @@ export const getTripOwner = async (tripId: string): Promise<UserProfile | null> 
     const ownerId = trip.owner_id || trip.user_id;
     const ownerProfile = (trip.profiles_owner as any) || (trip.profiles_user as any);
 
-    if (!ownerId || !ownerProfile) return null;
+    // Si tenemos ownerId pero no pudimos traer el perfil (por RLS o datos faltantes),
+    // igual devolvemos el ownerId para permitir resolver correctamente el rol "Owner".
+    if (!ownerId) return null;
 
     return {
       id: ownerId,
-      full_name: ownerProfile.full_name,
-      avatar_url: ownerProfile.avatar_url,
+      full_name: ownerProfile?.full_name,
+      avatar_url: ownerProfile?.avatar_url,
     };
   } catch (error) {
     console.error('Error getting trip owner:', error);
     return null;
+  }
+};
+
+/**
+ * Resolve the current user's role for a given trip.
+ * Contract:
+ * - Inputs: userId (string|null|undefined), trip { id, owner_id?, user_id }
+ * - Output: 'owner' | 'editor' | 'viewer'
+ * - Owner takes precedence over collaborator role. If userId is missing, defaults to 'viewer'.
+ */
+export const resolveUserRoleForTrip = async (
+  userId: string | null | undefined,
+  trip: { id: string; owner_id?: string | null; user_id?: string | null }
+): Promise<UserRole> => {
+  try {
+    if (!userId) return 'viewer';
+    const ownerId = trip.owner_id || trip.user_id || null;
+    if (ownerId && userId === ownerId) return 'owner';
+
+    const { data, error } = await supabase
+      .from('trip_collaborators')
+      .select('role')
+      .eq('trip_id', trip.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('resolveUserRoleForTrip: collaborators lookup error', error);
+      return 'viewer';
+    }
+
+    const r = (data as any)?.role;
+    return r === 'editor' || r === 'viewer' ? r : 'viewer';
+  } catch (e) {
+    console.warn('resolveUserRoleForTrip: unexpected error', e);
+    return 'viewer';
   }
 };

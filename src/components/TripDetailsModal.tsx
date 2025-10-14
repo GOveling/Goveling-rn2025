@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '~/lib/supabase';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
-import { getCurrentUser, getTripCollaborators, getTripOwner, UserProfile } from '~/lib/userUtils';
+import { getCurrentUser, getTripCollaborators, getTripOwner, resolveUserRoleForTrip, UserProfile } from '~/lib/userUtils';
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
 import i18n from '~/i18n';
@@ -129,18 +129,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       setTripOwner(owner);
       setCollaborators(collabs);
 
-      // Derive current user's role relative to this trip
-      let role: 'owner' | 'editor' | 'viewer' = 'viewer';
-      if (user && owner && user.id === owner.id) {
-        role = 'owner';
-      } else if (user) {
-        const me = collabs.find((c) => c.id === user.id);
-        const r = (me as any)?.role;
-        if (r === 'editor' || r === 'viewer') {
-          role = r;
-        }
-      }
-      setCurrentRole(role);
+      // Centralized role resolution
+      const resolved = await resolveUserRoleForTrip(user?.id, {
+        id: trip.id,
+        owner_id: trip.owner_id ?? owner?.id ?? null,
+        user_id: trip.user_id ?? null,
+      });
+      // Safety net: direct owner-id fallback in case of any weirdness
+      const ownerId = (trip.owner_id || trip.user_id || owner?.id) ?? null;
+      const finalRole = user?.id && ownerId && user.id === ownerId ? 'owner' : resolved;
+      setCurrentRole(finalRole);
     } catch (error) {
       console.error('Error loading users:', error);
     }
@@ -231,11 +229,13 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     return configs[role];
   };
 
-  const getUserInitials = (fullName?: string) => {
-    if (!fullName) return 'U';
-    const names = fullName.trim().split(' ');
-    if (names.length === 1) return names[0].charAt(0).toUpperCase();
-    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  const getUserInitials = (fullName?: string, email?: string) => {
+    const src = (fullName && fullName.trim().length > 0) ? fullName : (email || 'User');
+    const from = src.trim();
+    if (from.length === 0) return 'U';
+    const parts = from.split(/\s+/);
+    if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? 'U';
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   const TabButton = ({ tab, title }: { tab: TabType; title: string }) => (
@@ -439,15 +439,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </View>
       )}
 
-      {/* Botón de editar */}
-      <TouchableOpacity
-        onPress={() => setShowEditModal(true)}
-        style={{ marginTop: 20 }}
-      >
-        <LinearGradient
-          colors={['#8B5CF6', '#EC4899']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+      {/* Botón de editar - Solo para propietario y editores */}
+      {(currentRole === 'owner' || currentRole === 'editor') && (
+        <TouchableOpacity
+          onPress={() => setShowEditModal(true)}
+          style={{ marginTop: 20 }}
+        >
+          <LinearGradient
+            colors={['#8B5CF6', '#EC4899']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
           style={{
             borderRadius: 12,
             padding: 16,
@@ -463,6 +464,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           </View>
         </LinearGradient>
       </TouchableOpacity>
+      )}
     </ScrollView>
   );
 
@@ -499,18 +501,20 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 marginRight: 12,
               }}>
                 <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>
-                  {getUserInitials(tripOwner.full_name)}
+                  {getUserInitials(tripOwner.full_name, tripOwner.email)}
                 </Text>
               </View>
             )}
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-                {tripOwner.full_name || 'Usuario'}
+                {tripOwner.full_name || tripOwner.email || 'Owner'}
                 {currentUser?.id === tripOwner.id && ' (You)'}
               </Text>
-              <Text style={{ fontSize: 14, color: '#6B7280' }}>
-                {tripOwner.email || 'No email'}
-              </Text>
+              {tripOwner.full_name && tripOwner.email && (
+                <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                  {tripOwner.email}
+                </Text>
+              )}
             </View>
             <View style={{
               backgroundColor: '#F59E0B',
@@ -553,17 +557,17 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 marginRight: 12,
               }}>
                 <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>
-                  {getUserInitials(collaborator.full_name)}
+                  {getUserInitials(collaborator.full_name, collaborator.email)}
                 </Text>
               </View>
             )}
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-                {collaborator.full_name || 'Usuario'}
+                {collaborator.full_name || collaborator.email || 'Collaborator'}
                 {currentUser?.id === collaborator.id && ' (You)'}
               </Text>
               <Text style={{ fontSize: 14, color: '#6B7280' }}>
-                {(collaborator as any).role || 'Colaborador'}
+                {(collaborator as any).role === 'editor' ? 'Editor' : 'Viewer'}
               </Text>
             </View>
           </View>
