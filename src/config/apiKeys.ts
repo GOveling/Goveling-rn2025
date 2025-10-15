@@ -3,10 +3,18 @@
  * Configuración centralizada y validación de API keys
  */
 
+import Constants from 'expo-constants';
+
 // Safe environment variable access for Expo Go compatibility
 function getEnvVar(key: string): string | undefined {
   try {
-    // Try to access process.env safely
+    // Try Constants first (works best in Expo Go)
+    const expoConfig = Constants.expoConfig;
+    if (expoConfig?.extra?.[key]) {
+      return expoConfig.extra[key];
+    }
+    
+    // Fallback to process.env if available
     if (typeof process !== 'undefined' && process.env) {
       return process.env[key];
     }
