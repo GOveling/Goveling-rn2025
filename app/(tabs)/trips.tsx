@@ -88,14 +88,50 @@ export default function TripsTab() {
 
       console.log('🧪 TripsTab Debug: tripsWithTeam summary:', tripsWithTeam.map(t => ({ id: t.id, collaboratorsCount: t.collaboratorsCount, isOwner: t.isOwner })) );
 
-      setTrips(tripsWithTeam);
+      // Sort trips according to business logic:
+      // 1. Trips with start_date: sort by closest start_date first
+      // 2. Trips without start_date: sort by created_at (newest first)
+      const sortedTrips = tripsWithTeam.sort((a, b) => {
+        const aHasDate = a.start_date && a.start_date.trim() !== '';
+        const bHasDate = b.start_date && b.start_date.trim() !== '';
 
-      const totalTrips = tripsWithTeam.length || 0;
+        // Both have dates - sort by closest start_date (earliest first)
+        if (aHasDate && bHasDate) {
+          const aStartDate = new Date(a.start_date);
+          const bStartDate = new Date(b.start_date);
+          return aStartDate.getTime() - bStartDate.getTime();
+        }
+
+        // Only A has date - A comes first
+        if (aHasDate && !bHasDate) {
+          return -1;
+        }
+
+        // Only B has date - B comes first
+        if (!aHasDate && bHasDate) {
+          return 1;
+        }
+
+        // Neither has date - sort by created_at (newest first)
+        const aCreatedDate = new Date(a.created_at || '1970-01-01');
+        const bCreatedDate = new Date(b.created_at || '1970-01-01');
+        return bCreatedDate.getTime() - aCreatedDate.getTime();
+      });
+
+      console.log('🧪 TripsTab: Sorted trips order:', sortedTrips.map(t => ({ 
+        title: t.title, 
+        start_date: t.start_date, 
+        created_at: t.created_at 
+      })));
+
+      setTrips(sortedTrips);
+
+      const totalTrips = sortedTrips.length || 0;
 
       // Get upcoming trips (future trips + planning trips without dates)
       // Exclude: completed trips and currently traveling trips
       console.log('🧪 TripsTab: Analyzing upcoming trips...');
-      const upcomingTrips = tripsWithTeam?.filter(trip => {
+      const upcomingTrips = sortedTrips?.filter(trip => {
         console.log(`🧪 Evaluating trip "${trip.title}":`, {
           start_date: trip.start_date,
           end_date: trip.end_date
@@ -136,7 +172,7 @@ export default function TripsTab() {
 
       // Group trips: collaboratorsCount includes owner (+1 baked in team helper logic).
       // We consider group if total participants > 1.
-      const groupTrips = tripsWithTeam?.filter(trip => {
+      const groupTrips = sortedTrips?.filter(trip => {
         const count = trip.collaboratorsCount ?? (1 + (trip.collaborators?.length || 0));
         return count > 1;
       }).length || 0;
