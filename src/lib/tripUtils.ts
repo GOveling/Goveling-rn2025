@@ -35,8 +35,14 @@ const getCountryFromCoordinates = async (lat: number, lng: number): Promise<stri
       return 'US';
     }
 
-    // Brazil coordinate ranges (approximate)
-    if (lat >= -33.7 && lat <= 5.3 && lng >= -73.9 && lng <= -28.6) {
+    // Chile coordinate ranges (approximate) - Check Chile before Brazil to avoid overlap
+    if (lat >= -56.0 && lat <= -17.5 && lng >= -75.6 && lng <= -66.4) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Chile (CL)');
+      return 'CL';
+    }
+
+    // Brazil coordinate ranges (approximate) - Corrected eastern boundary
+    if (lat >= -33.7 && lat <= 5.3 && lng >= -73.0 && lng <= -28.6) {
       console.log('🗺️ getCountryFromCoordinates: Matched Brazil (BR)');
       return 'BR';
     }
@@ -45,12 +51,6 @@ const getCountryFromCoordinates = async (lat: number, lng: number): Promise<stri
     if (lat >= 35.8 && lat <= 42.1 && lng >= 25.7 && lng <= 44.8) {
       console.log('🗺️ getCountryFromCoordinates: Matched Turkey (TR)');
       return 'TR';
-    }
-
-    // Chile coordinate ranges (approximate)
-    if (lat >= -56.0 && lat <= -17.5 && lng >= -75.6 && lng <= -66.4) {
-      console.log('🗺️ getCountryFromCoordinates: Matched Chile (CL)');
-      return 'CL';
     }
 
     // Argentina coordinate ranges (approximate)
