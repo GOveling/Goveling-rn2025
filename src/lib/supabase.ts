@@ -1,22 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
+console.log('[supabase] Initializing Supabase client...');
+
 // Safe environment variable access for Expo Go compatibility
 function getEnvVar(key: string): string | undefined {
   try {
     // Try Constants first (works best in Expo Go)
     const expoConfig = Constants.expoConfig;
     if (expoConfig?.extra?.[key]) {
+      console.log(`[supabase] Found ${key} in Constants.expoConfig.extra`);
       return expoConfig.extra[key];
     }
     
     // Fallback to process.env if available
     if (typeof process !== 'undefined' && process.env) {
-      return process.env[key];
+      const val = process.env[key];
+      if (val) {
+        console.log(`[supabase] Found ${key} in process.env`);
+        return val;
+      }
     }
   } catch (e) {
     console.warn(`[supabase] Could not access env var ${key}:`, e);
   }
+  console.log(`[supabase] Using hardcoded fallback for ${key}`);
   return undefined;
 }
 
@@ -32,7 +40,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   throw new Error('Supabase configuration missing');
 }
 
-console.log('[supabase] Initializing with URL:', SUPABASE_URL);
+console.log('[supabase] Creating client with URL:', SUPABASE_URL);
+console.log('[supabase] Anon key present:', !!SUPABASE_ANON_KEY);
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { 
@@ -43,3 +52,5 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     debug: false // Desactivar logs de debug en producción
   }
 });
+
+console.log('[supabase] Client created successfully');

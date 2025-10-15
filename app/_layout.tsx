@@ -20,10 +20,25 @@ function InlineAuthGuard() {
   console.log('DEBUG AuthGuard - segments:', segments);
   console.log('DEBUG AuthGuard - inAuthGroup:', inAuthGroup);
 
-  // Mientras carga no hacemos nada para no bloquear el render del Stack
+  // Mientras carga mostramos un indicador
   if (loading) {
-    console.log('DEBUG AuthGuard - loading, no redirect yet');
-    return null;
+    console.log('DEBUG AuthGuard - loading, showing spinner');
+    return (
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: '#F7F7FA',
+        justifyContent: 'center', 
+        alignItems: 'center',
+        zIndex: 9999
+      }}>
+        <ActivityIndicator size="large" color="#0066CC" />
+        <Text style={{ marginTop: 16, color: '#666' }}>Cargando...</Text>
+      </View>
+    );
   }
 
   // Si no está autenticado y no está en la página de auth, redirigir a auth

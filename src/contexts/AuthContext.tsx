@@ -34,21 +34,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialize session and subscribe to auth state changes
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const init = async () => {
       try {
+        console.log('[Auth] Starting session check...');
+        
+        // Safety timeout - if init takes more than 5 seconds, stop loading
+        timeoutId = setTimeout(() => {
+          if (isMounted && loading) {
+            console.warn('[Auth] Init timeout - stopping loading state');
+            setLoading(false);
+          }
+        }, 5000);
+
         // 1) Get initial session from storage
         const { data, error } = await supabase.auth.getSession();
+        
         if (error) {
           console.warn('[Auth] getSession error:', error.message);
+        } else {
+          console.log('[Auth] Session check complete:', data?.session ? 'user found' : 'no user');
         }
+        
         if (!isMounted) return;
+        
         setSession(data?.session ?? null);
         setUser(data?.session?.user ?? null);
+        
+        clearTimeout(timeoutId);
       } catch (e) {
-        console.warn('[Auth] init error:', e);
+        console.error('[Auth] init error:', e);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          console.log('[Auth] Init complete - setting loading to false');
+          setLoading(false);
+        }
       }
     };
 
@@ -56,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2) Subscribe to auth state changes
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      console.log('[Auth] Auth state changed:', _event);
       // Update local state on any auth event
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -63,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       sub.subscription.unsubscribe();
     };
   }, []);
