@@ -3,9 +3,22 @@
  * Configuración centralizada y validación de API keys
  */
 
+// Safe environment variable access for Expo Go compatibility
+function getEnvVar(key: string): string | undefined {
+  try {
+    // Try to access process.env safely
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[key];
+    }
+  } catch (e) {
+    console.warn(`Could not access env var ${key}:`, e);
+  }
+  return undefined;
+}
+
 // Validación de variables de entorno requeridas
 function validateEnvVar(key: string, name: string): string | null {
-  const value = process.env[key];
+  const value = getEnvVar(key);
   
   if (!value || value.trim() === '' || value === 'your_new_api_key_here') {
     console.warn(`⚠️ ${name} no configurada: ${key}`);
@@ -19,8 +32,8 @@ function validateEnvVar(key: string, name: string): string | null {
 export const API_KEYS = {
   // Supabase (REQUERIDO - sin esto la app no funciona)
   supabase: {
-    url: process.env.EXPO_PUBLIC_SUPABASE_URL!,
-    anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+    url: getEnvVar('EXPO_PUBLIC_SUPABASE_URL') || '',
+    anonKey: getEnvVar('EXPO_PUBLIC_SUPABASE_ANON_KEY') || '',
   },
   
   // Google Maps (OPCIONAL - funcionalidad de mapas avanzada)
@@ -34,9 +47,9 @@ export const API_KEYS = {
   
   // OAuth Google (REQUERIDO para login con Google)
   googleOAuth: {
-    web: process.env.EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_WEB!,
-    ios: process.env.EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_IOS!,
-    android: process.env.EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ANDROID!,
+    web: getEnvVar('EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_WEB') || '',
+    ios: getEnvVar('EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_IOS') || '',
+    android: getEnvVar('EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ANDROID') || '',
   }
 } as const;
 
