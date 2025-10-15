@@ -150,20 +150,59 @@ export async function getActiveOrNextTrip(): Promise<Trip|null>{
   const uid = u?.user?.id;
   if (!uid) return null;
   const { data: own } = await supabase.from('trips').select('id,title,start_date,end_date').eq('user_id', uid).neq('status', 'cancelled');
+  const { data: ownByOwnerId } = await supabase.from('trips').select('id,title,start_date,end_date').eq('owner_id', uid).neq('status', 'cancelled');
   const { data: collabIds } = await supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid);
   const tripIds = (collabIds || []).map(c => c.trip_id);
   const { data: collabTrips } = tripIds.length > 0 ? await supabase.from('trips').select('id,title,start_date,end_date').in('id', tripIds).neq('status', 'cancelled') : { data: [] };
   const trips: Trip[] = [ 
     ...((own||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date }))), 
+    ...((ownByOwnerId||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date }))),
     ...((collabTrips||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date })))
   ];
-  if (!trips.length) return null;
+  
+  // Remove duplicates by id
+  const uniqueTrips = trips.filter((trip, index, self) => 
+    index === self.findIndex(t => t.id === trip.id)
+  );
+  
+  if (!uniqueTrips.length) return null;
   // active first
-  const active = trips.find(isActiveTrip);
+  const active = uniqueTrips.find(isActiveTrip);
   if (active) return active as Trip;
   // next future
-  const future = trips.filter(isFutureTrip).sort((a,b)=> new Date(a.start_date||'2099').getTime() - new Date(b.start_date||'2099').getTime())[0];
+  const future = uniqueTrips.filter(isFutureTrip).sort((a,b)=> new Date(a.start_date||'2099').getTime() - new Date(b.start_date||'2099').getTime())[0];
   return future || null;
+}
+
+// New function to get all active trips
+export async function getActiveTrips(): Promise<Trip[]>{
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u?.user?.id;
+  if (!uid) return [];
+  
+  const { data: own } = await supabase.from('trips').select('id,title,start_date,end_date,created_at').eq('user_id', uid).neq('status', 'cancelled');
+  const { data: ownByOwnerId } = await supabase.from('trips').select('id,title,start_date,end_date,created_at').eq('owner_id', uid).neq('status', 'cancelled');
+  const { data: collabIds } = await supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid);
+  const tripIds = (collabIds || []).map(c => c.trip_id);
+  const { data: collabTrips } = tripIds.length > 0 ? await supabase.from('trips').select('id,title,start_date,end_date,created_at').in('id', tripIds).neq('status', 'cancelled') : { data: [] };
+  
+  const trips: (Trip & {created_at?: string})[] = [ 
+    ...((own||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date, created_at: t.created_at }))), 
+    ...((ownByOwnerId||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date, created_at: t.created_at }))),
+    ...((collabTrips||[]).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date, created_at: t.created_at })))
+  ];
+  
+  // Remove duplicates by id
+  const uniqueTrips = trips.filter((trip, index, self) => 
+    index === self.findIndex(t => t.id === trip.id)
+  );
+  
+  // Filter only active trips and sort by creation date (oldest first)
+  const activeTrips = uniqueTrips.filter(isActiveTrip).sort((a, b) => 
+    new Date(a.created_at || '2099').getTime() - new Date(b.created_at || '2099').getTime()
+  );
+  
+  return activeTrips as Trip[];
 }
 
 export async function getTripPlaces(trip_id:string){
