@@ -1,0 +1,80 @@
+# .easignore - Optimización para EAS Update
+# Este archivo excluye archivos innecesarios del bundle de EAS Update
+
+# Documentación y archivos markdown
+*.md
+*.MD
+DEPLOYMENT.md
+API_CONFIGURATION.md
+GOOGLE_PLACES_SETUP.md
+EAS-UPDATE-GUIDE.md
+LICENSE
+*.txt
+
+# Archivos SQL (migraciones - no necesarios en runtime)
+*.sql
+
+# Scripts de configuración y deployment
+*.sh
+*.example
+apply-migration*.js
+check_migration.js
+fix-*.js
+git-push.sh
+setup-api-keys.sh
+
+# Archivos de configuración de desarrollo
+babel.config.js
+metro.config.js
+tsconfig.json
+.eslintrc*
+.prettierrc*
+bolt.config.js
+bolt.json
+
+# Archivos temporales y logs
+*.log
+*.tmp
+*.temp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Directorios de build y cache
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+ios/
+android/
+**/.gradle/
+**/build/
+**/Pods/
+
+# IDE y sistema
+.vscode/
+.idea/
+.DS_Store
+*.hprof
+
+# Archivos de entorno (sensibles)
+.env*
+google-services.json*
+GoogleService-Info.plist*
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Assets grandes que no cambian frecuentemente (opcional)
+# Descomenta si tienes assets muy grandes y estáticos
+# **/assets/videos/*
+# **/assets/fonts/*
+
+# Archivos de test
+**/__tests__/
+**/__mocks__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
