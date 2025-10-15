@@ -3,15 +3,59 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Skeleton } from '~/components/ui/Skeleton';
 import { Trip, getActiveOrNextTrip, getPlanningTripsCount, getActiveTrips } from '~/lib/home';
+import { supabase } from '~/lib/supabase';
+import { useTripRefresh } from '~/contexts/TripRefreshContext';
+import { setGlobalTripRefresh } from '~/lib/tripRefresh';
 
 const daysDiff = (a: Date, b: Date): number => Math.ceil((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
+
+// Helper function to parse date as local time instead of UTC
+const parseLocalDate = (dateString: string): Date => {
+  // If the date string is just YYYY-MM-DD, we want to treat it as local time, not UTC
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    // Parse as local time by appending local time zone
+    const localDate = new Date(dateString + 'T00:00:00');
+    console.log('🕐 parseLocalDate: Converted', dateString, 'to local midnight:', localDate.toLocaleString('es-CL'));
+    return localDate;
+  }
+  // If it already has time/timezone info, use as is
+  return new Date(dateString);
+};
+
+const getCountdownText = (startDate: string): string => {
+  const now = new Date();
+  const start = parseLocalDate(startDate);
+  const diff = start.getTime() - now.getTime();
+  
+  // Log específico para debugging el problema de "19 horas"
+  console.log('🕐 COUNTDOWN:', {
+    raw_startDate: startDate,
+    parsed_start_local: start.toLocaleString('es-CL'),
+    current_time_local: now.toLocaleString('es-CL'),
+    diff_hours: Math.floor(diff / (1000 * 60 * 60))
+  });
+  
+  if (diff <= 0) return "¡Ya comenzó!";
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  if (days > 0) {
+    return `${days} día${days !== 1 ? 's' : ''} y ${hours} hora${hours !== 1 ? 's' : ''}`;
+  } else {
+    return `${hours} hora${hours !== 1 ? 's' : ''}`;
+  }
+};
 
 const CurrentTripCard = React.memo(function CurrentTripCard() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { registerRefreshFunction } = useTripRefresh();
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [trip, setTrip] = React.useState<Trip|null>(null);
   const [activeTrips, setActiveTrips] = React.useState<Trip[]>([]);
   const [selectedActiveTrip, setSelectedActiveTrip] = React.useState<Trip|null>(null);
@@ -19,10 +63,15 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
   const [countdown, setCountdown] = React.useState<number|null>(null);
   const [planningTripsCount, setPlanningTripsCount] = React.useState<number>(0);
 
-  React.useEffect(()=>{
-    (async()=>{
-      setLoading(true);
-      
+  // Use ref to store stable function reference
+  const loadTripDataRef = React.useRef<() => Promise<void>>(async () => {});
+
+  // Create stable function using useRef
+  loadTripDataRef.current = async () => {
+    console.log('🔄 CurrentTripCard: Loading trip data...');
+    setLoading(true);
+    
+    try {
       // First check for active trips
       const activeTripsData = await getActiveTrips();
       setActiveTrips(activeTripsData);
@@ -33,6 +82,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         setTrip(activeTripsData[0]);
         setMode('active');
         setCountdown(null);
+        console.log('🔄 CurrentTripCard: Found active trip:', activeTripsData[0].name);
       } else {
         // No active trips, check for future trips
         const t = await getActiveOrNextTrip();
@@ -42,25 +92,171 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           // If no active/next trip, check for planning trips
           const planningCount = await getPlanningTripsCount();
           setPlanningTripsCount(planningCount);
+          console.log('🔄 CurrentTripCard: No trips found, planning count:', planningCount);
         }
         else {
           const now = new Date();
-          if (t.start_date && new Date(t.start_date) > now){ 
+          console.log('🔄 CurrentTripCard: Found trip:', t.name, 'Start date:', t.start_date);
+          if (t.start_date && parseLocalDate(t.start_date) > now){ 
             setMode('future'); 
-            setCountdown(daysDiff(new Date(t.start_date), now)); 
+            setCountdown(daysDiff(parseLocalDate(t.start_date), now)); 
+            console.log('🔄 CurrentTripCard: Trip is future, countdown set to:', daysDiff(parseLocalDate(t.start_date), now));
           }
           else { 
             setMode('active'); 
-            setCountdown(null); 
+            setCountdown(null);
+            console.log('🔄 CurrentTripCard: Trip is active');
           }
         }
       }
+      console.log('🔄 CurrentTripCard: Trip data loaded successfully');
+    } catch (error) {
+      console.error('🔄 CurrentTripCard: Error loading trip data:', error);
+    } finally {
       setLoading(false);
-    })();
+      setRefreshing(false);
+    }
+  };
+
+  // Stable wrapper function
+  const loadTripData = React.useCallback(async () => {
+    if (loadTripDataRef.current) {
+      await loadTripDataRef.current();
+    }
   }, []);
 
+  // Initial load only
+  React.useEffect(() => {
+    console.log('🔄 CurrentTripCard: Initial load');
+    loadTripData();
+  }, [loadTripData]);
+
+  // Register refresh function for external trigger (only once)
+  React.useEffect(() => {
+    registerRefreshFunction(loadTripData);
+    setGlobalTripRefresh(loadTripData);
+    console.log('🔄 CurrentTripCard: Refresh functions registered');
+  }, [loadTripData, registerRefreshFunction]);
+
+  // Simplified focus effect - only when explicitly navigating between tabs
+  // Commented out for now to prevent excessive refreshes
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     const now = Date.now();
+  //     if (now - lastFocusRefresh.current > 2000) {
+  //       console.log('🏠 CurrentTripCard: Screen gained focus, refreshing trip data');
+  //       lastFocusRefresh.current = now;
+  //       loadTripData();
+  //     }
+  //   }, [loadTripData])
+  // );
+
+  // Update countdown every minute for future trips
+  React.useEffect(() => {
+    if (mode !== 'future' || !trip?.start_date) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const startDate = parseLocalDate(trip.start_date);
+      
+      if (startDate <= now) {
+        // Trip has started, switch to active mode
+        setMode('active');
+        setCountdown(null);
+        clearInterval(interval);
+        // Reload trip data to get updated status
+        loadTripData();
+      }
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [mode, trip?.start_date, loadTripData]);
+
+  // Simplified real-time subscription with longer debounce
+  React.useEffect(() => {
+    let channel: any;
+    let userId: string | undefined;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
+    (async () => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        userId = user?.user?.id;
+        if (!userId) return;
+
+        console.log('🔄 CurrentTripCard: Setting up simplified realtime subscription');
+        
+        const debouncedRefresh = () => {
+          if (debounceTimeout) {
+            clearTimeout(debounceTimeout);
+          }
+          debounceTimeout = setTimeout(() => {
+            console.log('🔄 CurrentTripCard: Executing debounced refresh after 3 seconds');
+            loadTripData();
+            debounceTimeout = null;
+          }, 3000); // 3 second debounce to prevent excessive refreshes
+        };
+        
+        channel = supabase
+          .channel(`current-trip-card-${userId}`)
+          // Listen to trips table changes - both updates and deletes
+          .on('postgres_changes', { 
+            event: 'UPDATE',
+            schema: 'public', 
+            table: 'trips',
+            filter: `owner_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🔄 CurrentTripCard: Trip update detected for user trips');
+            debouncedRefresh();
+          })
+          .on('postgres_changes', { 
+            event: 'DELETE',
+            schema: 'public', 
+            table: 'trips',
+            filter: `owner_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🔄 CurrentTripCard: Trip deletion detected for user trips');
+            debouncedRefresh();
+          })
+          .on('postgres_changes', { 
+            event: 'INSERT',
+            schema: 'public', 
+            table: 'trips',
+            filter: `owner_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🔄 CurrentTripCard: Trip creation detected for user trips');
+            debouncedRefresh();
+          })
+          // Also listen to trip_collaborators changes (when user is added/removed from trips)
+          .on('postgres_changes', { 
+            event: '*',
+            schema: 'public', 
+            table: 'trip_collaborators',
+            filter: `user_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🔄 CurrentTripCard: Trip collaboration change detected');
+            debouncedRefresh();
+          })
+          .subscribe();
+          
+      } catch (error) {
+        console.error('🔄 CurrentTripCard: Error setting up realtime subscription:', error);
+      }
+    })();
+
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      if (channel) {
+        console.log('🔄 CurrentTripCard: Cleaning up simplified subscription');
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []); // Empty dependency array for stability
+
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
     return date.toLocaleDateString('es-ES', { 
       day: 'numeric', 
       month: 'short', 
@@ -232,7 +428,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
   const memoizedContent = React.useMemo(() => {
     if (!trip || mode !== 'future') return null;
     
-    const title = `Próximo trip en ${countdown} días`;
+    const countdownText = getCountdownText(trip.start_date);
     const tripName = trip?.name || 'Mi Viaje';
 
     return (
@@ -254,15 +450,25 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             elevation: 8
           }}
         >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            {/* Contenido del lado izquierdo */}
+            <View style={{ flex: 1, marginRight: 16 }}>
               <Text style={{ 
                 fontSize: 16, 
                 fontWeight: '600', 
                 color: 'white', 
-                marginBottom: 4 
+                marginBottom: 4,
+                opacity: 0.9
               }}>
-                {title}
+                Tu próximo viaje comienza en:
+              </Text>
+              <Text style={{ 
+                fontSize: 20, 
+                fontWeight: '800', 
+                color: 'white',
+                marginBottom: 8
+              }}>
+                {countdownText}
               </Text>
               <Text style={{ 
                 fontSize: 18, 
@@ -273,20 +479,32 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               </Text>
             </View>
             
-            <View style={{ alignItems: 'center' }}>
+            {/* Botón del lado derecho */}
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/explore')}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.3)',
+                alignSelf: 'flex-start'
+              }}
+            >
               <Text style={{ 
-                fontSize: 16, 
+                fontSize: 14, 
                 fontWeight: '600', 
                 color: 'white' 
               }}>
-                📍 Test SA
+                ➕ Agregar más lugares
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
       </TouchableOpacity>
     );
-  }, [trip, mode, countdown]);
+  }, [trip, mode, router]);
 
   // Loading state
   if (loading) return (
@@ -385,7 +603,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
                 }}
               >
                 <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
-                  + Nuevo Viaje
+                  {t('+ New Trip')}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -398,7 +616,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             {t('No tienes viajes')}
           </Text>
           <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
-            {t('Crea tu primer trip para comenzar')}
+            {t('Crea tu primer viaje para comenzar')}
           </Text>
           <TouchableOpacity onPress={() => router.push('/trips?openModal=true')}>
             <LinearGradient

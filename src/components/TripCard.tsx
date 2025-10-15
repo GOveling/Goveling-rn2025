@@ -33,6 +33,15 @@ interface TripCardProps {
   onTripUpdated?: (updatedTrip: TripData) => void;
 }
 
+// Helper function to parse date as local time instead of UTC
+const parseLocalDate = (dateString: string): Date => {
+  // If the date string is just YYYY-MM-DD, we want to treat it as local time, not UTC
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(dateString + 'T00:00:00');
+  }
+  return new Date(dateString);
+};
+
 const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   console.log('🎨 TripCard: Rendering TripCard for trip:', { id: trip.id, title: trip.title });
 
@@ -174,7 +183,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
@@ -186,8 +195,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     if (!currentTrip.start_date || !currentTrip.end_date) return 'planning';
 
     const now = new Date();
-    const startDate = new Date(currentTrip.start_date);
-    const endDate = new Date(currentTrip.end_date);
+    const startDate = parseLocalDate(currentTrip.start_date);
+    const endDate = parseLocalDate(currentTrip.end_date);
 
     if (now < startDate) return 'upcoming';
     if (now >= startDate && now <= endDate) return 'traveling';

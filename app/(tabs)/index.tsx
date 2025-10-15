@@ -16,6 +16,7 @@ import NearbyAlerts from '~/components/home/NearbyAlerts';
 import { registerDeviceToken } from '~/lib/push';
 import { useRouter } from 'expo-router';
 import NotificationBell from '~/components/home/NotificationBell';
+import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
 
 export default function HomeTab() {
   const { t } = useTranslation();
@@ -184,7 +185,7 @@ export default function HomeTab() {
   }, [recomputeSavedPlaces]);
 
   return (
-    <>
+    <TripRefreshProvider>
       <StatusBar barStyle="light-content" />
       <ScrollView style={{ flex: 1, backgroundColor: '#F7F7FA' }}>
         {/* Header con gradiente */}
@@ -455,6 +456,6 @@ export default function HomeTab() {
           </View>
         </View>
       </ScrollView>
-    </>
+    </TripRefreshProvider>
   );
 }

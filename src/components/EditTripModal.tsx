@@ -16,6 +16,23 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
+import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
+
+// Helper function to format date as YYYY-MM-DD in local timezone
+const formatDateForStorage = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to parse date as local time instead of UTC
+const parseLocalDate = (dateString: string): Date => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(dateString + 'T00:00:00');
+  }
+  return new Date(dateString);
+};
 
 interface TripData {
   id: string;
@@ -112,8 +129,8 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
       setTripData({
         title: trip.title || '',
         description: trip.description || '',
-        startDate: trip.start_date ? new Date(trip.start_date) : null,
-        endDate: trip.end_date ? new Date(trip.end_date) : null,
+        startDate: trip.start_date ? parseLocalDate(trip.start_date) : null,
+        endDate: trip.end_date ? parseLocalDate(trip.end_date) : null,
         budget: trip.budget ? trip.budget.toString() : '',
         accommodation: accommodationArray,
         transport: transportArray,
@@ -152,8 +169,8 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
       const updateData = {
         title: tripData.title.trim(),
         description: tripData.description.trim() || null,
-        start_date: tripData.hasNoDates ? null : tripData.startDate?.toISOString(),
-        end_date: tripData.hasNoDates ? null : tripData.endDate?.toISOString(),
+        start_date: tripData.hasNoDates ? null : (tripData.startDate ? formatDateForStorage(tripData.startDate) : null),
+        end_date: tripData.hasNoDates ? null : (tripData.endDate ? formatDateForStorage(tripData.endDate) : null),
         budget: tripData.budget ? parseFloat(tripData.budget) : null,
         accommodation_preference: tripData.accommodation.length > 0 ? tripData.accommodation.join(', ') : null,
         transport_preference: tripData.transport.length > 0 ? tripData.transport.join(', ') : null,
@@ -179,6 +196,11 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
           text: 'OK',
           onPress: () => {
             onTripUpdated(data);
+            
+            // Trigger global trip refresh for CurrentTripCard
+            console.log('🔄 EditTripModal: Trip updated, triggering global refresh');
+            triggerGlobalTripRefresh();
+            
             handleClose();
           }
         }

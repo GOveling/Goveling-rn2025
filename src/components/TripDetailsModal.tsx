@@ -18,6 +18,7 @@ import { supabase } from '~/lib/supabase';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import { getCurrentUser, getTripCollaborators, getTripOwner, resolveUserRoleForTrip, UserProfile } from '~/lib/userUtils';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
 import i18n from '~/i18n';
@@ -77,6 +78,15 @@ interface TripDetailsModalProps {
 }
 
 type TabType = 'overview' | 'itinerary' | 'team';
+
+// Helper function to parse date as local time instead of UTC
+const parseLocalDate = (dateString: string): Date => {
+  // If the date string is just YYYY-MM-DD, we want to treat it as local time, not UTC
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(dateString + 'T00:00:00');
+  }
+  return new Date(dateString);
+};
 
 const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   visible,
@@ -228,6 +238,11 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       setIsEditing(false);
       onTripUpdate?.(editableTrip);
+      
+      // Trigger global trip refresh for CurrentTripCard
+      console.log('🔄 TripDetailsModal: Trip updated, triggering global refresh');
+      triggerGlobalTripRefresh();
+      
       Alert.alert('Éxito', 'Viaje actualizado correctamente');
     } catch (error) {
       console.error('Error updating trip:', error);
@@ -246,7 +261,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
@@ -258,8 +273,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     if (!editableTrip.start_date || !editableTrip.end_date) return 'Planning';
 
     const now = new Date();
-    const startDate = new Date(editableTrip.start_date);
-    const endDate = new Date(editableTrip.end_date);
+    const startDate = parseLocalDate(editableTrip.start_date);
+    const endDate = parseLocalDate(editableTrip.end_date);
 
     if (now < startDate) return 'Upcoming';
     if (now >= startDate && now <= endDate) return 'Traveling';

@@ -4,6 +4,17 @@ import { LocationCache } from './weatherCache';
 
 export type Trip = { id:string; name:string; start_date?:string|null; end_date?:string|null; cover_emoji?:string|null };
 
+// Helper function to parse date as local time instead of UTC
+const parseLocalDate = (dateString: string): Date => {
+  // If the date string is just YYYY-MM-DD, we want to treat it as local time, not UTC
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    // Parse as local time by appending local time zone
+    return new Date(dateString + 'T00:00:00');
+  }
+  // If it already has time/timezone info, use as is
+  return new Date(dateString);
+};
+
 export async function getToday(){
   const d = new Date();
   return d.toISOString().slice(0,10);
@@ -12,12 +23,12 @@ export async function getToday(){
 export function isActiveTrip(t:Trip){
   const now = new Date();
   if (!t.start_date || !t.end_date) return false;
-  return new Date(t.start_date) <= now && now <= new Date(t.end_date);
+  return parseLocalDate(t.start_date) <= now && now <= parseLocalDate(t.end_date);
 }
 export function isFutureTrip(t:Trip){
   const now = new Date();
   if (!t.start_date) return false;
-  return new Date(t.start_date) > now;
+  return parseLocalDate(t.start_date) > now;
 }
 
 export async function getPlanningTripsCount(): Promise<number> {
@@ -115,8 +126,8 @@ export async function getUpcomingTripsCount(): Promise<number> {
       return true;
     }
 
-    const startDate = new Date(trip.start_date);
-    const endDate = new Date(trip.end_date);
+    const startDate = parseLocalDate(trip.start_date);
+    const endDate = parseLocalDate(trip.end_date);
 
     // Future trips (start date is in the future) - these count as upcoming
     if (now < startDate) {
@@ -170,7 +181,7 @@ export async function getActiveOrNextTrip(): Promise<Trip|null>{
   const active = uniqueTrips.find(isActiveTrip);
   if (active) return active as Trip;
   // next future
-  const future = uniqueTrips.filter(isFutureTrip).sort((a,b)=> new Date(a.start_date||'2099').getTime() - new Date(b.start_date||'2099').getTime())[0];
+  const future = uniqueTrips.filter(isFutureTrip).sort((a,b)=> parseLocalDate(a.start_date||'2099').getTime() - parseLocalDate(b.start_date||'2099').getTime())[0];
   return future || null;
 }
 

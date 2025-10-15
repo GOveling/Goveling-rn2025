@@ -37,6 +37,15 @@ interface TripSelectorModalProps {
   placeId?: string;
 }
 
+// Helper function to parse date as local time instead of UTC
+const parseLocalDate = (dateString: string): Date => {
+  // If the date string is just YYYY-MM-DD, we want to treat it as local time, not UTC
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(dateString + 'T00:00:00');
+  }
+  return new Date(dateString);
+};
+
 export default function TripSelectorModal({
   visible,
   onClose,
@@ -132,7 +141,7 @@ export default function TripSelectorModal({
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',

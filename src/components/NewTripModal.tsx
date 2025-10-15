@@ -20,6 +20,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
 
+// Helper function to format date as YYYY-MM-DD in local timezone
+const formatDateForStorage = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface NewTripModalProps {
   visible: boolean;
   onClose: () => void;
@@ -154,8 +162,8 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
       const tripToCreate = {
         title: tripData.name.trim(),
         description: tripData.description.trim() || null,
-        start_date: tripData.startDate?.toISOString().split('T')[0] || null, // Solo fecha, sin hora
-        end_date: tripData.endDate?.toISOString().split('T')[0] || null, // Solo fecha, sin hora
+        start_date: tripData.startDate ? formatDateForStorage(tripData.startDate) : null,
+        end_date: tripData.endDate ? formatDateForStorage(tripData.endDate) : null,
         budget: tripData.budget ? parseFloat(tripData.budget) : null,
         accommodation_preference: tripData.accommodation || null,
         transport_preference: tripData.transport || null,
