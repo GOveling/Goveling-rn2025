@@ -1,7 +1,15 @@
 
 // src/i18n/index.ts
 // Import polyfill for Intl.PluralRules if not available
-import 'intl-pluralrules';
+// Skip polyfill in Expo Go to avoid compatibility issues
+try {
+  if (typeof Intl === 'undefined' || !Intl.PluralRules) {
+    require('intl-pluralrules');
+    console.log('[i18n] Loaded intl-pluralrules polyfill');
+  }
+} catch (e) {
+  console.warn('[i18n] Could not load intl-pluralrules polyfill:', e);
+}
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
@@ -15,6 +23,8 @@ import fr from './locales/fr.json';
 import it from './locales/it.json';
 import zh from './locales/zh.json';
 import ja from './locales/ja.json';
+
+console.log('[i18n] Initializing i18n...');
 
 const resources = { en:{translation:en}, es:{translation:es}, pt:{translation:pt}, fr:{translation:fr}, it:{translation:it}, zh:{translation:zh}, ja:{translation:ja} };
 
@@ -30,7 +40,17 @@ export async function setLanguage(lang:string){
 }
 
 const fallback = 'en';
-const deviceLang = (Localization.getLocales()?.[0]?.languageTag || 'en').split('-')[0];
+let deviceLang = fallback;
+
+try {
+  const locales = Localization.getLocales();
+  deviceLang = (locales?.[0]?.languageTag || 'en').split('-')[0];
+  console.log('[i18n] Device language detected:', deviceLang);
+} catch (e) {
+  console.warn('[i18n] Could not detect device language:', e);
+}
+
+console.log('[i18n] Initializing with fallback:', fallback);
 
 i18n
   .use(initReactI18next)
@@ -41,11 +61,20 @@ i18n
     interpolation: { escapeValue: false },
     // Add compatibility for older environments
     compatibilityJSON: 'v3'
+  })
+  .then(() => {
+    console.log('[i18n] i18n initialized successfully');
+  })
+  .catch(err => {
+    console.error('[i18n] Failed to initialize i18n:', err);
   });
 
 getSavedLanguage().then(saved => {
   const target = saved || (resources[deviceLang] ? deviceLang : fallback);
+  console.log('[i18n] Setting language to:', target);
   i18n.changeLanguage(target);
+}).catch(err => {
+  console.warn('[i18n] Could not load saved language:', err);
 });
 
 
@@ -70,7 +99,16 @@ function pseudo(str:string){
 
 async function edgeTranslate(text:string, lang:string){
   try{
-    const base = process.env.EXPO_PUBLIC_I18N_EDGE;
+    // Safe access to env var
+    let base: string | undefined;
+    try {
+      if (typeof process !== 'undefined' && process.env) {
+        base = process.env.EXPO_PUBLIC_I18N_EDGE;
+      }
+    } catch {
+      // process not available
+    }
+    
     if(!base) return null;
     const res = await fetch(base, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ q:text, target:lang }) });
     if(!res.ok) return null;
