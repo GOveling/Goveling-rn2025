@@ -136,7 +136,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
             Tienes {planningTripsCount} viaje{planningTripsCount > 1 ? 's' : ''} sin fecha. Agrega lugares y fechas para comenzar a planificar
           </Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
             <TouchableOpacity 
               onPress={() => router.push('/trips')}
               style={{ flex: 1 }}
@@ -149,8 +149,25 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
                   Completar Viajes
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/explore')}
+              style={{ flex: 1 }}
+            >
+              <LinearGradient
+                colors={['#F59E0B', '#D97706']}
+                style={{
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
+                  Agregar Lugares
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -166,7 +183,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
                   alignItems: 'center'
                 }}
               >
-                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
                   + Nuevo Viaje
                 </Text>
               </LinearGradient>
