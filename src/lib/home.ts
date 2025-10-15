@@ -20,6 +20,47 @@ export function isFutureTrip(t:Trip){
   return new Date(t.start_date) > now;
 }
 
+export async function getPlanningTripsCount(): Promise<number> {
+  console.log('🏠 getPlanningTripsCount: Starting...');
+  
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u?.user?.id;
+  
+  if (!uid) {
+    console.log('🏠 getPlanningTripsCount: No authenticated user, returning 0');
+    return 0;
+  }
+
+  // Get all trips where user is owner or collaborator (excluding cancelled trips)
+  const { data: own } = await supabase.from('trips').select('id,title,start_date,end_date').eq('user_id', uid).neq('status', 'cancelled');
+  const { data: ownByOwnerId } = await supabase.from('trips').select('id,title,start_date,end_date').eq('owner_id', uid).neq('status', 'cancelled');
+  const { data: collabIds } = await supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid);
+  
+  const tripIds = (collabIds || []).map(c => c.trip_id);
+  const { data: collabTrips } = tripIds.length > 0 ? await supabase.from('trips').select('id,title,start_date,end_date').in('id', tripIds).neq('status', 'cancelled') : { data: [] };
+  
+  const allTrips = [
+    ...((own || []).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date }))),
+    ...((ownByOwnerId || []).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date }))),
+    ...((collabTrips || []).map(t => ({ id: t.id, name: t.title, start_date: t.start_date, end_date: t.end_date })))
+  ];
+
+  // Remove duplicates by id
+  const uniqueTrips = allTrips.filter((trip, index, self) => 
+    index === self.findIndex(t => t.id === trip.id)
+  );
+
+  // Count trips in planning state (no start_date or end_date)
+  const planningTrips = uniqueTrips.filter(trip => {
+    return !trip.start_date || !trip.end_date;
+  });
+
+  console.log('🏠 getPlanningTripsCount: Planning trips count:', planningTrips.length);
+  console.log('🏠 getPlanningTripsCount: Planning trips:', planningTrips.map(t => t.name));
+  
+  return planningTrips.length;
+}
+
 export async function getUpcomingTripsCount(): Promise<number> {
   console.log('🏠 getUpcomingTripsCount: Starting...');
   

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import NewTripModal from '../../src/components/NewTripModal';
@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 export default function TripsTab() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
+  const { openModal } = useLocalSearchParams();
 
   // Estados
   const [showNewTripModal, setShowNewTripModal] = useState(false);
@@ -24,6 +25,15 @@ export default function TripsTab() {
     upcomingTrips: 0,
     groupTrips: 0
   });
+
+  // Check if we should open the modal automatically from query params
+  useEffect(() => {
+    if (openModal === 'true') {
+      setShowNewTripModal(true);
+      // Clear the parameter after opening modal to prevent reopening on re-renders
+      router.replace('/trips');
+    }
+  }, [openModal]);
 
   // Load trip statistics and trips from database
   const loadTripStats = async () => {

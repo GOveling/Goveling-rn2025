@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Skeleton } from '~/components/ui/Skeleton';
-import { Trip, getActiveOrNextTrip } from '~/lib/home';
+import { Trip, getActiveOrNextTrip, getPlanningTripsCount } from '~/lib/home';
 
 const daysDiff = (a: Date, b: Date): number => Math.ceil((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -15,13 +15,19 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
   const [trip, setTrip] = React.useState<Trip|null>(null);
   const [mode, setMode] = React.useState<'none'|'future'|'active'>('none');
   const [countdown, setCountdown] = React.useState<number|null>(null);
+  const [planningTripsCount, setPlanningTripsCount] = React.useState<number>(0);
 
   React.useEffect(()=>{
     (async()=>{
       setLoading(true);
       const t = await getActiveOrNextTrip();
       setTrip(t);
-      if (!t){ setMode('none'); }
+      if (!t){ 
+        setMode('none');
+        // If no active/next trip, check for planning trips
+        const planningCount = await getPlanningTripsCount();
+        setPlanningTripsCount(planningCount);
+      }
       else {
         const now = new Date();
         if (t.start_date && new Date(t.start_date) > now){ setMode('future'); setCountdown(daysDiff(new Date(t.start_date), now)); }
@@ -121,26 +127,77 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       shadowRadius: 8,
       elevation: 5
     }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
-        {t('No tienes viajes')}
-      </Text>
-      <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
-        {t('Crea tu primer trip para comenzar')}
-      </Text>
-      <TouchableOpacity onPress={()=>Alert.alert('Nuevo Trip', 'Funcionalidad de crear trips próximamente disponible')}>
-        <LinearGradient
-          colors={['#10B981', '#059669']}
-          style={{
-            paddingVertical: 12,
-            borderRadius: 12,
-            alignItems: 'center'
-          }}
-        >
-          <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-            {t('+ New Trip')}
+      {planningTripsCount > 0 ? (
+        // Has planning trips - encourage user to complete them
+        <>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
+            ¡Completa tus viajes! 
           </Text>
-        </LinearGradient>
-      </TouchableOpacity>
+          <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
+            Tienes {planningTripsCount} viaje{planningTripsCount > 1 ? 's' : ''} sin fecha. Agrega lugares y fechas para comenzar a planificar
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity 
+              onPress={() => router.push('/trips')}
+              style={{ flex: 1 }}
+            >
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                style={{
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                  Completar Viajes
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => router.push('/trips?openModal=true')}
+              style={{ flex: 1 }}
+            >
+              <LinearGradient
+                colors={['#8B5CF6', '#7C3AED']}
+                style={{
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                  + Nuevo Viaje
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        // No trips at all - encourage user to create first trip
+        <>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
+            {t('No tienes viajes')}
+          </Text>
+          <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
+            {t('Crea tu primer trip para comenzar')}
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/trips?openModal=true')}>
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              style={{
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                {t('+ New Trip')}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 
