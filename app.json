@@ -91,7 +91,9 @@
       "EXPO_PUBLIC_MAPTILER_API_KEY": "QTGwni8621Prm01m293v"
     },
     "owner": "goveling",
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/082d74f5-5463-424d-b8a3-0f2330c03846"
     }
