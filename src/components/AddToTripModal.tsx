@@ -41,7 +41,7 @@ const parseLocalDate = (dateString: string): Date => {
   return new Date(dateString);
 };
 
-const AddToTripModal: React.FC<AddToTripModalProps> = ({ isVisible, onClose, place }) => {
+const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place, onAdded }) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(false);
   const [showNewTripModal, setShowNewTripModal] = useState(false);

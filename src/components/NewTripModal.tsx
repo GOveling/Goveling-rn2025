@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '~/lib/supabase';
+import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 
 // Helper function to format date as YYYY-MM-DD in local timezone
 const formatDateForStorage = (date: Date): string => {
@@ -227,6 +228,9 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
 
       console.log('📞 Llamando onTripCreated...');
       onTripCreated(data.id);
+
+      console.log('🔄 Triggering global trip refresh...');
+      triggerGlobalTripRefresh();
 
       // Importante: no cerrar el modal inmediatamente si hay alguna alerta por mostrarse;
       // delegamos el cierre al contenedor (AddToTripModal) vía onTripCreated -> handleCreateTrip.

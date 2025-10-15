@@ -3,7 +3,7 @@ export const options = { headerShown: false };
 import { useTheme } from '~/lib/theme';
 import React from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, RefreshControl, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
 import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip, getUpcomingTripsCount } from '~/lib/home';
@@ -32,6 +32,7 @@ export default function HomeTab() {
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
   const [currentTrip, setCurrentTrip] = React.useState<any>(null);
+  const [refreshing, setRefreshing] = React.useState<boolean>(false);
   const recomputeSavedPlaces = React.useCallback(async () => {
     console.log('🏠 HomeTab: recomputeSavedPlaces called');
     try {
@@ -43,6 +44,44 @@ export default function HomeTab() {
       console.log('🏠 HomeTab: Error recomputing saved places:', e);
     }
   }, []);
+
+  const onRefresh = React.useCallback(async () => {
+    console.log('🔄 HomeTab: Pull-to-refresh triggered');
+    setRefreshing(true);
+    
+    try {
+      // Refresh all data in parallel
+      await Promise.all([
+        recomputeSavedPlaces(),
+        (async () => {
+          const trip = await getActiveOrNextTrip();
+          setCurrentTrip(trip);
+        })(),
+        (async () => {
+          const upcomingCount = await getUpcomingTripsCount();
+          setUpcomingTripsCount(upcomingCount);
+        })(),
+        (async () => {
+          const p = await getCurrentPosition();
+          if (p) {
+            setPos(p);
+            const [cityName, weather] = await Promise.all([
+              reverseCityCached(p.lat, p.lng),
+              getWeatherCached(p.lat, p.lng, units)
+            ]);
+            setCity(cityName || 'Ubicación');
+            setTemp(weather?.temp);
+          }
+        })()
+      ]);
+      
+      console.log('✅ HomeTab: Pull-to-refresh completed successfully');
+    } catch (error) {
+      console.error('❌ HomeTab: Pull-to-refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [recomputeSavedPlaces, units]);
 
   React.useEffect(() => {
     registerDeviceToken().catch(() => { });
@@ -184,10 +223,124 @@ export default function HomeTab() {
     };
   }, [recomputeSavedPlaces]);
 
+  // Realtime subscription to trips changes to update upcoming trips count
+  React.useEffect(() => {
+    let tripsChannel: any;
+    let collaboratorsChannel: any;
+    let userId: string | undefined;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+
+    (async () => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        userId = user?.user?.id;
+        if (!userId) return;
+
+        console.log('🏠 HomeTab: Setting up realtime subscription for trips changes');
+        
+        const debouncedRefresh = async () => {
+          if (debounceTimeout) {
+            clearTimeout(debounceTimeout);
+          }
+          debounceTimeout = setTimeout(async () => {
+            console.log('🏠 HomeTab: Executing debounced trips refresh after 2 seconds');
+            try {
+              const upcomingCount = await getUpcomingTripsCount();
+              setUpcomingTripsCount(upcomingCount);
+              console.log('🏠 HomeTab: Updated upcoming trips count to:', upcomingCount);
+            } catch (error) {
+              console.error('🏠 HomeTab: Error updating upcoming trips count:', error);
+            }
+            debounceTimeout = null;
+          }, 2000); // 2 second debounce to prevent excessive refreshes
+        };
+
+        // Listen to trips table changes
+        tripsChannel = supabase
+          .channel(`home-trips-${userId}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'trips',
+            filter: `owner_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🏠 HomeTab: Trip creation detected');
+            debouncedRefresh();
+          })
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'trips',
+            filter: `owner_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🏠 HomeTab: Trip update detected');
+            debouncedRefresh();
+          })
+          .on('postgres_changes', {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'trips',
+            filter: `owner_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🏠 HomeTab: Trip deletion detected');
+            debouncedRefresh();
+          })
+          .subscribe();
+
+        // Also listen to trip_collaborators changes (when user is added/removed from trips)
+        collaboratorsChannel = supabase
+          .channel(`home-collaborators-${userId}`)
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'trip_collaborators',
+            filter: `user_id=eq.${userId}`
+          }, (payload) => {
+            console.log('🏠 HomeTab: Trip collaboration change detected');
+            debouncedRefresh();
+          })
+          .subscribe();
+
+      } catch (e) {
+        console.log('🏠 HomeTab: Realtime subscription error (trips):', e);
+      }
+    })();
+
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      try {
+        if (tripsChannel) {
+          console.log('🏠 HomeTab: Cleaning up trips realtime subscription');
+          supabase.removeChannel(tripsChannel);
+        }
+        if (collaboratorsChannel) {
+          console.log('🏠 HomeTab: Cleaning up collaborators realtime subscription');
+          supabase.removeChannel(collaboratorsChannel);
+        }
+      } catch (e) {
+        console.log('🏠 HomeTab: Error cleaning up trips subscriptions:', e);
+      }
+    };
+  }, []);
+
   return (
     <TripRefreshProvider>
       <StatusBar barStyle="light-content" />
-      <ScrollView style={{ flex: 1, backgroundColor: '#F7F7FA' }}>
+      <ScrollView 
+        style={{ flex: 1, backgroundColor: '#F7F7FA' }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#4A90E2', '#9B59B6']} // Android
+            tintColor="#4A90E2" // iOS
+            title="Actualizando..." // iOS
+            titleColor="#666" // iOS
+          />
+        }
+      >
         {/* Header con gradiente */}
         <LinearGradient
           colors={['#4A90E2', '#9B59B6']}

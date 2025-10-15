@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions, Pressable, Platform, Image, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Dimensions, Pressable, Platform, Image, Modal, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { supabase } from '~/lib/supabase';
@@ -42,6 +42,7 @@ export default function ProfileScreen(){
 
   const [showPersonalModal, setShowPersonalModal] = React.useState(false);
   const [showProfileEditModal, setShowProfileEditModal] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   React.useEffect(() => {
     console.log('🎯 ProfileScreen: showPersonalModal state changed to:', showPersonalModal);
@@ -80,9 +81,26 @@ export default function ProfileScreen(){
         }));
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Error loading travel stats:', error);
     }
   };
+
+  const onRefresh = React.useCallback(async () => {
+    console.log('🔄 ProfileScreen: Pull-to-refresh triggered');
+    setRefreshing(true);
+    
+    try {
+      await Promise.all([
+        loadProfileData(),
+        loadTravelStats()
+      ]);
+      console.log('✅ ProfileScreen: Pull-to-refresh completed successfully');
+    } catch (error) {
+      console.error('❌ ProfileScreen: Pull-to-refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const loadTravelStats = async () => {
     try {
@@ -285,7 +303,20 @@ export default function ProfileScreen(){
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#6366F1', '#8B5CF6']} // Android - profile theme colors
+          tintColor="#6366F1" // iOS
+          title="Actualizando perfil..." // iOS
+          titleColor="#666" // iOS
+        />
+      }
+    >
       {/* Header con Avatar y Info Personal */}
       <View style={styles.headerSection}>
         <View style={styles.avatarContainer}>

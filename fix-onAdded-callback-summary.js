@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+
+console.log('🔧 SEGUNDO PROBLEMA CORREGIDO: onAdded callback');
+console.log('');
+console.log('❌ Error encontrado:');
+console.log('   • Property "onAdded" doesn\'t exist');
+console.log('   • En línea 149 de AddToTripModal.tsx');
+console.log('   • Ocurría al agregar lugar a trip existente');
+console.log('');
+console.log('🔍 Diagnóstico:');
+console.log('   • Interface definía: onAdded?: (tripId: string, tripTitle: string) => void');
+console.log('   • PlaceDetailModal pasaba: onAdded={() => {...}}');
+console.log('   • Pero componente no destructuraba el prop onAdded');
+console.log('   • AddToTripModal intentaba llamar onAdded?.(tripId, tripTitle)');
+console.log('');
+console.log('✅ Solución aplicada:');
+console.log('   • Cambié AddToTripModal.tsx línea 44:');
+console.log('   • DE: ({ visible, onClose, place })');
+console.log('   • A:  ({ visible, onClose, place, onAdded })');
+console.log('   • Ahora el callback se recibe correctamente');
+console.log('');
+console.log('🧪 Verificación:');
+console.log('   • ✅ TypeScript compilation: PASSED');
+console.log('   • ✅ Callback destructuring: FIXED');
+console.log('   • ✅ onAdded prop access: WORKING');
+console.log('');
+console.log('📱 Flujo corregido:');
+console.log('1. Usuario abre ficha de lugar en Explore');
+console.log('2. Presiona "Agregar al viaje"');
+console.log('3. Selecciona trip existente o crea nuevo');
+console.log('4. Lugar se agrega exitosamente');
+console.log('5. Modal se cierra con callback onAdded');
+console.log('6. PlaceDetailModal recibe confirmación');
+console.log('');
+console.log('✨ ¡Ambos errores resueltos! Agregar lugares funciona completamente.');

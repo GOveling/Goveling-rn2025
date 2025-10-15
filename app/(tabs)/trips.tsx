@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,6 +18,7 @@ export default function TripsTab() {
   const [showNewTripModal, setShowNewTripModal] = useState(false);
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Stats data - these would come from your database
   const [stats, setStats] = useState({
@@ -200,6 +201,20 @@ export default function TripsTab() {
     }
   };
 
+  const onRefresh = React.useCallback(async () => {
+    console.log('🔄 TripsTab: Pull-to-refresh triggered');
+    setRefreshing(true);
+    
+    try {
+      await loadTripStats();
+      console.log('✅ TripsTab: Pull-to-refresh completed successfully');
+    } catch (error) {
+      console.error('❌ TripsTab: Pull-to-refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadTripStats();
   }, []);
@@ -233,14 +248,25 @@ export default function TripsTab() {
 
       channel = supabase
         .channel('trips-tab-realtime')
-        // Cambios directos en trips (owner transfiere, etc.)
+        // Cambios directos en trips - ahora incluye INSERT, UPDATE, DELETE
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, (payload) => {
           if (!isActive) return;
           const newOwnerId = (payload as any)?.new?.owner_id;
           const oldOwnerId = (payload as any)?.old?.owner_id;
-            if (newOwnerId === userId || oldOwnerId === userId) {
-              safeReload();
-            }
+          console.log('🔄 TripsTab: Trip change detected:', payload.eventType, { newOwnerId, oldOwnerId, userId });
+          
+          // For INSERT events, check if new trip belongs to current user
+          if (payload.eventType === 'INSERT' && newOwnerId === userId) {
+            console.log('🔄 TripsTab: New trip created by user, refreshing...');
+            safeReload();
+            return;
+          }
+          
+          // For UPDATE/DELETE events, check if trip belonged to current user
+          if (newOwnerId === userId || oldOwnerId === userId) {
+            console.log('🔄 TripsTab: Trip modified/deleted for user, refreshing...');
+            safeReload();
+          }
         })
         // Cambios en colaboradores: refrescar si afecta al usuario directamente o a un trip que es suyo
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_collaborators' }, (payload) => {
@@ -288,6 +314,16 @@ export default function TripsTab() {
           paddingTop: Platform.OS === 'ios' ? 60 : 20
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#8B5CF6', '#EC4899']} // Android - theme colors
+            tintColor="#8B5CF6" // iOS
+            title="Actualizando viajes..." // iOS
+            titleColor="#666" // iOS
+          />
+        }
       >
         {/* Header */}
         <View style={{ marginBottom: 24 }}>
