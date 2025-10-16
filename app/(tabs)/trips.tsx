@@ -9,11 +9,15 @@ import NewTripModal from '../../src/components/NewTripModal';
 import TripCard from '../../src/components/TripCard';
 import { useFocusEffect } from '@react-navigation/native';
 import { logger } from '~/utils/logger';
+import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
 export default function TripsTab() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
   const { openModal } = useLocalSearchParams();
+
+  // RTK Query: Get cached trips breakdown (shared with HomeTab)
+  const { data: breakdown, isLoading: tripsLoading, refetch: refetchTrips } = useGetTripsBreakdownQuery();
 
   // Estados
   const [showNewTripModal, setShowNewTripModal] = useState(false);
@@ -21,12 +25,12 @@ export default function TripsTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Stats data - these would come from your database
-  const [stats, setStats] = useState({
-    totalTrips: 0,
-    upcomingTrips: 0,
-    groupTrips: 0
-  });
+  // Stats data derived from RTK Query
+  const stats = {
+    totalTrips: breakdown?.counts.total || 0,
+    upcomingTrips: breakdown?.counts.upcoming || 0,
+    groupTrips: 0 // Will be calculated from team data
+  };
 
   // Check if we should open the modal automatically from query params
   useEffect(() => {
@@ -44,23 +48,14 @@ export default function TripsTab() {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) return;
 
-      // Obtener tanto los trips propios como los trips donde es colaborador usando consultas más simples
-      const { data: allRelevantTrips, error: tripsError } = await supabase
-        .from('trips')
-        .select('*')
-        .or(`owner_id.eq.${user.user.id},user_id.eq.${user.user.id}`) // fallback por si aún se usa user_id
-        .neq('status', 'cancelled');
+      // Use RTK Query breakdown as base (leverages cache from HomeTab)
+      const baseTrips = breakdown?.all || [];
+      logger.debug('🧪 TripsTab: Using RTK Query cache, base trips count:', baseTrips.length);
 
-      if (tripsError) {
-        logger.error('Error loading trips:', tripsError);
-        return;
-      }
-
-      logger.debug('🧪 TripsTab Debug: Raw trips for current user (owner_id/user_id match):',
-        (allRelevantTrips || []).map(t => ({ id: t.id, title: t.title, owner_id: t.owner_id, user_id: t.user_id }))
-      );
-
-      // También buscar trips donde es colaborador (y no owner) para incluirlos
+      // Get trip IDs from breakdown for team data enrichment
+      const tripIds = baseTrips.map(t => t.id);
+      
+      // Also check for collaborator trips not in breakdown
       const { data: collabTripIds, error: collabError } = await supabase
         .from('trip_collaborators')
         .select('trip_id')
@@ -71,14 +66,21 @@ export default function TripsTab() {
       }
 
       const collabSet = new Set((collabTripIds || []).map(c => c.trip_id));
-  logger.debug('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
+      logger.debug('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
 
-      // Unificar: trips directos + placeholders para collab-only (si alguno no estaba en la lista inicial)
+      // Combine base trips with any missing collab trips
       const baseTripsMap = new Map<string, any>();
-      (allRelevantTrips || []).forEach(t => baseTripsMap.set(t.id, t));
+      baseTrips.forEach(t => baseTripsMap.set(t.id, { 
+        ...t, 
+        title: t.name, // Map 'name' from breakdown to 'title' for TripsTab
+        id: t.id 
+      }));
+      
+      // Add placeholder for collab-only trips not in breakdown
       collabSet.forEach(id => {
         if (!baseTripsMap.has(id)) baseTripsMap.set(id, { id, owner_id: null });
       });
+      
       logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
       const unifiedTrips = Array.from(baseTripsMap.values());
 
@@ -184,15 +186,15 @@ export default function TripsTab() {
 
       // Group trips: collaboratorsCount includes owner (+1 baked in team helper logic).
       // We consider group if total participants > 1.
-      const groupTrips = sortedTrips?.filter(trip => {
+      const groupTripsCount = sortedTrips?.filter(trip => {
         const count = trip.collaboratorsCount ?? (1 + (trip.collaborators?.length || 0));
         return count > 1;
       }).length || 0;
 
-      setStats({
-        totalTrips,
-        upcomingTrips,
-        groupTrips
+      logger.debug('🧪 TripsTab: Stats calculated -', {
+        total: sortedTrips.length,
+        upcoming: upcomingTrips,
+        group: groupTripsCount
       });
     } catch (error) {
       logger.error('Error loading trip stats:', error);
@@ -207,6 +209,9 @@ export default function TripsTab() {
     setRefreshing(true);
     
     try {
+      // Refetch RTK Query cache first (shared with HomeTab)
+      await refetchTrips();
+      // Then reload trip stats with team data
       await loadTripStats();
       logger.debug('✅ TripsTab: Pull-to-refresh completed successfully');
     } catch (error) {
@@ -214,7 +219,7 @@ export default function TripsTab() {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [refetchTrips]);
 
   useEffect(() => {
     loadTripStats();
