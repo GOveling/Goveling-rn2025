@@ -138,7 +138,9 @@ export default function TripsTab() {
         created_at: t.created_at 
       })));
 
+      logger.debug('🔍🔍🔍 CRITICAL: About to setTrips with length:', sortedTrips.length);
       setTrips(sortedTrips);
+      logger.debug('🔍🔍🔍 CRITICAL: After setTrips called');
 
       const totalTrips = sortedTrips.length || 0;
 
@@ -311,6 +313,15 @@ export default function TripsTab() {
       if (channel) supabase.removeChannel(channel);
     };
   }, []);
+
+  // DEBUG: Log render state
+  console.log('🔍🔍🔍 TRIPSTAB RENDER:', {
+    loading,
+    'trips.length': trips.length,
+    'trips[0]': trips[0],
+    'breakdown?.all.length': breakdown?.all?.length
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
       <ScrollView

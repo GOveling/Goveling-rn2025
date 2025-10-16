@@ -11,6 +11,7 @@ export interface TripStats {
     id: string;
     full_name?: string;
     avatar_url?: string;
+    email?: string;
   }>;
   firstPlaceImage?: string;
 }
@@ -192,7 +193,8 @@ export const getTripStats = async (tripId: string): Promise<TripStats> => {
     const formattedCollaborators = collaboratorsSafe.map(c => ({
       id: c.id,
       full_name: c.full_name,
-      avatar_url: c.avatar_url
+      avatar_url: c.avatar_url,
+      email: c.email
     }));
 
     // Obtener imagen del primer lugar (si existe)

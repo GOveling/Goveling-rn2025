@@ -10,6 +10,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { getCurrentUser, resolveUserRoleForTrip, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 import { supabase } from '~/lib/supabase';
 import { CountryImage } from './CountryImage';
+import { useGetProfileQuery } from '../store/api/userApi';
 
 interface TripData {
   id: string;
@@ -42,11 +43,27 @@ const parseLocalDate = (dateString: string): Date => {
   return new Date(dateString);
 };
 
+// UPDATED: Avatar fix using RTK Query - 2025-10-16
 const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
-  console.log('🎨 TripCard: Rendering TripCard for trip:', { id: trip.id, title: trip.title });
+  console.log('🎨🎨🎨 TripCard UPDATED VERSION: Rendering for trip:', { id: trip.id, title: trip.title });
 
   const router = useRouter();
   const { user } = useAuth();
+  
+  // RTK Query: Get current user profile (IGUAL QUE PROFILE.TSX)
+  const { data: currentUserProfile, isLoading, isError, error } = useGetProfileQuery();
+  
+  // DEBUG: Ver el estado del RTK Query
+  console.log('🔍🔍🔍 RTK QUERY STATUS (NEW VERSION):', {
+    isLoading,
+    isError,
+    error: error ? JSON.stringify(error) : 'none',
+    hasData: !!currentUserProfile,
+    'currentUserProfile?.full_name': currentUserProfile?.full_name,
+    'currentUserProfile?.avatar_url': currentUserProfile?.avatar_url,
+    'user?.id': user?.id
+  });
+  
   const [currentTrip, setCurrentTrip] = useState(trip);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
@@ -62,6 +79,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     id: string;
     full_name?: string;
     avatar_url?: string;
+    email?: string;
   } | null>(null);
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
   const [pendingInvites, setPendingInvites] = useState(0);
@@ -164,7 +182,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select('id, full_name, avatar_url, email')
         .eq('id', ownerId)
         .single();
 
@@ -174,6 +192,13 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       }
 
       if (profile) {
+        console.log('🔍 TripCard: Owner profile loaded:', {
+          id: profile.id,
+          full_name: profile.full_name,
+          has_avatar: !!profile.avatar_url,
+          avatar_url: profile.avatar_url,
+          email: profile.email
+        });
         setOwnerProfile(profile);
       }
     } catch (error) {
@@ -275,88 +300,110 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     return tripData.firstPlaceImage;
   };
 
-  const getUserInitials = (fullName?: string) => {
-    if (!fullName) return 'U';
-
-    const names = fullName.trim().split(' ');
-    if (names.length === 1) {
-      return names[0].charAt(0).toUpperCase();
+  const getUserInitials = (fullName?: string, email?: string) => {
+    // MISMA LÓGICA QUE PROFILE.TSX
+    if (fullName && fullName.trim()) {
+      return fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     }
-
-    return (names[0].charAt(0) + (names[names.length - 1].charAt(0))).toUpperCase();
+    
+    // Fallback: usar email
+    if (email && email.trim()) {
+      return email.split('@')[0].substring(0, 2).toUpperCase();
+    }
+    
+    return 'U';
   };
 
   const renderOwnerAvatar = () => {
     const ownerId = trip.owner_id || trip.user_id;
     const isCurrentUserOwner = user?.id === ownerId;
 
-    // Si el usuario actual es el dueño del trip
-    if (isCurrentUserOwner) {
-      if (ownerProfile?.avatar_url) {
-        return (
-          <Image
-            source={{ uri: ownerProfile.avatar_url }}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-            }}
-          />
-        );
-      } else {
-        return (
-          <View style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: '#8B5CF6',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Text style={{
-              color: '#FFFFFF',
-              fontWeight: '700',
-              fontSize: 12
-            }}>
-              YO
-            </Text>
-          </View>
-        );
+    console.log('�🔴🔴 AVATAR FIX v2:', {
+      isCurrentUserOwner,
+      userId: user?.id,
+      ownerId,
+      hasCurrentUserProfile: !!currentUserProfile,
+      currentUserAvatarUrl: currentUserProfile?.avatar_url,
+      currentUserFullName: currentUserProfile?.full_name,
+      hasOwnerProfile: !!ownerProfile,
+      ownerProfileAvatarUrl: ownerProfile?.avatar_url,
+      ownerProfileFullName: ownerProfile?.full_name
+    });
+
+    // ALWAYS use RTK Query for current user, regardless of ownerProfile
+    let avatarUrl: string | undefined;
+    let fullName: string | undefined;
+    let initials = 'U';
+
+    // Use currentUserProfile if: 
+    // 1. It's the current user's trip (isCurrentUserOwner is true), OR
+    // 2. Trip has no owner AND we have currentUserProfile data (fallback for trips missing owner_id)
+    const shouldUseCurrentUser = isCurrentUserOwner || (!ownerId && !ownerProfile && currentUserProfile);
+
+    if (shouldUseCurrentUser && currentUserProfile) {
+      // Current user: ALWAYS use RTK Query (like profile.tsx does)
+      avatarUrl = currentUserProfile.avatar_url;
+      fullName = currentUserProfile.full_name;
+      
+      console.log('🟢 Using currentUserProfile:', { avatarUrl, fullName });
+      
+      if (fullName) {
+        initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
       }
-    } else {
-      // Si es otro usuario (colaborador), mostrar su avatar o iniciales
-      if (ownerProfile?.avatar_url) {
-        return (
-          <Image
-            source={{ uri: ownerProfile.avatar_url }}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-            }}
-          />
-        );
-      } else {
-        return (
-          <View style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: '#8B5CF6',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Text style={{
-              color: '#FFFFFF',
-              fontWeight: '700',
-              fontSize: 12
-            }}>
-              {getUserInitials(ownerProfile?.full_name)}
-            </Text>
-          </View>
-        );
+    } else if (ownerProfile) {
+      // Other user: use ownerProfile from getTripWithTeam
+      avatarUrl = ownerProfile.avatar_url;
+      fullName = ownerProfile.full_name;
+      
+      console.log('🟡 Using ownerProfile:', { avatarUrl, fullName });
+      
+      if (fullName) {
+        initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
       }
     }
+
+    console.log('� Final avatar data:', { avatarUrl, fullName, initials });
+
+    // Render image if we have URL
+    if (avatarUrl) {
+      return (
+        <Image 
+          source={{ uri: avatarUrl }}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+          }}
+          onError={(error) => {
+            console.error('🔴 Avatar image failed to load:', avatarUrl, error);
+          }}
+        />
+      );
+    }
+    
+    // Fallback: LinearGradient with initials (like profile.tsx)
+    return (
+      <LinearGradient
+        colors={['#4F8EF7', '#FF8C42']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{
+          color: '#FFFFFF',
+          fontWeight: '700',
+          fontSize: 12
+        }}>
+          {initials}
+        </Text>
+      </LinearGradient>
+    );
   };
 
   const renderCountryBadges = () => {
@@ -406,9 +453,11 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               paddingVertical: 6,
               borderWidth: 1,
               borderColor: 'rgba(0, 0, 0, 0.08)',
-              boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
-    elevation: 2,
-              elevation: 1
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.05,
+              shadowRadius: 2,
+              elevation: 2
             }}>
               <Text style={{ fontSize: 14, marginRight: 4 }}>
                 {flag}
@@ -455,9 +504,11 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       backgroundColor: '#FFFFFF',
       borderRadius: 24,
       overflow: 'hidden',
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.12)',
-    elevation: 12,
-      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 12,
       marginBottom: 24
     }}>
       {/* Header con imagen de país de fondo y overlay de texto */}
@@ -516,7 +567,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               <Text style={{ 
                 fontSize: 32, 
                 marginBottom: 8,
-                textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 3,
               }}>
                 {getFirstCountryFlag()}
               </Text>
@@ -525,7 +578,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 fontWeight: '700',
                 color: '#FFFFFF',
                 textAlign: 'center',
-                textShadow: '1px 1px 4px rgba(0,0,0,0.8)',
+                textShadowColor: 'rgba(0,0,0,0.8)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 4,
                 letterSpacing: 1,
               }}>
                 {getCountryName(tripData.countryCodes[0]) || tripData.countryCodes[0]}
@@ -745,7 +800,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                     fontWeight: '700',
                     fontSize: 11
                   }}>
-                    {getUserInitials(collaborator.full_name)}
+                    {getUserInitials(collaborator.full_name, collaborator.email)}
                   </Text>
                 </View>
               )}

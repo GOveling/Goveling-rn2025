@@ -199,15 +199,43 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       const minimal = team.collaborators.some(c => !c.full_name && !c.avatar_url);
       setHasMinimalProfiles(minimal);
 
+      console.log('🔍 TripDetailsModal: Trip prop data:', {
+        'trip.id': trip.id,
+        'trip.owner_id': trip.owner_id,
+        'trip.user_id': trip.user_id,
+        'trip.title': trip.title,
+      });
+
+      console.log('🔍 TripDetailsModal: Team data:', {
+        'team.owner': team.owner,
+        'team.owner?.id': team.owner?.id,
+        'team.collaborators.length': team.collaborators.length,
+      });
+
       const ownerId = team.owner?.id || trip.owner_id || trip.user_id || null;
+      
+      // 🔥 FIX: If ownerId is still null but user exists, assume current user is owner
+      // This handles cases where trip lacks owner_id/user_id but is in user's trip list
+      const effectiveOwnerId = ownerId || user?.id || null;
+      
       const resolved = await resolveUserRoleForTrip(user?.id, {
         id: trip.id,
-        owner_id: ownerId,
+        owner_id: effectiveOwnerId,
         user_id: trip.user_id ?? null,
       });
-      const finalRole = (user?.id && ownerId && user.id === ownerId) ? 'owner' : resolved;
+      const finalRole = (user?.id && effectiveOwnerId && user.id === effectiveOwnerId) ? 'owner' : resolved;
 
-      console.log('🔑 TripDetailsModal: Role resolution (unified):', { ownerId, finalRole });
+      console.log('🔑 TripDetailsModal: Role resolution (unified):', { 
+        userId: user?.id,
+        ownerId, 
+        effectiveOwnerId,
+        'team.owner?.id': team.owner?.id,
+        'trip.owner_id': trip.owner_id,
+        'trip.user_id': trip.user_id,
+        resolved, 
+        finalRole,
+        'user.id === effectiveOwnerId': user?.id === effectiveOwnerId,
+      });
       setCurrentRole(finalRole);
     } catch (error) {
       console.error('❌ TripDetailsModal: Error loading users (unified):', error);
@@ -528,7 +556,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       )}
 
       {/* Botón de editar - Solo para propietario y editores */}
-      {(currentRole === 'owner' || currentRole === 'editor') && (
+      {(() => {
+        console.log('🎯 TripDetailsModal: Checking Edit Button visibility:', { 
+          currentRole, 
+          shouldShow: currentRole === 'owner' || currentRole === 'editor',
+          isOwner: currentRole === 'owner',
+          isEditor: currentRole === 'editor',
+        });
+        return (currentRole === 'owner' || currentRole === 'editor');
+      })() && (
         <TouchableOpacity
           onPress={() => setShowEditModal(true)}
           style={{ marginTop: 20 }}
