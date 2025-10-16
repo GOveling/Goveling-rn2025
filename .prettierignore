@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.expo/
+.expo-shared/
+web-build/
+
+# iOS
+ios/Pods/
+ios/build/
+*.pbxuser
+*.xcworkspace
+!default.xcworkspace
+
+# Android
+android/app/build/
+android/.gradle/
+*.apk
+*.aab
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment and config
+.env
+.env.local
+.env.*.local
+google-services.json
+GoogleService-Info.plist
+
+# Generated files
+*.log
+*.cache
+.DS_Store
+*.tsbuildinfo
+
+# Documentation
+*.md
+!README.md
+
+# Migrations
+supabase/migrations/*.sql

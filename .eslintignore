@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.expo/
+.expo-shared/
+web-build/
+
+# iOS
+ios/
+
+# Android
+android/
+
+# Config files
+*.config.js
+babel.config.js
+metro.config.js
+webpack.config.js
+
+# Generated files
+coverage/
+*.log
+
+# Migrations
+supabase/

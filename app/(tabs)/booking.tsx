@@ -13,43 +13,43 @@ export default function BookingTab() {
       icon: '✈️',
       description: 'Encuentra las mejores ofertas',
       color: '#007AFF',
-      route: '/booking/flights'
+      route: '/booking/flights',
     },
     {
       title: 'Hoteles',
       icon: '🏨',
       description: 'Estadías cómodas',
       color: '#34C759',
-      route: '/booking/hotels'
+      route: '/booking/hotels',
     },
     {
       title: 'Transporte',
       icon: '�',
       description: 'Múltiples opciones de viaje',
       color: '#8B5CF6',
-      route: '/booking/transport'
+      route: '/booking/transport',
     },
     {
       title: 'Tours y Actividades',
       icon: '📍',
       description: 'Experiencias guiadas',
       color: '#FF9500',
-      route: '/booking/tours'
+      route: '/booking/tours',
     },
     {
       title: 'eSIMs',
       icon: '📱',
       description: 'Mantente conectado',
       color: '#EC4899',
-      route: '/booking/esim'
+      route: '/booking/esim',
     },
     {
       title: 'Restaurantes',
       icon: '🍴',
       description: 'Reservar mesas',
       color: '#DC2626',
-      route: '/booking/restaurants'
-    }
+      route: '/booking/restaurants',
+    },
   ];
 
   const handleBookingPress = (option: any) => {
@@ -63,40 +63,46 @@ export default function BookingTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ 
+        contentContainerStyle={{
           padding: 16,
-          paddingTop: Platform.OS === 'ios' ? 60 : 20
+          paddingTop: Platform.OS === 'ios' ? 60 : 20,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={{ marginBottom: 32 }}>
-          <Text style={{ 
-            fontSize: 32, 
-            fontWeight: '900', 
-            color: '#1A1A1A',
-            marginBottom: 8
-          }}>
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: '900',
+              color: '#1A1A1A',
+              marginBottom: 8,
+            }}
+          >
             Reservas
           </Text>
-          <Text style={{ 
-            fontSize: 16,
-            color: '#666666',
-            fontWeight: '500'
-          }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: '#666666',
+              fontWeight: '500',
+            }}
+          >
             Reserva lo esencial para tu viaje
           </Text>
         </View>
 
         {/* Booking Options Grid */}
-        <View style={{ 
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          gap: 16
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            gap: 16,
+          }}
+        >
           {bookingOptions.map((option, index) => (
             <TouchableOpacity
               key={index}
@@ -115,50 +121,58 @@ export default function BookingTab() {
                 shadowRadius: 12,
                 elevation: 4,
                 borderWidth: 1,
-                borderColor: 'rgba(0,0,0,0.05)'
+                borderColor: 'rgba(0,0,0,0.05)',
               }}
             >
               {/* Icon Circle */}
-              <View style={{
-                width: 64,
-                height: 64,
-                backgroundColor: option.color,
-                borderRadius: 32,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-                shadowColor: option.color,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 4
-              }}>
-                <Text style={{ 
-                  fontSize: 28,
-                  color: '#FFFFFF'
-                }}>
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  backgroundColor: option.color,
+                  borderRadius: 32,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                  shadowColor: option.color,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 28,
+                    color: '#FFFFFF',
+                  }}
+                >
                   {option.icon}
                 </Text>
               </View>
-              
+
               {/* Title */}
-              <Text style={{ 
-                fontSize: 18, 
-                fontWeight: '700', 
-                color: '#1A1A1A',
-                marginBottom: 8,
-                textAlign: 'center'
-              }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: '#1A1A1A',
+                  marginBottom: 8,
+                  textAlign: 'center',
+                }}
+              >
                 {option.title}
               </Text>
-              
+
               {/* Description */}
-              <Text style={{ 
-                fontSize: 14, 
-                color: '#666666',
-                textAlign: 'center',
-                lineHeight: 20
-              }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: '#666666',
+                  textAlign: 'center',
+                  lineHeight: 20,
+                }}
+              >
                 {option.description}
               </Text>
             </TouchableOpacity>
