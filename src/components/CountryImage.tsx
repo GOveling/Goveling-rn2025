@@ -108,10 +108,7 @@ export const CountryImage: React.FC<CountryImageProps> = ({
       justifyContent: 'center',
       alignItems: 'center',
       // Optimizaciones para sombras en iOS y Android
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
       elevation: 3, // Android
     },
     style

@@ -191,10 +191,7 @@ export default function Home(){
             backgroundColor: 'white',
             borderRadius: 16,
             padding: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
+            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
             elevation: 5
           }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -294,10 +291,7 @@ export default function Home(){
             backgroundColor: 'white',
             borderRadius: 16,
             padding: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
+            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
             elevation: 5
           }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

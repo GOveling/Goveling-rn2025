@@ -83,6 +83,6 @@ export const typography = {
 };
 
 export const elevations = {
-  card: { shadowColor:'#000', shadowOpacity:0.06, shadowRadius:12, elevation:2 },
-  raised: { shadowColor:'#000', shadowOpacity:0.12, shadowRadius:20, elevation:4 }
+  card: { boxShadow: '0px 0px 12px rgba(0, 0, 0, 0.06)', elevation:2 },
+  raised: { boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.12)', elevation:4 }
 };

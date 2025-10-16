@@ -607,7 +607,7 @@ const styleObj = {
   uncertainButtonText: { fontSize: 16, color: '#666', marginLeft: 8 } as TextStyle,
   uncertainButtonTextActive: { color: '#007AFF', fontWeight: '600' } as TextStyle,
   dateContainer: { flexDirection: 'row', gap: 12 } as ViewStyle,
-  dateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', minHeight: 56, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 } as ViewStyle,
+  dateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', minHeight: 56, boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)', elevation: 2 } as ViewStyle,
   dateButtonText: { fontSize: 16, color: '#1A1A1A', marginLeft: 8, flex: 1, fontWeight: '500' } as TextStyle,
   pickerButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' } as ViewStyle,
   pickerButtonText: { fontSize: 16, color: '#999' } as TextStyle,
