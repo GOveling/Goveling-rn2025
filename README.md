@@ -334,3 +334,33 @@ Se reemplazaron textos comunes en pantallas raíz y se añadió utilidades; el s
 - **Visual QA**: padding base 16, botones 44pt (ajuste de `paddingVertical`), títulos y fondos verificados en pantallas clave.
 - **i18n auto-translation** (runtime): si falta una traducción en `auto.*`, se intenta mini-diccionario; si defines `EXPO_PUBLIC_I18N_EDGE`, se consultará una Edge Function y se cacheará. Fallback visible con pseudolocalización para confirmar cobertura.
 - Herramienta `tools/bake-translations.js` para consolidar traducciones runtime en tus JSON de locales.
+
+---
+
+## 📚 Documentación del Proyecto
+
+### Documentación Activa (Raíz)
+- **[README.md](README.md)** - Documentación principal y versiones
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Guía completa de despliegue
+- **[API_CONFIGURATION.md](API_CONFIGURATION.md)** - Configuración de APIs y variables de entorno
+- **[SECURITY_SETUP.md](SECURITY_SETUP.md)** - Configuración de seguridad
+- **[SECURITY_ALERT.md](SECURITY_ALERT.md)** - Alertas de seguridad activas
+- **[EAS-UPDATE-GUIDE.md](EAS-UPDATE-GUIDE.md)** - Guía de actualizaciones OTA con EAS
+- **[GOOGLE_PLACES_SETUP.md](GOOGLE_PLACES_SETUP.md)** - Setup de Google Places API
+- **[MAPLIBRE-UNIFIED-SYSTEM.md](MAPLIBRE-UNIFIED-SYSTEM.md)** - Sistema unificado de mapas
+- **[LOCATION-BUTTON-FEATURE.md](LOCATION-BUTTON-FEATURE.md)** - Feature de botón de ubicación
+- **[EXPLORE_LUGARES_FLOW.md](EXPLORE_LUGARES_FLOW.md)** - Flujo de exploración de lugares
+- **[OPTIMIZATION_SUMMARY.md](OPTIMIZATION_SUMMARY.md)** - Resumen de optimizaciones
+
+### Historial de Implementaciones
+Ver **[docs/changelog/](docs/changelog/)** para documentación histórica de fixes, mejoras y optimizaciones ya implementadas.
+
+---
+
+
+
+## v157 changes
+- **Android search fallback** en Explore: TextInput vinculado al mismo estado `search` que la barra nativa de iOS.
+- **Visual QA**: padding base 16, botones 44pt (ajuste de `paddingVertical`), títulos y fondos verificados en pantallas clave.
+- **i18n auto-translation** (runtime): si falta una traducción en `auto.*`, se intenta mini-diccionario; si defines `EXPO_PUBLIC_I18N_EDGE`, se consultará una Edge Function y se cacheará. Fallback visible con pseudolocalización para confirmar cobertura.
+- Herramienta `tools/bake-translations.js` para consolidar traducciones runtime en tus JSON de locales.
