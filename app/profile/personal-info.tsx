@@ -63,7 +63,7 @@ export default function PersonalInfoScreen() {
     loading: citiesLoading,
     error: citiesError,
     loadCitiesForCountry,
-    clearResults
+    clearResults,
   } = useCitiesByCountry();
 
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -98,9 +98,7 @@ export default function PersonalInfoScreen() {
     let filtered = cities;
     if (citySearchQuery.trim()) {
       const query = citySearchQuery.toLowerCase().trim();
-      filtered = cities.filter(city =>
-        city.city.toLowerCase().includes(query)
-      );
+      filtered = cities.filter((city) => city.city.toLowerCase().includes(query));
     }
 
     // Ordenar por población (ciudades más grandes primero) y luego alfabéticamente
@@ -124,34 +122,36 @@ export default function PersonalInfoScreen() {
   // Función para cargar más ciudades
   const loadMoreCities = () => {
     if (displayedCitiesCount < cities.length) {
-      setDisplayedCitiesCount(prev => Math.min(prev + 50, cities.length));
+      setDisplayedCitiesCount((prev) => Math.min(prev + 50, cities.length));
     }
   };
 
   // Componente optimizado para renderizar cada ciudad
-  const CityItem = React.memo(({ item, isSelected, onPress }: {
-    item: CityResult;
-    isSelected: boolean;
-    onPress: () => void;
-  }) => (
-    <TouchableOpacity
-      style={[styles.pickerOption, isSelected && styles.pickerOptionSelected]}
-      onPress={onPress}
-    >
-      <Text style={styles.pickerOptionIcon}>🏙️</Text>
-      <View style={styles.cityOptionContent}>
-        <Text style={[styles.pickerOptionText, isSelected && styles.pickerOptionTextSelected]}>
-          {item.city}
-        </Text>
-        <Text style={styles.populationText}>
-          {item.population.toLocaleString()} habitantes
-        </Text>
-      </View>
-      {isSelected && (
-        <Ionicons name="checkmark" size={20} color="#6366F1" />
-      )}
-    </TouchableOpacity>
-  ));
+  const CityItem = React.memo(
+    ({
+      item,
+      isSelected,
+      onPress,
+    }: {
+      item: CityResult;
+      isSelected: boolean;
+      onPress: () => void;
+    }) => (
+      <TouchableOpacity
+        style={[styles.pickerOption, isSelected && styles.pickerOptionSelected]}
+        onPress={onPress}
+      >
+        <Text style={styles.pickerOptionIcon}>🏙️</Text>
+        <View style={styles.cityOptionContent}>
+          <Text style={[styles.pickerOptionText, isSelected && styles.pickerOptionTextSelected]}>
+            {item.city}
+          </Text>
+          <Text style={styles.populationText}>{item.population.toLocaleString()} habitantes</Text>
+        </View>
+        {isSelected && <Ionicons name="checkmark" size={20} color="#6366F1" />}
+      </TouchableOpacity>
+    )
+  );
 
   useEffect(() => {
     loadProfileData();
@@ -228,7 +228,9 @@ export default function PersonalInfoScreen() {
     try {
       const updateData = {
         full_name: profileData.full_name.trim(),
-        birth_date: profileData.birth_date ? profileData.birth_date.toISOString().split('T')[0] : null,
+        birth_date: profileData.birth_date
+          ? profileData.birth_date.toISOString().split('T')[0]
+          : null,
         age: profileData.birth_date ? calculateAge(profileData.birth_date) : null,
         gender: profileData.gender || null,
         country: profileData.country || null,
@@ -239,20 +241,18 @@ export default function PersonalInfoScreen() {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          ...updateData,
-        });
+      const { error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        ...updateData,
+      });
 
       if (error) throw error;
 
       // Actualizar la edad calculada en el estado local
       const updatedData = {
         ...profileData,
-        age: profileData.birth_date ? calculateAge(profileData.birth_date) : null
+        age: profileData.birth_date ? calculateAge(profileData.birth_date) : null,
       };
       setProfileData(updatedData);
       setOriginalData(updatedData);
@@ -274,7 +274,7 @@ export default function PersonalInfoScreen() {
   };
 
   const updateField = (field: keyof ProfileData, value: any) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+    setProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -300,17 +300,17 @@ export default function PersonalInfoScreen() {
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
   const getGenderLabel = (value: string) => {
-    const option = genderOptions.find(o => o.value === value);
+    const option = genderOptions.find((o) => o.value === value);
     return option ? `${option.icon} ${option.label}` : '';
   };
 
   const getCountryLabel = (countryCode: string) => {
-    const country = countries.find(c => c.country_code === countryCode);
+    const country = countries.find((c) => c.country_code === countryCode);
     return country ? `🌍 ${country.country_name}` : '';
   };
 
@@ -327,7 +327,7 @@ export default function PersonalInfoScreen() {
   // Actualizar prefijo telefónico cuando cambia el país
   useEffect(() => {
     if (profileData.country && isEditing) {
-      const country = countries.find(c => c.country_code === profileData.country);
+      const country = countries.find((c) => c.country_code === profileData.country);
       if (country) {
         const phoneCode = normalizePhoneCode(country.phone_code);
         updateField('country_code', phoneCode);
@@ -347,14 +347,8 @@ export default function PersonalInfoScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={['#6366F1', '#8B5CF6']}
-        style={styles.header}
-      >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+      <LinearGradient colors={['#6366F1', '#8B5CF6']} style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
 
@@ -374,9 +368,7 @@ export default function PersonalInfoScreen() {
           {loading ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text style={styles.editButtonText}>
-              {isEditing ? 'Guardar' : 'Editar'}
-            </Text>
+            <Text style={styles.editButtonText}>{isEditing ? 'Guardar' : 'Editar'}</Text>
           )}
         </TouchableOpacity>
       </LinearGradient>
@@ -387,7 +379,6 @@ export default function PersonalInfoScreen() {
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.form}>
-
             {/* Información Básica */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Información Básica</Text>
@@ -421,19 +412,25 @@ export default function PersonalInfoScreen() {
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Ionicons name="calendar" size={20} color="#6366F1" />
-                    <Text style={[styles.dateButtonText, {
-                      color: profileData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
-                    }]}>
+                    <Text
+                      style={[
+                        styles.dateButtonText,
+                        {
+                          color: profileData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
+                        },
+                      ]}
+                    >
                       {profileData.birth_date
                         ? formatDate(profileData.birth_date)
-                        : 'Seleccionar fecha'
-                      }
+                        : 'Seleccionar fecha'}
                     </Text>
                   </TouchableOpacity>
                 ) : (
                   <View style={styles.displayField}>
                     <Text style={styles.displayText}>
-                      {profileData.birth_date ? formatDate(profileData.birth_date) : 'No especificado'}
+                      {profileData.birth_date
+                        ? formatDate(profileData.birth_date)
+                        : 'No especificado'}
                     </Text>
                   </View>
                 )}
@@ -442,9 +439,7 @@ export default function PersonalInfoScreen() {
                 {profileData.age !== null && (
                   <View style={styles.ageContainer}>
                     <Ionicons name="time" size={16} color="#6366F1" />
-                    <Text style={styles.ageText}>
-                      Edad: {profileData.age} años
-                    </Text>
+                    <Text style={styles.ageText}>Edad: {profileData.age} años</Text>
                   </View>
                 )}
               </View>
@@ -458,7 +453,9 @@ export default function PersonalInfoScreen() {
                     onPress={() => setShowGenderPicker(true)}
                   >
                     <Text style={styles.pickerButtonText}>
-                      {profileData.gender ? getGenderLabel(profileData.gender) : '👤 Seleccionar género'}
+                      {profileData.gender
+                        ? getGenderLabel(profileData.gender)
+                        : '👤 Seleccionar género'}
                     </Text>
                     <Ionicons name="chevron-down" size={20} color="#6366F1" />
                   </TouchableOpacity>
@@ -486,7 +483,9 @@ export default function PersonalInfoScreen() {
                     disabled={countriesLoading}
                   >
                     <Text style={styles.pickerButtonText}>
-                      {profileData.country ? getCountryLabel(profileData.country) : '🌍 Seleccionar país'}
+                      {profileData.country
+                        ? getCountryLabel(profileData.country)
+                        : '🌍 Seleccionar país'}
                     </Text>
                     {countriesLoading ? (
                       <ActivityIndicator size="small" color="#6366F1" />
@@ -497,7 +496,9 @@ export default function PersonalInfoScreen() {
                 ) : (
                   <View style={styles.displayField}>
                     <Text style={styles.displayText}>
-                      {profileData.country ? getCountryLabel(profileData.country) : 'No especificado'}
+                      {profileData.country
+                        ? getCountryLabel(profileData.country)
+                        : 'No especificado'}
                     </Text>
                   </View>
                 )}
@@ -510,23 +511,24 @@ export default function PersonalInfoScreen() {
                   <TouchableOpacity
                     style={[
                       styles.pickerButton,
-                      (!profileData.country || citiesLoading) && styles.pickerButtonDisabled
+                      (!profileData.country || citiesLoading) && styles.pickerButtonDisabled,
                     ]}
                     onPress={() => setShowCityPicker(true)}
                     disabled={!profileData.country || citiesLoading}
                   >
-                    <Text style={[
-                      styles.pickerButtonText,
-                      (!profileData.country || citiesLoading) && styles.pickerButtonTextDisabled
-                    ]}>
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        (!profileData.country || citiesLoading) && styles.pickerButtonTextDisabled,
+                      ]}
+                    >
                       {!profileData.country
                         ? '🌍 Selecciona un país primero'
                         : citiesLoading
                           ? '⏳ Cargando ciudades...'
                           : profileData.city_state
                             ? getCityLabel(profileData.city_state)
-                            : '🏙️ Seleccionar ciudad o estado'
-                      }
+                            : '🏙️ Seleccionar ciudad o estado'}
                     </Text>
                     {citiesLoading ? (
                       <ActivityIndicator size="small" color="#6366F1" />
@@ -534,14 +536,16 @@ export default function PersonalInfoScreen() {
                       <Ionicons
                         name="chevron-down"
                         size={20}
-                        color={!profileData.country ? "#ccc" : "#6366F1"}
+                        color={!profileData.country ? '#ccc' : '#6366F1'}
                       />
                     )}
                   </TouchableOpacity>
                 ) : (
                   <View style={styles.displayField}>
                     <Text style={styles.displayText}>
-                      {profileData.city_state ? getCityLabel(profileData.city_state) : 'No especificado'}
+                      {profileData.city_state
+                        ? getCityLabel(profileData.city_state)
+                        : 'No especificado'}
                     </Text>
                   </View>
                 )}
@@ -606,8 +610,7 @@ export default function PersonalInfoScreen() {
                     <Text style={styles.displayText}>
                       {profileData.country_code && profileData.mobile_phone
                         ? `${profileData.country_code} ${profileData.mobile_phone}`
-                        : 'No especificado'
-                      }
+                        : 'No especificado'}
                     </Text>
                   </View>
                 )}
@@ -619,11 +622,7 @@ export default function PersonalInfoScreen() {
         {/* Botones de acción cuando está editando */}
         {isEditing && (
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={cancelEdit}
-              disabled={loading}
-            >
+            <TouchableOpacity style={styles.cancelButton} onPress={cancelEdit} disabled={loading}>
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
 
@@ -695,14 +694,22 @@ export default function PersonalInfoScreen() {
               {genderOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
-                  style={[styles.pickerOption, profileData.gender === option.value && styles.pickerOptionSelected]}
+                  style={[
+                    styles.pickerOption,
+                    profileData.gender === option.value && styles.pickerOptionSelected,
+                  ]}
                   onPress={() => {
                     updateField('gender', option.value);
                     setShowGenderPicker(false);
                   }}
                 >
                   <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
-                  <Text style={[styles.pickerOptionText, profileData.gender === option.value && styles.pickerOptionTextSelected]}>
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      profileData.gender === option.value && styles.pickerOptionTextSelected,
+                    ]}
+                  >
                     {option.label}
                   </Text>
                   {profileData.gender === option.value && (
@@ -730,7 +737,10 @@ export default function PersonalInfoScreen() {
               {countries.map((country) => (
                 <TouchableOpacity
                   key={country.country_code}
-                  style={[styles.pickerOption, profileData.country === country.country_code && styles.pickerOptionSelected]}
+                  style={[
+                    styles.pickerOption,
+                    profileData.country === country.country_code && styles.pickerOptionSelected,
+                  ]}
                   onPress={() => {
                     updateField('country', country.country_code);
                     updateField('city_state', ''); // Limpiar ciudad cuando cambia país
@@ -739,7 +749,13 @@ export default function PersonalInfoScreen() {
                 >
                   <Text style={styles.pickerOptionIcon}>🌍</Text>
                   <View style={styles.countryOptionContent}>
-                    <Text style={[styles.pickerOptionText, profileData.country === country.country_code && styles.pickerOptionTextSelected]}>
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        profileData.country === country.country_code &&
+                          styles.pickerOptionTextSelected,
+                      ]}
+                    >
                       {country.country_name}
                     </Text>
                     <Text style={styles.phoneCodeText}>{country.phone_code}</Text>
@@ -759,11 +775,13 @@ export default function PersonalInfoScreen() {
         <View style={styles.pickerOverlay}>
           <View style={styles.pickerContainer}>
             <View style={styles.pickerHeader}>
-              <TouchableOpacity onPress={() => {
-                setShowCityPicker(false);
-                setCitySearchQuery('');
-                setDisplayedCitiesCount(50);
-              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowCityPicker(false);
+                  setCitySearchQuery('');
+                  setDisplayedCitiesCount(50);
+                }}
+              >
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Seleccionar Ciudad</Text>
@@ -771,7 +789,14 @@ export default function PersonalInfoScreen() {
             </View>
 
             {/* Información y búsqueda */}
-            <View style={{ paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+            <View
+              style={{
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: '#E5E7EB',
+              }}
+            >
               {cities.length > 10 && (
                 <TextInput
                   value={citySearchQuery}
@@ -783,18 +808,15 @@ export default function PersonalInfoScreen() {
                 />
               )}
               <Text style={styles.cityCountText}>
-                {citySearchQuery ?
-                  `🔍 ${filteredAndPaginatedCities.length} resultados` :
-                  `🏙️ Mostrando ${Math.min(displayedCitiesCount, cities.length)} de ${cities.length} ciudades`
-                }
+                {citySearchQuery
+                  ? `🔍 ${filteredAndPaginatedCities.length} resultados`
+                  : `🏙️ Mostrando ${Math.min(displayedCitiesCount, cities.length)} de ${cities.length} ciudades`}
               </Text>
             </View>
 
             {cities.length === 0 && !citiesLoading ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>
-                  No se encontraron ciudades para este país
-                </Text>
+                <Text style={styles.emptyStateText}>No se encontraron ciudades para este país</Text>
               </View>
             ) : (
               <FlatList
@@ -828,10 +850,7 @@ export default function PersonalInfoScreen() {
                   if (displayedCitiesCount < cities.length && !citySearchQuery) {
                     return (
                       <View style={{ padding: 20, alignItems: 'center' }}>
-                        <TouchableOpacity
-                          style={styles.loadMoreButton}
-                          onPress={loadMoreCities}
-                        >
+                        <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreCities}>
                           <Text style={styles.loadMoreText}>
                             Cargar más ciudades ({cities.length - displayedCitiesCount} restantes)
                           </Text>

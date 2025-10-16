@@ -12,21 +12,24 @@ export async function ensureUserProfile(userId: string): Promise<void> {
       .select('id')
       .eq('id', userId)
       .maybeSingle();
-    
+
     if (existingProfile) {
       return; // Profile already exists
     }
 
     // Try to get user metadata from auth (this may not be accessible depending on RLS)
     // For now, create a minimal profile that can be updated later
-    await supabase.from('profiles').upsert({
-      id: userId,
-      email: null, // Could be populated if accessible
-      full_name: null, // Could be populated if accessible  
-      avatar_url: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
+    await supabase.from('profiles').upsert(
+      {
+        id: userId,
+        email: null, // Could be populated if accessible
+        full_name: null, // Could be populated if accessible
+        avatar_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
 
     console.log('Created minimal profile for user:', userId);
   } catch (error) {
@@ -39,26 +42,29 @@ export async function ensureUserProfile(userId: string): Promise<void> {
  */
 export async function ensureMultipleUserProfiles(userIds: string[]): Promise<void> {
   if (userIds.length === 0) return;
-  
+
   try {
     // Get existing profiles
     const { data: existingProfiles } = await supabase
       .from('profiles')
       .select('id')
       .in('id', userIds);
-    
-    const existingIds = new Set((existingProfiles || []).map(p => p.id));
-    const missingIds = userIds.filter(id => !existingIds.has(id));
-    
+
+    const existingIds = new Set((existingProfiles || []).map((p) => p.id));
+    const missingIds = userIds.filter((id) => !existingIds.has(id));
+
     if (missingIds.length === 0) {
       // Health log: none missing
-      console.log('🩺 profileUtils.ensureMultipleUserProfiles: No missing profiles to backfill. Total existing:', existingIds.size);
+      console.log(
+        '🩺 profileUtils.ensureMultipleUserProfiles: No missing profiles to backfill. Total existing:',
+        existingIds.size
+      );
       return;
     }
-    
+
     // Create minimal profiles for missing users
     const now = new Date().toISOString();
-    const newProfiles = missingIds.map(userId => ({
+    const newProfiles = missingIds.map((userId) => ({
       id: userId,
       email: null,
       full_name: null,
@@ -66,9 +72,12 @@ export async function ensureMultipleUserProfiles(userIds: string[]): Promise<voi
       created_at: now,
       updated_at: now,
     }));
-    
-  await supabase.from('profiles').upsert(newProfiles, { onConflict: 'id' });
-  console.log('🩺 profileUtils.ensureMultipleUserProfiles: Backfilled minimal profiles for users:', missingIds);
+
+    await supabase.from('profiles').upsert(newProfiles, { onConflict: 'id' });
+    console.log(
+      '🩺 profileUtils.ensureMultipleUserProfiles: Backfilled minimal profiles for users:',
+      missingIds
+    );
   } catch (error) {
     console.log('Could not backfill profiles - non-blocking:', error);
   }

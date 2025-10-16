@@ -33,7 +33,7 @@ interface LocationCacheEntry {
 function roundCoords(lat: number, lng: number) {
   return {
     lat: Math.round(lat * Math.pow(10, LOCATION_PRECISION)) / Math.pow(10, LOCATION_PRECISION),
-    lng: Math.round(lng * Math.pow(10, LOCATION_PRECISION)) / Math.pow(10, LOCATION_PRECISION)
+    lng: Math.round(lng * Math.pow(10, LOCATION_PRECISION)) / Math.pow(10, LOCATION_PRECISION),
   };
 }
 
@@ -56,7 +56,7 @@ export class WeatherCache {
         this.cache = JSON.parse(data);
         // Clean expired entries
         const now = Date.now();
-        this.cache = this.cache.filter(entry => now - entry.timestamp < CACHE_DURATION_MS);
+        this.cache = this.cache.filter((entry) => now - entry.timestamp < CACHE_DURATION_MS);
       }
       this.initialized = true;
     } catch (error) {
@@ -69,32 +69,33 @@ export class WeatherCache {
   static async get(lat: number, lng: number, units: 'c' | 'f') {
     await this.initialize();
     const now = Date.now();
-    
-    const entry = this.cache.find(item => 
-      coordsMatch(item.lat, item.lng, lat, lng) &&
-      item.units === units &&
-      now - item.timestamp < CACHE_DURATION_MS
+
+    const entry = this.cache.find(
+      (item) =>
+        coordsMatch(item.lat, item.lng, lat, lng) &&
+        item.units === units &&
+        now - item.timestamp < CACHE_DURATION_MS
     );
-    
+
     return entry?.data || null;
   }
 
   static async set(lat: number, lng: number, units: 'c' | 'f', data: WeatherCacheEntry['data']) {
     await this.initialize();
     const rounded = roundCoords(lat, lng);
-    
+
     // Remove existing entry for same location/units
-    this.cache = this.cache.filter(item => 
-      !(coordsMatch(item.lat, item.lng, lat, lng) && item.units === units)
+    this.cache = this.cache.filter(
+      (item) => !(coordsMatch(item.lat, item.lng, lat, lng) && item.units === units)
     );
-    
+
     // Add new entry
     this.cache.push({
       lat: rounded.lat,
       lng: rounded.lng,
       units,
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep cache size reasonable (max 50 entries)
@@ -133,7 +134,7 @@ export class LocationCache {
         this.cache = JSON.parse(data);
         // Clean expired entries
         const now = Date.now();
-        this.cache = this.cache.filter(entry => now - entry.timestamp < CACHE_DURATION_MS);
+        this.cache = this.cache.filter((entry) => now - entry.timestamp < CACHE_DURATION_MS);
       }
       this.initialized = true;
     } catch (error) {
@@ -146,32 +147,38 @@ export class LocationCache {
   static async get(lat: number, lng: number, source?: string) {
     await this.initialize();
     const now = Date.now();
-    
-    const entry = this.cache.find(item => 
-      coordsMatch(item.lat, item.lng, lat, lng) &&
-      (!source || item.source === source) &&
-      now - item.timestamp < CACHE_DURATION_MS
+
+    const entry = this.cache.find(
+      (item) =>
+        coordsMatch(item.lat, item.lng, lat, lng) &&
+        (!source || item.source === source) &&
+        now - item.timestamp < CACHE_DURATION_MS
     );
-    
+
     return entry?.location || null;
   }
 
-  static async set(lat: number, lng: number, location: string, source: LocationCacheEntry['source']) {
+  static async set(
+    lat: number,
+    lng: number,
+    location: string,
+    source: LocationCacheEntry['source']
+  ) {
     await this.initialize();
     const rounded = roundCoords(lat, lng);
-    
+
     // Remove existing entry for same location/source
-    this.cache = this.cache.filter(item => 
-      !(coordsMatch(item.lat, item.lng, lat, lng) && item.source === source)
+    this.cache = this.cache.filter(
+      (item) => !(coordsMatch(item.lat, item.lng, lat, lng) && item.source === source)
     );
-    
+
     // Add new entry
     this.cache.push({
       lat: rounded.lat,
       lng: rounded.lng,
       location,
       source,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep cache size reasonable (max 100 entries)

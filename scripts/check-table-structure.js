@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function checkTableStructure() {
   try {
     console.log('🔍 Verificando estructura de la tabla profiles...');
-    
+
     // Primero, intentar describir la tabla directamente usando información del esquema
     const { data: schemaInfo, error: schemaError } = await supabase
       .from('information_schema.columns')
@@ -23,8 +23,8 @@ async function checkTableStructure() {
     } else if (schemaInfo && schemaInfo.length > 0) {
       console.log('✅ Estructura de la tabla profiles:');
       console.table(schemaInfo);
-      
-      const mobilePhoneColumn = schemaInfo.find(col => col.column_name === 'mobile_phone');
+
+      const mobilePhoneColumn = schemaInfo.find((col) => col.column_name === 'mobile_phone');
       if (mobilePhoneColumn) {
         console.log('✅ El campo mobile_phone EXISTE!');
       } else {
@@ -34,10 +34,7 @@ async function checkTableStructure() {
     }
 
     // Fallback: intentar obtener un perfil existente
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .limit(1);
+    const { data, error } = await supabase.from('profiles').select('*').limit(1);
 
     if (error) {
       console.error('❌ Error consultando profiles:', error);
@@ -47,16 +44,17 @@ async function checkTableStructure() {
     if (data && data.length > 0) {
       console.log('✅ Campos disponibles en la tabla profiles:');
       console.log(Object.keys(data[0]).join(', '));
-      
+
       if ('mobile_phone' in data[0]) {
         console.log('✅ El campo mobile_phone ya existe!');
       } else {
         console.log('❌ El campo mobile_phone NO existe aún');
       }
     } else {
-      console.log('ℹ️  La tabla profiles está vacía, no se puede verificar la estructura usando datos');
+      console.log(
+        'ℹ️  La tabla profiles está vacía, no se puede verificar la estructura usando datos'
+      );
     }
-
   } catch (error) {
     console.error('❌ Error:', error);
   }

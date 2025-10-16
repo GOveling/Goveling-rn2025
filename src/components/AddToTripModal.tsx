@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
-  InteractionManager
+  InteractionManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,28 +108,26 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                   onAdded?.(tripId, tripTitle);
                   onClose();
                 }, 50);
-              }
-            }
+              },
+            },
           ],
           { cancelable: true }
         );
         return;
       }
 
-      const { error } = await supabase
-        .from('trip_places')
-        .insert({
-          trip_id: tripId,
-          place_id: place.id,
-          name: place.name,
-          address: place.address || '',
-          lat: place.coordinates?.lat || 0,
-          lng: place.coordinates?.lng || 0,
-          category: place.types?.[0] || place.category || 'establishment',
-          photo_url: (place.photos && place.photos.length > 0) ? place.photos[0] : null,
-          added_by: user.user.id,
-          added_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from('trip_places').insert({
+        trip_id: tripId,
+        place_id: place.id,
+        name: place.name,
+        address: place.address || '',
+        lat: place.coordinates?.lat || 0,
+        lng: place.coordinates?.lng || 0,
+        category: place.types?.[0] || place.category || 'establishment',
+        photo_url: place.photos && place.photos.length > 0 ? place.photos[0] : null,
+        added_by: user.user.id,
+        added_at: new Date().toISOString(),
+      });
 
       if (error) {
         console.error('Insert error', error);
@@ -150,8 +148,8 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                   onClose();
                 }, 30);
               });
-            }
-          }
+            },
+          },
         ],
         { cancelable: true }
       );
@@ -166,7 +164,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   const handleCreateTrip = (newTripId: string) => {
     // Cerrar primero el modal de creación
     setShowNewTripModal(false);
-    const created = trips.find(t => t.id === newTripId);
+    const created = trips.find((t) => t.id === newTripId);
     const title = created?.title || 'Nuevo viaje';
     // Pequeño delay para asegurar desmontaje del modal antes de continuar
     setTimeout(() => {
@@ -208,7 +206,12 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
 
             {/* Create new */}
             <TouchableOpacity style={styles.newBtn} onPress={() => setShowNewTripModal(true)}>
-              <LinearGradient colors={["#8B5CF6", "#EC4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.newBtnBg}>
+              <LinearGradient
+                colors={['#8B5CF6', '#EC4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.newBtnBg}
+              >
                 <Ionicons name="add" size={20} color="#fff" />
                 <Text style={styles.newBtnText}>Crear nuevo viaje</Text>
               </LinearGradient>
@@ -231,10 +234,15 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
             ) : (
               <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
                 {trips.map((t) => (
-                  <TouchableOpacity key={t.id} style={styles.tripItem} disabled={adding} onPress={() => addPlaceToTrip(t.id, t.title)}>
+                  <TouchableOpacity
+                    key={t.id}
+                    style={styles.tripItem}
+                    disabled={adding}
+                    onPress={() => addPlaceToTrip(t.id, t.title)}
+                  >
                     <View style={{ flex: 1 }}>
                       <Text style={styles.tripTitle}>{t.title}</Text>
-                      {(t.start_date || t.end_date) ? (
+                      {t.start_date || t.end_date ? (
                         <Text style={styles.tripDates}>
                           {t.start_date && t.end_date
                             ? `${formatDate(t.start_date)} - ${formatDate(t.end_date)}`
@@ -244,7 +252,9 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                         </Text>
                       ) : null}
                       {!!(t.description && t.description.trim().length > 0) && (
-                        <Text numberOfLines={2} style={styles.tripDesc}>{t.description}</Text>
+                        <Text numberOfLines={2} style={styles.tripDesc}>
+                          {t.description}
+                        </Text>
                       )}
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
@@ -376,4 +386,3 @@ const styles = StyleSheet.create({
 });
 
 export default AddToTripModal;
-

@@ -104,7 +104,7 @@ export default function AccommodationExplorer() {
   const [tripDestination, setTripDestination] = useState('');
   const [mapRegion, setMapRegion] = useState({
     latitude: 40.7128,
-    longitude: -74.0060,
+    longitude: -74.006,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
@@ -164,10 +164,7 @@ export default function AccommodationExplorer() {
     if (!tripId) return;
 
     try {
-      const { data } = await supabase
-        .from('trip_accommodations')
-        .select('*')
-        .eq('trip_id', tripId);
+      const { data } = await supabase.from('trip_accommodations').select('*').eq('trip_id', tripId);
 
       setSavedAccommodations(data || []);
     } catch (error) {
@@ -215,8 +212,8 @@ export default function AccommodationExplorer() {
           amenities: ['WiFi', 'Piscina', 'Desayuno', 'Gimnasio'],
           contact_info: {
             phone: '+1234567890',
-            website: 'https://hotelplaza.com'
-          }
+            website: 'https://hotelplaza.com',
+          },
         },
         {
           id: '2',
@@ -241,9 +238,9 @@ export default function AccommodationExplorer() {
           amenities: ['Todo Incluido', 'Spa', 'Playa Privada', 'Golf'],
           contact_info: {
             phone: '+1234567891',
-            website: 'https://resortparadise.com'
-          }
-        }
+            website: 'https://resortparadise.com',
+          },
+        },
       ];
 
       setAccommodations(mockResults);
@@ -260,22 +257,20 @@ export default function AccommodationExplorer() {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return;
 
-      const { error } = await supabase
-        .from('trip_accommodations')
-        .insert({
-          trip_id: tripId,
-          user_id: user.user.id,
-          name: accommodation.name,
-          type: accommodation.type,
-          address: accommodation.address,
-          latitude: accommodation.latitude,
-          longitude: accommodation.longitude,
-          price_per_night: accommodation.price_per_night,
-          rating: accommodation.rating,
-          amenities: accommodation.amenities,
-          contact_info: accommodation.contact_info,
-          availability: accommodation.availability,
-        });
+      const { error } = await supabase.from('trip_accommodations').insert({
+        trip_id: tripId,
+        user_id: user.user.id,
+        name: accommodation.name,
+        type: accommodation.type,
+        address: accommodation.address,
+        latitude: accommodation.latitude,
+        longitude: accommodation.longitude,
+        price_per_night: accommodation.price_per_night,
+        rating: accommodation.rating,
+        amenities: accommodation.amenities,
+        contact_info: accommodation.contact_info,
+        availability: accommodation.availability,
+      });
 
       if (error) throw error;
 
@@ -361,7 +356,8 @@ export default function AccommodationExplorer() {
   );
 
   const renderAccommodationCard = (accommodation: Accommodation, isSaved = false) => {
-    const typeConfig = accommodationTypes.find(t => t.type === accommodation.type) || accommodationTypes[0];
+    const typeConfig =
+      accommodationTypes.find((t) => t.type === accommodation.type) || accommodationTypes[0];
 
     return (
       <View key={accommodation.id} style={styles.accommodationCard}>
@@ -382,9 +378,7 @@ export default function AccommodationExplorer() {
         <Text style={styles.accommodationAddress}>{accommodation.address}</Text>
 
         {accommodation.price_per_night && (
-          <Text style={styles.price}>
-            ${accommodation.price_per_night}/noche
-          </Text>
+          <Text style={styles.price}>${accommodation.price_per_night}/noche</Text>
         )}
 
         {accommodation.amenities && accommodation.amenities.length > 0 && (
@@ -424,11 +418,7 @@ export default function AccommodationExplorer() {
   };
 
   const renderCustomAddressModal = () => (
-    <Modal
-      visible={showCustomAddressModal}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
+    <Modal visible={showCustomAddressModal} animationType="slide" presentationStyle="pageSheet">
       <View style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <TouchableOpacity onPress={() => setShowCustomAddressModal(false)}>
@@ -487,15 +477,17 @@ export default function AccommodationExplorer() {
                       key={type.type}
                       style={[
                         styles.typeOption,
-                        customAddress.type === type.type && styles.typeOptionSelected
+                        customAddress.type === type.type && styles.typeOptionSelected,
                       ]}
                       onPress={() => setCustomAddress({ ...customAddress, type: type.type as any })}
                     >
                       <Text style={styles.typeOptionIcon}>{type.icon}</Text>
-                      <Text style={[
-                        styles.typeOptionText,
-                        customAddress.type === type.type && styles.typeOptionTextSelected
-                      ]}>
+                      <Text
+                        style={[
+                          styles.typeOptionText,
+                          customAddress.type === type.type && styles.typeOptionTextSelected,
+                        ]}
+                      >
                         {type.label}
                       </Text>
                     </TouchableOpacity>
@@ -609,7 +601,8 @@ export default function AccommodationExplorer() {
                 <Text style={styles.emptyStateIcon}>🏨</Text>
                 <Text style={styles.emptyStateTitle}>Encuentra Tu Alojamiento Ideal</Text>
                 <Text style={styles.emptyStateText}>
-                  Utiliza las opciones de arriba para buscar hoteles, Airbnb y más opciones de estadía para tu viaje.
+                  Utiliza las opciones de arriba para buscar hoteles, Airbnb y más opciones de
+                  estadía para tu viaje.
                 </Text>
               </View>
             )}
@@ -620,7 +613,9 @@ export default function AccommodationExplorer() {
             {savedAccommodations.length > 0 ? (
               <View style={styles.savedContainer}>
                 <Text style={styles.savedTitle}>Alojamientos Guardados</Text>
-                {savedAccommodations.map((accommodation) => renderAccommodationCard(accommodation, true))}
+                {savedAccommodations.map((accommodation) =>
+                  renderAccommodationCard(accommodation, true)
+                )}
               </View>
             ) : (
               <View style={styles.emptyState}>

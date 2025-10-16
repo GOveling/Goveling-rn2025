@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Modal,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { View, Modal, TouchableOpacity, Text, StyleSheet, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppMap from './AppMap';
 
@@ -30,7 +22,10 @@ const MiniMapModal: React.FC<MiniMapModalProps> = ({
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number }>({ latitude, longitude });
+  const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number }>({
+    latitude,
+    longitude,
+  });
   const [mapZoom, setMapZoom] = useState<number>(16);
 
   useEffect(() => {
@@ -39,7 +34,7 @@ const MiniMapModal: React.FC<MiniMapModalProps> = ({
         placeName,
         latitude,
         longitude,
-        visible
+        visible,
       });
       // Reset al abrir el modal
       setUserLocation(null);

@@ -11,7 +11,7 @@ interface LocationButtonProps {
 export default function LocationButton({
   onLocationPress,
   isActive = false,
-  style
+  style,
 }: LocationButtonProps) {
   const animationRef = useRef<LottieView>(null);
   const [isPressed, setIsPressed] = useState(false);

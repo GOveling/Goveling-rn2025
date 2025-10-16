@@ -3,11 +3,22 @@ import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getTripStats, getCountryFlagByName, getCountryFlag, getCountryName, getCountryImage, TripStats } from '~/lib/tripUtils';
+import {
+  getTripStats,
+  getCountryFlagByName,
+  getCountryFlag,
+  getCountryName,
+  getCountryImage,
+  TripStats,
+} from '~/lib/tripUtils';
 import TripDetailsModal from './TripDetailsModal';
 import LiquidButton from './LiquidButton';
 import { useAuth } from '~/contexts/AuthContext';
-import { getCurrentUser, resolveUserRoleForTrip, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
+import {
+  getCurrentUser,
+  resolveUserRoleForTrip,
+  resolveCurrentUserRoleForTripId,
+} from '~/lib/userUtils';
 import { supabase } from '~/lib/supabase';
 import { CountryImage } from './CountryImage';
 import { useGetProfileQuery } from '../store/api/userApi';
@@ -45,14 +56,17 @@ const parseLocalDate = (dateString: string): Date => {
 
 // UPDATED: Avatar fix using RTK Query - 2025-10-16
 const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
-  console.log('🎨🎨🎨 TripCard UPDATED VERSION: Rendering for trip:', { id: trip.id, title: trip.title });
+  console.log('🎨🎨🎨 TripCard UPDATED VERSION: Rendering for trip:', {
+    id: trip.id,
+    title: trip.title,
+  });
 
   const router = useRouter();
   const { user } = useAuth();
-  
+
   // RTK Query: Get current user profile (IGUAL QUE PROFILE.TSX)
   const { data: currentUserProfile, isLoading, isError, error } = useGetProfileQuery();
-  
+
   // DEBUG: Ver el estado del RTK Query
   console.log('🔍🔍🔍 RTK QUERY STATUS (NEW VERSION):', {
     isLoading,
@@ -61,9 +75,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     hasData: !!currentUserProfile,
     'currentUserProfile?.full_name': currentUserProfile?.full_name,
     'currentUserProfile?.avatar_url': currentUserProfile?.avatar_url,
-    'user?.id': user?.id
+    'user?.id': user?.id,
   });
-  
+
   const [currentTrip, setCurrentTrip] = useState(trip);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
@@ -72,7 +86,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     countryCodes: [],
     categories: [],
     collaborators: [],
-    firstPlaceImage: undefined
+    firstPlaceImage: undefined,
   });
   const [showModal, setShowModal] = useState(false);
   const [ownerProfile, setOwnerProfile] = useState<{
@@ -111,21 +125,41 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       try {
         channel = supabase
           .channel(`tripcard-role-${trip.id}`)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_collaborators', filter: `trip_id=eq.${trip.id}` }, () => {
-            // Re-derive role and possibly stats (collaborators count)
-            deriveCurrentRole();
-            loadTripData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_invitations', filter: `trip_id=eq.${trip.id}` }, () => {
-            fetchPendingInvites();
-          })
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'trip_collaborators',
+              filter: `trip_id=eq.${trip.id}`,
+            },
+            () => {
+              // Re-derive role and possibly stats (collaborators count)
+              deriveCurrentRole();
+              loadTripData();
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'trip_invitations',
+              filter: `trip_id=eq.${trip.id}`,
+            },
+            () => {
+              fetchPendingInvites();
+            }
+          )
           .subscribe();
       } catch (e) {
         console.warn('TripCard realtime subscription failed', e);
       }
     })();
     return () => {
-      try { if (channel) supabase.removeChannel(channel); } catch {}
+      try {
+        if (channel) supabase.removeChannel(channel);
+      } catch {}
     };
   }, [trip.id]);
 
@@ -155,7 +189,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             country_code: place.country_code,
             country: place.country,
             city: place.city,
-            full_address: place.full_address
+            full_address: place.full_address,
           });
         });
       }
@@ -197,7 +231,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           full_name: profile.full_name,
           has_avatar: !!profile.avatar_url,
           avatar_url: profile.avatar_url,
-          email: profile.email
+          email: profile.email,
         });
         setOwnerProfile(profile);
       }
@@ -212,7 +246,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -232,7 +266,10 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const getRoleConfig = () => {
     const role = currentRole;
-    const configs: Record<'owner' | 'editor' | 'viewer', { bgColor: string; textColor: string; label: string }> = {
+    const configs: Record<
+      'owner' | 'editor' | 'viewer',
+      { bgColor: string; textColor: string; label: string }
+    > = {
       owner: { bgColor: '#FEF3C7', textColor: '#92400E', label: 'Owner' },
       editor: { bgColor: '#DBEAFE', textColor: '#1E40AF', label: 'Editor' },
       viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: 'Viewer' },
@@ -286,9 +323,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   const getCountryFlags = () => {
     if (tripData.countryCodes.length === 0) return [];
 
-    return tripData.countryCodes.map(code =>
-      getCountryFlag(code)
-    );
+    return tripData.countryCodes.map((code) => getCountryFlag(code));
   };
 
   const getFirstCountryFlag = () => {
@@ -303,14 +338,19 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   const getUserInitials = (fullName?: string, email?: string) => {
     // MISMA LÓGICA QUE PROFILE.TSX
     if (fullName && fullName.trim()) {
-      return fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      return fullName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
     }
-    
+
     // Fallback: usar email
     if (email && email.trim()) {
       return email.split('@')[0].substring(0, 2).toUpperCase();
     }
-    
+
     return 'U';
   };
 
@@ -327,7 +367,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       currentUserFullName: currentUserProfile?.full_name,
       hasOwnerProfile: !!ownerProfile,
       ownerProfileAvatarUrl: ownerProfile?.avatar_url,
-      ownerProfileFullName: ownerProfile?.full_name
+      ownerProfileFullName: ownerProfile?.full_name,
     });
 
     // ALWAYS use RTK Query for current user, regardless of ownerProfile
@@ -335,30 +375,41 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     let fullName: string | undefined;
     let initials = 'U';
 
-    // Use currentUserProfile if: 
+    // Use currentUserProfile if:
     // 1. It's the current user's trip (isCurrentUserOwner is true), OR
     // 2. Trip has no owner AND we have currentUserProfile data (fallback for trips missing owner_id)
-    const shouldUseCurrentUser = isCurrentUserOwner || (!ownerId && !ownerProfile && currentUserProfile);
+    const shouldUseCurrentUser =
+      isCurrentUserOwner || (!ownerId && !ownerProfile && currentUserProfile);
 
     if (shouldUseCurrentUser && currentUserProfile) {
       // Current user: ALWAYS use RTK Query (like profile.tsx does)
       avatarUrl = currentUserProfile.avatar_url;
       fullName = currentUserProfile.full_name;
-      
+
       console.log('🟢 Using currentUserProfile:', { avatarUrl, fullName });
-      
+
       if (fullName) {
-        initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        initials = fullName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .substring(0, 2)
+          .toUpperCase();
       }
     } else if (ownerProfile) {
       // Other user: use ownerProfile from getTripWithTeam
       avatarUrl = ownerProfile.avatar_url;
       fullName = ownerProfile.full_name;
-      
+
       console.log('🟡 Using ownerProfile:', { avatarUrl, fullName });
-      
+
       if (fullName) {
-        initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        initials = fullName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .substring(0, 2)
+          .toUpperCase();
       }
     }
 
@@ -367,7 +418,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     // Render image if we have URL
     if (avatarUrl) {
       return (
-        <Image 
+        <Image
           source={{ uri: avatarUrl }}
           style={{
             width: 32,
@@ -380,7 +431,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         />
       );
     }
-    
+
     // Fallback: LinearGradient with initials (like profile.tsx)
     return (
       <LinearGradient
@@ -395,11 +446,13 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           justifyContent: 'center',
         }}
       >
-        <Text style={{
-          color: '#FFFFFF',
-          fontWeight: '700',
-          fontSize: 12
-        }}>
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontWeight: '700',
+            fontSize: 12,
+          }}
+        >
           {initials}
         </Text>
       </LinearGradient>
@@ -423,19 +476,23 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     const remainingCount = tripData.countryCodes.length - 3;
 
     return (
-      <View style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        marginBottom: 20,
-        gap: 6
-      }}>
-        <Text style={{
-          fontSize: 14,
-          color: '#666666',
-          fontWeight: '500',
-          marginRight: 8
-        }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          marginBottom: 20,
+          gap: 6,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            color: '#666666',
+            fontWeight: '500',
+            marginRight: 8,
+          }}
+        >
           Destinos:
         </Text>
 
@@ -444,30 +501,33 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           const flag = getCountryFlag(countryCode);
 
           return (
-            <View key={`${countryCode}-${index}`} style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              borderRadius: 16,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderWidth: 1,
-              borderColor: 'rgba(0, 0, 0, 0.08)',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 2,
-              elevation: 2
-            }}>
-              <Text style={{ fontSize: 14, marginRight: 4 }}>
-                {flag}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: '#374151',
-                fontWeight: '600',
-                letterSpacing: 0.2
-              }}>
+            <View
+              key={`${countryCode}-${index}`}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: 16,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderWidth: 1,
+                borderColor: 'rgba(0, 0, 0, 0.08)',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 2,
+              }}
+            >
+              <Text style={{ fontSize: 14, marginRight: 4 }}>{flag}</Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: '#374151',
+                  fontWeight: '600',
+                  letterSpacing: 0.2,
+                }}
+              >
                 {countryName || countryCode}
               </Text>
             </View>
@@ -475,56 +535,65 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         })}
 
         {remainingCount > 0 && (
-          <View style={{
-            backgroundColor: 'rgba(156, 163, 175, 0.15)',
-            borderRadius: 16,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: 'rgba(156, 163, 175, 0.2)'
-          }}>
-            <Text style={{
-              fontSize: 12,
-              color: '#6B7280',
-              fontWeight: '600',
-              letterSpacing: 0.2
-            }}>
+          <View
+            style={{
+              backgroundColor: 'rgba(156, 163, 175, 0.15)',
+              borderRadius: 16,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderWidth: 1,
+              borderColor: 'rgba(156, 163, 175, 0.2)',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                color: '#6B7280',
+                fontWeight: '600',
+                letterSpacing: 0.2,
+              }}
+            >
               +{remainingCount} más
             </Text>
           </View>
         )}
       </View>
     );
-  }; const getTripType = () => {
+  };
+  const getTripType = () => {
     return tripData.collaboratorsCount > 1 ? 'Grupo' : 'Individual';
   };
 
   return (
-    <View style={{
-      backgroundColor: '#FFFFFF',
-      borderRadius: 24,
-      overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      elevation: 12,
-      marginBottom: 24
-    }}>
-      {/* Header con imagen de país de fondo y overlay de texto */}
-      <View style={{
-        width: '100%',
-        height: 120,
-        position: 'relative',
+    <View
+      style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
         overflow: 'hidden',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-      }}>
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 12,
+        marginBottom: 24,
+      }}
+    >
+      {/* Header con imagen de país de fondo y overlay de texto */}
+      <View
+        style={{
+          width: '100%',
+          height: 120,
+          position: 'relative',
+          overflow: 'hidden',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}
+      >
         {/* Imagen de fondo del país */}
         {tripData.countryCodes.length > 0 && getCountryImage(tripData.countryCodes[0]) && (
           <Image
             source={{ uri: getCountryImage(tripData.countryCodes[0]) }}
-            style={{ 
+            style={{
               position: 'absolute',
               top: 0,
               left: 0,
@@ -534,7 +603,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             resizeMode="cover"
           />
         )}
-        
+
         {/* Overlay con gradiente para mejorar legibilidad del texto */}
         <LinearGradient
           colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
@@ -548,41 +617,49 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             bottom: 0,
           }}
         />
-        
+
         {/* Contenido superpuesto: bandera y nombre del país */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           {tripData.countryCodes.length > 0 && (
-            <View style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Text style={{ 
-                fontSize: 32, 
-                marginBottom: 8,
-                textShadowColor: 'rgba(0,0,0,0.5)',
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 3,
-              }}>
+            <View
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 32,
+                  marginBottom: 8,
+                  textShadowColor: 'rgba(0,0,0,0.5)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 3,
+                }}
+              >
                 {getFirstCountryFlag()}
               </Text>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '700',
-                color: '#FFFFFF',
-                textAlign: 'center',
-                textShadowColor: 'rgba(0,0,0,0.8)',
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 4,
-                letterSpacing: 1,
-              }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: '#FFFFFF',
+                  textAlign: 'center',
+                  textShadowColor: 'rgba(0,0,0,0.8)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 4,
+                  letterSpacing: 1,
+                }}
+              >
                 {getCountryName(tripData.countryCodes[0]) || tripData.countryCodes[0]}
               </Text>
             </View>
@@ -593,33 +670,41 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       {/* Contenido del Trip */}
       <View style={{ padding: 20 }}>
         {/* Título y Estado */}
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 16
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 16,
+          }}
+        >
           <View style={{ flex: 1 }}>
-            <Text style={{
-              fontSize: 24,
-              fontWeight: '800',
-              color: '#1A1A1A',
-              marginBottom: 4
-            }}>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: '800',
+                color: '#1A1A1A',
+                marginBottom: 4,
+              }}
+            >
               {currentTrip.title}
             </Text>
 
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginTop: 4
-            }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: 4,
+              }}
+            >
               <Text style={{ fontSize: 16, color: '#8B5CF6', marginRight: 8 }}>👥</Text>
-              <Text style={{
-                fontSize: 16,
-                color: '#8B5CF6',
-                fontWeight: '600'
-              }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: '#8B5CF6',
+                  fontWeight: '600',
+                }}
+              >
                 {getTripType()}
               </Text>
             </View>
@@ -627,32 +712,40 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
           {/* Badges: estado + rol */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{
-              backgroundColor: getStatusConfig().bgColor,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-              marginLeft: 12
-            }}>
-              <Text style={{
-                fontSize: 12,
-                fontWeight: '600',
-                color: getStatusConfig().textColor
-              }}>
+            <View
+              style={{
+                backgroundColor: getStatusConfig().bgColor,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
+                marginLeft: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: getStatusConfig().textColor,
+                }}
+              >
                 {getStatusConfig().text}
               </Text>
             </View>
-            <View style={{
-              backgroundColor: getRoleConfig().bgColor,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12
-            }}>
-              <Text style={{
-                fontSize: 12,
-                fontWeight: '600',
-                color: getRoleConfig().textColor
-              }}>
+            <View
+              style={{
+                backgroundColor: getRoleConfig().bgColor,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: getRoleConfig().textColor,
+                }}
+              >
                 {getRoleConfig().label}
               </Text>
             </View>
@@ -661,31 +754,40 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
         {/* Países/Destinos - solo si hay lugares */}
         {tripData.countries.length > 0 && (
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 16
-          }}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
-            <View style={{
+          <View
+            style={{
               flexDirection: 'row',
-              flexWrap: 'wrap',
-              gap: 8
-            }}>
+              alignItems: 'center',
+              marginBottom: 16,
+            }}
+          >
+            <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: 8,
+              }}
+            >
               {tripData.countries.map((country, index) => (
-                <View key={index} style={{
-                  backgroundColor: '#EBF4FF',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: '#007AFF'
-                }}>
-                  <Text style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: '#007AFF'
-                  }}>
+                <View
+                  key={index}
+                  style={{
+                    backgroundColor: '#EBF4FF',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: '#007AFF',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: '600',
+                      color: '#007AFF',
+                    }}
+                  >
                     {getCountryFlags()[index] || '🌍'} {country}
                   </Text>
                 </View>
@@ -695,43 +797,51 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         )}
 
         {/* Fechas - con fallback "Fechas por confirmar" */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginBottom: 16
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 16,
+          }}
+        >
           <Text style={{ fontSize: 16, marginRight: 8 }}>📅</Text>
-          <Text style={{
-            fontSize: 16,
-            color: '#1A1A1A',
-            fontWeight: '500'
-          }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: '#1A1A1A',
+              fontWeight: '500',
+            }}
+          >
             {currentTrip.start_date && currentTrip.end_date
               ? `${formatDate(currentTrip.start_date)} - ${formatDate(currentTrip.end_date)}`
-              : 'Fechas por confirmar'
-            }
+              : 'Fechas por confirmar'}
           </Text>
         </View>
 
         {/* Viajeros y Lugares */}
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginBottom: 24
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+          }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>👥</Text>
             <Text style={{ fontSize: 16, color: '#1A1A1A', fontWeight: '500' }}>
-              {tripData.collaboratorsCount} {tripData.collaboratorsCount === 1 ? 'viajero' : 'viajeros'}
+              {tripData.collaboratorsCount}{' '}
+              {tripData.collaboratorsCount === 1 ? 'viajero' : 'viajeros'}
             </Text>
             {pendingInvites > 0 && (
-              <View style={{
-                marginLeft: 8,
-                backgroundColor: '#F59E0B',
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-                borderRadius: 12
-              }}>
+              <View
+                style={{
+                  marginLeft: 8,
+                  backgroundColor: '#F59E0B',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 12,
+                }}
+              >
                 <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
                   {pendingInvites}
                 </Text>
@@ -739,40 +849,46 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             )}
           </View>
 
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center'
-          }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
             <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#1A1A1A',
-              fontWeight: '500'
-            }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: '#1A1A1A',
+                fontWeight: '500',
+              }}
+            >
               {tripData.placesCount} {tripData.placesCount === 1 ? 'lugar' : 'lugares'}
             </Text>
           </View>
         </View>
 
         {/* Miembros del Equipo con avatares reales */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginBottom: 24
-        }}>
-          <Text style={{
-            fontSize: 14,
-            color: '#666666',
-            fontWeight: '500',
-            marginRight: 8
-          }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 24,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              color: '#666666',
+              fontWeight: '500',
+              marginRight: 8,
+            }}
+          >
             Equipo:
           </Text>
 
           {/* Dueño del trip (primera posición) */}
-          <View style={{ marginRight: 4 }}>
-            {renderOwnerAvatar()}
-          </View>
+          <View style={{ marginRight: 4 }}>{renderOwnerAvatar()}</View>
 
           {/* Colaboradores */}
           {tripData.collaborators.slice(0, 2).map((collaborator, index) => (
@@ -787,19 +903,23 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                   }}
                 />
               ) : (
-                <View style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: '#10B981',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Text style={{
-                    color: '#FFFFFF',
-                    fontWeight: '700',
-                    fontSize: 11
-                  }}>
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: '#10B981',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#FFFFFF',
+                      fontWeight: '700',
+                      fontSize: 11,
+                    }}
+                  >
                     {getUserInitials(collaborator.full_name, collaborator.email)}
                   </Text>
                 </View>
@@ -808,27 +928,27 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           ))}
 
           {tripData.collaboratorsCount > 3 && (
-            <Text style={{
-              fontSize: 14,
-              color: '#666666',
-              marginLeft: 4
-            }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: '#666666',
+                marginLeft: 4,
+              }}
+            >
               +{tripData.collaboratorsCount - 3} más
             </Text>
           )}
         </View>
 
         {/* Botones de Acción */}
-        <View style={{
-          flexDirection: 'row',
-          gap: 12,
-          marginBottom: 16
-        }}>
-          <LiquidButton
-            title="Ver Detalles"
-            onPress={() => setShowModal(true)}
-            variant="primary"
-          />
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <LiquidButton title="Ver Detalles" onPress={() => setShowModal(true)} variant="primary" />
 
           <LiquidButton
             title="Ver Mis lugares"
@@ -838,10 +958,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           />
         </View>
 
-        <View style={{
-          flexDirection: 'row',
-          gap: 12
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 12,
+          }}
+        >
           <LiquidButton
             title="Ruta Inteligente IA"
             icon="🧠"
@@ -859,17 +981,21 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
         {/* Descripción si existe */}
         {currentTrip.description && (
-          <View style={{
-            marginTop: 16,
-            padding: 12,
-            backgroundColor: '#F8F9FA',
-            borderRadius: 12
-          }}>
-            <Text style={{
-              fontSize: 14,
-              color: '#666666',
-              lineHeight: 20
-            }}>
+          <View
+            style={{
+              marginTop: 16,
+              padding: 12,
+              backgroundColor: '#F8F9FA',
+              borderRadius: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                color: '#666666',
+                lineHeight: 20,
+              }}
+            >
               {currentTrip.description}
             </Text>
           </View>

@@ -15,7 +15,9 @@ export type UserRole = 'owner' | 'editor' | 'viewer';
 
 export const getCurrentUser = async (): Promise<UserProfile | null> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return null;
 
     const { data: profile } = await supabase
@@ -37,16 +39,19 @@ export const getCurrentUser = async (): Promise<UserProfile | null> => {
 };
 
 export const getTripCollaborators = async (tripId: string): Promise<UserProfile[]> => {
-  console.log('🚀🚀🚀 UPDATED VERSION 2.0 - getTripCollaborators FUNCTION STARTED!!!', { tripId, timestamp: Date.now() });
+  console.log('🚀🚀🚀 UPDATED VERSION 2.0 - getTripCollaborators FUNCTION STARTED!!!', {
+    tripId,
+    timestamp: Date.now(),
+  });
   console.log('🆕🆕🆕 THIS IS THE NEW FUNCTION - CHECK IF YOU SEE THIS LOG!!!');
   console.log('🔥🔥🔥 FORCE_RELOAD_V2:', FORCE_RELOAD_V2);
-  
+
   try {
     console.log('🔍 getTripCollaborators: Starting query for trip:', tripId);
     console.log('🔍 getTripCollaborators: Trip ID length:', tripId?.length);
     console.log('🔍 getTripCollaborators: Trip ID type:', typeof tripId);
     console.log('🔍 getTripCollaborators: Function called at:', new Date().toISOString());
-    
+
     // Primero obtenemos los IDs de los colaboradores
     console.log('🔍 getTripCollaborators: About to query trip_collaborators table');
     const { data: collaboratorIds, error: collabError } = await supabase
@@ -55,10 +60,13 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
       .eq('trip_id', tripId);
 
     console.log('🔍 getTripCollaborators: Query completed, checking results...');
-    
+
     if (collabError) {
       console.error('❌ getTripCollaborators: Collaborators query error:', collabError);
-      console.error('❌ getTripCollaborators: Error details:', JSON.stringify(collabError, null, 2));
+      console.error(
+        '❌ getTripCollaborators: Error details:',
+        JSON.stringify(collabError, null, 2)
+      );
       return [];
     }
 
@@ -71,9 +79,9 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
     }
 
     // Luego obtenemos los perfiles de esos usuarios
-    const userIds = collaboratorIds.map(c => c.user_id);
+    const userIds = collaboratorIds.map((c) => c.user_id);
     console.log('🔍 getTripCollaborators: User IDs to fetch:', userIds);
-    
+
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, avatar_url, email')
@@ -85,7 +93,10 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
     }
 
     console.log('🔍 getTripCollaborators: Raw profiles:', profiles);
-    console.log('🔍 getTripCollaborators: Raw profiles stringified:', JSON.stringify(profiles, null, 2));
+    console.log(
+      '🔍 getTripCollaborators: Raw profiles stringified:',
+      JSON.stringify(profiles, null, 2)
+    );
 
     if (!profiles || profiles.length === 0) {
       console.log('❌ getTripCollaborators: No profiles found for collaborators');
@@ -93,17 +104,20 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
     }
 
     // Combinar la información de colaboradores con perfiles
-    const result = collaboratorIds.map(collab => {
-      const profile = profiles.find(p => p.id === collab.user_id);
+    const result = collaboratorIds.map((collab) => {
+      const profile = profiles.find((p) => p.id === collab.user_id);
 
       const minimal = !profile?.full_name && !profile?.avatar_url;
       if (minimal) {
-        console.log('🩺 getTripCollaborators: Minimal/incomplete profile detected (likely backfill).', {
-          user_id: collab.user_id,
-          has_profile_row: !!profile,
-          email: profile?.email,
-          role: collab.role
-        });
+        console.log(
+          '🩺 getTripCollaborators: Minimal/incomplete profile detected (likely backfill).',
+          {
+            user_id: collab.user_id,
+            has_profile_row: !!profile,
+            email: profile?.email,
+            role: collab.role,
+          }
+        );
       }
 
       console.log(`👤 getTripCollaborators: Processing collaborator ${collab.user_id}:`, {
@@ -111,7 +125,7 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
         has_profile: !!profile,
         full_name: profile?.full_name,
         email: profile?.email,
-        role: collab.role
+        role: collab.role,
       });
 
       return {
@@ -128,7 +142,10 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
   } catch (error) {
     console.error('❌ getTripCollaborators: CATCH ERROR:', error);
     console.error('❌ getTripCollaborators: Error details:', JSON.stringify(error, null, 2));
-    console.error('❌ getTripCollaborators: Stack trace:', error instanceof Error ? error.stack : 'No stack');
+    console.error(
+      '❌ getTripCollaborators: Stack trace:',
+      error instanceof Error ? error.stack : 'No stack'
+    );
     return [];
   }
 };
@@ -137,7 +154,8 @@ export const getTripOwner = async (tripId: string): Promise<UserProfile | null> 
   try {
     const { data: trip } = await supabase
       .from('trips')
-      .select(`
+      .select(
+        `
         owner_id,
         user_id,
         profiles_owner:owner_id (
@@ -150,7 +168,8 @@ export const getTripOwner = async (tripId: string): Promise<UserProfile | null> 
           full_name,
           avatar_url
         )
-      `)
+      `
+      )
       .eq('id', tripId)
       .single();
 

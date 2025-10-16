@@ -13,7 +13,7 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
   focused,
   source,
   label,
-  size = 32
+  size = 32,
 }) => {
   const animationRef = useRef<LottieView>(null);
   const [animationKey, setAnimationKey] = useState(0);
@@ -24,7 +24,7 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
       const now = Date.now();
       // Si han pasado más de 100ms desde el último focus, es un nuevo click
       if (now - lastFocusTimeRef.current > 100) {
-        setAnimationKey(prev => prev + 1);
+        setAnimationKey((prev) => prev + 1);
         lastFocusTimeRef.current = now;
       }
     }
@@ -54,12 +54,7 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
           resizeMode="contain"
         />
       </View>
-      <Text style={[
-        styles.label,
-        { color: focused ? '#4F46E5' : '#6B7280' }
-      ]}>
-        {label}
-      </Text>
+      <Text style={[styles.label, { color: focused ? '#4F46E5' : '#6B7280' }]}>{label}</Text>
     </View>
   );
 };

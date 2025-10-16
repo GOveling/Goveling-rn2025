@@ -16,14 +16,11 @@ interface StatCardsProps {
 const StatCards = React.memo<StatCardsProps>(
   function StatCards({ savedPlacesCount, upcomingTripsCount }) {
     const router = useRouter();
-    
+
     return (
       <View style={{ flexDirection: 'row', gap: 12 }}>
         {/* Lugares Guardados Card */}
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          onPress={() => router.push('/(tabs)/explore')}
-        >
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/explore')}>
           <LinearGradient
             colors={['#8B5CF6', '#A855F7']}
             style={{
@@ -31,7 +28,7 @@ const StatCards = React.memo<StatCardsProps>(
               borderRadius: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: 120
+              minHeight: 120,
             }}
           >
             <Text style={{ fontSize: 16, color: 'white', marginBottom: 4 }}>📍</Text>
@@ -45,10 +42,7 @@ const StatCards = React.memo<StatCardsProps>(
         </TouchableOpacity>
 
         {/* Próximos Viajes Card */}
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          onPress={() => router.push('/(tabs)/trips')}
-        >
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/(tabs)/trips')}>
           <LinearGradient
             colors={['#F97316', '#EA580C']}
             style={{
@@ -56,7 +50,7 @@ const StatCards = React.memo<StatCardsProps>(
               borderRadius: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: 120
+              minHeight: 120,
             }}
           >
             <Text style={{ fontSize: 16, color: 'white', marginBottom: 4 }}>📅</Text>

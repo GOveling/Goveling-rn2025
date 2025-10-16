@@ -9,7 +9,7 @@ import {
   Platform,
   Dimensions,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,7 +51,7 @@ export default function TripSelectorModal({
   onClose,
   onTripSelected,
   placeName,
-  placeId
+  placeId,
 }: TripSelectorModalProps) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +114,7 @@ export default function TripSelectorModal({
     } else {
       // Flujo normal sin contexto de lugar
       loadUserTrips();
-      const newTrip = trips.find(t => t.id === tripId);
+      const newTrip = trips.find((t) => t.id === tripId);
       if (newTrip) {
         handleTripSelect(newTrip);
       } else {
@@ -145,7 +145,7 @@ export default function TripSelectorModal({
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -172,11 +172,7 @@ export default function TripSelectorModal({
             </TouchableOpacity>
             <View style={styles.headerContent}>
               <Text style={styles.headerTitle}>Seleccionar Viaje</Text>
-              {placeName && (
-                <Text style={styles.headerSubtitle}>
-                  Para añadir {placeName}
-                </Text>
-              )}
+              {placeName && <Text style={styles.headerSubtitle}>Para añadir {placeName}</Text>}
             </View>
             <View style={styles.headerPlaceholder} />
           </View>
@@ -263,12 +259,12 @@ export default function TripSelectorModal({
         addPlaceContext={
           placeId && placeName
             ? {
-              placeId,
-              placeName,
-              onPlaceAdded: () => {
-                console.log('Lugar añadido exitosamente al nuevo viaje');
+                placeId,
+                placeName,
+                onPlaceAdded: () => {
+                  console.log('Lugar añadido exitosamente al nuevo viaje');
+                },
               }
-            }
             : undefined
         }
       />

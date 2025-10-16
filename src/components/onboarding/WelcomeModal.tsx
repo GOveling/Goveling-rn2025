@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  Animated,
-  Dimensions,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Modal, Animated, Dimensions, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -62,7 +55,7 @@ const ConfettiParticle: React.FC<{
   useEffect(() => {
     if (isActive) {
       const delay = index * 100;
-      
+
       Animated.parallel([
         Animated.timing(animatedValue, {
           toValue: 1,
@@ -106,11 +99,7 @@ const ConfettiParticle: React.FC<{
         styles.confettiParticle,
         {
           backgroundColor: color,
-          transform: [
-            { translateX },
-            { translateY },
-            { rotate: rotation },
-          ],
+          transform: [{ translateX }, { translateY }, { rotate: rotation }],
         },
       ]}
     />
@@ -120,7 +109,7 @@ const ConfettiParticle: React.FC<{
 export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -130,7 +119,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
     if (isOpen) {
       setCurrentStep(0);
       setShowConfetti(true);
-      
+
       // Start entrance animation
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -166,7 +155,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
       // Auto-close timer
       const closeTimer = setTimeout(() => {
         setShowConfetti(false);
-        
+
         // Exit animation
         Animated.parallel([
           Animated.timing(fadeAnim, {
@@ -200,22 +189,13 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
   if (!isOpen) return null;
 
   return (
-    <Modal
-      visible={isOpen}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-    >
+    <Modal visible={isOpen} transparent animationType="none" statusBarTranslucent>
       <View style={styles.overlay}>
         {/* Confetti Particles */}
         {showConfetti && (
           <View style={styles.confettiContainer}>
             {Array.from({ length: 12 }, (_, index) => (
-              <ConfettiParticle
-                key={index}
-                index={index}
-                isActive={showConfetti}
-              />
+              <ConfettiParticle key={index} index={index} isActive={showConfetti} />
             ))}
           </View>
         )}
@@ -238,18 +218,11 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
           >
             {/* Icon */}
             <View style={styles.iconContainer}>
-              <Ionicons
-                name={currentStepData.icon}
-                size={80}
-                color="white"
-                style={styles.icon}
-              />
+              <Ionicons name={currentStepData.icon} size={80} color="white" style={styles.icon} />
             </View>
 
             {/* Title */}
-            <Text style={styles.title}>
-              {currentStepData.title}
-            </Text>
+            <Text style={styles.title}>{currentStepData.title}</Text>
 
             {/* Step Indicators */}
             <View style={styles.dotsContainer}>
@@ -260,9 +233,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                     styles.dot,
                     {
                       backgroundColor: index === currentStep ? 'white' : 'rgba(255,255,255,0.3)',
-                      transform: [
-                        { scale: index === currentStep ? 1.2 : 1 }
-                      ],
+                      transform: [{ scale: index === currentStep ? 1.2 : 1 }],
                     },
                   ]}
                 />
@@ -272,12 +243,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
             {/* Progress Bar */}
             <View style={styles.progressContainer}>
               <View style={styles.progressBackground}>
-                <Animated.View
-                  style={[
-                    styles.progressBar,
-                    { width: progressWidth },
-                  ]}
-                />
+                <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
               </View>
             </View>
           </LinearGradient>

@@ -5,6 +5,7 @@ Esta carpeta contiene la documentación histórica de fixes, mejoras y optimizac
 ## 📋 Propósito
 
 Estos documentos sirven como:
+
 - **Referencia histórica** de decisiones técnicas tomadas
 - **Documentación** de problemas resueltos
 - **Contexto** para futuros desarrolladores
@@ -16,11 +17,13 @@ Estos documentos sirven como:
 ## 🔧 Fixes Implementados
 
 ### Problemas de Conteo y Datos
+
 - `FIX_PROXIMOS_VIAJES_CONTEO.md` - Corrección del conteo de próximos viajes
 - `TRIPS_GROUP_COUNT_FIX.md` - Fix en el conteo de viajes grupales
 - `REMOVE_COLLABORATOR_FIX.md` - Corrección al remover colaboradores
 
 ### Problemas UI/UX
+
 - `FLATLIST_ERROR_FIX.md` - Solución a errores de FlatList
 
 ---
@@ -40,10 +43,12 @@ Documentación de las mejoras progresivas en la pantalla principal:
 ## 🚀 Optimizaciones
 
 ### Rendimiento
+
 - `CIUDADES_OPTIMIZACION_INFORME.md` - Optimización de búsqueda de ciudades
 - `TRIPS_ORDENAMIENTO_INTELIGENTE.md` - Ordenamiento inteligente de viajes
 
 ### Features
+
 - `CATEGORIES-IMPROVEMENT.md` - Mejoras en sistema de categorías
 - `MODAL_IMPLEMENTATION.md` - Implementación de modales
 
@@ -60,6 +65,7 @@ Documentación de las mejoras progresivas en la pantalla principal:
 ## 📌 Documentación Activa
 
 Para documentación de configuración y features activos, consulta:
+
 - `/README.md` - Documentación principal del proyecto
 - `/DEPLOYMENT.md` - Guía de despliegue
 - `/API_CONFIGURATION.md` - Configuración de APIs
@@ -68,4 +74,4 @@ Para documentación de configuración y features activos, consulta:
 
 ---
 
-*Última actualización: Octubre 2025*
+_Última actualización: Octubre 2025_

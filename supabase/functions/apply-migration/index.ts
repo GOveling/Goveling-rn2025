@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 serve(async (req) => {
   try {
@@ -10,8 +10,8 @@ serve(async (req) => {
 
     // Crear cliente con service role key para DDL operations
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
     console.log('🔧 Applying mobile_phone migration...');
@@ -31,13 +31,16 @@ serve(async (req) => {
 
     if (existingColumns && existingColumns.length > 0) {
       console.log('✅ Column mobile_phone already exists');
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Column mobile_phone already exists',
-        action: 'skipped'
-      }), { 
-        headers: { "Content-Type": "application/json" } 
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Column mobile_phone already exists',
+          action: 'skipped',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Aplicar la migración usando SQL directo
@@ -49,8 +52,8 @@ serve(async (req) => {
     console.log('📝 Executing SQL:', migrationSQL);
 
     // Ejecutar SQL usando rpc con función sql
-    const { data, error } = await supabase.rpc('sql', { 
-      query: migrationSQL 
+    const { data, error } = await supabase.rpc('sql', {
+      query: migrationSQL,
     });
 
     if (error) {
@@ -60,22 +63,27 @@ serve(async (req) => {
 
     console.log('✅ Migration applied successfully!');
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Column mobile_phone added successfully',
-      action: 'created'
-    }), { 
-      headers: { "Content-Type": "application/json" } 
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Column mobile_phone added successfully',
+        action: 'created',
+      }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (e) {
     console.error('❌ Migration error:', e);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: e.message 
-    }), { 
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: e.message,
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

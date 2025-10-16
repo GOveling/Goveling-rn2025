@@ -81,7 +81,7 @@ export function withPerformanceTracking<P extends object>(
 ) {
   return React.memo<P>(function PerformanceTrackedComponent(props) {
     const monitor = PerformanceMonitor.getInstance();
-    
+
     React.useEffect(() => {
       monitor.startTiming(`${componentName}_mount`);
       return () => {

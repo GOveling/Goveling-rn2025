@@ -18,7 +18,7 @@ interface LocationWidgetProps {
 const LocationWidget = React.memo<LocationWidgetProps>(
   function LocationWidget({ city, temp, units, onToggleUnits }) {
     const currentDate = new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-    
+
     return (
       <LinearGradient
         colors={['#4A90E2', '#9B59B6']}
@@ -29,10 +29,12 @@ const LocationWidget = React.memo<LocationWidgetProps>(
           paddingHorizontal: 20,
           paddingBottom: 20,
           borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0
+          borderBottomRightRadius: 0,
         }}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
               <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>📍 {city}</Text>
@@ -41,10 +43,14 @@ const LocationWidget = React.memo<LocationWidgetProps>(
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity onPress={onToggleUnits} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+            <TouchableOpacity
+              onPress={onToggleUnits}
+              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}
+            >
               <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
               <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
-                {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°{units === 'c' ? 'C' : 'F'}
+                {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°
+                {units === 'c' ? 'C' : 'F'}
               </Text>
             </TouchableOpacity>
 

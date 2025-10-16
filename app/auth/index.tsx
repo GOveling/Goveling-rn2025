@@ -12,7 +12,7 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  Appearance
+  Appearance,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,8 +69,8 @@ export default function AuthScreen() {
       const response = await supabase.functions.invoke('send-confirmation-email', {
         body: {
           email,
-          fullName
-        }
+          fullName,
+        },
       });
 
       console.log('📧 Email function response:', response);
@@ -87,12 +87,15 @@ export default function AuthScreen() {
       if (emailData?.ok) {
         // Success case - email sent
         console.log('✅ Email sent successfully');
-        await AsyncStorage.setItem('pendingSignup', JSON.stringify({
-          email,
-          password,
-          fullName,
-          timestamp: Date.now()
-        }));
+        await AsyncStorage.setItem(
+          'pendingSignup',
+          JSON.stringify({
+            email,
+            password,
+            fullName,
+            timestamp: Date.now(),
+          })
+        );
 
         Alert.alert(
           '¡Casi listo!',
@@ -100,8 +103,8 @@ export default function AuthScreen() {
           [
             {
               text: 'OK',
-              onPress: () => router.push('/auth/verify-email' as any)
-            }
+              onPress: () => router.push('/auth/verify-email' as any),
+            },
           ]
         );
       } else if (emailData?.userExists || emailData?.error === 'user_already_exists') {
@@ -109,19 +112,20 @@ export default function AuthScreen() {
         console.log('👤 User already exists, switching to sign in');
         Alert.alert(
           'Usuario Existente',
-          emailData.message || 'Este email ya está registrado en Goveling. Por favor inicia sesión.',
+          emailData.message ||
+            'Este email ya está registrado en Goveling. Por favor inicia sesión.',
           [
             {
               text: 'Iniciar Sesión',
               onPress: () => {
                 setMode('signin'); // Switch to sign in mode
                 setEmail(email); // Pre-fill the email
-              }
+              },
             },
             {
               text: 'Cancelar',
-              style: 'cancel'
-            }
+              style: 'cancel',
+            },
           ]
         );
       } else {
@@ -142,12 +146,12 @@ export default function AuthScreen() {
               onPress: () => {
                 setMode('signin'); // Switch to sign in mode
                 setEmail(email); // Pre-fill the email
-              }
+              },
             },
             {
               text: 'Cancelar',
-              style: 'cancel'
-            }
+              style: 'cancel',
+            },
           ]
         );
       } else {
@@ -182,8 +186,8 @@ export default function AuthScreen() {
   };
 
   const backgroundColors = isDark
-    ? ['#1A1B3C', '#2D1B69', '#4A154B'] as const
-    : ['#6366F1', '#8B5CF6', '#EC4899'] as const;
+    ? (['#1A1B3C', '#2D1B69', '#4A154B'] as const)
+    : (['#6366F1', '#8B5CF6', '#EC4899'] as const);
 
   return (
     <KeyboardAvoidingView
@@ -191,23 +195,16 @@ export default function AuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'light-content'} />
-      <LinearGradient
-        colors={backgroundColors}
-        style={styles.gradient}
-      >
+      <LinearGradient colors={backgroundColors} style={styles.gradient}>
         {/* Theme Toggle */}
         <TouchableOpacity
           style={[
             styles.themeToggle,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)' }
+            { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)' },
           ]}
           onPress={toggleTheme}
         >
-          <Ionicons
-            name={isDark ? 'sunny' : 'moon'}
-            size={24}
-            color="rgba(255,255,255,0.8)"
-          />
+          <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color="rgba(255,255,255,0.8)" />
         </TouchableOpacity>
 
         <ScrollView
@@ -216,7 +213,12 @@ export default function AuthScreen() {
         >
           {/* Error Message */}
           {authError && (
-            <View style={[styles.errorContainer, { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' }]}>
+            <View
+              style={[
+                styles.errorContainer,
+                { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' },
+              ]}
+            >
               <Ionicons name="alert-circle" size={20} color={isDark ? '#FCA5A5' : '#DC2626'} />
               <Text style={[styles.errorText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>
                 {authError}
@@ -228,8 +230,12 @@ export default function AuthScreen() {
           )}
 
           {/* Card Container */}
-          <View style={[styles.card, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' }]}>
-
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' },
+            ]}
+          >
             {/* Logo */}
             <View style={styles.logoContainer}>
               <Image
@@ -244,11 +250,14 @@ export default function AuthScreen() {
               {mode === 'signup' && (
                 <View style={styles.inputContainer}>
                   <TextInput
-                    style={[styles.input, {
-                      borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                      color: isDark ? '#fff' : '#000',
-                      backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-                    }]}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                        color: isDark ? '#fff' : '#000',
+                        backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                      },
+                    ]}
                     placeholder="Full Name"
                     placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                     value={fullName}
@@ -263,11 +272,14 @@ export default function AuthScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={emailInputRef}
-                  style={[styles.input, {
-                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                    color: isDark ? '#fff' : '#000',
-                    backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-                  }]}
+                  style={[
+                    styles.input,
+                    {
+                      borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                      color: isDark ? '#fff' : '#000',
+                      backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                    },
+                  ]}
                   placeholder="Email Address"
                   placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                   value={email}
@@ -282,17 +294,22 @@ export default function AuthScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={passwordInputRef}
-                  style={[styles.input, {
-                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                    color: isDark ? '#fff' : '#000',
-                    backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-                  }]}
+                  style={[
+                    styles.input,
+                    {
+                      borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                      color: isDark ? '#fff' : '#000',
+                      backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                    },
+                  ]}
                   placeholder="Password"
                   placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
-                  onSubmitEditing={mode === 'signin' ? signIn : () => confirmPasswordInputRef.current?.focus()}
+                  onSubmitEditing={
+                    mode === 'signin' ? signIn : () => confirmPasswordInputRef.current?.focus()
+                  }
                   returnKeyType={mode === 'signin' ? 'done' : 'next'}
                 />
                 <TouchableOpacity
@@ -311,11 +328,14 @@ export default function AuthScreen() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     ref={confirmPasswordInputRef}
-                    style={[styles.input, {
-                      borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                      color: isDark ? '#fff' : '#000',
-                      backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-                    }]}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                        color: isDark ? '#fff' : '#000',
+                        backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                      },
+                    ]}
                     placeholder="Confirm Password"
                     placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                     value={confirmPassword}
@@ -343,14 +363,14 @@ export default function AuthScreen() {
                     style={styles.checkboxContainer}
                     onPress={() => setRememberMe(!rememberMe)}
                   >
-                    <View style={[
-                      styles.checkbox,
-                      { borderColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)' },
-                      rememberMe && styles.checkboxChecked
-                    ]}>
-                      {rememberMe && (
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      )}
+                    <View
+                      style={[
+                        styles.checkbox,
+                        { borderColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)' },
+                        rememberMe && styles.checkboxChecked,
+                      ]}
+                    >
+                      {rememberMe && <Ionicons name="checkmark" size={16} color="#fff" />}
                     </View>
                     <Text style={[styles.checkboxText, { color: isDark ? '#fff' : '#333' }]}>
                       Remember me
@@ -371,10 +391,7 @@ export default function AuthScreen() {
                 onPress={mode === 'signup' ? signUp : signIn}
                 disabled={loading}
               >
-                <LinearGradient
-                  colors={['#6366F1', '#8B5CF6']}
-                  style={styles.buttonGradient}
-                >
+                <LinearGradient colors={['#6366F1', '#8B5CF6']} style={styles.buttonGradient}>
                   <Text style={styles.mainButtonText}>
                     {mode === 'signup' ? 'Sign Up' : 'Log In'}
                   </Text>
@@ -384,7 +401,7 @@ export default function AuthScreen() {
               {/* Switch Mode */}
               <View style={styles.switchContainer}>
                 <Text style={[styles.switchText, { color: isDark ? '#fff' : '#666' }]}>
-                  {mode === 'signup' ? "Already have an account? " : "Don't have an account? "}
+                  {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
                 </Text>
                 <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
                   <Text style={[styles.switchLink, { color: isDark ? '#fff' : '#6366F1' }]}>

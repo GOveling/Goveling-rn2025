@@ -1,5 +1,5 @@
 // Babel plugin to transform import.meta
-module.exports = function() {
+module.exports = function () {
   return {
     name: 'transform-import-meta',
     visitor: {
@@ -9,16 +9,16 @@ module.exports = function() {
             type: 'MemberExpression',
             object: {
               type: 'Identifier',
-              name: 'globalThis'
+              name: 'globalThis',
             },
             property: {
               type: 'Identifier',
-              name: 'importMeta'
+              name: 'importMeta',
             },
-            computed: false
+            computed: false,
           });
         }
-      }
-    }
+      },
+    },
   };
 };

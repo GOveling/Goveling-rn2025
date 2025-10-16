@@ -154,9 +154,9 @@ export default function ForgotPasswordScreen() {
 
     try {
       console.log('📧 Sending password reset request for:', email);
-      
+
       const response = await supabase.functions.invoke('send-reset-password', {
-        body: { email }
+        body: { email },
       });
 
       console.log('📧 Reset password response:', response);
@@ -167,19 +167,20 @@ export default function ForgotPasswordScreen() {
       }
 
       const resetData = response.data;
-      
+
       if (resetData?.ok) {
         // Store email for verification step
         await AsyncStorage.setItem('resetPasswordEmail', email);
 
         Alert.alert(
           '📧 Correo Enviado',
-          resetData.message || 'Si tu email está registrado, recibirás un código de restablecimiento.',
+          resetData.message ||
+            'Si tu email está registrado, recibirás un código de restablecimiento.',
           [
             {
               text: 'OK',
-              onPress: () => router.push('/auth/reset-password-verify' as any)
-            }
+              onPress: () => router.push('/auth/reset-password-verify' as any),
+            },
           ]
         );
       } else {
@@ -193,13 +194,13 @@ export default function ForgotPasswordScreen() {
     }
   };
 
-  const backgroundColors = isDark 
-    ? ['#1A1B3C', '#2D1B69', '#4A154B'] as const
-    : ['#6366F1', '#8B5CF6', '#EC4899'] as const;
+  const backgroundColors = isDark
+    ? (['#1A1B3C', '#2D1B69', '#4A154B'] as const)
+    : (['#6366F1', '#8B5CF6', '#EC4899'] as const);
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle="light-content" />
@@ -210,49 +211,70 @@ export default function ForgotPasswordScreen() {
         end={{ x: 1, y: 1 }}
       >
         {/* Back Button */}
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
         {/* Main Card */}
-        <View style={[styles.card, { 
-          backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' 
-        }]}>
-          
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)',
+            },
+          ]}
+        >
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/branding-zeppeling.png')} 
+            <Image
+              source={require('../../assets/branding-zeppeling.png')}
               style={styles.logo}
               resizeMode="contain"
             />
           </View>
 
           {/* Title */}
-          <Text style={[styles.title, { 
-            color: isDark ? '#fff' : '#1f2937' 
-          }]}>
+          <Text
+            style={[
+              styles.title,
+              {
+                color: isDark ? '#fff' : '#1f2937',
+              },
+            ]}
+          >
             🔐 Restablecer Contraseña
           </Text>
-          
-          <Text style={[styles.subtitle, { 
-            color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280' 
-          }]}>
+
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280',
+              },
+            ]}
+          >
             Ingresa tu email y te enviaremos un código para restablecer tu contraseña
           </Text>
 
           {/* Error Message */}
           {error && (
-            <View style={[styles.errorContainer, { 
-              backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' 
-            }]}>
+            <View
+              style={[
+                styles.errorContainer,
+                {
+                  backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)',
+                },
+              ]}
+            >
               <Ionicons name="alert-circle" size={20} color={isDark ? '#FCA5A5' : '#DC2626'} />
-              <Text style={[styles.errorText, { 
-                color: isDark ? '#FCA5A5' : '#DC2626' 
-              }]}>
+              <Text
+                style={[
+                  styles.errorText,
+                  {
+                    color: isDark ? '#FCA5A5' : '#DC2626',
+                  },
+                ]}
+              >
                 {error}
               </Text>
               <TouchableOpacity onPress={() => setError(null)}>
@@ -265,11 +287,14 @@ export default function ForgotPasswordScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               ref={emailInputRef}
-              style={[styles.input, { 
-                borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                color: isDark ? '#fff' : '#000',
-                backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-              }]}
+              style={[
+                styles.input,
+                {
+                  borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                  color: isDark ? '#fff' : '#000',
+                  backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                },
+              ]}
               placeholder="Email"
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
               value={email}
@@ -283,7 +308,7 @@ export default function ForgotPasswordScreen() {
           </View>
 
           {/* Reset Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.resetButton, { opacity: loading ? 0.6 : 1 }]}
             onPress={sendResetEmail}
             disabled={loading}
@@ -291,28 +316,35 @@ export default function ForgotPasswordScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.resetButtonText}>
-                Enviar Código de Restablecimiento
-              </Text>
+              <Text style={styles.resetButtonText}>Enviar Código de Restablecimiento</Text>
             )}
           </TouchableOpacity>
 
           {/* Back to Login */}
           <View style={styles.backToLoginContainer}>
-            <Text style={[styles.backToLoginText, { 
-              color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280' 
-            }]}>
+            <Text
+              style={[
+                styles.backToLoginText,
+                {
+                  color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280',
+                },
+              ]}
+            >
               ¿Recordaste tu contraseña?
             </Text>
             <TouchableOpacity onPress={() => router.back()}>
-              <Text style={[styles.backToLoginLink, { 
-                color: isDark ? '#fff' : '#6366F1' 
-              }]}>
+              <Text
+                style={[
+                  styles.backToLoginLink,
+                  {
+                    color: isDark ? '#fff' : '#6366F1',
+                  },
+                ]}
+              >
                 Volver al Login
               </Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>

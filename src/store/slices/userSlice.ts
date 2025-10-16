@@ -1,6 +1,6 @@
 /**
  * 👤 User Slice
- * 
+ *
  * Manages user profile state with:
  * - Profile data
  * - Loading/error states
@@ -48,19 +48,15 @@ export const loadProfile = createAsyncThunk(
   async (userId: string | undefined, { rejectWithValue }) => {
     try {
       const id = userId || (await supabase.auth.getUser()).data.user?.id;
-      
+
       if (!id) {
         throw new Error('No user ID provided');
       }
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
+
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single();
+
       if (error) throw error;
-      
+
       logger.info('[userSlice] Profile loaded successfully');
       return data as UserProfile;
     } catch (error: any) {
@@ -83,9 +79,9 @@ export const updateProfile = createAsyncThunk(
         .eq('id', updates.id)
         .select()
         .single();
-      
+
       if (error) throw error;
-      
+
       logger.info('[userSlice] Profile updated successfully');
       return data as UserProfile;
     } catch (error: any) {
@@ -140,7 +136,7 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       });
-    
+
     // updateProfile
     builder
       .addCase(updateProfile.pending, (state) => {
@@ -167,7 +163,7 @@ export const selectUserLoading = (state: any) => state.user.loading;
 export const selectUserError = (state: any) => state.user.error;
 export const selectIsStale = (state: any) => {
   if (!state.user.lastFetch) return true;
-  return (Date.now() - state.user.lastFetch) > CACHE_DURATION;
+  return Date.now() - state.user.lastFetch > CACHE_DURATION;
 };
 
 // ===== EXPORTS =====

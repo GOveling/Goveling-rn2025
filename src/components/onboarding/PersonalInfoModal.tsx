@@ -31,11 +31,11 @@ interface FormData {
   full_name: string;
   birth_date: Date | null;
   gender: string;
-  country: string;           // country_code (ej: "MX", "ES")
-  city_state: string;        // nombre de la ciudad seleccionada
+  country: string; // country_code (ej: "MX", "ES")
+  city_state: string; // nombre de la ciudad seleccionada
   address: string;
-  mobile_phone: string;      // número de teléfono sin prefijo
-  country_code: string;      // prefijo telefónico (ej: "+52")
+  mobile_phone: string; // número de teléfono sin prefijo
+  country_code: string; // prefijo telefónico (ej: "+52")
 }
 
 const genderOptions = [
@@ -44,8 +44,6 @@ const genderOptions = [
   { label: 'Femenino', value: 'feminine', icon: '👩' },
   { label: 'Prefiero no decirlo', value: 'prefer_not_to_say', icon: '🤐' },
 ];
-
-
 
 export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInfoModalProps) {
   const [showIntro, setShowIntro] = useState(false);
@@ -58,12 +56,12 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
   // Hooks para países y ciudades
   const { countries, loading: countriesLoading, error: countriesError } = useCountries();
-  const { 
-    cities, 
-    loading: citiesLoading, 
+  const {
+    cities,
+    loading: citiesLoading,
     error: citiesError,
     loadCitiesForCountry,
-    clearResults 
+    clearResults,
   } = useCitiesByCountry();
 
   const [formData, setFormData] = useState<FormData>({
@@ -98,24 +96,24 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
     if (formData.country) {
       // Busca el país en el array de países
-      const country = countries.find(c => c.country_code === formData.country);
-      
+      const country = countries.find((c) => c.country_code === formData.country);
+
       if (country) {
         // Normaliza el phone_code (asegura un solo "+")
         const phoneCode = normalizePhoneCode(country.phone_code);
-        
+
         // Actualiza el prefijo automáticamente
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          country_code: phoneCode
+          country_code: phoneCode,
         }));
       }
     } else {
       // Si no hay país, limpia prefijo y teléfono
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         country_code: '',
-        mobile_phone: ''
+        mobile_phone: '',
       }));
     }
   }, [formData.country, countries, isInitialized]);
@@ -125,7 +123,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
     if (!isInitialized) return; // Previene fetch duplicado al cargar perfil
 
     if (formData.country && formData.country !== '') {
-      setFormData(prev => ({ ...prev, city_state: '' })); // Limpia ciudad anterior
+      setFormData((prev) => ({ ...prev, city_state: '' })); // Limpia ciudad anterior
       loadCitiesForCountry(formData.country); // Fetch ciudades del nuevo país
     } else {
       clearResults(); // Limpia resultados si no hay país
@@ -178,7 +176,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           country_code: profile.country_code || '',
         });
       }
-      
+
       // Marcar como inicializado después de cargar los datos
       setIsInitialized(true);
     } catch (error) {
@@ -191,7 +189,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       return age - 1;
     }
@@ -199,7 +197,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
   };
 
   const updateField = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const skipOnboarding = async () => {
@@ -230,7 +228,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
     setLoading(true);
     try {
       const age = calculateAge(formData.birth_date);
-      
+
       const updateData = {
         full_name: formData.full_name.trim(),
         birth_date: formData.birth_date.toISOString().split('T')[0],
@@ -245,13 +243,11 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          ...updateData,
-        });
+      const { error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        ...updateData,
+      });
 
       if (error) throw error;
 
@@ -264,8 +260,8 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
         [
           {
             text: 'Comenzar a Explorar',
-            onPress: onClose
-          }
+            onPress: onClose,
+          },
         ]
       );
     } catch (error: any) {
@@ -278,11 +274,11 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     console.log('Date change event:', event?.type, selectedDate);
-    
+
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
-    
+
     if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
       console.log('Date picker dismissed');
       setShowDatePicker(false);
@@ -304,17 +300,17 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
   const getGenderLabel = (value: string) => {
-    const option = genderOptions.find(o => o.value === value);
+    const option = genderOptions.find((o) => o.value === value);
     return option ? `${option.icon} ${option.label}` : '';
   };
 
   const getCountryLabel = (countryCode: string) => {
-    const country = countries.find(c => c.country_code === countryCode);
+    const country = countries.find((c) => c.country_code === countryCode);
     return country ? `🌍 ${country.country_name}` : '';
   };
 
@@ -325,26 +321,16 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
   if (!isOpen) return null;
 
   return (
-    <Modal
-      visible={isOpen}
-      animationType="slide"
-      presentationStyle="formSheet"
-    >
-      <KeyboardAvoidingView 
+    <Modal visible={isOpen} animationType="slide" presentationStyle="formSheet">
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <LinearGradient
-          colors={['#6366F1', '#8B5CF6']}
-          style={{ flex: 1 }}
-        >
+        <LinearGradient colors={['#6366F1', '#8B5CF6']} style={{ flex: 1 }}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Información Personal</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-            >
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -361,10 +347,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={() => setShowIntro(false)}
-                style={styles.introCloseButton}
-              >
+              <TouchableOpacity onPress={() => setShowIntro(false)} style={styles.introCloseButton}>
                 <Ionicons name="close" size={20} color="#6b7280" />
               </TouchableOpacity>
             </View>
@@ -373,7 +356,6 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           {/* Form */}
           <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
             <View style={styles.formContainer}>
-              
               {/* Required Fields Section */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Campos Obligatorios *</Text>
@@ -398,14 +380,16 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Ionicons name="calendar" size={20} color="#6366F1" />
-                    <Text style={[styles.dateButtonText, { 
-                      color: formData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
-                      fontWeight: formData.birth_date ? '600' : '400'
-                    }]}>
-                      {formData.birth_date 
-                        ? formatDate(formData.birth_date)
-                        : 'Seleccionar fecha'
-                      }
+                    <Text
+                      style={[
+                        styles.dateButtonText,
+                        {
+                          color: formData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
+                          fontWeight: formData.birth_date ? '600' : '400',
+                        },
+                      ]}
+                    >
+                      {formData.birth_date ? formatDate(formData.birth_date) : 'Seleccionar fecha'}
                     </Text>
                   </TouchableOpacity>
                   {formData.birth_date && (
@@ -422,7 +406,12 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     style={[styles.pickerButton, formData.gender && styles.pickerButtonSelected]}
                     onPress={() => setShowGenderPicker(true)}
                   >
-                    <Text style={[styles.pickerButtonText, formData.gender && styles.pickerButtonTextSelected]}>
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        formData.gender && styles.pickerButtonTextSelected,
+                      ]}
+                    >
                       {formData.gender ? getGenderLabel(formData.gender) : '👤 Seleccionar género'}
                     </Text>
                     <Ionicons name="chevron-down" size={20} color="#6366F1" />
@@ -442,7 +431,12 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     onPress={() => setShowCountryPicker(true)}
                     disabled={countriesLoading}
                   >
-                    <Text style={[styles.pickerButtonText, formData.country && styles.pickerButtonTextSelected]}>
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        formData.country && styles.pickerButtonTextSelected,
+                      ]}
+                    >
                       {formData.country ? getCountryLabel(formData.country) : '🌍 Seleccionar país'}
                     </Text>
                     {countriesLoading ? (
@@ -463,41 +457,40 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   <Text style={styles.fieldLabel}>Ciudad/Estado</Text>
                   <TouchableOpacity
                     style={[
-                      styles.pickerButton, 
+                      styles.pickerButton,
                       formData.city_state && styles.pickerButtonSelected,
-                      (!formData.country || citiesLoading) && styles.pickerButtonDisabled
+                      (!formData.country || citiesLoading) && styles.pickerButtonDisabled,
                     ]}
                     onPress={() => setShowCityPicker(true)}
                     disabled={!formData.country || citiesLoading}
                   >
-                    <Text style={[
-                      styles.pickerButtonText, 
-                      formData.city_state && styles.pickerButtonTextSelected,
-                      (!formData.country || citiesLoading) && styles.pickerButtonTextDisabled
-                    ]}>
-                      {!formData.country 
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        formData.city_state && styles.pickerButtonTextSelected,
+                        (!formData.country || citiesLoading) && styles.pickerButtonTextDisabled,
+                      ]}
+                    >
+                      {!formData.country
                         ? '🌍 Selecciona un país primero'
-                        : citiesLoading 
-                        ? '⏳ Cargando ciudades...'
-                        : formData.city_state 
-                        ? getCityLabel(formData.city_state)
-                        : '🏙️ Seleccionar ciudad o estado'
-                      }
+                        : citiesLoading
+                          ? '⏳ Cargando ciudades...'
+                          : formData.city_state
+                            ? getCityLabel(formData.city_state)
+                            : '🏙️ Seleccionar ciudad o estado'}
                     </Text>
                     {citiesLoading ? (
                       <ActivityIndicator size="small" color="#6366F1" />
                     ) : (
-                      <Ionicons 
-                        name="chevron-down" 
-                        size={20} 
-                        color={!formData.country ? "#ccc" : "#6366F1"} 
+                      <Ionicons
+                        name="chevron-down"
+                        size={20}
+                        color={!formData.country ? '#ccc' : '#6366F1'}
                       />
                     )}
                   </TouchableOpacity>
                   {citiesError && (
-                    <Text style={styles.errorText}>
-                      Error al cargar ciudades para este país.
-                    </Text>
+                    <Text style={styles.errorText}>Error al cargar ciudades para este país.</Text>
                   )}
                 </View>
 
@@ -554,11 +547,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.skipButton}
-              onPress={skipOnboarding}
-              disabled={loading}
-            >
+            <TouchableOpacity style={styles.skipButton} onPress={skipOnboarding} disabled={loading}>
               <Text style={styles.skipButtonText}>Omitir por ahora</Text>
             </TouchableOpacity>
 
@@ -585,7 +574,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
             >
               <View style={styles.iosDatePickerContainer}>
                 <View style={styles.iosDatePickerHeader}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => {
                       console.log('Date picker cancelled');
                       setShowDatePicker(false);
@@ -595,7 +584,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     <Text style={styles.datePickerCancel}>Cancelar</Text>
                   </TouchableOpacity>
                   <Text style={styles.datePickerTitle}>Fecha de Nacimiento</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => {
                       console.log('Date picker done');
                       setShowDatePicker(false);
@@ -636,11 +625,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           )}
 
           {/* Gender Picker Modal */}
-          <Modal
-            visible={showGenderPicker}
-            animationType="slide"
-            presentationStyle="pageSheet"
-          >
+          <Modal visible={showGenderPicker} animationType="slide" presentationStyle="pageSheet">
             <View style={styles.pickerModal}>
               <View style={styles.pickerHeader}>
                 <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
@@ -653,14 +638,22 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 {genderOptions.slice(1).map((option) => (
                   <TouchableOpacity
                     key={option.value}
-                    style={[styles.pickerOption, formData.gender === option.value && styles.pickerOptionSelected]}
+                    style={[
+                      styles.pickerOption,
+                      formData.gender === option.value && styles.pickerOptionSelected,
+                    ]}
                     onPress={() => {
                       updateField('gender', option.value);
                       setShowGenderPicker(false);
                     }}
                   >
                     <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
-                    <Text style={[styles.pickerOptionText, formData.gender === option.value && styles.pickerOptionTextSelected]}>
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        formData.gender === option.value && styles.pickerOptionTextSelected,
+                      ]}
+                    >
                       {option.label}
                     </Text>
                     {formData.gender === option.value && (
@@ -673,11 +666,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           </Modal>
 
           {/* Country Picker Modal */}
-          <Modal
-            visible={showCountryPicker}
-            animationType="slide"
-            presentationStyle="pageSheet"
-          >
+          <Modal visible={showCountryPicker} animationType="slide" presentationStyle="pageSheet">
             <View style={styles.pickerModal}>
               <View style={styles.pickerHeader}>
                 <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
@@ -699,7 +688,10 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 {countries.map((country) => (
                   <TouchableOpacity
                     key={country.country_code}
-                    style={[styles.pickerOption, formData.country === country.country_code && styles.pickerOptionSelected]}
+                    style={[
+                      styles.pickerOption,
+                      formData.country === country.country_code && styles.pickerOptionSelected,
+                    ]}
                     onPress={() => {
                       updateField('country', country.country_code);
                       setShowCountryPicker(false);
@@ -707,7 +699,13 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   >
                     <Text style={styles.pickerOptionIcon}>🌍</Text>
                     <View style={styles.countryOptionContent}>
-                      <Text style={[styles.pickerOptionText, formData.country === country.country_code && styles.pickerOptionTextSelected]}>
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          formData.country === country.country_code &&
+                            styles.pickerOptionTextSelected,
+                        ]}
+                      >
                         {country.country_name}
                       </Text>
                       <Text style={styles.phoneCodeText}>{country.phone_code}</Text>
@@ -722,11 +720,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           </Modal>
 
           {/* City Picker Modal */}
-          <Modal
-            visible={showCityPicker}
-            animationType="slide"
-            presentationStyle="pageSheet"
-          >
+          <Modal visible={showCityPicker} animationType="slide" presentationStyle="pageSheet">
             <View style={styles.pickerModal}>
               <View style={styles.pickerHeader}>
                 <TouchableOpacity onPress={() => setShowCityPicker(false)}>
@@ -755,7 +749,10 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 {cities.map((city) => (
                   <TouchableOpacity
                     key={`${city.city}-${city.latitude}-${city.longitude}`}
-                    style={[styles.pickerOption, formData.city_state === city.city && styles.pickerOptionSelected]}
+                    style={[
+                      styles.pickerOption,
+                      formData.city_state === city.city && styles.pickerOptionSelected,
+                    ]}
                     onPress={() => {
                       updateField('city_state', city.city);
                       setShowCityPicker(false);
@@ -763,7 +760,12 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   >
                     <Text style={styles.pickerOptionIcon}>🏙️</Text>
                     <View style={styles.cityOptionContent}>
-                      <Text style={[styles.pickerOptionText, formData.city_state === city.city && styles.pickerOptionTextSelected]}>
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          formData.city_state === city.city && styles.pickerOptionTextSelected,
+                        ]}
+                      >
                         {city.city}
                       </Text>
                       <Text style={styles.populationText}>

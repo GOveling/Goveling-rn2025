@@ -61,7 +61,9 @@ export default function SimpleMap({ accommodations, style }: SimpleMapProps) {
             onPress={() => {
               const center = accommodations[0];
               if (Platform.OS === 'web') {
-                Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${center.latitude},${center.longitude}`);
+                Linking.openURL(
+                  `https://www.google.com/maps/search/?api=1&query=${center.latitude},${center.longitude}`
+                );
               } else {
                 openInMaps(center);
               }

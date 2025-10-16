@@ -36,7 +36,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'react-native-maps' && platform === 'web') {
     return {
       filePath: path.resolve(__dirname, 'src/stubs/react-native-maps-stub.js'),
-      type: 'sourceFile'
+      type: 'sourceFile',
     };
   }
 
@@ -47,9 +47,11 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
 config.resolver.alias = {
   ...(config.resolver.alias || {}),
   // Map react-native-maps to stub for web only
-  ...(isWeb ? {
-    'react-native-maps': path.resolve(__dirname, 'src/stubs/react-native-maps-stub.js')
-  } : {})
+  ...(isWeb
+    ? {
+        'react-native-maps': path.resolve(__dirname, 'src/stubs/react-native-maps-stub.js'),
+      }
+    : {}),
 };
 
 // Performance optimizations (compatible with Bolt)

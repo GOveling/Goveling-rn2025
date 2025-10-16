@@ -207,7 +207,7 @@ export default function ResetPasswordVerifyScreen() {
     }
 
     // Auto-focus password when code is complete
-    if (index === 5 && text && newCode.every(c => c)) {
+    if (index === 5 && text && newCode.every((c) => c)) {
       setTimeout(() => {
         passwordInputRef.current?.focus();
       }, 100);
@@ -222,7 +222,7 @@ export default function ResetPasswordVerifyScreen() {
 
   const resetPassword = async () => {
     const codeString = code.join('');
-    
+
     if (codeString.length !== 6) {
       Alert.alert('Error', 'Por favor ingresa el código de 6 dígitos');
       return;
@@ -243,13 +243,13 @@ export default function ResetPasswordVerifyScreen() {
 
     try {
       console.log('🔐 Verifying reset code and updating password');
-      
+
       const response = await supabase.functions.invoke('verify-reset-password', {
-        body: { 
+        body: {
           email,
           code: codeString,
-          newPassword
-        }
+          newPassword,
+        },
       });
 
       console.log('🔐 Reset password response:', response);
@@ -260,7 +260,7 @@ export default function ResetPasswordVerifyScreen() {
       }
 
       const resetData = response.data;
-      
+
       if (resetData?.ok) {
         // Clear stored email
         await AsyncStorage.removeItem('resetPasswordEmail');
@@ -271,8 +271,8 @@ export default function ResetPasswordVerifyScreen() {
           [
             {
               text: 'Iniciar Sesión',
-              onPress: () => router.replace('/auth' as any)
-            }
+              onPress: () => router.replace('/auth' as any),
+            },
           ]
         );
       } else {
@@ -292,7 +292,7 @@ export default function ResetPasswordVerifyScreen() {
     setLoading(true);
     try {
       const response = await supabase.functions.invoke('send-reset-password', {
-        body: { email }
+        body: { email },
       });
 
       if (response.data?.ok) {
@@ -310,13 +310,13 @@ export default function ResetPasswordVerifyScreen() {
     }
   };
 
-  const backgroundColors = isDark 
-    ? ['#1A1B3C', '#2D1B69', '#4A154B'] as const
-    : ['#6366F1', '#8B5CF6', '#EC4899'] as const;
+  const backgroundColors = isDark
+    ? (['#1A1B3C', '#2D1B69', '#4A154B'] as const)
+    : (['#6366F1', '#8B5CF6', '#EC4899'] as const);
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle="light-content" />
@@ -327,49 +327,70 @@ export default function ResetPasswordVerifyScreen() {
         end={{ x: 1, y: 1 }}
       >
         {/* Back Button */}
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
         {/* Main Card */}
-        <View style={[styles.card, { 
-          backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' 
-        }]}>
-          
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)',
+            },
+          ]}
+        >
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/branding-zeppeling.png')} 
+            <Image
+              source={require('../../assets/branding-zeppeling.png')}
               style={styles.logo}
               resizeMode="contain"
             />
           </View>
 
           {/* Title */}
-          <Text style={[styles.title, { 
-            color: isDark ? '#fff' : '#1f2937' 
-          }]}>
+          <Text
+            style={[
+              styles.title,
+              {
+                color: isDark ? '#fff' : '#1f2937',
+              },
+            ]}
+          >
             🔐 Nueva Contraseña
           </Text>
-          
-          <Text style={[styles.subtitle, { 
-            color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280' 
-          }]}>
+
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280',
+              },
+            ]}
+          >
             Ingresa el código de 6 dígitos que enviamos a {email} y tu nueva contraseña
           </Text>
 
           {/* Error Message */}
           {error && (
-            <View style={[styles.errorContainer, { 
-              backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' 
-            }]}>
+            <View
+              style={[
+                styles.errorContainer,
+                {
+                  backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)',
+                },
+              ]}
+            >
               <Ionicons name="alert-circle" size={20} color={isDark ? '#FCA5A5' : '#DC2626'} />
-              <Text style={[styles.errorText, { 
-                color: isDark ? '#FCA5A5' : '#DC2626' 
-              }]}>
+              <Text
+                style={[
+                  styles.errorText,
+                  {
+                    color: isDark ? '#FCA5A5' : '#DC2626',
+                  },
+                ]}
+              >
                 {error}
               </Text>
               <TouchableOpacity onPress={() => setError(null)}>
@@ -383,16 +404,25 @@ export default function ResetPasswordVerifyScreen() {
             {code.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={(ref) => { codeInputRefs.current[index] = ref; }}
-                style={[styles.codeInput, {
-                  borderColor: digit 
-                    ? '#6366F1' 
-                    : (isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'),
-                  color: isDark ? '#fff' : '#000',
-                  backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-                }]}
+                ref={(ref) => {
+                  codeInputRefs.current[index] = ref;
+                }}
+                style={[
+                  styles.codeInput,
+                  {
+                    borderColor: digit
+                      ? '#6366F1'
+                      : isDark
+                        ? 'rgba(255,255,255,0.3)'
+                        : 'rgba(0,0,0,0.2)',
+                    color: isDark ? '#fff' : '#000',
+                    backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                  },
+                ]}
                 value={digit}
-                onChangeText={(text) => handleCodeChange(text.replace(/[^0-9]/g, '').slice(0, 1), index)}
+                onChangeText={(text) =>
+                  handleCodeChange(text.replace(/[^0-9]/g, '').slice(0, 1), index)
+                }
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 keyboardType="numeric"
                 maxLength={1}
@@ -405,11 +435,14 @@ export default function ResetPasswordVerifyScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               ref={passwordInputRef}
-              style={[styles.input, { 
-                borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                color: isDark ? '#fff' : '#000',
-                backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-              }]}
+              style={[
+                styles.input,
+                {
+                  borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                  color: isDark ? '#fff' : '#000',
+                  backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                },
+              ]}
               placeholder="Nueva Contraseña"
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
               value={newPassword}
@@ -418,14 +451,11 @@ export default function ResetPasswordVerifyScreen() {
               returnKeyType="next"
               onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
             />
-            <TouchableOpacity 
-              style={styles.eyeIcon} 
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Ionicons 
-                name={showPassword ? 'eye' : 'eye-off'} 
-                size={24} 
-                color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} 
+            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye' : 'eye-off'}
+                size={24}
+                color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               />
             </TouchableOpacity>
           </View>
@@ -434,11 +464,14 @@ export default function ResetPasswordVerifyScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               ref={confirmPasswordInputRef}
-              style={[styles.input, { 
-                borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                color: isDark ? '#fff' : '#000',
-                backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)'
-              }]}
+              style={[
+                styles.input,
+                {
+                  borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                  color: isDark ? '#fff' : '#000',
+                  backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
+                },
+              ]}
               placeholder="Confirmar Nueva Contraseña"
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
               value={confirmPassword}
@@ -447,20 +480,20 @@ export default function ResetPasswordVerifyScreen() {
               returnKeyType="done"
               onSubmitEditing={resetPassword}
             />
-            <TouchableOpacity 
-              style={styles.eyeIcon} 
+            <TouchableOpacity
+              style={styles.eyeIcon}
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              <Ionicons 
-                name={showConfirmPassword ? 'eye' : 'eye-off'} 
-                size={24} 
-                color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} 
+              <Ionicons
+                name={showConfirmPassword ? 'eye' : 'eye-off'}
+                size={24}
+                color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               />
             </TouchableOpacity>
           </View>
 
           {/* Verify Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.verifyButton, { opacity: loading ? 0.6 : 1 }]}
             onPress={resetPassword}
             disabled={loading}
@@ -468,32 +501,36 @@ export default function ResetPasswordVerifyScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.verifyButtonText}>
-                Actualizar Contraseña
-              </Text>
+              <Text style={styles.verifyButtonText}>Actualizar Contraseña</Text>
             )}
           </TouchableOpacity>
 
           {/* Resend Code */}
           <View style={styles.resendContainer}>
-            <Text style={[styles.resendText, { 
-              color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280' 
-            }]}>
+            <Text
+              style={[
+                styles.resendText,
+                {
+                  color: isDark ? 'rgba(255,255,255,0.8)' : '#6b7280',
+                },
+              ]}
+            >
               ¿No recibiste el código?
             </Text>
-            <TouchableOpacity 
-              onPress={resendCode}
-              disabled={resendCooldown > 0 || loading}
-            >
-              <Text style={[styles.resendLink, { 
-                color: resendCooldown > 0 ? '#9CA3AF' : (isDark ? '#fff' : '#6366F1'),
-                opacity: resendCooldown > 0 ? 0.5 : 1
-              }]}>
+            <TouchableOpacity onPress={resendCode} disabled={resendCooldown > 0 || loading}>
+              <Text
+                style={[
+                  styles.resendLink,
+                  {
+                    color: resendCooldown > 0 ? '#9CA3AF' : isDark ? '#fff' : '#6366F1',
+                    opacity: resendCooldown > 0 ? 0.5 : 1,
+                  },
+                ]}
+              >
                 {resendCooldown > 0 ? `Reenviar (${resendCooldown}s)` : 'Reenviar'}
               </Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>

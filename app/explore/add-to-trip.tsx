@@ -6,7 +6,7 @@ import {
   Alert,
   StyleSheet,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -51,7 +51,7 @@ export default function AddToTripScreen() {
         priceLevel: 0,
         photos: [],
         business_status: 'OPERATIONAL',
-        source: 'params'
+        source: 'params',
       };
       setPlace(basicPlace);
 
@@ -90,38 +90,32 @@ export default function AddToTripScreen() {
         .maybeSingle();
 
       if (existingPlace) {
-        Alert.alert(
-          'Lugar ya agregado',
-          `"${place.name}" ya está en tu viaje "${tripTitle}"`,
-          [
-            {
-              text: 'Ver lugares del viaje',
-              onPress: () => router.push(`/trips/${tripId}/places`)
-            },
-            {
-              text: 'Continuar explorando',
-              onPress: () => router.push('/(tabs)/explore')
-            }
-          ]
-        );
+        Alert.alert('Lugar ya agregado', `"${place.name}" ya está en tu viaje "${tripTitle}"`, [
+          {
+            text: 'Ver lugares del viaje',
+            onPress: () => router.push(`/trips/${tripId}/places`),
+          },
+          {
+            text: 'Continuar explorando',
+            onPress: () => router.push('/(tabs)/explore'),
+          },
+        ]);
         return;
       }
 
       // Agregar el lugar al viaje
-      const { error } = await supabase
-        .from('trip_places')
-        .insert({
-          trip_id: tripId,
-          place_id: place.id,
-          name: place.name,
-          address: place.address || '',
-          lat: place.coordinates?.lat || 0,
-          lng: place.coordinates?.lng || 0,
-          category: place.types?.[0] || place.category || 'establishment',
-          photo_url: (place.photos && place.photos.length > 0) ? place.photos[0] : null,
-          added_by: user.user.id,
-          added_at: new Date().toISOString()
-        });
+      const { error } = await supabase.from('trip_places').insert({
+        trip_id: tripId,
+        place_id: place.id,
+        name: place.name,
+        address: place.address || '',
+        lat: place.coordinates?.lat || 0,
+        lng: place.coordinates?.lng || 0,
+        category: place.types?.[0] || place.category || 'establishment',
+        photo_url: place.photos && place.photos.length > 0 ? place.photos[0] : null,
+        added_by: user.user.id,
+        added_at: new Date().toISOString(),
+      });
 
       if (error) {
         console.error('Error adding place to trip:', error);
@@ -137,16 +131,15 @@ export default function AddToTripScreen() {
           {
             text: 'Continuar explorando',
             style: 'default',
-            onPress: () => router.push('/(tabs)/explore')
+            onPress: () => router.push('/(tabs)/explore'),
           },
           {
             text: 'Ver lugares del viaje',
             style: 'default',
-            onPress: () => router.push(`/trips/${tripId}/places`)
-          }
+            onPress: () => router.push(`/trips/${tripId}/places`),
+          },
         ]
       );
-
     } catch (error) {
       console.error('Error adding place to trip:', error);
       Alert.alert('Error', 'Ocurrió un error inesperado');
@@ -175,10 +168,7 @@ export default function AddToTripScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#374151" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -205,7 +195,7 @@ export default function AddToTripScreen() {
               )}
             </View>
 
-            {((place.address ?? '').trim().length > 0) && (
+            {(place.address ?? '').trim().length > 0 && (
               <View style={styles.addressContainer}>
                 <Ionicons name="location-outline" size={16} color="#6B7280" />
                 <Text style={styles.addressText}>{place.address}</Text>

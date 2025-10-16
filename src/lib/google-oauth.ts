@@ -9,7 +9,7 @@ const getGoogleClientIds = () => {
     console.error('❌ Google OAuth no configurado correctamente');
     return null;
   }
-  
+
   return API_KEYS.googleOAuth;
 };
 
@@ -20,7 +20,7 @@ const isExpoGo = (): boolean => {
   if (typeof window !== 'undefined') {
     return false; // Estamos en web
   }
-  
+
   // Verificar si estamos en Expo Go usando Constants
   try {
     return Constants.appOwnership === 'expo';
@@ -34,22 +34,22 @@ const isExpoGo = (): boolean => {
  */
 export const getGoogleClientId = (): string => {
   const clientIds = getGoogleClientIds();
-  
+
   if (!clientIds) {
     throw new Error('Google OAuth no configurado - verifica las variables de entorno');
   }
-  
+
   // En web, usamos el Client ID web
   if (typeof window !== 'undefined') {
     return clientIds.web;
   }
-  
+
   // Si estamos en Expo Go, usar siempre web client
   if (isExpoGo()) {
     console.log('🔧 Detectado Expo Go - Usando autenticación web');
     return clientIds.web;
   }
-  
+
   // En móvil nativo, usamos Platform de React Native
   switch (Platform.OS) {
     case 'ios':
@@ -70,17 +70,17 @@ export const getGoogleClientId = (): string => {
 export const getPlatformInfo = () => {
   const isWeb = typeof window !== 'undefined';
   const inExpoGo = isExpoGo();
-  const platform = isWeb ? 'web' : (inExpoGo ? 'expo-go' : Platform.OS);
+  const platform = isWeb ? 'web' : inExpoGo ? 'expo-go' : Platform.OS;
   const clientId = getGoogleClientId();
   const clientIds = getGoogleClientIds();
-  
+
   return {
     platform,
     isWeb,
     inExpoGo,
     clientId,
     allClientIds: clientIds,
-    shouldUseWebAuth: isWeb || inExpoGo
+    shouldUseWebAuth: isWeb || inExpoGo,
   };
 };
 
@@ -89,16 +89,16 @@ export const getPlatformInfo = () => {
  */
 export const getOAuthConfig = () => {
   const platformInfo = getPlatformInfo();
-  
+
   // Usar siempre la URL más segura (Supabase) para desarrollo
   const redirectUrl = getSafeRedirectUrl('development');
-  
+
   return {
     clientId: platformInfo.clientId,
     redirectUrl,
     platform: platformInfo.platform,
     useWebAuth: true, // Siempre usar web auth en desarrollo
     inExpoGo: platformInfo.inExpoGo,
-    isSecure: true // Indicar que usamos URL segura
+    isSecure: true, // Indicar que usamos URL segura
   };
 };

@@ -39,7 +39,10 @@ interface MapRegion {
 }
 
 // Función para calcular la región del mapa basada en los puntos
-function calculateRegion(userLocation: { latitude: number; longitude: number } | null, places: PlaceLike[]): MapRegion {
+function calculateRegion(
+  userLocation: { latitude: number; longitude: number } | null,
+  places: PlaceLike[]
+): MapRegion {
   // Recopilar todas las coordenadas
   const coordinates: { latitude: number; longitude: number }[] = [];
 
@@ -47,11 +50,11 @@ function calculateRegion(userLocation: { latitude: number; longitude: number } |
     coordinates.push(userLocation);
   }
 
-  places.forEach(place => {
+  places.forEach((place) => {
     if (place.coordinates) {
       coordinates.push({
         latitude: place.coordinates.lat,
-        longitude: place.coordinates.lng
+        longitude: place.coordinates.lng,
       });
     }
   });
@@ -77,10 +80,10 @@ function calculateRegion(userLocation: { latitude: number; longitude: number } |
   }
 
   // Calcular los límites (bounding box)
-  const minLat = Math.min(...coordinates.map(coord => coord.latitude));
-  const maxLat = Math.max(...coordinates.map(coord => coord.latitude));
-  const minLng = Math.min(...coordinates.map(coord => coord.longitude));
-  const maxLng = Math.max(...coordinates.map(coord => coord.longitude));
+  const minLat = Math.min(...coordinates.map((coord) => coord.latitude));
+  const maxLat = Math.max(...coordinates.map((coord) => coord.latitude));
+  const minLng = Math.min(...coordinates.map((coord) => coord.longitude));
+  const maxLng = Math.max(...coordinates.map((coord) => coord.longitude));
 
   // Calcular el centro
   const centerLat = (minLat + maxLat) / 2;
@@ -137,7 +140,7 @@ export const AppleMap: React.FC<AppleMapProps> = ({ userLocation, places, style 
 
         {/* Marcadores de lugares */}
         {places
-          .filter(place => place.coordinates)
+          .filter((place) => place.coordinates)
           .map((place, index) => (
             <Marker
               key={place.id || `place-${index}`}

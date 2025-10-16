@@ -10,7 +10,7 @@ import {
   Platform,
   Dimensions,
   StyleSheet,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -81,7 +81,7 @@ const accommodationTypes = [
   { label: 'Apartamento', value: 'apartment', icon: '🏢' },
   { label: 'Camping', value: 'camping', icon: '⛺' },
   { label: 'Casa Rural', value: 'rural_house', icon: '🏡' },
-  { label: 'Otro', value: 'other', icon: '🏨' }
+  { label: 'Otro', value: 'other', icon: '🏨' },
 ];
 
 const transportTypes = [
@@ -93,10 +93,15 @@ const transportTypes = [
   { label: 'Barco', value: 'boat', icon: '⛵' },
   { label: 'Bicicleta', value: 'bike', icon: '🚲' },
   { label: 'A pie', value: 'walking', icon: '🚶' },
-  { label: 'Otro', value: 'other', icon: '🚗' }
+  { label: 'Otro', value: 'other', icon: '🚗' },
 ];
 
-export default function EditTripModal({ visible, onClose, trip, onTripUpdated }: EditTripModalProps) {
+export default function EditTripModal({
+  visible,
+  onClose,
+  trip,
+  onTripUpdated,
+}: EditTripModalProps) {
   const [tripData, setTripData] = useState<EditableTripData>({
     title: '',
     description: '',
@@ -106,7 +111,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
     accommodation: [],
     transport: [],
     isDateUncertain: false,
-    hasNoDates: false
+    hasNoDates: false,
   });
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -120,10 +125,10 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
     if (visible && trip) {
       // Convertir string separado por comas a array para múltiples selecciones
       const accommodationArray = trip.accommodation_preference
-        ? trip.accommodation_preference.split(',').map(item => item.trim())
+        ? trip.accommodation_preference.split(',').map((item) => item.trim())
         : [];
       const transportArray = trip.transport_preference
-        ? trip.transport_preference.split(',').map(item => item.trim())
+        ? trip.transport_preference.split(',').map((item) => item.trim())
         : [];
 
       setTripData({
@@ -135,7 +140,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
         accommodation: accommodationArray,
         transport: transportArray,
         isDateUncertain: false,
-        hasNoDates: !trip.start_date || !trip.end_date
+        hasNoDates: !trip.start_date || !trip.end_date,
       });
     }
   }, [visible, trip]);
@@ -153,7 +158,10 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
     // Solo validar fechas si no está marcado como "sin fechas"
     if (!tripData.hasNoDates) {
       if (!tripData.startDate || !tripData.endDate) {
-        Alert.alert('Error', 'Las fechas de inicio y fin son obligatorias, o marca la opción "Sin fechas"');
+        Alert.alert(
+          'Error',
+          'Las fechas de inicio y fin son obligatorias, o marca la opción "Sin fechas"'
+        );
         return;
       }
 
@@ -169,13 +177,22 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
       const updateData = {
         title: tripData.title.trim(),
         description: tripData.description.trim() || null,
-        start_date: tripData.hasNoDates ? null : (tripData.startDate ? formatDateForStorage(tripData.startDate) : null),
-        end_date: tripData.hasNoDates ? null : (tripData.endDate ? formatDateForStorage(tripData.endDate) : null),
+        start_date: tripData.hasNoDates
+          ? null
+          : tripData.startDate
+            ? formatDateForStorage(tripData.startDate)
+            : null,
+        end_date: tripData.hasNoDates
+          ? null
+          : tripData.endDate
+            ? formatDateForStorage(tripData.endDate)
+            : null,
         budget: tripData.budget ? parseFloat(tripData.budget) : null,
-        accommodation_preference: tripData.accommodation.length > 0 ? tripData.accommodation.join(', ') : null,
+        accommodation_preference:
+          tripData.accommodation.length > 0 ? tripData.accommodation.join(', ') : null,
         transport_preference: tripData.transport.length > 0 ? tripData.transport.join(', ') : null,
         has_defined_dates: !tripData.hasNoDates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
@@ -196,16 +213,15 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
           text: 'OK',
           onPress: () => {
             onTripUpdated(data);
-            
+
             // Trigger global trip refresh for CurrentTripCard
             console.log('🔄 EditTripModal: Trip updated, triggering global refresh');
             triggerGlobalTripRefresh();
-            
-            handleClose();
-          }
-        }
-      ]);
 
+            handleClose();
+          },
+        },
+      ]);
     } catch (error) {
       console.error('Error updating trip:', error);
       Alert.alert('Error', 'Hubo un problema al actualizar el viaje');
@@ -221,7 +237,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
       [
         {
           text: 'Cancelar',
-          style: 'cancel'
+          style: 'cancel',
         },
         {
           text: 'Eliminar',
@@ -235,7 +251,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                 .from('trips')
                 .update({
                   status: 'cancelled',
-                  updated_at: new Date().toISOString()
+                  updated_at: new Date().toISOString(),
                 })
                 .eq('id', trip.id);
 
@@ -258,8 +274,8 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             } finally {
               setLoading(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -269,15 +285,17 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
   const getAccommodationLabel = (values: string[]) => {
     if (values.length === 0) return 'Seleccionar alojamiento';
     if (values.length === 1) {
-      const accommodation = accommodationTypes.find(a => a.value === values[0]);
-      return accommodation ? `${accommodation.icon} ${accommodation.label}` : 'Seleccionar alojamiento';
+      const accommodation = accommodationTypes.find((a) => a.value === values[0]);
+      return accommodation
+        ? `${accommodation.icon} ${accommodation.label}`
+        : 'Seleccionar alojamiento';
     }
     return `${values.length} tipos de alojamiento seleccionados`;
   };
@@ -285,7 +303,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
   const getTransportLabel = (values: string[]) => {
     if (values.length === 0) return 'Seleccionar transporte';
     if (values.length === 1) {
-      const transport = transportTypes.find(t => t.value === values[0]);
+      const transport = transportTypes.find((t) => t.value === values[0]);
       return transport ? `${transport.icon} ${transport.label}` : 'Seleccionar transporte';
     }
     return `${values.length} tipos de transporte seleccionados`;
@@ -328,7 +346,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                 style={styles.input}
                 placeholder="Ej: Viaje a París"
                 value={tripData.title}
-                onChangeText={(text) => setTripData(prev => ({ ...prev, title: text }))}
+                onChangeText={(text) => setTripData((prev) => ({ ...prev, title: text }))}
                 maxLength={100}
               />
             </View>
@@ -340,7 +358,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                 style={[styles.input, styles.textArea]}
                 placeholder="Describe tu viaje..."
                 value={tripData.description}
-                onChangeText={(text) => setTripData(prev => ({ ...prev, description: text }))}
+                onChangeText={(text) => setTripData((prev) => ({ ...prev, description: text }))}
                 multiline={true}
                 numberOfLines={4}
                 maxLength={500}
@@ -354,7 +372,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
               {/* Opción "Sin fechas" */}
               <TouchableOpacity
                 style={[styles.checkboxContainer, tripData.hasNoDates && styles.checkboxSelected]}
-                onPress={() => setTripData(prev => ({ ...prev, hasNoDates: !prev.hasNoDates }))}
+                onPress={() => setTripData((prev) => ({ ...prev, hasNoDates: !prev.hasNoDates }))}
               >
                 <View style={[styles.checkbox, tripData.hasNoDates && styles.checkboxChecked]}>
                   {tripData.hasNoDates && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
@@ -398,7 +416,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                   value={tripData.budget}
                   onChangeText={(text) => {
                     const numericText = text.replace(/[^0-9.]/g, '');
-                    setTripData(prev => ({ ...prev, budget: numericText }));
+                    setTripData((prev) => ({ ...prev, budget: numericText }));
                   }}
                   keyboardType="numeric"
                 />
@@ -422,13 +440,8 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             {/* Transporte */}
             <View style={styles.section}>
               <Text style={styles.label}>Tipo de Transporte Preferido</Text>
-              <TouchableOpacity
-                style={styles.picker}
-                onPress={() => setShowTransportPicker(true)}
-              >
-                <Text style={styles.pickerText}>
-                  {getTransportLabel(tripData.transport)}
-                </Text>
+              <TouchableOpacity style={styles.picker} onPress={() => setShowTransportPicker(true)}>
+                <Text style={styles.pickerText}>{getTransportLabel(tripData.transport)}</Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
               </TouchableOpacity>
             </View>
@@ -438,10 +451,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
 
           {/* Botón Eliminar Viaje */}
           <View style={styles.deleteSection}>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDeleteTrip}
-            >
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteTrip}>
               <Ionicons name="trash-outline" size={20} color="#DC2626" />
               <Text style={styles.deleteButtonText}>Eliminar Viaje</Text>
             </TouchableOpacity>
@@ -457,7 +467,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             onChange={(event, selectedDate) => {
               setShowStartDatePicker(false);
               if (selectedDate) {
-                setTripData(prev => ({ ...prev, startDate: selectedDate }));
+                setTripData((prev) => ({ ...prev, startDate: selectedDate }));
               }
             }}
             minimumDate={new Date()}
@@ -475,7 +485,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
             onChange={(event, selectedDate) => {
               setShowEndDatePicker(false);
               if (selectedDate) {
-                setTripData(prev => ({ ...prev, endDate: selectedDate }));
+                setTripData((prev) => ({ ...prev, endDate: selectedDate }));
               }
             }}
             minimumDate={tripData.startDate || new Date()}
@@ -507,14 +517,15 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                   key={accommodation.value}
                   style={[
                     styles.pickerItem,
-                    tripData.accommodation.includes(accommodation.value) && styles.pickerItemSelected
+                    tripData.accommodation.includes(accommodation.value) &&
+                      styles.pickerItemSelected,
                   ]}
                   onPress={() => {
-                    setTripData(prev => ({
+                    setTripData((prev) => ({
                       ...prev,
                       accommodation: prev.accommodation.includes(accommodation.value)
-                        ? prev.accommodation.filter(item => item !== accommodation.value)
-                        : [...prev.accommodation, accommodation.value]
+                        ? prev.accommodation.filter((item) => item !== accommodation.value)
+                        : [...prev.accommodation, accommodation.value],
                     }));
                   }}
                 >
@@ -530,11 +541,7 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
         </Modal>
 
         {/* Transport Picker */}
-        <Modal
-          visible={showTransportPicker}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
+        <Modal visible={showTransportPicker} animationType="slide" presentationStyle="pageSheet">
           <View style={styles.pickerModal}>
             <View style={styles.pickerHeader}>
               <TouchableOpacity onPress={() => setShowTransportPicker(false)}>
@@ -551,14 +558,14 @@ export default function EditTripModal({ visible, onClose, trip, onTripUpdated }:
                   key={transport.value}
                   style={[
                     styles.pickerItem,
-                    tripData.transport.includes(transport.value) && styles.pickerItemSelected
+                    tripData.transport.includes(transport.value) && styles.pickerItemSelected,
                   ]}
                   onPress={() => {
-                    setTripData(prev => ({
+                    setTripData((prev) => ({
                       ...prev,
                       transport: prev.transport.includes(transport.value)
-                        ? prev.transport.filter(item => item !== transport.value)
-                        : [...prev.transport, transport.value]
+                        ? prev.transport.filter((item) => item !== transport.value)
+                        : [...prev.transport, transport.value],
                     }));
                   }}
                 >

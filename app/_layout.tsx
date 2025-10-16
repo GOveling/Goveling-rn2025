@@ -5,7 +5,7 @@ import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider } from '../src/lib/theme';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { Stack, useSegments, Redirect } from 'expo-router';
-import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native'
+import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { StatusBar } from 'expo-status-bar';
 import { logger } from '~/utils/logger';
@@ -38,9 +38,7 @@ class ErrorBoundary extends React.Component<
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Error al cargar la app</Text>
           <Text style={styles.errorMessage}>{this.state.error?.message}</Text>
-          <Text style={styles.errorHint}>
-            Por favor, cierra y vuelve a abrir la app
-          </Text>
+          <Text style={styles.errorHint}>Por favor, cierra y vuelve a abrir la app</Text>
         </View>
       );
     }
@@ -65,17 +63,19 @@ function InlineAuthGuard() {
   if (loading) {
     logger.debug('DEBUG AuthGuard - loading, showing spinner');
     return (
-      <View style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        backgroundColor: '#F7F7FA',
-        justifyContent: 'center', 
-        alignItems: 'center',
-        zIndex: 9999
-      }}>
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: '#F7F7FA',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+        }}
+      >
         <ActivityIndicator size="large" color="#0066CC" />
         <Text style={{ marginTop: 16, color: '#666' }}>Cargando...</Text>
       </View>
@@ -101,7 +101,7 @@ function InlineAuthGuard() {
 export default function Root() {
   useFrameworkReady();
   logger.debug('🚀 Root Layout mounting...');
-  
+
   return (
     <ErrorBoundary>
       <Provider store={store}>
@@ -110,29 +110,31 @@ export default function Root() {
             <ThemeProvider>
               <AuthProvider>
                 <ToastProvider>
-              <>
-                {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
-                <Stack screenOptions={{
-                  headerShown: false,
-                  ...(Platform.OS === 'web' && {
-                    contentStyle: { backgroundColor: '#F7F7FA' }
-                  })
-                }}>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  {/* Use explicit routes to match actual files */}
-                  <Stack.Screen name="auth/index" options={{ headerShown: false }} />
-                  <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
-                  <Stack.Screen name="settings/index" options={{ headerShown: false }} />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                {/* El guard se renderiza como hermano y solo hace Redirect cuando corresponde */}
-                <InlineAuthGuard />
-                <StatusBar style="auto" />
-              </>
-            </ToastProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </I18nextProvider>
+                  <>
+                    {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        ...(Platform.OS === 'web' && {
+                          contentStyle: { backgroundColor: '#F7F7FA' },
+                        }),
+                      }}
+                    >
+                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                      {/* Use explicit routes to match actual files */}
+                      <Stack.Screen name="auth/index" options={{ headerShown: false }} />
+                      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+                      <Stack.Screen name="settings/index" options={{ headerShown: false }} />
+                      <Stack.Screen name="+not-found" />
+                    </Stack>
+                    {/* El guard se renderiza como hermano y solo hace Redirect cuando corresponde */}
+                    <InlineAuthGuard />
+                    <StatusBar style="auto" />
+                  </>
+                </ToastProvider>
+              </AuthProvider>
+            </ThemeProvider>
+          </I18nextProvider>
         </PersistGate>
       </Provider>
     </ErrorBoundary>

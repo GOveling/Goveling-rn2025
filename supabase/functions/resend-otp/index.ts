@@ -1,46 +1,50 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 serve(async (req) => {
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
-  
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!);
+
   try {
     const { email, type = 'confirmation' } = await req.json();
-    
+
     if (!email) {
       throw new Error('Email is required');
     }
 
     // Generate OTP code
     const code = (Math.floor(Math.random() * 900000) + 100000).toString();
-    
+
     // Store OTP in database
-    await supabase.from('email_otps').insert({ 
-      email, 
+    await supabase.from('email_otps').insert({
+      email,
       code,
       type,
-      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
     });
 
     // Get Resend API key from environment
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+
     if (!resendApiKey) {
       console.log('⚠️ RESEND_API_KEY not configured, returning code for development');
-      return new Response(JSON.stringify({ 
-        ok: true, 
-        code,
-        message: 'Development mode - check server logs for code'
-      }), { 
-        headers: { "Content-Type": "application/json" } 
-      });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          code,
+          message: 'Development mode - check server logs for code',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Send email via Resend
-    const emailSubject = type === 'confirmation' 
-      ? 'Confirma tu cuenta en Goveling' 
-      : 'Código de verificación - Goveling';
-      
+    const emailSubject =
+      type === 'confirmation'
+        ? 'Confirma tu cuenta en Goveling'
+        : 'Código de verificación - Goveling';
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -65,9 +69,10 @@ serve(async (req) => {
           
           <h2>¡Hola!</h2>
           
-          ${type === 'confirmation' 
-            ? '<p>Gracias por crear tu cuenta en Goveling. Para completar tu registro, usa el siguiente código de verificación:</p>'
-            : '<p>Usa el siguiente código de verificación para continuar:</p>'
+          ${
+            type === 'confirmation'
+              ? '<p>Gracias por crear tu cuenta en Goveling. Para completar tu registro, usa el siguiente código de verificación:</p>'
+              : '<p>Usa el siguiente código de verificación para continuar:</p>'
           }
           
           <div class="code-box">
@@ -90,7 +95,7 @@ serve(async (req) => {
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -107,23 +112,28 @@ serve(async (req) => {
     }
 
     const resendData = await resendResponse.json();
-    
-    return new Response(JSON.stringify({ 
-      ok: true, 
-      message: 'Email sent successfully',
-      emailId: resendData.id 
-    }), { 
-      headers: { "Content-Type": "application/json" } 
-    });
 
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        message: 'Email sent successfully',
+        emailId: resendData.id,
+      }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (e) {
     console.error('Email sending error:', e);
-    return new Response(JSON.stringify({ 
-      ok: false, 
-      error: e.message 
-    }), { 
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: e.message,
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

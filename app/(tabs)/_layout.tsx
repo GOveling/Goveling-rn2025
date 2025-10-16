@@ -14,21 +14,21 @@ const profileAnimation = require('../../assets/lottie/profile.json');
 
 export default function TabLayout() {
   const { t } = useTranslation();
-  
+
   // Estados para forzar re-render de cada animación
   const [tabKeys, setTabKeys] = useState({
     home: 0,
     explore: 0,
     trips: 0,
     booking: 0,
-    profile: 0
+    profile: 0,
   });
 
   // Función para incrementar el key de un tab específico
   const incrementTabKey = useCallback((tabName: keyof typeof tabKeys) => {
-    setTabKeys(prev => ({
+    setTabKeys((prev) => ({
       ...prev,
-      [tabName]: prev[tabName] + 1
+      [tabName]: prev[tabName] + 1,
     }));
   }, []);
 
@@ -38,27 +38,31 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false, // Ocultamos los labels por defecto ya que usamos el nuestro
-          tabBarStyle: Platform.OS === 'web' ? {
-            backgroundColor: '#ffffff',
-            borderTopWidth: 1,
-            borderTopColor: '#e5e7eb',
-            paddingBottom: 8,
-            paddingTop: 8,
-            height: 84 // Aumentamos la altura 20% más para evitar corte de iconos en dispositivos nativos
-          } : {
-            paddingBottom: 8,
-            paddingTop: 8,
-            height: 84
-          }
-        }}>
+          tabBarStyle:
+            Platform.OS === 'web'
+              ? {
+                  backgroundColor: '#ffffff',
+                  borderTopWidth: 1,
+                  borderTopColor: '#e5e7eb',
+                  paddingBottom: 8,
+                  paddingTop: 8,
+                  height: 84, // Aumentamos la altura 20% más para evitar corte de iconos en dispositivos nativos
+                }
+              : {
+                  paddingBottom: 8,
+                  paddingTop: 8,
+                  height: 84,
+                },
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
             title: t('home.title') || 'Home',
             tabBarIcon: ({ focused }) => (
-              <AnimatedTabIcon 
-                focused={focused} 
-                source={homeAnimation} 
+              <AnimatedTabIcon
+                focused={focused}
+                source={homeAnimation}
                 label="Home"
                 size={36}
                 key={`home-${tabKeys.home}`}
@@ -74,9 +78,9 @@ export default function TabLayout() {
           options={{
             title: t('explore.title') || 'Explore',
             tabBarIcon: ({ focused }) => (
-              <AnimatedTabIcon 
-                focused={focused} 
-                source={exploreAnimation} 
+              <AnimatedTabIcon
+                focused={focused}
+                source={exploreAnimation}
                 label="Explore"
                 size={36}
                 key={`explore-${tabKeys.explore}`}
@@ -93,9 +97,9 @@ export default function TabLayout() {
           options={{
             title: t('trips.title') || 'My Trips',
             tabBarIcon: ({ focused }) => (
-              <AnimatedTabIcon 
-                focused={focused} 
-                source={tripsAnimation} 
+              <AnimatedTabIcon
+                focused={focused}
+                source={tripsAnimation}
                 label="Trips"
                 size={36}
                 key={`trips-${tabKeys.trips}`}
@@ -111,9 +115,9 @@ export default function TabLayout() {
           options={{
             title: t('booking.title') || 'Booking',
             tabBarIcon: ({ focused }) => (
-              <AnimatedTabIcon 
-                focused={focused} 
-                source={bookingAnimation} 
+              <AnimatedTabIcon
+                focused={focused}
+                source={bookingAnimation}
                 label="Booking"
                 size={36}
                 key={`booking-${tabKeys.booking}`}
@@ -129,9 +133,9 @@ export default function TabLayout() {
           options={{
             title: t('profile.title') || 'Profile',
             tabBarIcon: ({ focused }) => (
-              <AnimatedTabIcon 
-                focused={focused} 
-                source={profileAnimation} 
+              <AnimatedTabIcon
+                focused={focused}
+                source={profileAnimation}
                 label="Profile"
                 size={36}
                 key={`profile-${tabKeys.profile}`}

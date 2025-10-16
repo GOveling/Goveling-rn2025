@@ -10,26 +10,22 @@ interface OAuthHelpProps {
 
 export default function OAuthHelp({ isDark = false, visible = true }: OAuthHelpProps) {
   const [expanded, setExpanded] = useState(false);
-  
+
   if (!visible) return null;
-  
+
   const showInstructions = () => {
-    Alert.alert(
-      "Configuración de Google OAuth",
-      GOOGLE_CONSOLE_SETUP_INSTRUCTIONS,
-      [
-        { text: "Copiar URL", onPress: () => copyToClipboard() },
-        { text: "Cerrar", style: "cancel" }
-      ]
-    );
+    Alert.alert('Configuración de Google OAuth', GOOGLE_CONSOLE_SETUP_INSTRUCTIONS, [
+      { text: 'Copiar URL', onPress: () => copyToClipboard() },
+      { text: 'Cerrar', style: 'cancel' },
+    ]);
   };
-  
+
   const copyToClipboard = () => {
     // En web, usar navigator.clipboard, en móvil podríamos usar una librería
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText('https://iwsuyrlrbmnbfyfkqowl.supabase.co/auth/v1/callback');
     }
-    Alert.alert("URL Copiada", "URL de callback copiada al portapapeles");
+    Alert.alert('URL Copiada', 'URL de callback copiada al portapapeles');
   };
 
   const textColor = isDark ? '#FFFFFF' : '#333333';
@@ -40,52 +36,33 @@ export default function OAuthHelp({ isDark = false, visible = true }: OAuthHelpP
   return (
     <View style={[styles.container, { backgroundColor, borderColor }]}>
       <View style={styles.header}>
-        <Ionicons 
-          name="warning-outline" 
-          size={20} 
-          color={iconColor} 
-        />
-        <Text style={[styles.title, { color: textColor }]}>
-          OAuth en Desarrollo
-        </Text>
+        <Ionicons name="warning-outline" size={20} color={iconColor} />
+        <Text style={[styles.title, { color: textColor }]}>OAuth en Desarrollo</Text>
         <TouchableOpacity onPress={showInstructions}>
-          <Ionicons 
-            name="help-circle-outline" 
-            size={20} 
-            color={iconColor}
-          />
+          <Ionicons name="help-circle-outline" size={20} color={iconColor} />
         </TouchableOpacity>
       </View>
-      
+
       <Text style={[styles.subtitle, { color: textColor, opacity: 0.8 }]}>
         Si ves errores de "navegador no seguro", toca el ícono de ayuda
       </Text>
-      
-      <TouchableOpacity 
-        style={styles.expandButton}
-        onPress={() => setExpanded(!expanded)}
-      >
+
+      <TouchableOpacity style={styles.expandButton} onPress={() => setExpanded(!expanded)}>
         <Text style={[styles.expandText, { color: iconColor }]}>
           {expanded ? 'Ocultar detalles' : 'Ver solución rápida'}
         </Text>
-        <Ionicons 
-          name={expanded ? 'chevron-up' : 'chevron-down'} 
-          size={16} 
-          color={iconColor}
-        />
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={iconColor} />
       </TouchableOpacity>
-      
+
       {expanded && (
         <View style={styles.expandedContent}>
           <Text style={[styles.solutionText, { color: textColor }]}>
-            🚀 <Text style={styles.bold}>Solución recomendada:</Text>{'\n'}
+            🚀 <Text style={styles.bold}>Solución recomendada:</Text>
+            {'\n'}
             Usar el callback de Supabase (ya configurado){'\n\n'}
-            
-            🔧 <Text style={styles.bold}>Si persisten errores:</Text>{'\n'}
-            • Verificar configuración en Google Console{'\n'}
-            • Usar Chrome/Safari actualizado{'\n'}
-            • Permitir cookies y popups{'\n'}
-            • Probar en modo incógnito
+            🔧 <Text style={styles.bold}>Si persisten errores:</Text>
+            {'\n'}• Verificar configuración en Google Console{'\n'}• Usar Chrome/Safari actualizado
+            {'\n'}• Permitir cookies y popups{'\n'}• Probar en modo incógnito
           </Text>
         </View>
       )}

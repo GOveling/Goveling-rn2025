@@ -4,15 +4,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { AppMapProps } from '../types';
 import { MAP_STYLE_URL } from '../../../config/maps';
 
-export default function WebDomMap({ 
-  center, 
-  zoom = 13, 
-  markers = [], 
-  polylines = [], 
+export default function WebDomMap({
+  center,
+  zoom = 13,
+  markers = [],
+  polylines = [],
   onRegionChange,
   showUserLocation = true,
   onLocationFound,
-  onLocationError 
+  onLocationError,
 }: AppMapProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -30,19 +30,29 @@ export default function WebDomMap({
     mapRef.current = map;
 
     map.on('load', () => {
-      markers.forEach(m => {
-        new maplibregl.Marker({ color: '#007AFF' }).setLngLat([m.coord.longitude, m.coord.latitude]).addTo(map);
+      markers.forEach((m) => {
+        new maplibregl.Marker({ color: '#007AFF' })
+          .setLngLat([m.coord.longitude, m.coord.latitude])
+          .addTo(map);
       });
-      polylines.forEach(pl => {
+      polylines.forEach((pl) => {
         map.addSource(pl.id, {
           type: 'geojson',
           data: {
             type: 'Feature',
-            geometry: { type: 'LineString', coordinates: pl.path.map(p => [p.longitude, p.latitude]) },
-            properties: {}
-          }
+            geometry: {
+              type: 'LineString',
+              coordinates: pl.path.map((p) => [p.longitude, p.latitude]),
+            },
+            properties: {},
+          },
         });
-        map.addLayer({ id: pl.id, type: 'line', source: pl.id, paint: { 'line-width': 4, 'line-color': '#007AFF' } });
+        map.addLayer({
+          id: pl.id,
+          type: 'line',
+          source: pl.id,
+          paint: { 'line-width': 4, 'line-color': '#007AFF' },
+        });
       });
 
       // Don't add default geolocation control, we'll handle it manually
@@ -64,7 +74,7 @@ export default function WebDomMap({
     });
 
     return () => map.remove();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getUserLocation = () => {
@@ -78,9 +88,9 @@ export default function WebDomMap({
       (position) => {
         const userLocation = {
           latitude: position.coords.latitude,
-          longitude: position.coords.longitude
+          longitude: position.coords.longitude,
         };
-        
+
         if (mapRef.current) {
           // Remove existing user location marker
           if (userLocationMarkerRef.current) {
@@ -89,8 +99,10 @@ export default function WebDomMap({
           }
 
           // Remove any existing location markers (including default ones)
-          const existingMarkers = document.querySelectorAll('.maplibregl-user-location-dot, .maplibregl-user-location-accuracy-circle');
-          existingMarkers.forEach(marker => marker.remove());
+          const existingMarkers = document.querySelectorAll(
+            '.maplibregl-user-location-dot, .maplibregl-user-location-accuracy-circle'
+          );
+          existingMarkers.forEach((marker) => marker.remove());
 
           // Add user location marker with explicit red styling
           const el = document.createElement('div');
@@ -111,7 +123,7 @@ export default function WebDomMap({
           // Center map on user location
           mapRef.current.flyTo({
             center: [userLocation.longitude, userLocation.latitude],
-            zoom: 15
+            zoom: 15,
           });
         }
 
@@ -137,7 +149,7 @@ export default function WebDomMap({
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 60000
+        maximumAge: 60000,
       }
     );
   };
@@ -162,7 +174,7 @@ export default function WebDomMap({
             fontSize: '14px',
             fontWeight: '600',
             opacity: isLocating ? 0.6 : 1,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
           {isLocating ? '🔄 Localizando...' : '📍 Mi Ubicación'}

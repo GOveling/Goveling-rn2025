@@ -3,10 +3,26 @@ export const options = { headerShown: false };
 import { useTheme } from '~/lib/theme';
 import React from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, RefreshControl, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Alert,
+  RefreshControl,
+  Animated,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
-import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
+import {
+  getCurrentPosition,
+  reverseCityCached,
+  reverseGeocodeCoordinatesCached,
+  getLocationFromCoordinatesCached,
+  getSavedPlaces,
+  getActiveOrNextTrip,
+} from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getWeatherCached } from '~/lib/weather';
 import { useSettingsStore } from '~/lib/settingsStore';
@@ -33,8 +49,12 @@ export default function HomeTab() {
   const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
 
   // RTK Query for trips - automatic caching & refetching
-  const { data: breakdown, isLoading: tripsLoading, refetch: refetchTrips } = useGetTripsBreakdownQuery();
-  
+  const {
+    data: breakdown,
+    isLoading: tripsLoading,
+    refetch: refetchTrips,
+  } = useGetTripsBreakdownQuery();
+
   // Derive data from breakdown
   const currentTrip = breakdown?.active || null;
   const upcomingTripsCount = breakdown?.counts.upcoming || 0;
@@ -44,16 +64,16 @@ export default function HomeTab() {
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
-  
+
   // Memoized callbacks for child components
   const toggleUnits = React.useCallback(() => {
     setUnits(units === 'c' ? 'f' : 'c');
   }, [units, setUnits]);
-  
+
   const toggleTravelMode = React.useCallback(() => {
     setTravelModeEnabled(!travelModeEnabled);
   }, [travelModeEnabled, setTravelModeEnabled]);
-  
+
   const recomputeSavedPlaces = React.useCallback(async () => {
     logger.debug('🏠 HomeTab: recomputeSavedPlaces called');
     try {
@@ -69,7 +89,7 @@ export default function HomeTab() {
   const onRefresh = React.useCallback(async () => {
     logger.debug('🔄 HomeTab: Pull-to-refresh triggered');
     setRefreshing(true);
-    
+
     try {
       // Refresh all data in parallel - RTK Query handles trips caching
       await Promise.all([
@@ -81,14 +101,14 @@ export default function HomeTab() {
             setPos(p);
             const [cityName, weather] = await Promise.all([
               reverseCityCached(p.lat, p.lng),
-              getWeatherCached(p.lat, p.lng, units)
+              getWeatherCached(p.lat, p.lng, units),
             ]);
             setCity(cityName || 'Ubicación');
             setTemp(weather?.temp);
           }
-        })()
+        })(),
       ]);
-      
+
       logger.debug('✅ HomeTab: Pull-to-refresh completed successfully');
     } catch (error) {
       logger.error('❌ HomeTab: Pull-to-refresh error:', error);
@@ -98,7 +118,7 @@ export default function HomeTab() {
   }, [recomputeSavedPlaces, refetchTrips, units]);
 
   React.useEffect(() => {
-    registerDeviceToken().catch(() => { });
+    registerDeviceToken().catch(() => {});
     (async () => {
       const p = await getCurrentPosition();
       if (p) {
@@ -134,7 +154,10 @@ export default function HomeTab() {
                   setCity(alternativeCity);
                 } else {
                   // Fallback 3: coordinate-based detection
-                  const coordinateLocation = await getLocationFromCoordinatesCached(pos.lat, pos.lng);
+                  const coordinateLocation = await getLocationFromCoordinatesCached(
+                    pos.lat,
+                    pos.lng
+                  );
                   if (coordinateLocation) {
                     setCity(coordinateLocation);
                   }
@@ -175,11 +198,11 @@ export default function HomeTab() {
     (async () => {
       try {
         logger.debug('🏠 HomeTab: Initial data loading started');
-        
+
         // RTK Query handles trips data automatically via useGetTripsBreakdownQuery
         // Just need to recompute saved places
         await recomputeSavedPlaces();
-        
+
         logger.debug('🏠 HomeTab: Initial data loading completed');
       } catch (e) {
         logger.error('🏠 HomeTab: Error loading stats:', e);
@@ -188,10 +211,12 @@ export default function HomeTab() {
   }, []);
 
   // Recompute when screen gains focus
-  useFocusEffect(React.useCallback(() => {
-    logger.debug('🏠 HomeTab: Screen gained focus, recomputing saved places');
-    recomputeSavedPlaces();
-  }, [recomputeSavedPlaces]));
+  useFocusEffect(
+    React.useCallback(() => {
+      logger.debug('🏠 HomeTab: Screen gained focus, recomputing saved places');
+      recomputeSavedPlaces();
+    }, [recomputeSavedPlaces])
+  );
 
   // Realtime subscription to trip_places changes for any trip the user is involved in
   React.useEffect(() => {
@@ -201,20 +226,27 @@ export default function HomeTab() {
         logger.debug('🏠 HomeTab: Setting up realtime subscription for trip_places changes');
         channel = supabase
           .channel('home-saved-places')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_places' }, (payload) => {
-            logger.debug('🏠 HomeTab: Realtime change detected in trip_places:', payload.eventType);
-            // Lightweight debounce if many rapid changes (timeout 120ms)
-            if ((channel as any)._pending) {
-              logger.debug('🏠 HomeTab: Debouncing rapid changes...');
-              return;
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'trip_places' },
+            (payload) => {
+              logger.debug(
+                '🏠 HomeTab: Realtime change detected in trip_places:',
+                payload.eventType
+              );
+              // Lightweight debounce if many rapid changes (timeout 120ms)
+              if ((channel as any)._pending) {
+                logger.debug('🏠 HomeTab: Debouncing rapid changes...');
+                return;
+              }
+              (channel as any)._pending = true;
+              setTimeout(() => {
+                (channel as any)._pending = false;
+                logger.debug('🏠 HomeTab: Triggering recomputeSavedPlaces after realtime change');
+                recomputeSavedPlaces();
+              }, 120);
             }
-            (channel as any)._pending = true;
-            setTimeout(() => {
-              (channel as any)._pending = false;
-              logger.debug('🏠 HomeTab: Triggering recomputeSavedPlaces after realtime change');
-              recomputeSavedPlaces();
-            }, 120);
-          })
+          )
           .subscribe();
       } catch (e) {
         logger.error('🏠 HomeTab: Realtime subscription error (trip_places):', e);
@@ -246,7 +278,7 @@ export default function HomeTab() {
         if (!userId) return;
 
         logger.debug('🏠 HomeTab: Setting up realtime subscription for trips changes');
-        
+
         const debouncedRefresh = async () => {
           if (debounceTimeout) {
             clearTimeout(debounceTimeout);
@@ -267,49 +299,64 @@ export default function HomeTab() {
         // Listen to trips table changes
         tripsChannel = supabase
           .channel(`home-trips-${userId}`)
-          .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'trips',
-            filter: `owner_id=eq.${userId}`
-          }, (payload) => {
-            logger.debug('🏠 HomeTab: Trip creation detected');
-            debouncedRefresh();
-          })
-          .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'trips',
-            filter: `owner_id=eq.${userId}`
-          }, (payload) => {
-            logger.debug('🏠 HomeTab: Trip update detected');
-            debouncedRefresh();
-          })
-          .on('postgres_changes', {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'trips',
-            filter: `owner_id=eq.${userId}`
-          }, (payload) => {
-            logger.debug('🏠 HomeTab: Trip deletion detected');
-            debouncedRefresh();
-          })
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'trips',
+              filter: `owner_id=eq.${userId}`,
+            },
+            (payload) => {
+              logger.debug('🏠 HomeTab: Trip creation detected');
+              debouncedRefresh();
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'trips',
+              filter: `owner_id=eq.${userId}`,
+            },
+            (payload) => {
+              logger.debug('🏠 HomeTab: Trip update detected');
+              debouncedRefresh();
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'trips',
+              filter: `owner_id=eq.${userId}`,
+            },
+            (payload) => {
+              logger.debug('🏠 HomeTab: Trip deletion detected');
+              debouncedRefresh();
+            }
+          )
           .subscribe();
 
         // Also listen to trip_collaborators changes (when user is added/removed from trips)
         collaboratorsChannel = supabase
           .channel(`home-collaborators-${userId}`)
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'trip_collaborators',
-            filter: `user_id=eq.${userId}`
-          }, (payload) => {
-            logger.debug('🏠 HomeTab: Trip collaboration change detected');
-            debouncedRefresh();
-          })
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'trip_collaborators',
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload) => {
+              logger.debug('🏠 HomeTab: Trip collaboration change detected');
+              debouncedRefresh();
+            }
+          )
           .subscribe();
-
       } catch (e) {
         logger.error('🏠 HomeTab: Realtime subscription error (trips):', e);
       }
@@ -337,7 +384,7 @@ export default function HomeTab() {
   return (
     <TripRefreshProvider>
       <StatusBar barStyle="light-content" />
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1, backgroundColor: '#F7F7FA' }}
         refreshControl={
           <RefreshControl
@@ -351,19 +398,11 @@ export default function HomeTab() {
         }
       >
         {/* Header con gradiente - Memoized LocationWidget */}
-        <LocationWidget
-          city={city}
-          temp={temp}
-          units={units}
-          onToggleUnits={toggleUnits}
-        />
+        <LocationWidget city={city} temp={temp} units={units} onToggleUnits={toggleUnits} />
 
         <View style={{ padding: 16, gap: 16 }}>
           {/* Cards de estadísticas - Memoized StatCards */}
-          <StatCards
-            savedPlacesCount={savedPlacesCount}
-            upcomingTripsCount={upcomingTripsCount}
-          />
+          <StatCards savedPlacesCount={savedPlacesCount} upcomingTripsCount={upcomingTripsCount} />
 
           {/* Viaje Activo */}
           <CurrentTripCard />
@@ -379,19 +418,30 @@ export default function HomeTab() {
           <NearbyAlerts />
 
           {/* Lugares Populares Globalmente */}
-          <View style={{
-            backgroundColor: 'white',
-            borderRadius: 16,
-            padding: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 5
-          }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <View
+            style={{
+              backgroundColor: 'white',
+              borderRadius: 16,
+              padding: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 5,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
               <View>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}>
+                <Text
+                  style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}
+                >
                   📈 Lugares Populares
                 </Text>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>
@@ -399,12 +449,8 @@ export default function HomeTab() {
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>
-                  Siguiente:
-                </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280' }}>
-                  4:52
-                </Text>
+                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>Siguiente:</Text>
+                <Text style={{ fontSize: 12, color: '#6B7280' }}>4:52</Text>
                 <TouchableOpacity style={{ marginTop: 4 }}>
                   <Text style={{ fontSize: 16, color: '#8B5CF6' }}>🔄 Actualizar</Text>
                 </TouchableOpacity>
@@ -417,25 +463,34 @@ export default function HomeTab() {
                 alignItems: 'center',
                 backgroundColor: '#F3E8FF',
                 borderRadius: 12,
-                padding: 12
+                padding: 12,
               }}
-              onPress={() => Alert.alert('Santorini', 'Funcionalidad de lugares específicos próximamente disponible')}
+              onPress={() =>
+                Alert.alert(
+                  'Santorini',
+                  'Funcionalidad de lugares específicos próximamente disponible'
+                )
+              }
             >
-              <View style={{
-                width: 60,
-                height: 60,
-                borderRadius: 8,
-                backgroundColor: '#FEF3C7',
-                marginRight: 12,
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
+              <View
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 8,
+                  backgroundColor: '#FEF3C7',
+                  marginRight: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Text style={{ fontSize: 24 }}>🌅</Text>
               </View>
 
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 }}>
+                  <Text
+                    style={{ fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 }}
+                  >
                     Santorini Sunset Point
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -447,7 +502,8 @@ export default function HomeTab() {
                   📍 Santorini, Greece
                 </Text>
                 <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
-                  One of the world's most photographed sunsets with breathtaking views over the Aegean Sea...
+                  One of the world's most photographed sunsets with breathtaking views over the
+                  Aegean Sea...
                 </Text>
               </View>
             </TouchableOpacity>

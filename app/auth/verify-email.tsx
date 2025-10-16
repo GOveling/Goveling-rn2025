@@ -41,7 +41,7 @@ export default function VerifyEmailScreen() {
         } else {
           // No pending signup, redirect back
           Alert.alert('Error', 'No hay registro pendiente', [
-            { text: 'OK', onPress: () => router.push('/auth') }
+            { text: 'OK', onPress: () => router.push('/auth') },
           ]);
         }
       } catch (error) {
@@ -81,7 +81,7 @@ export default function VerifyEmailScreen() {
         }
       });
       setCode(newCode);
-      
+
       // Focus on the next empty input or the last one
       const nextIndex = Math.min(index + digits.length, 5);
       inputRefs.current[nextIndex]?.focus();
@@ -126,20 +126,20 @@ export default function VerifyEmailScreen() {
 
       // Verify the code and create user
       const { data, error } = await supabase.functions.invoke('verify-email-code', {
-        body: { 
-          email, 
+        body: {
+          email,
           code: fullCode,
           password,
-          fullName 
-        }
+          fullName,
+        },
       });
 
       if (error) throw error;
-      
+
       if (data?.ok) {
         // Clear pending signup data
         await AsyncStorage.removeItem('pendingSignup');
-        
+
         // Now sign in the user
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -155,7 +155,7 @@ export default function VerifyEmailScreen() {
           );
         } else {
           Alert.alert('¡Éxito!', 'Tu cuenta ha sido verificada y estás conectado', [
-            { text: 'OK', onPress: () => router.replace('/(tabs)') }
+            { text: 'OK', onPress: () => router.replace('/(tabs)') },
           ]);
         }
       } else {
@@ -170,7 +170,7 @@ export default function VerifyEmailScreen() {
 
   const resendCode = async () => {
     if (resendCooldown > 0) return;
-    
+
     setLoading(true);
     try {
       const pendingData = await AsyncStorage.getItem('pendingSignup');
@@ -181,11 +181,11 @@ export default function VerifyEmailScreen() {
       const { email, fullName } = JSON.parse(pendingData);
 
       const { data, error } = await supabase.functions.invoke('send-confirmation-email', {
-        body: { email, fullName }
+        body: { email, fullName },
       });
 
       if (error) throw error;
-      
+
       if (data?.ok) {
         Alert.alert('Código Reenviado', `Se ha enviado un nuevo código a ${email}`);
         setCode(['', '', '', '', '', '']);
@@ -205,14 +205,14 @@ export default function VerifyEmailScreen() {
       '¿Estás seguro que quieres cancelar? Tendrás que registrarte de nuevo.',
       [
         { text: 'No', style: 'cancel' },
-        { 
-          text: 'Sí, cancelar', 
+        {
+          text: 'Sí, cancelar',
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('pendingSignup');
             router.push('/auth');
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -242,15 +242,8 @@ export default function VerifyEmailScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={goBack}
-            >
-              <Ionicons 
-                name="arrow-back" 
-                size={24} 
-                color={isDark ? '#ffffff' : '#000000'} 
-              />
+            <TouchableOpacity style={styles.backButton} onPress={goBack}>
+              <Ionicons name="arrow-back" size={24} color={isDark ? '#ffffff' : '#000000'} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
@@ -283,14 +276,22 @@ export default function VerifyEmailScreen() {
             {code.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={(ref) => { inputRefs.current[index] = ref; }}
+                ref={(ref) => {
+                  inputRefs.current[index] = ref;
+                }}
                 style={[
                   styles.codeInput,
                   {
-                    borderColor: digit ? (isDark ? '#6366F1' : '#4F46E5') : (isDark ? '#444444' : '#e1e5e9'),
+                    borderColor: digit
+                      ? isDark
+                        ? '#6366F1'
+                        : '#4F46E5'
+                      : isDark
+                        ? '#444444'
+                        : '#e1e5e9',
                     backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
                     color: isDark ? '#ffffff' : '#000000',
-                  }
+                  },
                 ]}
                 value={digit}
                 onChangeText={(value) => handleCodeChange(value, index)}
@@ -309,9 +310,10 @@ export default function VerifyEmailScreen() {
             style={[
               styles.verifyButton,
               {
-                backgroundColor: code.join('').length === 6 ? '#6366F1' : (isDark ? '#444444' : '#e1e5e9'),
+                backgroundColor:
+                  code.join('').length === 6 ? '#6366F1' : isDark ? '#444444' : '#e1e5e9',
                 opacity: loading ? 0.8 : 1,
-              }
+              },
             ]}
             onPress={verifyCode}
             disabled={loading || code.join('').length !== 6}
@@ -333,12 +335,15 @@ export default function VerifyEmailScreen() {
               disabled={loading || resendCooldown > 0}
               style={styles.resendButton}
             >
-              <Text style={[
-                styles.resendButtonText,
-                {
-                  color: (loading || resendCooldown > 0) ? (isDark ? '#666666' : '#cccccc') : '#6366F1'
-                }
-              ]}>
+              <Text
+                style={[
+                  styles.resendButtonText,
+                  {
+                    color:
+                      loading || resendCooldown > 0 ? (isDark ? '#666666' : '#cccccc') : '#6366F1',
+                  },
+                ]}
+              >
                 {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : 'Reenviar código'}
               </Text>
             </TouchableOpacity>

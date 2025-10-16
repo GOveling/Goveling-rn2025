@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 
 type TravelState = {
   enabled: boolean;
-  setEnabled: (v:boolean)=>void;
+  setEnabled: (v: boolean) => void;
 };
 
 // Manual travel state management without Zustand
 class TravelStore {
   private state: { enabled: boolean } = {
-    enabled: false
+    enabled: false,
   };
 
   private listeners: Set<() => void> = new Set();
@@ -21,13 +21,13 @@ class TravelStore {
   }
 
   private notifyListeners() {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
   }
 
   getState(): TravelState {
     return {
       enabled: this.state.enabled,
-      setEnabled: this.setEnabled.bind(this)
+      setEnabled: this.setEnabled.bind(this),
     };
   }
 
@@ -48,10 +48,10 @@ export const useTravel = () => {
     const unsubscribe = travelStore.subscribe(() => {
       setState(travelStore.getState());
     });
-    
+
     // Update state in case it was loaded after component mount
     setState(travelStore.getState());
-    
+
     return unsubscribe;
   }, []);
 

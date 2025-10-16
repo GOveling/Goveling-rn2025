@@ -6,15 +6,13 @@ export const OAUTH_CONFIG = {
       'http://localhost:8081',
       'https://localhost:8081',
       'http://127.0.0.1:8081',
-      'https://127.0.0.1:8081'
-    ]
+      'https://127.0.0.1:8081',
+    ],
   },
   production: {
     redirectUrl: 'https://your-production-domain.com/auth/callback',
-    allowedOrigins: [
-      'https://your-production-domain.com'
-    ]
-  }
+    allowedOrigins: ['https://your-production-domain.com'],
+  },
 };
 
 export const getRedirectUrl = () => {

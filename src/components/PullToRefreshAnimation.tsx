@@ -7,10 +7,10 @@ interface PullToRefreshAnimationProps {
   color?: string;
 }
 
-const PullToRefreshAnimation: React.FC<PullToRefreshAnimationProps> = ({ 
-  refreshing, 
-  size = 24, 
-  color = '#4A90E2' 
+const PullToRefreshAnimation: React.FC<PullToRefreshAnimationProps> = ({
+  refreshing,
+  size = 24,
+  color = '#4A90E2',
 }) => {
   const spinValue = React.useRef(new Animated.Value(0)).current;
 
@@ -45,11 +45,13 @@ const PullToRefreshAnimation: React.FC<PullToRefreshAnimationProps> = ({
   if (!refreshing) return null;
 
   return (
-    <View style={{
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 10,
-    }}>
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+      }}
+    >
       <Animated.View
         style={{
           width: size,

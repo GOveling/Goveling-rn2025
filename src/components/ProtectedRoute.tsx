@@ -12,19 +12,23 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (loading) {
     return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#F8F9FA'
-      }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#F8F9FA',
+        }}
+      >
         <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={{
-          marginTop: 16,
-          fontSize: 16,
-          color: '#666',
-          textAlign: 'center'
-        }}>
+        <Text
+          style={{
+            marginTop: 16,
+            fontSize: 16,
+            color: '#666',
+            textAlign: 'center',
+          }}
+        >
           Cargando...
         </Text>
       </View>

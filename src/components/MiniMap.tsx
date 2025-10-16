@@ -13,14 +13,14 @@ export default function MiniMap({ lat, lng, height = 120, title }: Props) {
     id: 'location',
     coordinate: {
       latitude: lat,
-      longitude: lng
+      longitude: lng,
     },
-    title: title || 'Ubicación'
+    title: title || 'Ubicación',
   };
 
   const center = {
     latitude: lat,
-    longitude: lng
+    longitude: lng,
   };
 
   return (
@@ -34,7 +34,7 @@ export default function MiniMap({ lat, lng, height = 120, title }: Props) {
         borderRadius: 10,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#eee'
+        borderColor: '#eee',
       }}
     />
   );

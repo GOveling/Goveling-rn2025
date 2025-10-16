@@ -1,18 +1,17 @@
-
 import { useState, useEffect } from 'react';
 
-type Units = 'c'|'f';
-type ThemeMode = 'system'|'light'|'dark';
+type Units = 'c' | 'f';
+type ThemeMode = 'system' | 'light' | 'dark';
 
 type State = {
   language: string | null;
   units: Units;
   theme: ThemeMode;
   mapStyleUrl: string | null;
-  setLanguage: (lang:string|null)=>void;
-  setUnits: (u:Units)=>void;
-  setTheme: (m:ThemeMode)=>void;
-  setMapStyleUrl: (u:string|null)=>void;
+  setLanguage: (lang: string | null) => void;
+  setUnits: (u: Units) => void;
+  setTheme: (m: ThemeMode) => void;
+  setMapStyleUrl: (u: string | null) => void;
 };
 
 // Safe environment detection that works in all contexts
@@ -30,7 +29,7 @@ class SettingsStore {
     language: null,
     units: 'c',
     theme: 'system',
-    mapStyleUrl: null
+    mapStyleUrl: null,
   };
 
   private listeners: Set<() => void> = new Set();
@@ -42,7 +41,7 @@ class SettingsStore {
 
   private async loadInitialState() {
     if (this.initialized) return;
-    
+
     try {
       if (isBrowser()) {
         // Browser environment
@@ -73,7 +72,7 @@ class SettingsStore {
   private async saveState() {
     try {
       const stateToSave = JSON.stringify(this.state);
-      
+
       if (isBrowser()) {
         localStorage.setItem('goveling-settings', stateToSave);
       } else if (isNative()) {
@@ -90,7 +89,7 @@ class SettingsStore {
   }
 
   private notifyListeners() {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
   }
 
   subscribe(listener: () => void) {
@@ -106,7 +105,7 @@ class SettingsStore {
       setLanguage: this.setLanguage.bind(this),
       setUnits: this.setUnits.bind(this),
       setTheme: this.setTheme.bind(this),
-      setMapStyleUrl: this.setMapStyleUrl.bind(this)
+      setMapStyleUrl: this.setMapStyleUrl.bind(this),
     };
   }
 
@@ -146,10 +145,10 @@ export const useSettingsStore = () => {
     const unsubscribe = settingsStore.subscribe(() => {
       setState(settingsStore.getState());
     });
-    
+
     // Update state in case it was loaded after component mount
     setState(settingsStore.getState());
-    
+
     return unsubscribe;
   }, []);
 

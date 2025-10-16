@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  Modal, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity, 
-  Image, 
-  Alert, 
+import {
+  View,
+  Text,
+  Modal,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
   Platform,
   KeyboardAvoidingView,
-  ActivityIndicator 
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,7 +41,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
     full_name: '',
     description: '',
     avatar_url: '',
-    email: user?.email || ''
+    email: user?.email || '',
   });
 
   useEffect(() => {
@@ -57,9 +57,9 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
       console.log('❌ loadProfile: No user found');
       return;
     }
-    
+
     console.log('📋 loadProfile: Loading profile for user ID:', user.id);
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -77,7 +77,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
           full_name: data.full_name || '',
           description: data.description || '',
           avatar_url: data.avatar_url || '',
-          email: user.email || ''
+          email: user.email || '',
         });
       }
     } catch (error) {
@@ -86,24 +86,20 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
   };
 
   const pickImage = async () => {
-    Alert.alert(
-      'Seleccionar imagen',
-      'Elige una opción',
-      [
-        {
-          text: 'Cámara',
-          onPress: () => openCamera(),
-        },
-        {
-          text: 'Galería',
-          onPress: () => openGallery(),
-        },
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-      ]
-    );
+    Alert.alert('Seleccionar imagen', 'Elige una opción', [
+      {
+        text: 'Cámara',
+        onPress: () => openCamera(),
+      },
+      {
+        text: 'Galería',
+        onPress: () => openGallery(),
+      },
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+    ]);
   };
 
   const openCamera = async () => {
@@ -150,7 +146,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
       setUploading(true);
       console.log('🖼️ Iniciando compresión de imagen:', uri);
 
-      // Verificar que el archivo existe y obtener información  
+      // Verificar que el archivo existe y obtener información
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         throw new Error('El archivo no existe');
@@ -158,14 +154,14 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
       console.log('📊 Archivo original:', {
         size: 'size' in fileInfo ? `${(fileInfo.size / 1024).toFixed(2)}KB` : 'unknown',
-        uri: fileInfo.uri
+        uri: fileInfo.uri,
       });
 
       // Función recursiva para comprimir hasta llegar al tamaño deseado
       const compressImageToTarget = async (imageUri: string, quality = 0.8): Promise<string> => {
         try {
           console.log(`🔄 Comprimiendo con calidad: ${quality}`);
-          
+
           // Comprimir la imagen
           const compressedImage = await ImageManipulator.manipulateAsync(
             imageUri,
@@ -182,9 +178,14 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
           // Verificar el tamaño del archivo
           const compressedFileInfo = await FileSystem.getInfoAsync(compressedImage.uri);
-          const fileSizeKB = (compressedFileInfo.exists && 'size' in compressedFileInfo) ? compressedFileInfo.size / 1024 : 0;
+          const fileSizeKB =
+            compressedFileInfo.exists && 'size' in compressedFileInfo
+              ? compressedFileInfo.size / 1024
+              : 0;
 
-          console.log(`� Imagen comprimida - Calidad: ${quality}, Tamaño: ${fileSizeKB.toFixed(2)}KB`);
+          console.log(
+            `� Imagen comprimida - Calidad: ${quality}, Tamaño: ${fileSizeKB.toFixed(2)}KB`
+          );
 
           // Si es menor a 500KB o la calidad ya es muy baja, devolvemos esta versión
           if (fileSizeKB <= 500 || quality <= 0.1) {
@@ -201,19 +202,21 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
       // Comprimir la imagen hasta el tamaño objetivo
       const finalUri = await compressImageToTarget(uri);
-      
+
       // Verificar tamaño final
       const finalInfo = await FileSystem.getInfoAsync(finalUri);
-      const finalSizeKB = (finalInfo.exists && 'size' in finalInfo) ? finalInfo.size / 1024 : 0;
-      
+      const finalSizeKB = finalInfo.exists && 'size' in finalInfo ? finalInfo.size / 1024 : 0;
+
       console.log(`✅ Imagen final - Tamaño: ${finalSizeKB.toFixed(2)}KB, URI: ${finalUri}`);
 
       // Subir la imagen comprimida
       await uploadImage(finalUri);
-
     } catch (error) {
       console.error('❌ Error completo en compresión:', error);
-      Alert.alert('Error', `No se pudo procesar la imagen: ${error.message || 'Error desconocido'}`);
+      Alert.alert(
+        'Error',
+        `No se pudo procesar la imagen: ${error.message || 'Error desconocido'}`
+      );
       setUploading(false);
     }
   };
@@ -260,14 +263,12 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
       }
 
       console.log('🔄 Subiendo a Supabase Storage...');
-      
+
       // Subir a Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, bytes, {
-          contentType: 'image/jpeg',
-          upsert: true
-        });
+      const { data, error } = await supabase.storage.from('avatars').upload(filePath, bytes, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
 
       if (error) {
         console.error('❌ Error en Supabase upload:', error);
@@ -280,16 +281,15 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
       console.log('✅ Upload exitoso:', data);
 
       // Obtener URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
       console.log('🔗 URL pública generada:', publicUrl);
 
-      setProfileData(prev => ({ ...prev, avatar_url: publicUrl }));
-      
+      setProfileData((prev) => ({ ...prev, avatar_url: publicUrl }));
+
       console.log('✅ Avatar actualizado en el estado');
-      
     } catch (error) {
       console.error('❌ Error completo en upload:', error);
       Alert.alert('Error', `No se pudo subir la imagen: ${error.message || 'Error desconocido'}`);
@@ -300,7 +300,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
   const saveProfile = async () => {
     if (!user) return;
-    
+
     if (!profileData.full_name.trim()) {
       Alert.alert('Error', 'El nombre completo es obligatorio');
       return;
@@ -317,36 +317,31 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
       const updateData: any = {
         full_name: profileData.full_name.trim(),
         description: profileData.description.trim(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       if (profileData.avatar_url) {
         updateData.avatar_url = profileData.avatar_url;
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...updateData
-        });
+      const { error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        ...updateData,
+      });
 
       if (error) {
         throw error;
       }
 
-      Alert.alert(
-        'Éxito',
-        'Tu perfil se ha actualizado correctamente',
-        [{ 
-          text: 'OK', 
+      Alert.alert('Éxito', 'Tu perfil se ha actualizado correctamente', [
+        {
+          text: 'OK',
           onPress: () => {
             onSaved?.();
             onClose();
-          }
-        }]
-      );
-
+          },
+        },
+      ]);
     } catch (error) {
       console.error('Error saving profile:', error);
       Alert.alert('Error', 'No se pudo guardar el perfil');
@@ -356,7 +351,12 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   if (!visible) {
@@ -368,54 +368,58 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <LinearGradient 
-          colors={['#6366F1', '#8B5CF6']} 
-          style={{ 
-            paddingTop: Platform.OS === 'ios' ? 60 : 40, 
-            paddingHorizontal: 20, 
-            paddingBottom: 16 
+        <LinearGradient
+          colors={['#6366F1', '#8B5CF6']}
+          style={{
+            paddingTop: Platform.OS === 'ios' ? 60 : 40,
+            paddingHorizontal: 20,
+            paddingBottom: 16,
           }}
         >
-          <View style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            justifyContent: 'space-between' 
-          }}>
-            <TouchableOpacity 
-              onPress={onClose} 
-              style={{ 
-                padding: 8, 
-                borderRadius: 20, 
-                backgroundColor: 'rgba(255,255,255,0.15)' 
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                padding: 8,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.15)',
               }}
             >
               <Ionicons name="close" size={22} color="#fff" />
             </TouchableOpacity>
-            
-            <Text style={{ 
-              color: '#fff', 
-              fontSize: 18, 
-              fontWeight: '700',
-              flex: 1,
-              textAlign: 'center',
-              marginHorizontal: 16
-            }}>
+
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: 18,
+                fontWeight: '700',
+                flex: 1,
+                textAlign: 'center',
+                marginHorizontal: 16,
+              }}
+            >
               Editar Perfil
             </Text>
-            
-            <TouchableOpacity 
-              onPress={saveProfile} 
+
+            <TouchableOpacity
+              onPress={saveProfile}
               disabled={loading}
-              style={{ 
-                paddingHorizontal: 16, 
-                paddingVertical: 8, 
-                borderRadius: 20, 
-                backgroundColor: 'rgba(34,197,94,0.9)' 
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: 'rgba(34,197,94,0.9)',
               }}
             >
               {loading ? (
@@ -429,16 +433,15 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
         <ScrollView style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
           <View style={{ padding: 20 }}>
-            
             {/* Avatar Section */}
             <View style={{ alignItems: 'center', marginBottom: 30 }}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={pickImage}
                 disabled={uploading}
                 style={{ position: 'relative' }}
               >
                 {profileData.avatar_url ? (
-                  <Image 
+                  <Image
                     source={{ uri: profileData.avatar_url }}
                     style={{
                       width: 120,
@@ -447,8 +450,8 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                       borderWidth: 4,
                       borderColor: '#fff',
                       boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 8,
-                      ...(Platform.OS === 'android' && { elevation: 8 })
+                      elevation: 8,
+                      ...(Platform.OS === 'android' && { elevation: 8 }),
                     }}
                   />
                 ) : (
@@ -465,34 +468,38 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                       borderWidth: 4,
                       borderColor: '#fff',
                       boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 8,
-                      ...(Platform.OS === 'android' && { elevation: 8 })
+                      elevation: 8,
+                      ...(Platform.OS === 'android' && { elevation: 8 }),
                     }}
                   >
-                    <Text style={{ 
-                      fontSize: 36, 
-                      fontWeight: 'bold', 
-                      color: '#fff' 
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: 36,
+                        fontWeight: 'bold',
+                        color: '#fff',
+                      }}
+                    >
                       {getInitials(profileData.full_name || 'GO')}
                     </Text>
                   </LinearGradient>
                 )}
-                
+
                 {/* Edit Icon */}
-                <View style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  backgroundColor: '#4F8EF7',
-                  borderRadius: 20,
-                  width: 40,
-                  height: 40,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 3,
-                  borderColor: '#fff'
-                }}>
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    backgroundColor: '#4F8EF7',
+                    borderRadius: 20,
+                    width: 40,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                  }}
+                >
                   {uploading ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
@@ -500,33 +507,36 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                   )}
                 </View>
               </TouchableOpacity>
-              
-              <Text style={{ 
-                marginTop: 12, 
-                color: '#6b7280', 
-                fontSize: 14, 
-                textAlign: 'center' 
-              }}>
-                {uploading 
-                  ? 'Optimizando imagen...' 
-                  : 'Selecciona una imagen. Se optimizará automáticamente.'
-                }
+
+              <Text
+                style={{
+                  marginTop: 12,
+                  color: '#6b7280',
+                  fontSize: 14,
+                  textAlign: 'center',
+                }}
+              >
+                {uploading
+                  ? 'Optimizando imagen...'
+                  : 'Selecciona una imagen. Se optimizará automáticamente.'}
               </Text>
             </View>
 
             {/* Nombre Completo */}
             <View style={{ marginBottom: 24 }}>
-              <Text style={{ 
-                fontSize: 14, 
-                fontWeight: '600', 
-                color: '#374151', 
-                marginBottom: 8 
-              }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}
+              >
                 Nombre completo
               </Text>
               <TextInput
                 value={profileData.full_name}
-                onChangeText={(text) => setProfileData(prev => ({ ...prev, full_name: text }))}
+                onChangeText={(text) => setProfileData((prev) => ({ ...prev, full_name: text }))}
                 placeholder="Tu nombre completo"
                 style={{
                   backgroundColor: '#fff',
@@ -535,7 +545,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                   paddingVertical: 14,
                   fontSize: 16,
                   borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.1)'
+                  borderColor: 'rgba(0,0,0,0.1)',
                 }}
                 placeholderTextColor="#666"
               />
@@ -543,19 +553,21 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
             {/* Descripción */}
             <View style={{ marginBottom: 24 }}>
-              <Text style={{ 
-                fontSize: 14, 
-                fontWeight: '600', 
-                color: '#374151', 
-                marginBottom: 8 
-              }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}
+              >
                 Descripción
               </Text>
               <TextInput
                 value={profileData.description}
                 onChangeText={(text) => {
                   if (text.length <= 70) {
-                    setProfileData(prev => ({ ...prev, description: text }));
+                    setProfileData((prev) => ({ ...prev, description: text }));
                   }
                 }}
                 placeholder="Entusiasta de Viajes"
@@ -570,51 +582,56 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                   borderWidth: 1,
                   borderColor: 'rgba(0,0,0,0.1)',
                   height: 80,
-                  textAlignVertical: 'top'
+                  textAlignVertical: 'top',
                 }}
                 placeholderTextColor="#666"
               />
-              <Text style={{ 
-                marginTop: 6, 
-                fontSize: 12, 
-                color: '#6366F1', 
-                textAlign: 'right' 
-              }}>
+              <Text
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  color: '#6366F1',
+                  textAlign: 'right',
+                }}
+              >
                 {profileData.description.length}/70 caracteres
               </Text>
             </View>
 
             {/* Email (solo lectura) */}
             <View style={{ marginBottom: 24 }}>
-              <Text style={{ 
-                fontSize: 14, 
-                fontWeight: '600', 
-                color: '#374151', 
-                marginBottom: 8 
-              }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}
+              >
                 Email
               </Text>
-              <View style={{
-                backgroundColor: '#F3F4F6',
-                borderRadius: 12,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                borderWidth: 1,
-                borderColor: 'rgba(0,0,0,0.05)'
-              }}>
-                <Text style={{ fontSize: 16, color: '#6B7280' }}>
-                  {profileData.email}
-                </Text>
+              <View
+                style={{
+                  backgroundColor: '#F3F4F6',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,0,0,0.05)',
+                }}
+              >
+                <Text style={{ fontSize: 16, color: '#6B7280' }}>{profileData.email}</Text>
               </View>
-              <Text style={{ 
-                marginTop: 6, 
-                fontSize: 12, 
-                color: '#6B7280' 
-              }}>
+              <Text
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  color: '#6B7280',
+                }}
+              >
                 El email no se puede cambiar
               </Text>
             </View>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

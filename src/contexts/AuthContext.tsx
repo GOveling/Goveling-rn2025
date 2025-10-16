@@ -14,7 +14,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: false,
-  signOut: async () => { },
+  signOut: async () => {},
 });
 
 export const useAuth = () => {
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const init = async () => {
       try {
         console.log('[Auth] Starting session check...');
-        
+
         // Safety timeout - if init takes more than 5 seconds, stop loading
         timeoutId = setTimeout(() => {
           if (isMounted && loading) {
@@ -50,18 +50,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // 1) Get initial session from storage
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           console.warn('[Auth] getSession error:', error.message);
         } else {
           console.log('[Auth] Session check complete:', data?.session ? 'user found' : 'no user');
         }
-        
+
         if (!isMounted) return;
-        
+
         setSession(data?.session ?? null);
         setUser(data?.session?.user ?? null);
-        
+
         clearTimeout(timeoutId);
       } catch (e) {
         console.error('[Auth] init error:', e);
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Navigate to auth screen to show login/signup immediately
       try {
         router.replace('/auth');
-      } catch { }
+      } catch {}
     } catch (error) {
       console.error('🔐 ❌ Error in AuthContext signOut:', error);
       throw error;

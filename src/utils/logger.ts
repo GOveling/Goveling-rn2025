@@ -1,13 +1,13 @@
 /**
  * Logger Utility - Conditional logging based on environment
- * 
+ *
  * In production (__DEV__ = false):
  * - debug(), info(), warn() are no-ops (do nothing)
  * - error() still logs to console for critical errors
- * 
+ *
  * In development (__DEV__ = true):
  * - All methods log normally
- * 
+ *
  * Usage:
  * import { logger } from '~/utils/logger';
  * logger.debug('Debug info:', data);
@@ -55,13 +55,13 @@ export const logger = {
   /**
    * Error logs - Always logged
    * Use for critical errors that should be tracked in production
-   * 
+   *
    * In production, you can integrate with error tracking services
    * like Sentry, Firebase Crashlytics, etc.
    */
   error: (...args: any[]): void => {
     console.error(...args);
-    
+
     // TODO: In production, send to error tracking service
     // if (!isDevelopment) {
     //   Sentry.captureException(args[0]);
@@ -124,7 +124,7 @@ export const logger = {
     if (isDevelopment && console.trace) {
       console.trace(...args);
     }
-  }
+  },
 };
 
 /**
@@ -161,7 +161,7 @@ export class PerformanceLogger {
 
 /**
  * Decorator for async functions to log execution time
- * 
+ *
  * @example
  * const fetchData = logPerformance('fetchData', async () => {
  *   const response = await fetch(url);
@@ -188,7 +188,7 @@ export function logPerformance<T extends (...args: any[]) => Promise<any>>(
 
 /**
  * Create a namespaced logger for specific modules
- * 
+ *
  * @example
  * const log = createNamespacedLogger('HomeTab');
  * log.debug('Component mounted');

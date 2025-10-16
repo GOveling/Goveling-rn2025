@@ -16,7 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '~/lib/supabase';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
-import { getCurrentUser, getTripCollaborators, getTripOwner, resolveUserRoleForTrip, UserProfile } from '~/lib/userUtils';
+import {
+  getCurrentUser,
+  getTripCollaborators,
+  getTripOwner,
+  resolveUserRoleForTrip,
+  UserProfile,
+} from '~/lib/userUtils';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 import EditTripModal from './EditTripModal';
@@ -32,7 +38,7 @@ const accommodationIcons: { [key: string]: string } = {
   apartment: '🏢',
   camping: '⛺',
   rural_house: '🏡',
-  other: '🏨'
+  other: '🏨',
 };
 
 const transportIcons: { [key: string]: string } = {
@@ -44,7 +50,7 @@ const transportIcons: { [key: string]: string } = {
   boat: '⛵',
   bike: '🚲',
   walking: '🚶',
-  other: '🚗'
+  other: '🚗',
 };
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -148,25 +154,33 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       // Suscripciones en tiempo real para colaboradores e invitaciones
       const channel = supabase
         .channel(`trip-details-team-${trip.id}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'trip_collaborators',
-          filter: `trip_id=eq.${trip.id}`
-        }, () => {
-          console.log('🔄 TripDetailsModal: Collaborators changed, reloading users & stats...');
-          loadUsers();
-          loadTripStats();
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'trip_invitations',
-          filter: `trip_id=eq.${trip.id}`
-        }, () => {
-          console.log('🔄 TripDetailsModal: Invitations changed, reloading pending invites...');
-          fetchPendingInvites();
-        })
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'trip_collaborators',
+            filter: `trip_id=eq.${trip.id}`,
+          },
+          () => {
+            console.log('🔄 TripDetailsModal: Collaborators changed, reloading users & stats...');
+            loadUsers();
+            loadTripStats();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'trip_invitations',
+            filter: `trip_id=eq.${trip.id}`,
+          },
+          () => {
+            console.log('🔄 TripDetailsModal: Invitations changed, reloading pending invites...');
+            fetchPendingInvites();
+          }
+        )
         .subscribe();
 
       return () => {
@@ -188,15 +202,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     try {
       console.log('🔄 TripDetailsModal: Loading users (unified) for trip:', trip.id);
       const user = await getCurrentUser();
-  const useRPC = true; // flag to enable RPC path if function deployed
-  const team = useRPC ? await getTripWithTeamRPC(trip.id) : await getTripWithTeam(trip.id);
+      const useRPC = true; // flag to enable RPC path if function deployed
+      const team = useRPC ? await getTripWithTeamRPC(trip.id) : await getTripWithTeam(trip.id);
 
       setCurrentUser(user);
       setTripOwner(team.owner);
       setCollaborators(team.collaborators);
 
       // Detect minimal profiles (sin full_name y sin avatar_url)
-      const minimal = team.collaborators.some(c => !c.full_name && !c.avatar_url);
+      const minimal = team.collaborators.some((c) => !c.full_name && !c.avatar_url);
       setHasMinimalProfiles(minimal);
 
       console.log('🔍 TripDetailsModal: Trip prop data:', {
@@ -213,26 +227,27 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       });
 
       const ownerId = team.owner?.id || trip.owner_id || trip.user_id || null;
-      
+
       // 🔥 FIX: If ownerId is still null but user exists, assume current user is owner
       // This handles cases where trip lacks owner_id/user_id but is in user's trip list
       const effectiveOwnerId = ownerId || user?.id || null;
-      
+
       const resolved = await resolveUserRoleForTrip(user?.id, {
         id: trip.id,
         owner_id: effectiveOwnerId,
         user_id: trip.user_id ?? null,
       });
-      const finalRole = (user?.id && effectiveOwnerId && user.id === effectiveOwnerId) ? 'owner' : resolved;
+      const finalRole =
+        user?.id && effectiveOwnerId && user.id === effectiveOwnerId ? 'owner' : resolved;
 
-      console.log('🔑 TripDetailsModal: Role resolution (unified):', { 
+      console.log('🔑 TripDetailsModal: Role resolution (unified):', {
         userId: user?.id,
-        ownerId, 
+        ownerId,
         effectiveOwnerId,
         'team.owner?.id': team.owner?.id,
         'trip.owner_id': trip.owner_id,
         'trip.user_id': trip.user_id,
-        resolved, 
+        resolved,
         finalRole,
         'user.id === effectiveOwnerId': user?.id === effectiveOwnerId,
       });
@@ -266,11 +281,11 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       setIsEditing(false);
       onTripUpdate?.(editableTrip);
-      
+
       // Trigger global trip refresh for CurrentTripCard
       console.log('🔄 TripDetailsModal: Trip updated, triggering global refresh');
       triggerGlobalTripRefresh();
-      
+
       Alert.alert('Éxito', 'Viaje actualizado correctamente');
     } catch (error) {
       console.error('Error updating trip:', error);
@@ -324,7 +339,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const getRoleConfig = () => {
     const role = currentRole;
-    const configs: Record<'owner' | 'editor' | 'viewer', { bgColor: string; textColor: string; label: string }> = {
+    const configs: Record<
+      'owner' | 'editor' | 'viewer',
+      { bgColor: string; textColor: string; label: string }
+    > = {
       owner: { bgColor: '#FEF3C7', textColor: '#92400E', label: 'Owner' },
       editor: { bgColor: '#DBEAFE', textColor: '#1E40AF', label: 'Editor' },
       viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: 'Viewer' },
@@ -333,7 +351,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   };
 
   const getUserInitials = (fullName?: string, email?: string) => {
-    const src = (fullName && fullName.trim().length > 0) ? fullName : (email || 'User');
+    const src = fullName && fullName.trim().length > 0 ? fullName : email || 'User';
     const from = src.trim();
     if (from.length === 0) return 'U';
     const parts = from.split(/\s+/);
@@ -367,38 +385,53 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const OverviewTab = () => (
     <ScrollView style={{ flex: 1, padding: 20 }}>
       {/* Header con badges: estado del viaje + rol del usuario */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 20,
+        }}
+      >
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
             {editableTrip.title}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{
-            backgroundColor: getStatusConfig().bgColor,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-          }}>
-            <Text style={{
-              fontSize: 12,
-              fontWeight: '600',
-              color: getStatusConfig().textColor,
-            }}>
+          <View
+            style={{
+              backgroundColor: getStatusConfig().bgColor,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: getStatusConfig().textColor,
+              }}
+            >
               {getTripStatus()}
             </Text>
           </View>
-          <View style={{
-            backgroundColor: getRoleConfig().bgColor,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-          }}>
-            <Text style={{
-              fontSize: 12,
-              fontWeight: '600',
-              color: getRoleConfig().textColor,
-            }}>
+          <View
+            style={{
+              backgroundColor: getRoleConfig().bgColor,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: getRoleConfig().textColor,
+              }}
+            >
               {getRoleConfig().label}
             </Text>
           </View>
@@ -416,8 +449,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         <Text style={{ fontSize: 16, color: '#6B7280' }}>
           {editableTrip.start_date && editableTrip.end_date
             ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
-            : 'No dates set'
-          }
+            : 'No dates set'}
         </Text>
       </View>
 
@@ -429,13 +461,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             Travelers
           </Text>
           {pendingInvites > 0 && (
-            <View style={{
-              marginLeft: 8,
-              backgroundColor: '#F59E0B',
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              borderRadius: 12
-            }}>
+            <View
+              style={{
+                marginLeft: 8,
+                backgroundColor: '#F59E0B',
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 12,
+              }}
+            >
               <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
                 {pendingInvites} pending
               </Text>
@@ -443,7 +477,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           )}
         </View>
         <Text style={{ fontSize: 16, color: '#6B7280' }}>
-          {tripData.collaboratorsCount} {tripData.collaboratorsCount === 1 ? 'traveler' : 'travelers'}
+          {tripData.collaboratorsCount}{' '}
+          {tripData.collaboratorsCount === 1 ? 'traveler' : 'travelers'}
         </Text>
       </View>
 
@@ -487,16 +522,19 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               const trimmedAcc = acc.trim();
               const icon = accommodationIcons[trimmedAcc] || '🏨';
               return (
-                <View key={index} style={{
-                  backgroundColor: '#F3F4F6',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                  marginRight: 8,
-                  marginBottom: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
+                <View
+                  key={index}
+                  style={{
+                    backgroundColor: '#F3F4F6',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
                   <Text style={{ fontSize: 16, marginRight: 6 }}>{icon}</Text>
                   <Text style={{ fontSize: 14, color: '#374151', fontWeight: '500' }}>
                     {trimmedAcc.charAt(0).toUpperCase() + trimmedAcc.slice(1)}
@@ -522,16 +560,19 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               const trimmedTransport = transport.trim();
               const icon = transportIcons[trimmedTransport] || '🚗';
               return (
-                <View key={index} style={{
-                  backgroundColor: '#F3F4F6',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                  marginRight: 8,
-                  marginBottom: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
+                <View
+                  key={index}
+                  style={{
+                    backgroundColor: '#F3F4F6',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
                   <Text style={{ fontSize: 16, marginRight: 6 }}>{icon}</Text>
                   <Text style={{ fontSize: 14, color: '#374151', fontWeight: '500' }}>
                     {trimmedTransport.charAt(0).toUpperCase() + trimmedTransport.slice(1)}
@@ -557,37 +598,34 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {/* Botón de editar - Solo para propietario y editores */}
       {(() => {
-        console.log('🎯 TripDetailsModal: Checking Edit Button visibility:', { 
-          currentRole, 
+        console.log('🎯 TripDetailsModal: Checking Edit Button visibility:', {
+          currentRole,
           shouldShow: currentRole === 'owner' || currentRole === 'editor',
           isOwner: currentRole === 'owner',
           isEditor: currentRole === 'editor',
         });
-        return (currentRole === 'owner' || currentRole === 'editor');
+        return currentRole === 'owner' || currentRole === 'editor';
       })() && (
-        <TouchableOpacity
-          onPress={() => setShowEditModal(true)}
-          style={{ marginTop: 20 }}
-        >
+        <TouchableOpacity onPress={() => setShowEditModal(true)} style={{ marginTop: 20 }}>
           <LinearGradient
             colors={['#8B5CF6', '#EC4899']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-          style={{
-            borderRadius: 12,
-            padding: 16,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="pencil" size={20} color="white" />
-            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
-              Edit Trip
-            </Text>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
+            style={{
+              borderRadius: 12,
+              padding: 16,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="pencil" size={20} color="white" />
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
+                Edit Trip
+              </Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
       )}
     </ScrollView>
   );
@@ -599,22 +637,30 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       </Text>
 
       {hasMinimalProfiles && (
-        <View style={{
-          backgroundColor: '#FFF7ED',
-          borderRadius: 12,
-          padding: 14,
-          borderWidth: 1,
-          borderColor: '#FDBA74',
-          marginBottom: 20,
-          flexDirection: 'row'
-        }}>
-          <Ionicons name="warning-outline" size={22} color="#EA580C" style={{ marginRight: 10, marginTop: 2 }} />
+        <View
+          style={{
+            backgroundColor: '#FFF7ED',
+            borderRadius: 12,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: '#FDBA74',
+            marginBottom: 20,
+            flexDirection: 'row',
+          }}
+        >
+          <Ionicons
+            name="warning-outline"
+            size={22}
+            color="#EA580C"
+            style={{ marginRight: 10, marginTop: 2 }}
+          />
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 14, fontWeight: '700', color: '#9A3412', marginBottom: 4 }}>
               Perfiles incompletos
             </Text>
             <Text style={{ fontSize: 13, color: '#9A3412', lineHeight: 18 }}>
-              Uno o más colaboradores aún no completan su perfil (sin nombre ni avatar). Invítalos a actualizarlo para una mejor experiencia.
+              Uno o más colaboradores aún no completan su perfil (sin nombre ni avatar). Invítalos a
+              actualizarlo para una mejor experiencia.
             </Text>
           </View>
         </View>
@@ -622,14 +668,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {/* Owner */}
       {tripOwner && (
-        <View style={{
-          backgroundColor: '#FEF3C7',
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: '#F59E0B',
-        }}>
+        <View
+          style={{
+            backgroundColor: '#FEF3C7',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: '#F59E0B',
+          }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {tripOwner.avatar_url ? (
               <Image
@@ -637,15 +685,17 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 style={{ width: 50, height: 50, borderRadius: 25, marginRight: 12 }}
               />
             ) : (
-              <View style={{
-                width: 50,
-                height: 50,
-                borderRadius: 25,
-                backgroundColor: '#F59E0B',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12,
-              }}>
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: '#F59E0B',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}
+              >
                 <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>
                   {getUserInitials(tripOwner.full_name, tripOwner.email)}
                 </Text>
@@ -657,20 +707,18 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 {currentUser?.id === tripOwner.id && ' (You)'}
               </Text>
               {tripOwner.full_name && tripOwner.email && (
-                <Text style={{ fontSize: 14, color: '#6B7280' }}>
-                  {tripOwner.email}
-                </Text>
+                <Text style={{ fontSize: 14, color: '#6B7280' }}>{tripOwner.email}</Text>
               )}
             </View>
-            <View style={{
-              backgroundColor: '#F59E0B',
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 8,
-            }}>
-              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
-                Owner
-              </Text>
+            <View
+              style={{
+                backgroundColor: '#F59E0B',
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Owner</Text>
             </View>
           </View>
         </View>
@@ -681,20 +729,23 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         console.log('🎭 TeamTab: About to render collaborators:', {
           collaborators_count: collaborators?.length || 0,
           collaborators_data: collaborators,
-          trip_id: trip?.id
+          trip_id: trip?.id,
         });
         return null;
       })()}
-      
+
       {collaborators.map((collaborator) => (
-        <View key={collaborator.id} style={{
-          backgroundColor: '#F9FAFB',
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 12,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-        }}>
+        <View
+          key={collaborator.id}
+          style={{
+            backgroundColor: '#F9FAFB',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: '#E5E7EB',
+          }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {collaborator.avatar_url ? (
               <Image
@@ -702,15 +753,17 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 style={{ width: 50, height: 50, borderRadius: 25, marginRight: 12 }}
               />
             ) : (
-              <View style={{
-                width: 50,
-                height: 50,
-                borderRadius: 25,
-                backgroundColor: '#6B7280',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12,
-              }}>
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: '#6B7280',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}
+              >
                 <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>
                   {getUserInitials(collaborator.full_name, collaborator.email)}
                 </Text>
@@ -731,13 +784,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {/* Mensaje si no hay colaboradores */}
       {collaborators.length === 0 && (
-        <View style={{
-          backgroundColor: '#F3F4F6',
-          borderRadius: 12,
-          padding: 20,
-          alignItems: 'center',
-          marginBottom: 20,
-        }}>
+        <View
+          style={{
+            backgroundColor: '#F3F4F6',
+            borderRadius: 12,
+            padding: 20,
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
           <Ionicons name="people-outline" size={32} color="#9CA3AF" />
           <Text style={{ fontSize: 16, color: '#6B7280', marginTop: 8, textAlign: 'center' }}>
             No collaborators yet
@@ -751,7 +806,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Botones de acción */}
       <View style={{ gap: 12, marginTop: 20 }}>
         <TouchableOpacity
-          onPress={() => Alert.alert('Chat Grupal', 'Funcionalidad de chat próximamente disponible')}
+          onPress={() =>
+            Alert.alert('Chat Grupal', 'Funcionalidad de chat próximamente disponible')
+          }
         >
           <LinearGradient
             colors={['#3B82F6', '#1E40AF']}
@@ -773,9 +830,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => setShowManageTeam(true)}
-        >
+        <TouchableOpacity onPress={() => setShowManageTeam(true)}>
           <LinearGradient
             colors={['#8B5CF6', '#EC4899']}
             start={{ x: 0, y: 0 }}
@@ -802,7 +857,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const ItineraryTab = () => (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <Ionicons name="map-outline" size={64} color="#D1D5DB" />
-      <Text style={{ fontSize: 18, fontWeight: '600', color: '#6B7280', marginTop: 16, textAlign: 'center' }}>
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: '600',
+          color: '#6B7280',
+          marginTop: 16,
+          textAlign: 'center',
+        }}
+      >
         Itinerary Coming Soon
       </Text>
       <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 8, textAlign: 'center' }}>
@@ -833,21 +896,21 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     >
       <View style={{ flex: 1, backgroundColor: 'white' }}>
         {/* Header */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: 8,
-          borderBottomWidth: 1,
-          borderBottomColor: '#E5E7EB',
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 20,
+            paddingTop: 16,
+            paddingBottom: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: '#E5E7EB',
+          }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ fontSize: 24, marginRight: 8 }}>🌍</Text>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937' }}>
-              {trip.title}
-            </Text>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937' }}>{trip.title}</Text>
           </View>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color="#6B7280" />
@@ -862,8 +925,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               <Text style={{ fontSize: 14, color: '#6B7280', marginLeft: 4 }}>
                 {editableTrip.start_date && editableTrip.end_date
                   ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
-                  : 'No dates set'
-                }
+                  : 'No dates set'}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -876,12 +938,14 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </View>
 
         {/* Tabs */}
-        <View style={{
-          flexDirection: 'row',
-          backgroundColor: 'white',
-          borderBottomWidth: 1,
-          borderBottomColor: '#E5E7EB',
-        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            backgroundColor: 'white',
+            borderBottomWidth: 1,
+            borderBottomColor: '#E5E7EB',
+          }}
+        >
           <TabButton tab="overview" title="Overview" />
           <TabButton tab="itinerary" title="Itinerary" />
           <TabButton tab="team" title="Team" />

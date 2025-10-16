@@ -17,7 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 async function applyMigration() {
   try {
     console.log('🔍 Verificando si la columna mobile_phone ya existe...');
-    
+
     // Verificar si la columna ya existe
     const { data: columns, error: checkError } = await supabase
       .from('information_schema.columns')
@@ -42,7 +42,7 @@ async function applyMigration() {
       sql: `
         ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS mobile_phone text;
         COMMENT ON COLUMN public.profiles.mobile_phone IS 'Mobile phone number with country code (e.g., +34 123 456 789)';
-      `
+      `,
     });
 
     if (migrationError) {
@@ -52,7 +52,6 @@ async function applyMigration() {
 
     console.log('🎉 Migración aplicada exitosamente!');
     console.log('✅ Columna mobile_phone añadida a la tabla profiles');
-
   } catch (error) {
     console.error('❌ Error ejecutando migración:', error);
   }

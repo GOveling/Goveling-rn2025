@@ -76,15 +76,15 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
         textAlign: 'center',
         letterSpacing: 0.3,
         // textShadow is not deprecated for Text components
-        textShadowColor: variant === 'secondary' || variant === 'glass' 
-          ? 'rgba(0,0,0,0.08)' 
-          : 'rgba(0,0,0,0.25)',
+        textShadowColor:
+          variant === 'secondary' || variant === 'glass' ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.25)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
       }}
       numberOfLines={2}
     >
-      {icon && `${icon} `}{title}
+      {icon && `${icon} `}
+      {title}
     </Text>
   );
 

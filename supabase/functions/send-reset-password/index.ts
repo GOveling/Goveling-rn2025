@@ -1,13 +1,16 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 serve(async (req) => {
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
-  const supabaseServiceRole = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!);
+  const supabaseServiceRole = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
   try {
     const { email } = await req.json();
-    
+
     if (!email) {
       throw new Error('Email is required');
     }
@@ -16,64 +19,70 @@ serve(async (req) => {
 
     // Check if user exists
     const { data: users, error: listError } = await supabaseServiceRole.auth.admin.listUsers();
-    
+
     if (listError) {
       console.error('❌ Error checking users:', listError);
       throw new Error('Error verificando usuario');
     }
 
-    const existingUser = users.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-    
+    const existingUser = users.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+
     if (!existingUser) {
       console.log('👤 User does not exist:', email);
       // Return success response for security (don't reveal if email exists)
-      return new Response(JSON.stringify({ 
-        ok: true, 
-        message: 'Si el email está registrado, recibirás un enlace de restablecimiento.'
-      }), { 
-        status: 200,
-        headers: { 
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          message: 'Si el email está registrado, recibirás un enlace de restablecimiento.',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          },
         }
-      });
+      );
     }
 
     console.log('✅ User exists, generating reset code');
 
     // Generate reset code
     const resetCode = (Math.floor(Math.random() * 900000) + 100000).toString();
-    
+
     // Store reset code in database (expires in 30 minutes)
-    await supabase.from('email_otps').insert({ 
-      email, 
+    await supabase.from('email_otps').insert({
+      email,
       code: resetCode,
       type: 'password_reset',
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
     });
 
     // Get Resend API key from environment
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+
     if (!resendApiKey) {
       console.log('⚠️ RESEND_API_KEY not configured, returning code for development');
-      return new Response(JSON.stringify({ 
-        ok: true, 
-        code: resetCode,
-        message: 'Development mode - check server logs for reset code'
-      }), { 
-        headers: { 
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
-        } 
-      });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          code: resetCode,
+          message: 'Development mode - check server logs for reset code',
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          },
+        }
+      );
     }
 
     // Send password reset email via Resend
     const emailSubject = '🔐 Restablece tu contraseña de Goveling';
-      
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -271,7 +280,7 @@ serve(async (req) => {
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -288,32 +297,37 @@ serve(async (req) => {
     }
 
     const resendData = await resendResponse.json();
-    
-    return new Response(JSON.stringify({ 
-      ok: true, 
-      message: 'Si el email está registrado, recibirás un código de restablecimiento.',
-      emailId: resendData.id,
-      code: resendApiKey ? undefined : resetCode // Solo devolver código en desarrollo
-    }), { 
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
-      } 
-    });
 
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        message: 'Si el email está registrado, recibirás un código de restablecimiento.',
+        emailId: resendData.id,
+        code: resendApiKey ? undefined : resetCode, // Solo devolver código en desarrollo
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        },
+      }
+    );
   } catch (e) {
     console.error('Password reset error:', e);
-    return new Response(JSON.stringify({ 
-      ok: false, 
-      error: e.message 
-    }), { 
-      status: 200, // Return 200 to avoid Edge Function errors
-      headers: { 
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: e.message,
+      }),
+      {
+        status: 200, // Return 200 to avoid Edge Function errors
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        },
       }
-    });
+    );
   }
 });

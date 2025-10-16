@@ -21,30 +21,29 @@ interface ConditionalMapViewProps {
   };
 }
 
-export default function ConditionalMapView({ accommodations, style, mapRegion }: ConditionalMapViewProps) {
+export default function ConditionalMapView({
+  accommodations,
+  style,
+  mapRegion,
+}: ConditionalMapViewProps) {
   // Convertir accommodations a markers para MapTilerMap
-  const markers = accommodations.map(acc => ({
+  const markers = accommodations.map((acc) => ({
     id: acc.id,
     coordinate: {
       latitude: acc.latitude,
-      longitude: acc.longitude
+      longitude: acc.longitude,
     },
     title: acc.name,
-    description: `${acc.type} - ${acc.address}`
+    description: `${acc.type} - ${acc.address}`,
   }));
 
   // Usar el centro de la región si está disponible
-  const center = mapRegion ? {
-    latitude: mapRegion.latitude,
-    longitude: mapRegion.longitude
-  } : undefined;
+  const center = mapRegion
+    ? {
+        latitude: mapRegion.latitude,
+        longitude: mapRegion.longitude,
+      }
+    : undefined;
 
-  return (
-    <MapTilerMap
-      markers={markers}
-      center={center}
-      style={style}
-      showUserLocation={true}
-    />
-  );
+  return <MapTilerMap markers={markers} center={center} style={style} showUserLocation={true} />;
 }

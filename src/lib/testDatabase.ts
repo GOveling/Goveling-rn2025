@@ -6,7 +6,7 @@ import { supabase } from '~/lib/supabase';
 export const testDatabaseSave = async (userId: string) => {
   try {
     console.log('🧪 Testing database save for user:', userId);
-    
+
     // Datos de prueba
     const testData = {
       id: userId,
@@ -23,10 +23,7 @@ export const testDatabaseSave = async (userId: string) => {
     };
 
     // Guardar en la base de datos
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert(testData)
-      .select();
+    const { data, error } = await supabase.from('profiles').upsert(testData).select();
 
     if (error) {
       console.error('❌ Error saving test data:', error);
@@ -49,17 +46,16 @@ export const testDatabaseSave = async (userId: string) => {
 
     console.log('✅ Verified saved data:', verifyData);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Datos guardados y verificados correctamente',
-      savedData: verifyData 
+      savedData: verifyData,
     };
-
   } catch (error) {
     console.error('❌ Unexpected error in test:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error desconocido' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
     };
   }
 };
@@ -67,11 +63,8 @@ export const testDatabaseSave = async (userId: string) => {
 export const checkProfileSchema = async () => {
   try {
     console.log('🔍 Checking profiles table schema...');
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .limit(1);
+
+    const { data, error } = await supabase.from('profiles').select('*').limit(1);
 
     if (error) {
       console.error('❌ Error checking schema:', error);
@@ -80,12 +73,11 @@ export const checkProfileSchema = async () => {
 
     console.log('✅ Profiles table accessible');
     return { success: true, message: 'Tabla profiles accesible' };
-
   } catch (error) {
     console.error('❌ Unexpected error checking schema:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error desconocido' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
     };
   }
 };

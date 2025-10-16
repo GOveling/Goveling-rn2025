@@ -4,22 +4,26 @@ import React from 'react';
 
 // Mock MapView component
 function MapView(props) {
-  return React.createElement('div', {
-    style: {
-      height: props.style?.height || 200,
-      width: props.style?.width || '100%',
-      backgroundColor: '#f0f0f0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      ...props.style
-    }
-  }, 'Map View (Web Fallback)');
+  return React.createElement(
+    'div',
+    {
+      style: {
+        height: props.style?.height || 200,
+        width: props.style?.width || '100%',
+        backgroundColor: '#f0f0f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        ...props.style,
+      },
+    },
+    'Map View (Web Fallback)'
+  );
 }
 
-// Mock Marker component  
+// Mock Marker component
 function Marker(props) {
   return null;
 }

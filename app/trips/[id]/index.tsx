@@ -23,9 +23,9 @@ interface TripData {
 }
 
 export default function TripDetailScreen() {
-  const { id, openManageTeam, tab } = useLocalSearchParams<{ 
-    id: string; 
-    openManageTeam?: string; 
+  const { id, openManageTeam, tab } = useLocalSearchParams<{
+    id: string;
+    openManageTeam?: string;
     tab?: string;
   }>();
   const router = useRouter();
@@ -41,11 +41,7 @@ export default function TripDetailScreen() {
   const loadTrip = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.from('trips').select('*').eq('id', id).single();
 
       if (error) {
         console.error('Error loading trip:', error);
@@ -90,9 +86,14 @@ export default function TripDetailScreen() {
   }
 
   // Determine the manage team tab from query params
-  const manageTeamTab = tab === 'invitations' ? 'invitations' : 
-                      tab === 'members' ? 'members' : 
-                      tab === 'history' ? 'history' : 'invitations';
+  const manageTeamTab =
+    tab === 'invitations'
+      ? 'invitations'
+      : tab === 'members'
+        ? 'members'
+        : tab === 'history'
+          ? 'history'
+          : 'invitations';
 
   return (
     <TripDetailsModal

@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
   ViewStyle,
   TextStyle,
-  ImageStyle
+  ImageStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -68,7 +68,12 @@ const TRANSPORT_TYPES = [
   { value: 'other', label: 'Otro', icon: '🎯' },
 ];
 
-export default function NewTripModal({ visible, onClose, onTripCreated, addPlaceContext }: NewTripModalProps) {
+export default function NewTripModal({
+  visible,
+  onClose,
+  onTripCreated,
+  addPlaceContext,
+}: NewTripModalProps) {
   const [tripData, setTripData] = useState<TripData>({
     name: '',
     description: '',
@@ -128,7 +133,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
         hasUser: !!sessionData?.session?.user,
         userId: sessionData?.session?.user?.id,
         userEmail: sessionData?.session?.user?.email,
-        error: sessionError
+        error: sessionError,
       });
 
       if (sessionError) {
@@ -140,7 +145,10 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
 
       if (!sessionData?.session?.user) {
         console.log('❌ No hay sesión activa');
-        Alert.alert('Error', 'Debes iniciar sesión para crear un viaje. Por favor, ve a la sección de autenticación.');
+        Alert.alert(
+          'Error',
+          'Debes iniciar sesión para crear un viaje. Por favor, ve a la sección de autenticación.'
+        );
         setLoading(false);
         return;
       }
@@ -157,7 +165,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
 
       console.log('📖 Resultado consulta existente:', {
         tripsCount: existingTrips?.length || 0,
-        readError: readError?.message || null
+        readError: readError?.message || null,
       });
 
       const tripToCreate = {
@@ -188,7 +196,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
           message: error.message,
           code: error.code,
           details: error.details,
-          hint: error.hint
+          hint: error.hint,
         });
         throw error;
       }
@@ -199,20 +207,18 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
       if (addPlaceContext) {
         console.log('📍 Añadiendo lugar al viaje recién creado...');
         try {
-          const { error: placeError } = await supabase
-            .from('trip_places')
-            .insert({
-              trip_id: data.id,
-              place_id: addPlaceContext.placeId,
-              name: addPlaceContext.placeName,
-              address: '',
-              lat: 0,
-              lng: 0,
-              category: 'establishment',
-              photo_url: null,
-              added_by: user.id,
-              added_at: new Date().toISOString()
-            });
+          const { error: placeError } = await supabase.from('trip_places').insert({
+            trip_id: data.id,
+            place_id: addPlaceContext.placeId,
+            name: addPlaceContext.placeName,
+            address: '',
+            lat: 0,
+            lng: 0,
+            category: 'establishment',
+            photo_url: null,
+            added_by: user.id,
+            added_at: new Date().toISOString(),
+          });
 
           if (placeError) {
             console.error('❌ Error añadiendo lugar:', placeError);
@@ -257,8 +263,10 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
     });
   };
 
-  const selectedAccommodation = ACCOMMODATION_TYPES.find(type => type.value === tripData.accommodation);
-  const selectedTransport = TRANSPORT_TYPES.find(type => type.value === tripData.transport);
+  const selectedAccommodation = ACCOMMODATION_TYPES.find(
+    (type) => type.value === tripData.accommodation
+  );
+  const selectedTransport = TRANSPORT_TYPES.find((type) => type.value === tripData.transport);
 
   return (
     <Modal
@@ -281,15 +289,11 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
           <Text style={styles.headerTitle}>
             {addPlaceContext && addPlaceContext.placeName
               ? `Crear Viaje para ${addPlaceContext.placeName}`
-              : 'Nuevo Viaje'
-            }
+              : 'Nuevo Viaje'}
           </Text>
         </View>
 
-        <ScrollView
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Nombre del viaje */}
           <View style={styles.section}>
             <Text style={styles.label}>
@@ -299,7 +303,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               style={styles.textInput}
               placeholder="Ej: Vacaciones en el sur"
               value={tripData.name}
-              onChangeText={text => setTripData({ ...tripData, name: text })}
+              onChangeText={(text) => setTripData({ ...tripData, name: text })}
               autoFocus
               returnKeyType="next"
               onSubmitEditing={() => descriptionInputRef.current?.focus()}
@@ -314,7 +318,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               style={[styles.textInput, styles.textArea]}
               placeholder="Agrega una breve descripción (opcional)"
               value={tripData.description}
-              onChangeText={text => setTripData({ ...tripData, description: text })}
+              onChangeText={(text) => setTripData({ ...tripData, description: text })}
               multiline
               numberOfLines={4}
               ref={descriptionInputRef}
@@ -326,15 +330,25 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
             <Text style={styles.label}>Fechas del Viaje</Text>
 
             <TouchableOpacity
-              style={[styles.uncertainButton, tripData.isDateUncertain && styles.uncertainButtonActive]}
-              onPress={() => setTripData({ ...tripData, isDateUncertain: !tripData.isDateUncertain })}
+              style={[
+                styles.uncertainButton,
+                tripData.isDateUncertain && styles.uncertainButtonActive,
+              ]}
+              onPress={() =>
+                setTripData({ ...tripData, isDateUncertain: !tripData.isDateUncertain })
+              }
             >
               <Ionicons
-                name={tripData.isDateUncertain ? "checkmark-circle" : "ellipse-outline"}
+                name={tripData.isDateUncertain ? 'checkmark-circle' : 'ellipse-outline'}
                 size={20}
-                color={tripData.isDateUncertain ? "#007AFF" : "#999"}
+                color={tripData.isDateUncertain ? '#007AFF' : '#999'}
               />
-              <Text style={[styles.uncertainButtonText, tripData.isDateUncertain && styles.uncertainButtonTextActive]}>
+              <Text
+                style={[
+                  styles.uncertainButtonText,
+                  tripData.isDateUncertain && styles.uncertainButtonTextActive,
+                ]}
+              >
                 No estoy seguro de las fechas
               </Text>
             </TouchableOpacity>
@@ -370,7 +384,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
             <TextInput
               style={styles.textInput}
               value={tripData.budget}
-              onChangeText={text => setTripData({ ...tripData, budget: text })}
+              onChangeText={(text) => setTripData({ ...tripData, budget: text })}
               placeholder="Ej: 500000"
               keyboardType="numeric"
             />
@@ -383,8 +397,15 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               style={styles.pickerButton}
               onPress={() => setShowAccommodationPicker(true)}
             >
-              <Text style={[styles.pickerButtonText, tripData.accommodation && styles.pickerButtonTextSelected]}>
-                {selectedAccommodation ? `${selectedAccommodation.icon} ${selectedAccommodation.label}` : 'Seleccionar tipo'}
+              <Text
+                style={[
+                  styles.pickerButtonText,
+                  tripData.accommodation && styles.pickerButtonTextSelected,
+                ]}
+              >
+                {selectedAccommodation
+                  ? `${selectedAccommodation.icon} ${selectedAccommodation.label}`
+                  : 'Seleccionar tipo'}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#999" />
             </TouchableOpacity>
@@ -397,8 +418,15 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               style={styles.pickerButton}
               onPress={() => setShowTransportPicker(true)}
             >
-              <Text style={[styles.pickerButtonText, tripData.transport && styles.pickerButtonTextSelected]}>
-                {selectedTransport ? `${selectedTransport.icon} ${selectedTransport.label}` : 'Seleccionar tipo'}
+              <Text
+                style={[
+                  styles.pickerButtonText,
+                  tripData.transport && styles.pickerButtonTextSelected,
+                ]}
+              >
+                {selectedTransport
+                  ? `${selectedTransport.icon} ${selectedTransport.label}`
+                  : 'Seleccionar tipo'}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#999" />
             </TouchableOpacity>
@@ -416,9 +444,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               end={{ x: 1, y: 0 }}
               style={styles.createButtonGradient}
             >
-              <Text style={styles.createButtonText}>
-                {loading ? 'Creando...' : 'Crear Viaje'}
-              </Text>
+              <Text style={styles.createButtonText}>{loading ? 'Creando...' : 'Crear Viaje'}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
@@ -531,14 +557,22 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               {ACCOMMODATION_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.value}
-                  style={[styles.pickerOption, tripData.accommodation === type.value && styles.pickerOptionSelected]}
+                  style={[
+                    styles.pickerOption,
+                    tripData.accommodation === type.value && styles.pickerOptionSelected,
+                  ]}
                   onPress={() => {
                     setTripData({ ...tripData, accommodation: type.value });
                     setShowAccommodationPicker(false);
                   }}
                 >
                   <Text style={styles.pickerOptionIcon}>{type.icon}</Text>
-                  <Text style={[styles.pickerOptionText, tripData.accommodation === type.value && styles.pickerOptionTextSelected]}>
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      tripData.accommodation === type.value && styles.pickerOptionTextSelected,
+                    ]}
+                  >
                     {type.label}
                   </Text>
                   {tripData.accommodation === type.value && (
@@ -551,11 +585,7 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
         </Modal>
 
         {/* Picker de Transporte */}
-        <Modal
-          visible={showTransportPicker}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
+        <Modal visible={showTransportPicker} animationType="slide" presentationStyle="pageSheet">
           <View style={styles.pickerModal}>
             <View style={styles.pickerHeader}>
               <TouchableOpacity onPress={() => setShowTransportPicker(false)}>
@@ -568,14 +598,22 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
               {TRANSPORT_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.value}
-                  style={[styles.pickerOption, tripData.transport === type.value && styles.pickerOptionSelected]}
+                  style={[
+                    styles.pickerOption,
+                    tripData.transport === type.value && styles.pickerOptionSelected,
+                  ]}
                   onPress={() => {
                     setTripData({ ...tripData, transport: type.value });
                     setShowTransportPicker(false);
                   }}
                 >
                   <Text style={styles.pickerOptionIcon}>{type.icon}</Text>
-                  <Text style={[styles.pickerOptionText, tripData.transport === type.value && styles.pickerOptionTextSelected]}>
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      tripData.transport === type.value && styles.pickerOptionTextSelected,
+                    ]}
+                  >
                     {type.label}
                   </Text>
                   {tripData.transport === type.value && (
@@ -593,23 +631,77 @@ export default function NewTripModal({ visible, onClose, onTripCreated, addPlace
 
 const styleObj = {
   container: { flex: 1, backgroundColor: '#F8F9FA' } as ViewStyle,
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' } as ViewStyle,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  } as ViewStyle,
   closeButton: { padding: 4 } as ViewStyle,
   headerTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' } as TextStyle,
   content: { flex: 1, paddingHorizontal: 20 } as ViewStyle,
   section: { marginTop: 24 } as ViewStyle,
   label: { fontSize: 16, fontWeight: '600', color: '#1A1A1A', marginBottom: 8 } as TextStyle,
   required: { color: '#FF3B30' } as TextStyle,
-  textInput: { backgroundColor: '#fff', borderRadius: 12, padding: 16, fontSize: 16, borderWidth: 1, borderColor: '#E5E7EB', color: '#1A1A1A' } as TextStyle,
+  textInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    color: '#1A1A1A',
+  } as TextStyle,
   textArea: { height: 80, textAlignVertical: 'top' } as TextStyle,
-  uncertainButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16 } as ViewStyle,
+  uncertainButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 16,
+  } as ViewStyle,
   uncertainButtonActive: { borderColor: '#007AFF', backgroundColor: '#F0F8FF' } as ViewStyle,
   uncertainButtonText: { fontSize: 16, color: '#666', marginLeft: 8 } as TextStyle,
   uncertainButtonTextActive: { color: '#007AFF', fontWeight: '600' } as TextStyle,
   dateContainer: { flexDirection: 'row', gap: 12 } as ViewStyle,
-  dateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', minHeight: 56, boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)', elevation: 2 } as ViewStyle,
-  dateButtonText: { fontSize: 16, color: '#1A1A1A', marginLeft: 8, flex: 1, fontWeight: '500' } as TextStyle,
-  pickerButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' } as ViewStyle,
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minHeight: 56,
+    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
+    elevation: 2,
+  } as ViewStyle,
+  dateButtonText: {
+    fontSize: 16,
+    color: '#1A1A1A',
+    marginLeft: 8,
+    flex: 1,
+    fontWeight: '500',
+  } as TextStyle,
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  } as ViewStyle,
   pickerButtonText: { fontSize: 16, color: '#999' } as TextStyle,
   pickerButtonTextSelected: { color: '#1A1A1A' } as TextStyle,
   createButton: { marginTop: 32, borderRadius: 16, overflow: 'hidden' } as ViewStyle,
@@ -617,22 +709,68 @@ const styleObj = {
   createButtonGradient: { padding: 18, alignItems: 'center' } as ViewStyle,
   createButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' } as TextStyle,
   pickerModal: { flex: 1, backgroundColor: '#F8F9FA' } as ViewStyle,
-  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' } as ViewStyle,
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  } as ViewStyle,
   pickerCancel: { fontSize: 16, color: '#007AFF' } as TextStyle,
   pickerTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' } as TextStyle,
   pickerContent: { flex: 1, paddingHorizontal: 20 } as ViewStyle,
-  pickerOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginTop: 12, borderWidth: 1, borderColor: '#E5E7EB' } as ViewStyle,
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  } as ViewStyle,
   pickerOptionSelected: { borderColor: '#007AFF', backgroundColor: '#F0F8FF' } as ViewStyle,
   pickerOptionIcon: { fontSize: 20, marginRight: 12 } as TextStyle,
   pickerOptionText: { flex: 1, fontSize: 16, color: '#1A1A1A' } as TextStyle,
   pickerOptionTextSelected: { color: '#007AFF', fontWeight: '600' } as TextStyle,
-  iosDatePickerContainer: { flex: 1, backgroundColor: '#1a237e', justifyContent: 'space-between' } as ViewStyle,
-  iosDatePickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 30, paddingBottom: 15, backgroundColor: '#1a237e', borderBottomWidth: 0.5, borderBottomColor: '#3949ab' } as ViewStyle,
-  datePickerContent: { flex: 1, backgroundColor: '#1a237e', justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 0 } as ViewStyle,
+  iosDatePickerContainer: {
+    flex: 1,
+    backgroundColor: '#1a237e',
+    justifyContent: 'space-between',
+  } as ViewStyle,
+  iosDatePickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 15,
+    backgroundColor: '#1a237e',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#3949ab',
+  } as ViewStyle,
+  datePickerContent: {
+    flex: 1,
+    backgroundColor: '#1a237e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+  } as ViewStyle,
   datePickerCancel: { fontSize: 17, color: '#ffffff' } as TextStyle,
   datePickerTitle: { fontSize: 17, fontWeight: '600', color: '#ffffff' } as TextStyle,
   datePickerDone: { fontSize: 17, color: '#ffffff', fontWeight: '600' } as TextStyle,
-  iosDatePicker: { backgroundColor: '#1a237e', width: '95%', maxWidth: 400, alignSelf: 'center', transform: [{ scaleX: 1.1 }, { scaleY: 1.05 }] } as ViewStyle,
+  iosDatePicker: {
+    backgroundColor: '#1a237e',
+    width: '95%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    transform: [{ scaleX: 1.1 }, { scaleY: 1.05 }],
+  } as ViewStyle,
 };
 
 const styles = StyleSheet.create(styleObj);

@@ -4,7 +4,11 @@ import { sendPush } from '~/lib/push_send';
 /** Invite a user by email. If the user exists, send push; always send email separately (Resend path). */
 export async function inviteToTrip(trip_id: string, email: string, role: 'viewer' | 'editor') {
   // Insert invitation
-  const { data: inv, error } = await supabase.from('trip_invitations').insert({ trip_id, email, role }).select('id, trip_id, email, role').single();
+  const { data: inv, error } = await supabase
+    .from('trip_invitations')
+    .insert({ trip_id, email, role })
+    .select('id, trip_id, email, role')
+    .single();
   if (error) throw error;
 
   // Resolve inviter name and trip title for richer notifications/emails
@@ -18,13 +22,21 @@ export async function inviteToTrip(trip_id: string, email: string, role: 'viewer
   const tripName = (tripRow as any)?.title as string | undefined;
 
   // Try to find an existing user by email to push
-  const { data: userProfile } = await supabase.from('profiles').select('id, display_name').ilike('email', email).maybeSingle();
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .ilike('email', email)
+    .maybeSingle();
   if (userProfile?.id) {
     // Notify user with richer payload including inviter and trip
     await sendPush(
       [userProfile.id],
       'Invitation to collaborate',
-      tripName && inviterName ? `${inviterName} invited you to "${tripName}"` : (tripName ? `You have been invited to "${tripName}"` : 'You have been invited to a trip'),
+      tripName && inviterName
+        ? `${inviterName} invited you to "${tripName}"`
+        : tripName
+          ? `You have been invited to "${tripName}"`
+          : 'You have been invited to a trip',
       { type: 'trip_invite', trip_id, role, trip_name: tripName, inviter_name: inviterName }
     );
   }
@@ -34,7 +46,7 @@ export async function inviteToTrip(trip_id: string, email: string, role: 'viewer
     // Deep link to the trip inside the app (scheme defined in app.json)
     const inviteLink = `goveling://trips/${trip_id}`;
     const edgeRes = await supabase.functions.invoke('send-invite-email', {
-      body: { email, role, inviterName, tripName, inviteLink }
+      body: { email, role, inviterName, tripName, inviteLink },
     });
     if ((edgeRes as any)?.error) throw (edgeRes as any).error;
   } catch (e) {
@@ -57,7 +69,11 @@ export async function inviteToTrip(trip_id: string, email: string, role: 'viewer
 
 export async function acceptInvitation(invitation_id: number) {
   // Move invitation → collaborators
-  const { data: inv } = await supabase.from('trip_invitations').select('trip_id, email, role, owner_id').eq('id', invitation_id).single();
+  const { data: inv } = await supabase
+    .from('trip_invitations')
+    .select('trip_id, email, role, owner_id')
+    .eq('id', invitation_id)
+    .single();
   if (!inv) throw new Error('Invitation not found');
 
   const { data: u } = await supabase.auth.getUser();
@@ -71,38 +87,69 @@ export async function acceptInvitation(invitation_id: number) {
       .eq('id', uid)
       .maybeSingle();
     if (!existingProfile) {
-      const full_name = (u?.user as any)?.user_metadata?.full_name || (u?.user?.email?.split('@')[0] ?? null);
-      const avatar_url = (u?.user as any)?.user_metadata?.avatar_url || (u?.user as any)?.user_metadata?.picture || null;
-      await supabase.from('profiles').upsert({
-        id: uid,
-        email: u?.user?.email ?? null,
-        full_name,
-        avatar_url,
-      }, { onConflict: 'id' });
+      const full_name =
+        (u?.user as any)?.user_metadata?.full_name || (u?.user?.email?.split('@')[0] ?? null);
+      const avatar_url =
+        (u?.user as any)?.user_metadata?.avatar_url ||
+        (u?.user as any)?.user_metadata?.picture ||
+        null;
+      await supabase.from('profiles').upsert(
+        {
+          id: uid,
+          email: u?.user?.email ?? null,
+          full_name,
+          avatar_url,
+        },
+        { onConflict: 'id' }
+      );
     }
   } catch (profileErr) {
     console.log('ensure profile for accepting user failed (non-blocking):', profileErr);
   }
 
-  await supabase.from('trip_collaborators').insert({ trip_id: inv.trip_id, user_id: uid, role: inv.role });
+  await supabase
+    .from('trip_collaborators')
+    .insert({ trip_id: inv.trip_id, user_id: uid, role: inv.role });
   await supabase.from('trip_invitations').delete().eq('id', invitation_id);
 
   // Notify owner
   if (inv.owner_id) {
     // Fetch trip title for richer payload
-    const { data: tripRow } = await supabase.from('trips').select('title').eq('id', inv.trip_id).maybeSingle();
+    const { data: tripRow } = await supabase
+      .from('trips')
+      .select('title')
+      .eq('id', inv.trip_id)
+      .maybeSingle();
     const tripName = (tripRow as any)?.title as string | undefined;
-    await sendPush([inv.owner_id], 'Invitation accepted', tripName ? `Accepted for "${tripName}"` : 'A collaborator accepted your invitation', { type: 'invite_accepted', trip_id: inv.trip_id, trip_name: tripName });
+    await sendPush(
+      [inv.owner_id],
+      'Invitation accepted',
+      tripName ? `Accepted for "${tripName}"` : 'A collaborator accepted your invitation',
+      { type: 'invite_accepted', trip_id: inv.trip_id, trip_name: tripName }
+    );
   }
 }
 
 export async function rejectInvitation(invitation_id: number) {
-  const { data: inv } = await supabase.from('trip_invitations').select('trip_id, owner_id').eq('id', invitation_id).single();
+  const { data: inv } = await supabase
+    .from('trip_invitations')
+    .select('trip_id, owner_id')
+    .eq('id', invitation_id)
+    .single();
   await supabase.from('trip_invitations').delete().eq('id', invitation_id);
   if (inv?.owner_id) {
-    const { data: tripRow } = await supabase.from('trips').select('title').eq('id', inv.trip_id).maybeSingle();
+    const { data: tripRow } = await supabase
+      .from('trips')
+      .select('title')
+      .eq('id', inv.trip_id)
+      .maybeSingle();
     const tripName = (tripRow as any)?.title as string | undefined;
-    await sendPush([inv.owner_id], 'Invitation declined', tripName ? `Declined for "${tripName}"` : 'A collaborator declined your invitation', { type: 'invite_declined', trip_id: inv.trip_id, trip_name: tripName });
+    await sendPush(
+      [inv.owner_id],
+      'Invitation declined',
+      tripName ? `Declined for "${tripName}"` : 'A collaborator declined your invitation',
+      { type: 'invite_declined', trip_id: inv.trip_id, trip_name: tripName }
+    );
   }
 }
 
@@ -113,19 +160,22 @@ export async function removeCollaborator(trip_id: string, user_id: string) {
   const [tripRes, removedUserRes, allParticipantsRes] = await Promise.all([
     supabase.from('trips').select('title, owner_id').eq('id', trip_id).maybeSingle(),
     supabase.from('profiles').select('display_name, email').eq('id', user_id).maybeSingle(),
-    supabase.from('trip_collaborators').select('user_id').eq('trip_id', trip_id)
+    supabase.from('trip_collaborators').select('user_id').eq('trip_id', trip_id),
   ]);
 
   console.log('removeCollaborator - fetched data:', {
     trip: tripRes.data,
     removedUser: removedUserRes.data,
-    participants: allParticipantsRes.data
+    participants: allParticipantsRes.data,
   });
 
   const tripName = (tripRes.data as any)?.title;
   const ownerId = (tripRes.data as any)?.owner_id;
-  const removedUserName = (removedUserRes.data as any)?.display_name || (removedUserRes.data as any)?.email || 'User';
-  const allParticipants = (allParticipantsRes.data || []).map((p: any) => p.user_id).filter((id: string) => id !== user_id);
+  const removedUserName =
+    (removedUserRes.data as any)?.display_name || (removedUserRes.data as any)?.email || 'User';
+  const allParticipants = (allParticipantsRes.data || [])
+    .map((p: any) => p.user_id)
+    .filter((id: string) => id !== user_id);
 
   // Add owner to participants if not already included
   if (ownerId && !allParticipants.includes(ownerId)) {
@@ -136,11 +186,15 @@ export async function removeCollaborator(trip_id: string, user_id: string) {
     tripName,
     ownerId,
     removedUserName,
-    allParticipants
+    allParticipants,
   });
 
   // Remove the collaborator
-  const { error } = await supabase.from('trip_collaborators').delete().eq('trip_id', trip_id).eq('user_id', user_id);
+  const { error } = await supabase
+    .from('trip_collaborators')
+    .delete()
+    .eq('trip_id', trip_id)
+    .eq('user_id', user_id);
   if (error) {
     console.error('removeCollaborator - delete failed:', error);
     throw error;
@@ -161,7 +215,9 @@ export async function removeCollaborator(trip_id: string, user_id: string) {
     await sendPush(
       allParticipants,
       'Team member removed',
-      tripName ? `${removedUserName} was removed from "${tripName}"` : `${removedUserName} was removed from the trip`,
+      tripName
+        ? `${removedUserName} was removed from "${tripName}"`
+        : `${removedUserName} was removed from the trip`,
       { type: 'member_removed', trip_id, trip_name: tripName, removed_user: removedUserName }
     );
   }

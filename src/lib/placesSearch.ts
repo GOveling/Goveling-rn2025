@@ -61,16 +61,19 @@ function cacheKey(p: PlacesSearchParams) {
     i: p.input.trim().toLowerCase(),
     c: (p.selectedCategories || []).sort(),
     u: p.userLocation ? [p.userLocation.lat.toFixed(3), p.userLocation.lng.toFixed(3)] : null,
-    l: p.locale
+    l: p.locale,
   });
 }
 
-export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: AbortSignal): Promise<PlacesSearchResponse> {
+export async function searchPlacesEnhanced(
+  params: PlacesSearchParams,
+  signal?: AbortSignal
+): Promise<PlacesSearchResponse> {
   console.log('[placesSearch] Input params:', JSON.stringify(params, null, 2));
   console.log('[placesSearch] Platform info:', {
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
     isWeb: typeof window !== 'undefined',
-    hasSupabase: !!supabase
+    hasSupabase: !!supabase,
   });
 
   if (!params.input || params.input.trim().length < 2) {
@@ -81,7 +84,7 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
   const key = cacheKey(params);
   const cached = memoryCache.get(key);
   const now = Date.now();
-  if (cached && (now - cached.ts) < CACHE_TTL_MS && cached.data.status === 'OK') {
+  if (cached && now - cached.ts < CACHE_TTL_MS && cached.data.status === 'OK') {
     console.log('[placesSearch] Using cached result');
     return cached.data;
   } else if (cached && cached.data.status === 'ERROR') {
@@ -93,14 +96,16 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
     console.log('[placesSearch] Invoking edge function google-places-enhanced');
 
     // En desarrollo web (localhost), usar fetch directo para evitar problemas de CORS
-    const isWebDev = typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost';
+    const isWebDev =
+      typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost';
 
     if (isWebDev) {
       console.log('[placesSearch] Using direct fetch for web development');
       console.log('[placesSearch] Window location:', window.location?.href);
 
       // En web, usar las variables de entorno explícitamente
-      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iwsuyrlrbmnbfyfkqowl.supabase.co';
+      const supabaseUrl =
+        process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iwsuyrlrbmnbfyfkqowl.supabase.co';
       const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
       if (!anonKey) {
@@ -115,11 +120,11 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
         credentials: 'omit',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${anonKey}`,
+          Accept: 'application/json',
         },
         body: JSON.stringify(params),
-        ...(signal ? { signal } : {})
+        ...(signal ? { signal } : {}),
       });
 
       if (!response.ok) {
@@ -129,7 +134,7 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
           predictions: [],
           status: 'ERROR',
           source: 'google_places_enhanced',
-          error: `HTTP ${response.status}: ${errorText}`
+          error: `HTTP ${response.status}: ${errorText}`,
         };
         memoryCache.set(key, { ts: now, data: resp });
         return resp;
@@ -144,14 +149,19 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
       // Usar el cliente de Supabase normal en producción y nativo
       const { data, error } = await supabase.functions.invoke('google-places-enhanced', {
         body: params,
-        ...(signal ? { signal } : {})
+        ...(signal ? { signal } : {}),
       } as any);
 
       console.log('[placesSearch] Supabase client response:', { data, error });
 
       if (error) {
         console.error('[placesSearch] Error from edge function:', error);
-        const resp: PlacesSearchResponse = { predictions: [], status: 'ERROR', source: 'google_places_enhanced', error: error.message };
+        const resp: PlacesSearchResponse = {
+          predictions: [],
+          status: 'ERROR',
+          source: 'google_places_enhanced',
+          error: error.message,
+        };
         memoryCache.set(key, { ts: now, data: resp });
         return resp;
       }
@@ -166,7 +176,7 @@ export async function searchPlacesEnhanced(params: PlacesSearchParams, signal?: 
       predictions: [],
       status: 'ERROR',
       source: 'google_places_enhanced',
-      error: `Network error: ${networkError.message}`
+      error: `Network error: ${networkError.message}`,
     };
     memoryCache.set(key, { ts: now, data: resp });
     return resp;

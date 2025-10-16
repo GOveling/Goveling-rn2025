@@ -7,7 +7,7 @@ export default function PolylineMap({
   coords,
   origin,
   dest,
-  refitKey
+  refitKey,
 }: {
   coords: Coord[];
   origin?: Coord;
@@ -22,7 +22,7 @@ export default function PolylineMap({
       id: 'origin',
       coordinate: { latitude: origin.lat, longitude: origin.lng },
       title: 'Origen',
-      description: 'Punto de partida'
+      description: 'Punto de partida',
     });
   }
 
@@ -31,7 +31,7 @@ export default function PolylineMap({
       id: 'destination',
       coordinate: { latitude: dest.lat, longitude: dest.lng },
       title: 'Destino',
-      description: 'Punto de llegada'
+      description: 'Punto de llegada',
     });
   }
 
@@ -43,7 +43,7 @@ export default function PolylineMap({
           id: `waypoint-${index}`,
           coordinate: { latitude: coord.lat, longitude: coord.lng },
           title: `Punto ${index + 1}`,
-          description: 'Punto de ruta'
+          description: 'Punto de ruta',
         });
       }
     }
@@ -54,10 +54,13 @@ export default function PolylineMap({
   if (origin) allCoords.push(origin);
   if (dest) allCoords.push(dest);
 
-  const center = allCoords.length > 0 ? {
-    latitude: allCoords.reduce((sum, coord) => sum + coord.lat, 0) / allCoords.length,
-    longitude: allCoords.reduce((sum, coord) => sum + coord.lng, 0) / allCoords.length
-  } : { latitude: 0, longitude: 0 };
+  const center =
+    allCoords.length > 0
+      ? {
+          latitude: allCoords.reduce((sum, coord) => sum + coord.lat, 0) / allCoords.length,
+          longitude: allCoords.reduce((sum, coord) => sum + coord.lng, 0) / allCoords.length,
+        }
+      : { latitude: 0, longitude: 0 };
 
   return (
     <MapTilerMap

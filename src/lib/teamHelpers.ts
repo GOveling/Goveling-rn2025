@@ -42,29 +42,36 @@ export async function getTripWithTeam(tripId: string): Promise<TripWithTeamResul
 
     const [owner, collaborators] = await Promise.all([
       getTripOwner(trip.id),
-      getTripCollaborators(trip.id)
+      getTripCollaborators(trip.id),
     ]);
 
-    const collaboratorsCount = (collaborators.length + 1); // +1 owner
+    const collaboratorsCount = collaborators.length + 1; // +1 owner
 
     if (!trip.title) {
       console.warn('🧪 getTripWithTeam: Trip has no title (could affect UI)', { trip_id: trip.id });
     }
     if (!trip.owner_id && !trip.user_id) {
-      console.warn('🧪 getTripWithTeam: Trip missing both owner_id and user_id fields!', { trip_id: trip.id });
+      console.warn('🧪 getTripWithTeam: Trip missing both owner_id and user_id fields!', {
+        trip_id: trip.id,
+      });
     }
     if (!owner) {
-      console.warn('🧪 getTripWithTeam: Owner profile not resolved', { trip_owner_id: trip.owner_id, fallback_user_id: trip.user_id });
+      console.warn('🧪 getTripWithTeam: Owner profile not resolved', {
+        trip_owner_id: trip.owner_id,
+        fallback_user_id: trip.user_id,
+      });
     }
     if (collaborators.length === 0) {
-      console.log('🧪 getTripWithTeam: No collaborators found (this may still be valid if individual trip)');
+      console.log(
+        '🧪 getTripWithTeam: No collaborators found (this may still be valid if individual trip)'
+      );
     }
 
     console.log('🧩 getTripWithTeam: Done', {
       trip_id: trip.id,
       owner_id: owner?.id || trip.owner_id || trip.user_id,
-      collaborators: collaborators.map(c => ({ id: c.id, name: c.full_name, role: c.role })),
-      collaboratorsCount
+      collaborators: collaborators.map((c) => ({ id: c.id, name: c.full_name, role: c.role })),
+      collaboratorsCount,
     });
 
     return { trip, owner, collaborators, collaboratorsCount };
@@ -91,7 +98,10 @@ export async function getTripWithTeamRPC(tripId: string): Promise<TripWithTeamRe
       console.warn('🧪 getTripWithTeamRPC: Row without title', { trip_id: row.trip_id });
     }
     if (!row.owner_id) {
-      console.warn('🧪 getTripWithTeamRPC: Row without owner_id (will rely on original trip.user_id or UI fallback)', { trip_id: row.trip_id });
+      console.warn(
+        '🧪 getTripWithTeamRPC: Row without owner_id (will rely on original trip.user_id or UI fallback)',
+        { trip_id: row.trip_id }
+      );
     }
     const ownerProfile = row.owner_profile || null;
     const collabsRaw = Array.isArray(row.collaborators) ? row.collaborators : [];
@@ -112,16 +122,18 @@ export async function getTripWithTeamRPC(tripId: string): Promise<TripWithTeamRe
         owner_id: row.owner_id,
         start_date: row.start_date,
         end_date: row.end_date,
-        status: row.status
+        status: row.status,
       },
-      owner: ownerProfile ? {
-        id: ownerProfile.id,
-        full_name: ownerProfile.full_name,
-        avatar_url: ownerProfile.avatar_url,
-        email: ownerProfile.email
-      } : null,
+      owner: ownerProfile
+        ? {
+            id: ownerProfile.id,
+            full_name: ownerProfile.full_name,
+            avatar_url: ownerProfile.avatar_url,
+            email: ownerProfile.email,
+          }
+        : null,
       collaborators,
-      collaboratorsCount: row.collaborators_count || (collaborators.length + 1)
+      collaboratorsCount: row.collaborators_count || collaborators.length + 1,
     };
   } catch (e) {
     console.warn('⚠️ getTripWithTeamRPC: RPC failed, falling back to standard method', e);

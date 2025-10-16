@@ -1,6 +1,6 @@
 /**
  * Configuración de URLs permitidas para Google OAuth
- * 
+ *
  * IMPORTANTE: Estas URLs deben estar configuradas en Google Cloud Console
  * en la sección "URIs de redirección autorizados"
  */
@@ -8,7 +8,7 @@
 export const AUTHORIZED_REDIRECT_URLS = {
   // URL de Supabase (siempre funciona)
   supabase: 'https://iwsuyrlrbmnbfyfkqowl.supabase.co/auth/v1/callback',
-  
+
   // URLs de desarrollo local (requieren configuración en Google Console)
   localhost: [
     'http://localhost:8081/auth/callback',
@@ -16,35 +16,37 @@ export const AUTHORIZED_REDIRECT_URLS = {
     'http://localhost:19006/auth/callback', // Puerto alternativo de Expo
     'http://127.0.0.1:19006/auth/callback',
   ],
-  
+
   // URLs de producción (configurar cuando tengas dominio)
   production: [
     'https://yourdomain.com/auth/callback',
     // Agregar otras URLs de producción aquí
   ],
-  
+
   // Deep links para apps nativas
   deepLinks: [
     'com.goveling.app://auth/callback',
     'exp://192.168.1.100:8081/--/auth/callback', // IP local para Expo Go
-  ]
+  ],
 };
 
 /**
  * Obtiene la URL de redirección más segura y confiable
  */
-export const getSafeRedirectUrl = (environment: 'development' | 'production' = 'development'): string => {
+export const getSafeRedirectUrl = (
+  environment: 'development' | 'production' = 'development'
+): string => {
   if (environment === 'production') {
     return AUTHORIZED_REDIRECT_URLS.production[0] || AUTHORIZED_REDIRECT_URLS.supabase;
   }
-  
+
   // Para desarrollo web local, usar localhost si estamos en web
   if (typeof window !== 'undefined') {
     const currentOrigin = window.location.origin;
     console.log('🌐 Detected web environment, using:', `${currentOrigin}/auth/callback`);
     return `${currentOrigin}/auth/callback`;
   }
-  
+
   // Para Expo Go y otros casos, usar Supabase (más confiable)
   return AUTHORIZED_REDIRECT_URLS.supabase;
 };

@@ -55,50 +55,51 @@ interface OptimizedTextListProps {
   loading?: boolean;
 }
 
-export const OptimizedTextList = React.memo<OptimizedTextListProps>(
-  function OptimizedTextList({ items, loading = false }) {
-    type ItemType = { id: string; title: string; subtitle?: string; onPress?: () => void };
-    
-    const renderItem = React.useCallback(
-      ({ item }: { item: ItemType }) => (
-        <View style={{ 
-          paddingVertical: 12, 
-          paddingHorizontal: 16, 
-          borderBottomWidth: 1, 
-          borderBottomColor: '#f0f0f0' 
-        }}>
-          <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.title}</Text>
-          {item.subtitle && (
-            <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
-              {item.subtitle}
-            </Text>
-          )}
-        </View>
-      ),
-      []
-    );
+export const OptimizedTextList = React.memo<OptimizedTextListProps>(function OptimizedTextList({
+  items,
+  loading = false,
+}) {
+  type ItemType = { id: string; title: string; subtitle?: string; onPress?: () => void };
 
-    const keyExtractor = React.useCallback((item: ItemType) => item.id, []);
+  const renderItem = React.useCallback(
+    ({ item }: { item: ItemType }) => (
+      <View
+        style={{
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: '#f0f0f0',
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.title}</Text>
+        {item.subtitle && (
+          <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>{item.subtitle}</Text>
+        )}
+      </View>
+    ),
+    []
+  );
 
-    if (loading) {
-      return (
-        <View style={{ padding: 16 }}>
-          <Text style={{ textAlign: 'center', color: '#666' }}>Cargando...</Text>
-        </View>
-      );
-    }
+  const keyExtractor = React.useCallback((item: ItemType) => item.id, []);
 
+  if (loading) {
     return (
-      <FlatList
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        updateCellsBatchingPeriod={50}
-        initialNumToRender={10}
-        windowSize={10}
-      />
+      <View style={{ padding: 16 }}>
+        <Text style={{ textAlign: 'center', color: '#666' }}>Cargando...</Text>
+      </View>
     );
   }
-);
+
+  return (
+    <FlatList
+      data={items}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={10}
+      updateCellsBatchingPeriod={50}
+      initialNumToRender={10}
+      windowSize={10}
+    />
+  );
+});

@@ -46,9 +46,8 @@ export default function UnifiedMap({
   zoom = 12,
   style,
   showUserLocation = true,
-  onRegionChange
+  onRegionChange,
 }: UnifiedMapProps) {
-
   console.log('[UnifiedMap] Platform:', Platform.OS);
   console.log('[UnifiedMap] Native MapLibre available:', !!NativeMapLibre);
 
@@ -59,7 +58,9 @@ export default function UnifiedMap({
 
   // 2. Native con MapLibre (Builds nativas)
   if (NativeMapLibre) {
-    return <NativeMapLibreMap {...{ center, markers, userLocation, zoom, style, showUserLocation }} />;
+    return (
+      <NativeMapLibreMap {...{ center, markers, userLocation, zoom, style, showUserLocation }} />
+    );
   }
 
   // 3. Fallback: WebView con MapLibre (Expo Go)
@@ -73,7 +74,7 @@ function WebMapLibre({
   userLocation,
   zoom,
   style,
-  showUserLocation
+  showUserLocation,
 }: UnifiedMapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -104,7 +105,7 @@ function WebMapLibre({
           container: mapContainer.current,
           style: 'https://demotiles.maplibre.org/style.json',
           center: [initialCenter.longitude, initialCenter.latitude],
-          zoom: zoom
+          zoom: zoom,
         });
 
         mapRef.current = map;
@@ -164,7 +165,6 @@ function WebMapLibre({
           // Ajustar vista para mostrar todos los marcadores
           fitMapBounds(map, maplibregl, userLocation, markers);
         });
-
       } catch (error) {
         console.error('[WebMapLibre] Error cargando mapa:', error);
       }
@@ -192,7 +192,7 @@ function NativeMapLibreMap({
   userLocation,
   zoom,
   style,
-  showUserLocation
+  showUserLocation,
 }: UnifiedMapProps) {
   if (!NativeMapLibre) return null;
 
@@ -246,7 +246,7 @@ function WebViewMapLibre({
   userLocation,
   zoom,
   style,
-  showUserLocation
+  showUserLocation,
 }: UnifiedMapProps) {
   const initialCenter = getMapCenter(center, userLocation, markers);
 
@@ -259,8 +259,8 @@ function WebViewMapLibre({
       coordinate: [marker.coordinate.longitude, marker.coordinate.latitude],
       title: marker.title || `Lugar ${index + 1}`,
       description: marker.description || '',
-      index: index + 1
-    }))
+      index: index + 1,
+    })),
   };
 
   const html = `
@@ -395,24 +395,24 @@ function fitMapBounds(
     bounds.extend([userLocation.longitude, userLocation.latitude]);
   }
 
-  markers.forEach(marker => {
+  markers.forEach((marker) => {
     bounds.extend([marker.coordinate.longitude, marker.coordinate.latitude]);
   });
 
   map.fitBounds(bounds, {
     padding: 50,
     maxZoom: 15,
-    duration: 1000
+    duration: 1000,
   });
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0'
+    backgroundColor: '#f0f0f0',
   },
   map: {
-    flex: 1
+    flex: 1,
   },
   userLocationMarker: {
     width: 20,
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'white',
     boxShadow: '0px 0px 6px rgba(0, 122, 255, 0.3)',
-    elevation: 6
+    elevation: 6,
   },
   placeMarker: {
     width: 32,
@@ -434,11 +434,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
-    elevation: 4
+    elevation: 4,
   },
   placeMarkerText: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600'
-  }
+    fontWeight: '600',
+  },
 });

@@ -43,7 +43,7 @@ export default function TripPlacesScreen() {
 
   const loadUserRole = async () => {
     if (!id || !user?.id) return;
-    
+
     try {
       // Obtener datos del trip para determinar el rol
       const { data: trip } = await supabase
@@ -78,11 +78,7 @@ export default function TripPlacesScreen() {
       if (!id) return;
 
       // Obtener información del trip
-      const { data: trip } = await supabase
-        .from('trips')
-        .select('title')
-        .eq('id', id)
-        .single();
+      const { data: trip } = await supabase.from('trips').select('title').eq('id', id).single();
 
       if (trip) {
         setTripTitle(trip.title);
@@ -112,28 +108,28 @@ export default function TripPlacesScreen() {
 
   const getCategoryIcon = (category: string) => {
     const icons: { [key: string]: string } = {
-      'restaurant': '🍽️',
-      'tourist_attraction': '🎭',
-      'museum': '🏛️',
-      'park': '🌳',
-      'shopping_mall': '🛍️',
-      'lodging': '🏨',
-      'gas_station': '⛽',
-      'hospital': '🏥',
-      'bank': '🏦',
-      'pharmacy': '💊',
-      'school': '🏫',
-      'church': '⛪',
-      'gym': '💪',
-      'beauty_salon': '💅',
-      'cafe': '☕',
-      'bar': '🍺',
-      'night_club': '🎵',
-      'movie_theater': '🎬',
-      'library': '📚',
-      'airport': '✈️',
-      'subway_station': '🚇',
-      'bus_station': '🚌',
+      restaurant: '🍽️',
+      tourist_attraction: '🎭',
+      museum: '🏛️',
+      park: '🌳',
+      shopping_mall: '🛍️',
+      lodging: '🏨',
+      gas_station: '⛽',
+      hospital: '🏥',
+      bank: '🏦',
+      pharmacy: '💊',
+      school: '🏫',
+      church: '⛪',
+      gym: '💪',
+      beauty_salon: '💅',
+      cafe: '☕',
+      bar: '🍺',
+      night_club: '🎵',
+      movie_theater: '🎬',
+      library: '📚',
+      airport: '✈️',
+      subway_station: '🚇',
+      bus_station: '🚌',
     };
     return icons[category] || '📍';
   };
@@ -145,14 +141,17 @@ export default function TripPlacesScreen() {
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
   const handleDeletePlace = async (placeId: string, placeName: string) => {
     // Verificar permisos antes de eliminar
     if (!canDelete) {
-      Alert.alert('Sin permisos', 'No tienes permisos para eliminar lugares de este viaje. Solo el propietario y editores pueden eliminar lugares.');
+      Alert.alert(
+        'Sin permisos',
+        'No tienes permisos para eliminar lugares de este viaje. Solo el propietario y editores pueden eliminar lugares.'
+      );
       return;
     }
 
@@ -162,32 +161,29 @@ export default function TripPlacesScreen() {
       [
         {
           text: 'Cancelar',
-          style: 'cancel'
+          style: 'cancel',
         },
         {
           text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
             try {
-              const { error } = await supabase
-                .from('trip_places')
-                .delete()
-                .eq('id', placeId);
+              const { error } = await supabase.from('trip_places').delete().eq('id', placeId);
 
               if (error) {
                 console.error('Error deleting place:', error);
                 Alert.alert('Error', 'No se pudo eliminar el lugar');
               } else {
                 // Actualizar la lista local
-                setPlaces(prev => prev.filter(p => p.id !== placeId));
+                setPlaces((prev) => prev.filter((p) => p.id !== placeId));
                 Alert.alert('Éxito', 'Lugar eliminado del viaje');
               }
             } catch (error) {
               console.error('Error deleting place:', error);
               Alert.alert('Error', 'No se pudo eliminar el lugar');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -210,7 +206,7 @@ export default function TripPlacesScreen() {
     coordinates: { lat: place.lat, lng: place.lng },
     category: place.category,
     photos: place.photo_url ? [place.photo_url] : undefined,
-    source: 'trip_places'
+    source: 'trip_places',
   });
 
   // Function to handle place removal from modal (via heart button)
@@ -221,24 +217,21 @@ export default function TripPlacesScreen() {
       [
         {
           text: 'Cancelar',
-          style: 'cancel'
+          style: 'cancel',
         },
         {
           text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
             try {
-              const { error } = await supabase
-                .from('trip_places')
-                .delete()
-                .eq('id', place.id);
+              const { error } = await supabase.from('trip_places').delete().eq('id', place.id);
 
               if (error) {
                 console.error('Error deleting place:', error);
                 Alert.alert('Error', 'No se pudo eliminar el lugar');
               } else {
                 // Actualizar la lista local y cerrar modal
-                setPlaces(prev => prev.filter(p => p.id !== place.id));
+                setPlaces((prev) => prev.filter((p) => p.id !== place.id));
                 handleCloseModal();
                 Alert.alert('Éxito', 'Lugar eliminado del viaje');
               }
@@ -246,8 +239,8 @@ export default function TripPlacesScreen() {
               console.error('Error deleting place:', error);
               Alert.alert('Error', 'No se pudo eliminar el lugar');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -262,7 +255,7 @@ export default function TripPlacesScreen() {
           style={{
             paddingTop: 60,
             paddingHorizontal: 20,
-            paddingBottom: 20
+            paddingBottom: 20,
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -277,9 +270,7 @@ export default function TripPlacesScreen() {
 
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#8B5CF6" />
-          <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>
-            Cargando lugares...
-          </Text>
+          <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>Cargando lugares...</Text>
         </View>
       </View>
     );
@@ -295,7 +286,7 @@ export default function TripPlacesScreen() {
         style={{
           paddingTop: 60,
           paddingHorizontal: 20,
-          paddingBottom: 20
+          paddingBottom: 20,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -303,41 +294,43 @@ export default function TripPlacesScreen() {
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: 'white' }}>
-              Mis Lugares
-            </Text>
-            <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>
-              {tripTitle}
-            </Text>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: 'white' }}>Mis Lugares</Text>
+            <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>{tripTitle}</Text>
           </View>
         </View>
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
         {places.length === 0 ? (
-          <View style={{
-            backgroundColor: 'white',
-            borderRadius: 16,
-            padding: 32,
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+          <View
+            style={{
+              backgroundColor: 'white',
+              borderRadius: 16,
+              padding: 32,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Text style={{ fontSize: 48, marginBottom: 16 }}>📍</Text>
-            <Text style={{
-              fontSize: 20,
-              fontWeight: '700',
-              color: '#1A1A1A',
-              marginBottom: 8,
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: '#1A1A1A',
+                marginBottom: 8,
+                textAlign: 'center',
+              }}
+            >
               ¡Aún no has guardado lugares!
             </Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#666666',
-              marginBottom: 24,
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: '#666666',
+                marginBottom: 24,
+                textAlign: 'center',
+              }}
+            >
               Ve a la sección Explore y agrega lugares a este viaje
             </Text>
             <TouchableOpacity
@@ -345,7 +338,7 @@ export default function TripPlacesScreen() {
               style={{
                 borderRadius: 16,
                 paddingHorizontal: 24,
-                paddingVertical: 12
+                paddingVertical: 12,
               }}
             >
               <LinearGradient
@@ -357,14 +350,16 @@ export default function TripPlacesScreen() {
                   paddingHorizontal: 24,
                   paddingVertical: 12,
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
                 }}
               >
-                <Text style={{
-                  color: '#FFFFFF',
-                  fontWeight: '700',
-                  fontSize: 16
-                }}>
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 16,
+                  }}
+                >
                   Explorar Lugares
                 </Text>
               </LinearGradient>
@@ -372,17 +367,21 @@ export default function TripPlacesScreen() {
           </View>
         ) : (
           <View>
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16
-            }}>
-              <Text style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: '#666666'
-              }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: '600',
+                  color: '#666666',
+                }}
+              >
                 {places.length} {places.length === 1 ? 'lugar guardado' : 'lugares guardados'}
               </Text>
 
@@ -394,15 +393,17 @@ export default function TripPlacesScreen() {
                   paddingVertical: 8,
                   borderRadius: 20,
                   flexDirection: 'row',
-                  alignItems: 'center'
+                  alignItems: 'center',
                 }}
               >
                 <Ionicons name="add" size={16} color="white" style={{ marginRight: 4 }} />
-                <Text style={{
-                  color: 'white',
-                  fontWeight: '600',
-                  fontSize: 14
-                }}>
+                <Text
+                  style={{
+                    color: 'white',
+                    fontWeight: '600',
+                    fontSize: 14,
+                  }}
+                >
                   Explorar Más
                 </Text>
               </TouchableOpacity>
@@ -420,7 +421,7 @@ export default function TripPlacesScreen() {
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
-                  elevation: 3
+                  elevation: 3,
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -429,47 +430,59 @@ export default function TripPlacesScreen() {
                   </Text>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={{
-                      fontSize: 18,
-                      fontWeight: '700',
-                      color: '#1A1A1A',
-                      marginBottom: 4
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: '700',
+                        color: '#1A1A1A',
+                        marginBottom: 4,
+                      }}
+                    >
                       {place.name}
                     </Text>
 
-                    <Text style={{
-                      fontSize: 14,
-                      color: '#666666',
-                      marginBottom: 8
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: '#666666',
+                        marginBottom: 8,
+                      }}
+                    >
                       {place.address}
                     </Text>
 
-                    <View style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <Text style={{
-                        fontSize: 12,
-                        color: '#999999'
-                      }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: '#999999',
+                        }}
+                      >
                         Guardado el {formatDate(place.added_at)}
                       </Text>
 
-                      <View style={{
-                        backgroundColor: '#EBF4FF',
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8
-                      }}>
-                        <Text style={{
-                          fontSize: 12,
-                          color: '#007AFF',
-                          fontWeight: '600',
-                          textTransform: 'capitalize'
-                        }}>
+                      <View
+                        style={{
+                          backgroundColor: '#EBF4FF',
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 8,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: '#007AFF',
+                            fontWeight: '600',
+                            textTransform: 'capitalize',
+                          }}
+                        >
                           {place.category.replace('_', ' ')}
                         </Text>
                       </View>
@@ -483,7 +496,7 @@ export default function TripPlacesScreen() {
                         padding: 8,
                         borderRadius: 8,
                         backgroundColor: '#FEF2F2',
-                        marginLeft: 8
+                        marginLeft: 8,
                       }}
                     >
                       <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -498,14 +511,16 @@ export default function TripPlacesScreen() {
                     backgroundColor: '#F8F9FA',
                     borderRadius: 12,
                     padding: 12,
-                    alignItems: 'center'
+                    alignItems: 'center',
                   }}
                 >
-                  <Text style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: '#007AFF'
-                  }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: '600',
+                      color: '#007AFF',
+                    }}
+                  >
                     Ver Detalles
                   </Text>
                 </TouchableOpacity>

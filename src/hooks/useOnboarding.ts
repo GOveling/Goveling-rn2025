@@ -21,25 +21,27 @@ export const useOnboarding = () => {
 
   useEffect(() => {
     checkAuthAndOnboarding();
-    
+
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          await handleUserSignIn(session.user);
-        } else if (event === 'SIGNED_OUT') {
-          resetOnboardingState();
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await handleUserSignIn(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        resetOnboardingState();
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const checkAuthAndOnboarding = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (session?.user) {
         await handleUserSignIn(session.user);
       } else {
@@ -68,15 +70,13 @@ export const useOnboarding = () => {
 
       // Create profile if it doesn't exist
       if (!profile) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || '',
-            onboarding_completed: false,
-            welcome_shown: false,
-          });
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || '',
+          onboarding_completed: false,
+          welcome_shown: false,
+        });
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
@@ -104,13 +104,12 @@ export const useOnboarding = () => {
 
       // If onboarding was dismissed, don't show anything
       if (onboardingDismissed || currentProfile.onboarding_completed) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           showWelcome: false,
           showPersonalInfo: false,
         }));
       }
-
     } catch (error) {
       console.error('Error handling user sign in:', error);
     } finally {
@@ -144,14 +143,11 @@ export const useOnboarding = () => {
     if (state.user) {
       try {
         await AsyncStorage.setItem(`welcome_shown_${state.user.id}`, 'true');
-        
-        // Update profile in database
-        await supabase
-          .from('profiles')
-          .update({ welcome_shown: true })
-          .eq('id', state.user.id);
 
-        setState(prev => ({
+        // Update profile in database
+        await supabase.from('profiles').update({ welcome_shown: true }).eq('id', state.user.id);
+
+        setState((prev) => ({
           ...prev,
           showWelcome: false,
           showPersonalInfo: true,
@@ -163,7 +159,7 @@ export const useOnboarding = () => {
   };
 
   const closePersonalInfo = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       showPersonalInfo: false,
     }));
@@ -189,7 +185,7 @@ export const useOnboarding = () => {
           .single();
 
         if (profile) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             profile,
           }));

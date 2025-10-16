@@ -31,19 +31,23 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Show loading screen while checking authentication
   if (loading || !navigationState?.key) {
     return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#F8F9FA'
-      }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#F8F9FA',
+        }}
+      >
         <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={{
-          marginTop: 16,
-          fontSize: 16,
-          color: '#666',
-          textAlign: 'center'
-        }}>
+        <Text
+          style={{
+            marginTop: 16,
+            fontSize: 16,
+            color: '#666',
+            textAlign: 'center',
+          }}
+        >
           {authLoading ? 'Verificando autenticación...' : 'Preparando experiencia...'}
         </Text>
       </View>

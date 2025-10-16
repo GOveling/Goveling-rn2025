@@ -10,12 +10,9 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function testMobilePhoneField() {
   try {
     console.log('🧪 Probando si el campo mobile_phone existe...');
-    
+
     // Intentar hacer una consulta que incluya mobile_phone
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, mobile_phone')
-      .limit(1);
+    const { data, error } = await supabase.from('profiles').select('id, mobile_phone').limit(1);
 
     if (error) {
       if (error.message.includes('column "mobile_phone" does not exist')) {
@@ -31,14 +28,13 @@ async function testMobilePhoneField() {
       console.log('🎉 La migración se aplicó correctamente');
       return true;
     }
-
   } catch (error) {
     console.error('❌ Error en la prueba:', error);
     return null;
   }
 }
 
-testMobilePhoneField().then(result => {
+testMobilePhoneField().then((result) => {
   if (result === true) {
     console.log('\n🎯 RESULTADO: Campo mobile_phone disponible');
   } else if (result === false) {

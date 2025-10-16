@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
-  Alert, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
   Dimensions,
   Modal,
   TextInput,
-  SafeAreaView
+  SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
@@ -43,7 +43,9 @@ function useAuth() {
     });
 
     // Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -75,7 +77,7 @@ const PersonalInfoScreen: React.FC = () => {
     passport_expiry: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    emergency_contact_relationship: ''
+    emergency_contact_relationship: '',
   });
 
   // Cargar datos del perfil
@@ -114,7 +116,7 @@ const PersonalInfoScreen: React.FC = () => {
           passport_expiry: data.passport_expiry || '',
           emergency_contact_name: data.emergency_contact_name || '',
           emergency_contact_phone: data.emergency_contact_phone || '',
-          emergency_contact_relationship: data.emergency_contact_relationship || ''
+          emergency_contact_relationship: data.emergency_contact_relationship || '',
         });
 
         // Si no hay datos importantes, activar modo edición automáticamente
@@ -160,15 +162,13 @@ const PersonalInfoScreen: React.FC = () => {
         emergency_contact_name: profileData.emergency_contact_name.trim() || null,
         emergency_contact_phone: profileData.emergency_contact_phone.trim() || null,
         emergency_contact_relationship: profileData.emergency_contact_relationship.trim() || null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(dataToSave, {
-          onConflict: 'id',
-          ignoreDuplicates: false
-        });
+      const { error } = await supabase.from('profiles').upsert(dataToSave, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      });
 
       if (error) {
         console.error('Error saving profile:', error);
@@ -187,9 +187,9 @@ const PersonalInfoScreen: React.FC = () => {
   };
 
   const updateField = (field: keyof ProfileData, value: string) => {
-    setProfileData(prev => ({
+    setProfileData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -209,7 +209,7 @@ const PersonalInfoScreen: React.FC = () => {
     { label: '👨 Masculino', value: 'male' },
     { label: '👩 Femenino', value: 'female' },
     { label: '🏳️‍⚧️ No binario', value: 'non-binary' },
-    { label: '🤐 Prefiero no decir', value: 'prefer-not-to-say' }
+    { label: '🤐 Prefiero no decir', value: 'prefer-not-to-say' },
   ];
 
   if (authLoading || loading) {
@@ -225,18 +225,12 @@ const PersonalInfoScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Información Personal</Text>
         {!isEditMode && (
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => setIsEditMode(true)}
-          >
+          <TouchableOpacity style={styles.editButton} onPress={() => setIsEditMode(true)}>
             <Text style={styles.editButtonText}>Editar</Text>
           </TouchableOpacity>
         )}
@@ -246,7 +240,7 @@ const PersonalInfoScreen: React.FC = () => {
         {/* Información Básica */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información Básica</Text>
-          
+
           <View style={styles.field}>
             <Text style={styles.label}>Nombre Completo *</Text>
             {isEditMode ? (
@@ -265,23 +259,23 @@ const PersonalInfoScreen: React.FC = () => {
           <View style={styles.field}>
             <Text style={styles.label}>Fecha de Nacimiento</Text>
             {isEditMode ? (
-              <TouchableOpacity
-                style={styles.pickerButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={[styles.pickerButtonText, !profileData.birth_date && styles.pickerButtonTextPlaceholder]}>
-                  {profileData.birth_date 
+              <TouchableOpacity style={styles.pickerButton} onPress={() => setShowDatePicker(true)}>
+                <Text
+                  style={[
+                    styles.pickerButtonText,
+                    !profileData.birth_date && styles.pickerButtonTextPlaceholder,
+                  ]}
+                >
+                  {profileData.birth_date
                     ? `${profileData.birth_date} (${calculateAge(profileData.birth_date)} años)`
-                    : 'Selecciona tu fecha de nacimiento'
-                  }
+                    : 'Selecciona tu fecha de nacimiento'}
                 </Text>
               </TouchableOpacity>
             ) : (
               <Text style={styles.value}>
-                {profileData.birth_date 
+                {profileData.birth_date
                   ? `${profileData.birth_date} (${calculateAge(profileData.birth_date)} años)`
-                  : 'No especificado'
-                }
+                  : 'No especificado'}
               </Text>
             )}
           </View>
@@ -293,19 +287,24 @@ const PersonalInfoScreen: React.FC = () => {
                 style={styles.pickerButton}
                 onPress={() => setShowGenderPicker(true)}
               >
-                <Text style={[styles.pickerButtonText, !profileData.gender && styles.pickerButtonTextPlaceholder]}>
-                  {profileData.gender 
-                    ? genderOptions.find(g => g.value === profileData.gender)?.label || profileData.gender
-                    : 'Selecciona tu género'
-                  }
+                <Text
+                  style={[
+                    styles.pickerButtonText,
+                    !profileData.gender && styles.pickerButtonTextPlaceholder,
+                  ]}
+                >
+                  {profileData.gender
+                    ? genderOptions.find((g) => g.value === profileData.gender)?.label ||
+                      profileData.gender
+                    : 'Selecciona tu género'}
                 </Text>
               </TouchableOpacity>
             ) : (
               <Text style={styles.value}>
-                {profileData.gender 
-                  ? genderOptions.find(g => g.value === profileData.gender)?.label || profileData.gender
-                  : 'No especificado'
-                }
+                {profileData.gender
+                  ? genderOptions.find((g) => g.value === profileData.gender)?.label ||
+                    profileData.gender
+                  : 'No especificado'}
               </Text>
             )}
           </View>
@@ -314,7 +313,7 @@ const PersonalInfoScreen: React.FC = () => {
         {/* Información de Contacto */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información de Contacto</Text>
-          
+
           <View style={styles.field}>
             <Text style={styles.label}>Teléfono Móvil</Text>
             {isEditMode ? (
@@ -381,7 +380,7 @@ const PersonalInfoScreen: React.FC = () => {
         {/* Información de Viaje */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información de Viaje</Text>
-          
+
           <View style={styles.field}>
             <Text style={styles.label}>Nacionalidad</Text>
             {isEditMode ? (
@@ -432,7 +431,7 @@ const PersonalInfoScreen: React.FC = () => {
         {/* Contacto de Emergencia */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contacto de Emergencia</Text>
-          
+
           <View style={styles.field}>
             <Text style={styles.label}>Nombre</Text>
             {isEditMode ? (
@@ -444,7 +443,9 @@ const PersonalInfoScreen: React.FC = () => {
                 placeholderTextColor="#999"
               />
             ) : (
-              <Text style={styles.value}>{profileData.emergency_contact_name || 'No especificado'}</Text>
+              <Text style={styles.value}>
+                {profileData.emergency_contact_name || 'No especificado'}
+              </Text>
             )}
           </View>
 
@@ -460,7 +461,9 @@ const PersonalInfoScreen: React.FC = () => {
                 keyboardType="phone-pad"
               />
             ) : (
-              <Text style={styles.value}>{profileData.emergency_contact_phone || 'No especificado'}</Text>
+              <Text style={styles.value}>
+                {profileData.emergency_contact_phone || 'No especificado'}
+              </Text>
             )}
           </View>
 
@@ -475,7 +478,9 @@ const PersonalInfoScreen: React.FC = () => {
                 placeholderTextColor="#999"
               />
             ) : (
-              <Text style={styles.value}>{profileData.emergency_contact_relationship || 'No especificado'}</Text>
+              <Text style={styles.value}>
+                {profileData.emergency_contact_relationship || 'No especificado'}
+              </Text>
             )}
           </View>
         </View>
@@ -491,15 +496,13 @@ const PersonalInfoScreen: React.FC = () => {
             >
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
               onPress={saveProfileData}
               disabled={saving}
             >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Guardando...' : 'Guardar'}
-              </Text>
+              <Text style={styles.saveButtonText}>{saving ? 'Guardando...' : 'Guardar'}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -520,7 +523,7 @@ const PersonalInfoScreen: React.FC = () => {
               </TouchableOpacity>
               <Text style={styles.modalTitle}>Fecha de Nacimiento</Text>
             </View>
-            
+
             <TextInput
               style={styles.dateInput}
               value={profileData.birth_date}
@@ -528,7 +531,7 @@ const PersonalInfoScreen: React.FC = () => {
               placeholder="YYYY-MM-DD"
               placeholderTextColor="#999"
             />
-            
+
             <TouchableOpacity
               style={styles.modalSaveButton}
               onPress={() => setShowDatePicker(false)}
@@ -554,22 +557,28 @@ const PersonalInfoScreen: React.FC = () => {
               </TouchableOpacity>
               <Text style={styles.modalTitle}>Selecciona tu Género</Text>
             </View>
-            
+
             {genderOptions.map((option) => (
               <TouchableOpacity
                 key={option.value}
-                style={[styles.genderOption, profileData.gender === option.value && styles.genderOptionSelected]}
+                style={[
+                  styles.genderOption,
+                  profileData.gender === option.value && styles.genderOptionSelected,
+                ]}
                 onPress={() => {
                   updateField('gender', option.value);
                   setShowGenderPicker(false);
                 }}
               >
-                <Text style={[styles.genderOptionText, profileData.gender === option.value && styles.genderOptionTextSelected]}>
+                <Text
+                  style={[
+                    styles.genderOptionText,
+                    profileData.gender === option.value && styles.genderOptionTextSelected,
+                  ]}
+                >
                   {option.label}
                 </Text>
-                {profileData.gender === option.value && (
-                  <Text style={styles.checkmark}>✓</Text>
-                )}
+                {profileData.gender === option.value && <Text style={styles.checkmark}>✓</Text>}
               </TouchableOpacity>
             ))}
           </View>

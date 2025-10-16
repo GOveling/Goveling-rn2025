@@ -22,12 +22,12 @@ export const useCountries = (): UseCountriesReturn => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const countriesData = await apiService.getCountries();
       setCountries(countriesData);
-      
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al cargar países';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Error desconocido al cargar países';
       setError(errorMessage);
       console.error('Error loading countries:', err);
     } finally {
@@ -44,6 +44,6 @@ export const useCountries = (): UseCountriesReturn => {
     countries,
     loading,
     error,
-    refresh: loadCountries
+    refresh: loadCountries,
   };
 };

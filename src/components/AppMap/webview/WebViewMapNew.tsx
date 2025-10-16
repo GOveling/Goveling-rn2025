@@ -5,7 +5,9 @@ import * as Location from 'expo-location';
 import { AppMapProps } from '../types';
 import { MAP_STYLE_URL } from '../../../config/maps';
 
-const buildHtml = (props: AppMapProps & { userLocation?: { latitude: number; longitude: number } }) => `<!doctype html><html><head>
+const buildHtml = (
+  props: AppMapProps & { userLocation?: { latitude: number; longitude: number } }
+) => `<!doctype html><html><head>
 <meta name=viewport content="initial-scale=1, width=device-width" />
 <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
 <style> 
@@ -93,14 +95,19 @@ const buildHtml = (props: AppMapProps & { userLocation?: { latitude: number; lon
 
 export default function WebViewMap(props: AppMapProps) {
   const [isLocating, setIsLocating] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
+    null
+  );
   const webViewRef = React.useRef<WebView>(null);
 
   // Add user location to props for HTML generation
-  const propsWithLocation = useMemo(() => ({
-    ...props,
-    userLocation
-  }), [props, userLocation]);
+  const propsWithLocation = useMemo(
+    () => ({
+      ...props,
+      userLocation,
+    }),
+    [props, userLocation]
+  );
 
   const html = useMemo(() => buildHtml(propsWithLocation), [propsWithLocation]);
 
@@ -126,7 +133,7 @@ export default function WebViewMap(props: AppMapProps) {
 
       const userCoords = {
         latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+        longitude: location.coords.longitude,
       };
 
       setUserLocation(userCoords);
@@ -136,11 +143,10 @@ export default function WebViewMap(props: AppMapProps) {
       if (webViewRef.current) {
         const message = JSON.stringify({
           type: 'updateUserLocation',
-          location: userCoords
+          location: userCoords,
         });
         webViewRef.current.postMessage(message);
       }
-
     } catch (error: any) {
       const errorMessage = error?.message || 'No se pudo obtener tu ubicación';
       props.onLocationError?.(errorMessage);
@@ -155,18 +161,18 @@ export default function WebViewMap(props: AppMapProps) {
     if (userLocation && webViewRef.current) {
       const message = JSON.stringify({
         type: 'updateUserLocation',
-        location: userLocation
+        location: userLocation,
       });
       webViewRef.current.postMessage(message);
     }
   }, [userLocation]);
-  
+
   return (
     <View style={{ flex: 1, position: 'relative' }}>
-      <WebView 
+      <WebView
         ref={webViewRef}
-        originWhitelist={['*']} 
-        source={{ html }} 
+        originWhitelist={['*']}
+        source={{ html }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
@@ -174,7 +180,7 @@ export default function WebViewMap(props: AppMapProps) {
         mediaPlaybackRequiresUserAction={false}
         geolocationEnabled={false} // Disable WebView geolocation, use native instead
       />
-      
+
       {/* Native location button */}
       {props.showUserLocation !== false && (
         <TouchableOpacity
@@ -192,7 +198,7 @@ export default function WebViewMap(props: AppMapProps) {
             paddingHorizontal: 12,
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
             elevation: 3,
-            opacity: isLocating ? 0.6 : 1
+            opacity: isLocating ? 0.6 : 1,
           }}
         >
           <Text style={{ fontSize: 14, fontWeight: '600' }}>

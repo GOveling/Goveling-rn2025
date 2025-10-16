@@ -12,22 +12,26 @@ Este proyecto implementa una estrategia optimizada de mapas que utiliza la mejor
 ## 🎯 Beneficios
 
 ### 🚀 Rendimiento Optimizado
+
 - **iOS**: Usa MapKit nativo para mejor rendimiento y menor uso de batería
 - **Android**: MapLibre GL nativo para renderizado GPU optimizado
 - **Web**: MapLibre GL JS directo sin overhead de WebView
 
 ### 👤 Experiencia de Usuario
+
 - **iOS**: Interfaz familiar de Apple Maps que los usuarios esperan
 - **Android**: MapLibre altamente personalizable
 - **Web**: Experiencia web moderna y responsiva
 
 ### 📱 Cumplimiento de Guidelines
+
 - **Apple**: Prefiere el uso de MapKit sobre soluciones de terceros
 - **Google**: Permite flexibilidad en la elección de proveedores de mapas
 
 ## 🏗️ Arquitectura
 
 ### 📁 Estructura de Archivos
+
 ```
 src/components/map/
 ├── UniversalMap.tsx      # Componente principal con lógica de selección
@@ -65,9 +69,9 @@ export const UniversalMap = ({ userLocation, places, style }) => {
 
 ```json
 {
-  "react-native-maps": "^1.x.x",     // Apple Maps en iOS
-  "maplibre-gl": "^3.x.x",           // MapLibre para web
-  "@types/maplibre-gl": "^3.x.x"     // Tipos TypeScript
+  "react-native-maps": "^1.x.x", // Apple Maps en iOS
+  "maplibre-gl": "^3.x.x", // MapLibre para web
+  "@types/maplibre-gl": "^3.x.x" // Tipos TypeScript
 }
 ```
 
@@ -90,15 +94,17 @@ export const UniversalMap = ({ userLocation, places, style }) => {
 ## 🔧 Componentes
 
 ### 🌐 WebDirectMap
+
 - **Plataforma**: Web
 - **Tecnología**: MapLibre GL JS directo
-- **Características**: 
+- **Características**:
   - Renderizado GPU
   - Controles de navegación
   - Marcadores personalizados
   - Ajuste automático de bounds
 
 ### 🍎 AppleMap
+
 - **Plataforma**: iOS
 - **Tecnología**: react-native-maps con MapKit
 - **Características**:
@@ -108,6 +114,7 @@ export const UniversalMap = ({ userLocation, places, style }) => {
   - Controles de ubicación integrados
 
 ### 🔄 WebViewMap (Fallback)
+
 - **Plataforma**: Expo Go, casos especiales
 - **Tecnología**: WebView + MapLibre GL JS
 - **Características**:
@@ -137,12 +144,14 @@ import { UniversalMap } from '@/src/components/map/UniversalMap';
 ## 🎨 Personalización
 
 ### 🎯 Marcadores
+
 - **Usuario**: Azul (#007AFF) en todas las plataformas
 - **Lugares**: Rojo (#FF3B30) con números
 - **iOS**: Usa pins nativos de MapKit
 - **Web/Android**: Marcadores HTML personalizados
 
 ### 🗺️ Estilos de Mapa
+
 - **iOS**: Estilo estándar de Apple Maps
 - **Web/Android**: MapLibre demo style (demotiles.maplibre.org)
 
@@ -157,17 +166,21 @@ import { UniversalMap } from '@/src/components/map/UniversalMap';
 ## 🐛 Troubleshooting
 
 ### ❌ Error: "Cannot read property 'hostname' of undefined"
+
 **Solución**: Verificar que `window.location` existe antes de acceder a sus propiedades.
 
 ### ❌ Maps no aparece en iOS
+
 **Solución**: Verificar que react-native-maps está correctamente configurado en app.json.
 
 ### ❌ Marcadores no aparecen
+
 **Solución**: Verificar que las coordenadas están en formato correcto `{ lat: number, lng: number }`.
 
 ## 📞 Soporte
 
 Para problemas específicos de mapas, revisar:
+
 - Logs de consola en desarrollo
 - Configuración de permisos de ubicación
 - Compatibilidad de plataforma

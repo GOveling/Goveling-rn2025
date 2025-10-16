@@ -26,14 +26,14 @@ export const getAlternativeMapStyles = () => {
     return {
       basic: 'https://api.maptiler.com/maps/openstreetmap/style.json',
       satellite: 'https://api.maptiler.com/maps/openstreetmap/style.json',
-      hybrid: 'https://api.maptiler.com/maps/openstreetmap/style.json'
+      hybrid: 'https://api.maptiler.com/maps/openstreetmap/style.json',
     };
   }
 
   return {
     basic: `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`,
     satellite: `https://api.maptiler.com/maps/satellite/style.json?key=${key}`,
-    hybrid: `https://api.maptiler.com/maps/hybrid/style.json?key=${key}`
+    hybrid: `https://api.maptiler.com/maps/hybrid/style.json?key=${key}`,
   };
 };
 

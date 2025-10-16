@@ -88,7 +88,11 @@ const FALLBACK_COUNTRIES: Country[] = [
   { country_code: 'GP', country_name: 'Guadalupe', phone_code: '+590' },
   { country_code: 'GQ', country_name: 'Guinea Ecuatorial', phone_code: '+240' },
   { country_code: 'GR', country_name: 'Grecia', phone_code: '+30' },
-  { country_code: 'GS', country_name: 'Islas Georgias del Sur y Sandwich del Sur', phone_code: '+500' },
+  {
+    country_code: 'GS',
+    country_name: 'Islas Georgias del Sur y Sandwich del Sur',
+    phone_code: '+500',
+  },
   { country_code: 'GT', country_name: 'Guatemala', phone_code: '+502' },
   { country_code: 'GU', country_name: 'Guam', phone_code: '+1' },
   { country_code: 'GW', country_name: 'Guinea-Bisáu', phone_code: '+245' },
@@ -103,7 +107,11 @@ const FALLBACK_COUNTRIES: Country[] = [
   { country_code: 'IL', country_name: 'Israel', phone_code: '+972' },
   { country_code: 'IM', country_name: 'Isla de Man', phone_code: '+44' },
   { country_code: 'IN', country_name: 'India', phone_code: '+91' },
-  { country_code: 'IO', country_name: 'Territorio Británico del Océano Índico', phone_code: '+246' },
+  {
+    country_code: 'IO',
+    country_name: 'Territorio Británico del Océano Índico',
+    phone_code: '+246',
+  },
   { country_code: 'IQ', country_name: 'Irak', phone_code: '+964' },
   { country_code: 'IR', country_name: 'Irán', phone_code: '+98' },
   { country_code: 'IS', country_name: 'Islandia', phone_code: '+354' },
@@ -246,7 +254,7 @@ const FALLBACK_COUNTRIES: Country[] = [
   { country_code: 'YT', country_name: 'Mayotte', phone_code: '+262' },
   { country_code: 'ZA', country_name: 'Sudáfrica', phone_code: '+27' },
   { country_code: 'ZM', country_name: 'Zambia', phone_code: '+260' },
-  { country_code: 'ZW', country_name: 'Zimbabue', phone_code: '+263' }
+  { country_code: 'ZW', country_name: 'Zimbabue', phone_code: '+263' },
 ];
 
 /**
@@ -283,7 +291,7 @@ export const apiService = {
       // Normalizar los códigos telefónicos
       const normalizedCountries = data.map((country: Country) => ({
         ...country,
-        phone_code: normalizePhoneCode(country.phone_code)
+        phone_code: normalizePhoneCode(country.phone_code),
       }));
 
       // Ordenar alfabéticamente por nombre del país
@@ -293,14 +301,13 @@ export const apiService = {
 
       console.log(`✅ Successfully loaded ${sortedCountries.length} countries from API`);
       return sortedCountries;
-
     } catch (error) {
       console.warn('⚠️ Failed to fetch countries from API, using fallback list:', error);
 
       // Normalizar códigos telefónicos en la lista de fallback
-      const normalizedFallback = FALLBACK_COUNTRIES.map(country => ({
+      const normalizedFallback = FALLBACK_COUNTRIES.map((country) => ({
         ...country,
-        phone_code: normalizePhoneCode(country.phone_code)
+        phone_code: normalizePhoneCode(country.phone_code),
       }));
 
       // Ordenar alfabéticamente
@@ -329,7 +336,9 @@ export const apiService = {
       const cachedData = this.getCachedData(cacheKey, 24 * 60 * 60 * 1000); // 24 horas en ms
 
       if (cachedData) {
-        console.log(`🎯 Using cached cities for ${normalizedCountryCode}: ${cachedData.length} cities`);
+        console.log(
+          `🎯 Using cached cities for ${normalizedCountryCode}: ${cachedData.length} cities`
+        );
         return cachedData;
       }
 
@@ -339,13 +348,16 @@ export const apiService = {
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/geo/countries/${normalizedCountryCode}/cities`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/geo/countries/${normalizedCountryCode}/cities`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
 
         // Limpiar el timeout si la request es exitosa
         clearTimeout(timeoutId);
@@ -362,7 +374,7 @@ export const apiService = {
           latitude: city.latitude || city.lat || 0,
           longitude: city.longitude || city.lng || city.lon || 0,
           population: city.population || 0,
-          country_code: normalizedCountryCode
+          country_code: normalizedCountryCode,
         }));
 
         // Ordenar por población (más grandes primero) y luego alfabéticamente
@@ -377,21 +389,23 @@ export const apiService = {
 
         // Para países con muchas ciudades, limitar a las más importantes
         // Esto mejora el rendimiento en React Native
-        const optimizedCities = sortedCities.length > 2000
-          ? sortedCities.slice(0, 1000) // Solo las 1000 ciudades más pobladas
-          : sortedCities;
+        const optimizedCities =
+          sortedCities.length > 2000
+            ? sortedCities.slice(0, 1000) // Solo las 1000 ciudades más pobladas
+            : sortedCities;
 
         // Guardar en caché
         this.setCachedData(cacheKey, optimizedCities);
 
-        console.log(`✅ Successfully loaded ${optimizedCities.length} cities for ${normalizedCountryCode}${optimizedCities.length < sortedCities.length ? ` (optimized from ${sortedCities.length})` : ''}`);
+        console.log(
+          `✅ Successfully loaded ${optimizedCities.length} cities for ${normalizedCountryCode}${optimizedCities.length < sortedCities.length ? ` (optimized from ${sortedCities.length})` : ''}`
+        );
         return optimizedCities;
       } catch (fetchError) {
         // Limpiar timeout en caso de error
         clearTimeout(timeoutId);
         throw fetchError;
       }
-
     } catch (error) {
       console.error(`❌ Failed to fetch cities for ${countryCode}:`, error);
       throw error;
@@ -432,12 +446,12 @@ export const apiService = {
 
       const cacheEntry = {
         data,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       localStorage.setItem(key, JSON.stringify(cacheEntry));
     } catch (error) {
       console.warn(`Error saving cache for ${key}:`, error);
     }
-  }
+  },
 };

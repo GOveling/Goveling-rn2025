@@ -59,7 +59,11 @@ const popularAmenities = [
   { id: 'air-conditioning', label: 'Aire Acondicionado', icon: '❄️' },
 ];
 
-export default function HotelBookingModal({ visible, onClose, destination = '' }: HotelBookingModalProps) {
+export default function HotelBookingModal({
+  visible,
+  onClose,
+  destination = '',
+}: HotelBookingModalProps) {
   const [filters, setFilters] = useState<BookingFilters>({
     destination: destination,
     checkIn: new Date(),
@@ -79,7 +83,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -90,11 +94,11 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
   };
 
   const toggleAmenity = (amenityId: string) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       amenities: prev.amenities.includes(amenityId)
-        ? prev.amenities.filter(id => id !== amenityId)
-        : [...prev.amenities, amenityId]
+        ? prev.amenities.filter((id) => id !== amenityId)
+        : [...prev.amenities, amenityId],
     }));
   };
 
@@ -133,7 +137,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
             style={styles.textInput}
             placeholder="¿A dónde viajas?"
             value={filters.destination}
-            onChangeText={(text) => setFilters(prev => ({ ...prev, destination: text }))}
+            onChangeText={(text) => setFilters((prev) => ({ ...prev, destination: text }))}
           />
         </View>
       </View>
@@ -142,10 +146,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
       <View style={styles.dateContainer}>
         <View style={styles.dateGroup}>
           <Text style={styles.label}>Check-in</Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowCheckInPicker(true)}
-          >
+          <TouchableOpacity style={styles.dateButton} onPress={() => setShowCheckInPicker(true)}>
             <Ionicons name="calendar-outline" size={20} color="#8B5CF6" />
             <Text style={styles.dateText}>{formatDate(filters.checkIn)}</Text>
           </TouchableOpacity>
@@ -153,10 +154,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
 
         <View style={styles.dateGroup}>
           <Text style={styles.label}>Check-out</Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowCheckOutPicker(true)}
-          >
+          <TouchableOpacity style={styles.dateButton} onPress={() => setShowCheckOutPicker(true)}>
             <Ionicons name="calendar-outline" size={20} color="#8B5CF6" />
             <Text style={styles.dateText}>{formatDate(filters.checkOut)}</Text>
           </TouchableOpacity>
@@ -177,14 +175,18 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
           <View style={styles.counterContainer}>
             <TouchableOpacity
               style={styles.counterButton}
-              onPress={() => setFilters(prev => ({ ...prev, guests: Math.max(1, prev.guests - 1) }))}
+              onPress={() =>
+                setFilters((prev) => ({ ...prev, guests: Math.max(1, prev.guests - 1) }))
+              }
             >
               <Ionicons name="remove" size={20} color="#8B5CF6" />
             </TouchableOpacity>
             <Text style={styles.counterValue}>{filters.guests}</Text>
             <TouchableOpacity
               style={styles.counterButton}
-              onPress={() => setFilters(prev => ({ ...prev, guests: Math.min(20, prev.guests + 1) }))}
+              onPress={() =>
+                setFilters((prev) => ({ ...prev, guests: Math.min(20, prev.guests + 1) }))
+              }
             >
               <Ionicons name="add" size={20} color="#8B5CF6" />
             </TouchableOpacity>
@@ -196,14 +198,18 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
           <View style={styles.counterContainer}>
             <TouchableOpacity
               style={styles.counterButton}
-              onPress={() => setFilters(prev => ({ ...prev, rooms: Math.max(1, prev.rooms - 1) }))}
+              onPress={() =>
+                setFilters((prev) => ({ ...prev, rooms: Math.max(1, prev.rooms - 1) }))
+              }
             >
               <Ionicons name="remove" size={20} color="#8B5CF6" />
             </TouchableOpacity>
             <Text style={styles.counterValue}>{filters.rooms}</Text>
             <TouchableOpacity
               style={styles.counterButton}
-              onPress={() => setFilters(prev => ({ ...prev, rooms: Math.min(10, prev.rooms + 1) }))}
+              onPress={() =>
+                setFilters((prev) => ({ ...prev, rooms: Math.min(10, prev.rooms + 1) }))
+              }
             >
               <Ionicons name="add" size={20} color="#8B5CF6" />
             </TouchableOpacity>
@@ -234,15 +240,17 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
                 key={type.value}
                 style={[
                   styles.filterChip,
-                  filters.hotelType === type.value && styles.filterChipSelected
+                  filters.hotelType === type.value && styles.filterChipSelected,
                 ]}
-                onPress={() => setFilters(prev => ({ ...prev, hotelType: type.value as any }))}
+                onPress={() => setFilters((prev) => ({ ...prev, hotelType: type.value as any }))}
               >
                 <Text style={styles.filterChipIcon}>{type.icon}</Text>
-                <Text style={[
-                  styles.filterChipText,
-                  filters.hotelType === type.value && styles.filterChipTextSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    filters.hotelType === type.value && styles.filterChipTextSelected,
+                  ]}
+                >
                   {type.label}
                 </Text>
               </TouchableOpacity>
@@ -260,15 +268,17 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
               key={amenity.id}
               style={[
                 styles.amenityChip,
-                filters.amenities.includes(amenity.id) && styles.amenityChipSelected
+                filters.amenities.includes(amenity.id) && styles.amenityChipSelected,
               ]}
               onPress={() => toggleAmenity(amenity.id)}
             >
               <Text style={styles.amenityIcon}>{amenity.icon}</Text>
-              <Text style={[
-                styles.amenityText,
-                filters.amenities.includes(amenity.id) && styles.amenityTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.amenityText,
+                  filters.amenities.includes(amenity.id) && styles.amenityTextSelected,
+                ]}
+              >
                 {amenity.label}
               </Text>
             </TouchableOpacity>
@@ -298,9 +308,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
         </LinearGradient>
 
         {/* Content */}
-        <View style={styles.content}>
-          {renderSearchSection()}
-        </View>
+        <View style={styles.content}>{renderSearchSection()}</View>
 
         {/* Date Pickers */}
         {showCheckInPicker && (
@@ -312,7 +320,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
             onChange={(event, selectedDate) => {
               setShowCheckInPicker(false);
               if (selectedDate) {
-                setFilters(prev => {
+                setFilters((prev) => {
                   const updatedFilters = { ...prev, checkIn: selectedDate };
                   // Adjust checkout if necessary
                   if (selectedDate >= prev.checkOut) {
@@ -336,7 +344,7 @@ export default function HotelBookingModal({ visible, onClose, destination = '' }
             onChange={(event, selectedDate) => {
               setShowCheckOutPicker(false);
               if (selectedDate) {
-                setFilters(prev => ({ ...prev, checkOut: selectedDate }));
+                setFilters((prev) => ({ ...prev, checkOut: selectedDate }));
               }
             }}
           />

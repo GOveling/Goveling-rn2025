@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform, Image, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  Image,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '~/lib/theme';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,7 +27,11 @@ export default function TripsTab() {
   const { openModal } = useLocalSearchParams();
 
   // RTK Query: Get cached trips breakdown (shared with HomeTab)
-  const { data: breakdown, isLoading: tripsLoading, refetch: refetchTrips } = useGetTripsBreakdownQuery();
+  const {
+    data: breakdown,
+    isLoading: tripsLoading,
+    refetch: refetchTrips,
+  } = useGetTripsBreakdownQuery();
 
   // Estados
   const [showNewTripModal, setShowNewTripModal] = useState(false);
@@ -29,7 +43,7 @@ export default function TripsTab() {
   const stats = {
     totalTrips: breakdown?.counts.total || 0,
     upcomingTrips: breakdown?.counts.upcoming || 0,
-    groupTrips: 0 // Will be calculated from team data
+    groupTrips: 0, // Will be calculated from team data
   };
 
   // Check if we should open the modal automatically from query params
@@ -53,8 +67,8 @@ export default function TripsTab() {
       logger.debug('🧪 TripsTab: Using RTK Query cache, base trips count:', baseTrips.length);
 
       // Get trip IDs from breakdown for team data enrichment
-      const tripIds = baseTrips.map(t => t.id);
-      
+      const tripIds = baseTrips.map((t) => t.id);
+
       // Also check for collaborator trips not in breakdown
       const { data: collabTripIds, error: collabError } = await supabase
         .from('trip_collaborators')
@@ -65,42 +79,54 @@ export default function TripsTab() {
         logger.error('Error loading collaborator trips:', collabError);
       }
 
-      const collabSet = new Set((collabTripIds || []).map(c => c.trip_id));
+      const collabSet = new Set((collabTripIds || []).map((c) => c.trip_id));
       logger.debug('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
 
       // Combine base trips with any missing collab trips
       const baseTripsMap = new Map<string, any>();
-      baseTrips.forEach(t => baseTripsMap.set(t.id, { 
-        ...t, 
-        title: t.name, // Map 'name' from breakdown to 'title' for TripsTab
-        id: t.id 
-      }));
-      
+      baseTrips.forEach((t) =>
+        baseTripsMap.set(t.id, {
+          ...t,
+          title: t.name, // Map 'name' from breakdown to 'title' for TripsTab
+          id: t.id,
+        })
+      );
+
       // Add placeholder for collab-only trips not in breakdown
-      collabSet.forEach(id => {
+      collabSet.forEach((id) => {
         if (!baseTripsMap.has(id)) baseTripsMap.set(id, { id, owner_id: null });
       });
-      
+
       logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
       const unifiedTrips = Array.from(baseTripsMap.values());
 
       // Obtener team data para cada trip (owner, collaborators, count) en paralelo
       const useRPC = true; // toggle to false if RPC not deployed yet
-      const tripsWithTeam = await Promise.all(unifiedTrips.map(async (t) => {
-        const team = useRPC ? await getTripWithTeamRPC(t.id) : await getTripWithTeam(t.id);
-        if (!team.trip) {
-          logger.warn('🧪 TripsTab Debug: team.trip is null for id', t.id, 'team data:', team);
-        }
-        return {
-          ...t,
+      const tripsWithTeam = await Promise.all(
+        unifiedTrips.map(async (t) => {
+          const team = useRPC ? await getTripWithTeamRPC(t.id) : await getTripWithTeam(t.id);
+          if (!team.trip) {
+            logger.warn('🧪 TripsTab Debug: team.trip is null for id', t.id, 'team data:', team);
+          }
+          return {
+            ...t,
             // Campos para compatibilidad con componentes actuales
-          collaborators: team.collaborators.map(c => ({ user_id: c.id, role: c.role })),
-          collaboratorsCount: team.collaboratorsCount,
-          isOwner: (team.owner?.id && team.owner.id === user.user.id) || t.owner_id === user.user.id
-        };
-      }));
+            collaborators: team.collaborators.map((c) => ({ user_id: c.id, role: c.role })),
+            collaboratorsCount: team.collaboratorsCount,
+            isOwner:
+              (team.owner?.id && team.owner.id === user.user.id) || t.owner_id === user.user.id,
+          };
+        })
+      );
 
-      logger.debug('🧪 TripsTab Debug: tripsWithTeam summary:', tripsWithTeam.map(t => ({ id: t.id, collaboratorsCount: t.collaboratorsCount, isOwner: t.isOwner })) );
+      logger.debug(
+        '🧪 TripsTab Debug: tripsWithTeam summary:',
+        tripsWithTeam.map((t) => ({
+          id: t.id,
+          collaboratorsCount: t.collaboratorsCount,
+          isOwner: t.isOwner,
+        }))
+      );
 
       // Sort trips according to business logic:
       // 1. Trips with start_date: sort by closest start_date first
@@ -132,11 +158,14 @@ export default function TripsTab() {
         return bCreatedDate.getTime() - aCreatedDate.getTime();
       });
 
-      logger.debug('🧪 TripsTab: Sorted trips order:', sortedTrips.map(t => ({ 
-        title: t.title, 
-        start_date: t.start_date, 
-        created_at: t.created_at 
-      })));
+      logger.debug(
+        '🧪 TripsTab: Sorted trips order:',
+        sortedTrips.map((t) => ({
+          title: t.title,
+          start_date: t.start_date,
+          created_at: t.created_at,
+        }))
+      );
 
       logger.debug('🔍🔍🔍 CRITICAL: About to setTrips with length:', sortedTrips.length);
       setTrips(sortedTrips);
@@ -147,56 +176,62 @@ export default function TripsTab() {
       // Get upcoming trips (future trips + planning trips without dates)
       // Exclude: completed trips and currently traveling trips
       logger.debug('🧪 TripsTab: Analyzing upcoming trips...');
-      const upcomingTrips = sortedTrips?.filter(trip => {
-        logger.debug(`🧪 Evaluating trip "${trip.title}":`, {
-          start_date: trip.start_date,
-          end_date: trip.end_date
-        });
+      const upcomingTrips =
+        sortedTrips?.filter((trip) => {
+          logger.debug(`🧪 Evaluating trip "${trip.title}":`, {
+            start_date: trip.start_date,
+            end_date: trip.end_date,
+          });
 
-        // Planning trips (no dates set) - these count as upcoming
-        if (!trip.start_date || !trip.end_date) {
-          logger.debug(`  ✅ Planning trip (no dates): ${trip.title}`);
-          return true;
-        }
+          // Planning trips (no dates set) - these count as upcoming
+          if (!trip.start_date || !trip.end_date) {
+            logger.debug(`  ✅ Planning trip (no dates): ${trip.title}`);
+            return true;
+          }
 
-        const now = new Date();
-        const startDate = new Date(trip.start_date);
-        const endDate = new Date(trip.end_date);
+          const now = new Date();
+          const startDate = new Date(trip.start_date);
+          const endDate = new Date(trip.end_date);
 
-        // Future trips (start date is in the future) - these count as upcoming
-        if (now < startDate) {
-          logger.debug(`  ✅ Future trip: ${trip.title} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`);
-          return true;
-        }
+          // Future trips (start date is in the future) - these count as upcoming
+          if (now < startDate) {
+            logger.debug(
+              `  ✅ Future trip: ${trip.title} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`
+            );
+            return true;
+          }
 
-        // Currently traveling (between start and end dates) - don't count
-        if (now >= startDate && now <= endDate) {
-          logger.debug(`  ❌ Currently traveling: ${trip.title}`);
+          // Currently traveling (between start and end dates) - don't count
+          if (now >= startDate && now <= endDate) {
+            logger.debug(`  ❌ Currently traveling: ${trip.title}`);
+            return false;
+          }
+
+          // Completed trips (end date is in the past) - don't count
+          if (now > endDate) {
+            logger.debug(
+              `  ❌ Completed trip: ${trip.title} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`
+            );
+            return false;
+          }
+
           return false;
-        }
-
-        // Completed trips (end date is in the past) - don't count
-        if (now > endDate) {
-          logger.debug(`  ❌ Completed trip: ${trip.title} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`);
-          return false;
-        }
-
-        return false;
-      }).length || 0;
+        }).length || 0;
 
       logger.debug('🧪 TripsTab: Upcoming trips count:', upcomingTrips);
 
       // Group trips: collaboratorsCount includes owner (+1 baked in team helper logic).
       // We consider group if total participants > 1.
-      const groupTripsCount = sortedTrips?.filter(trip => {
-        const count = trip.collaboratorsCount ?? (1 + (trip.collaborators?.length || 0));
-        return count > 1;
-      }).length || 0;
+      const groupTripsCount =
+        sortedTrips?.filter((trip) => {
+          const count = trip.collaboratorsCount ?? 1 + (trip.collaborators?.length || 0);
+          return count > 1;
+        }).length || 0;
 
       logger.debug('🧪 TripsTab: Stats calculated -', {
         total: sortedTrips.length,
         upcoming: upcomingTrips,
-        group: groupTripsCount
+        group: groupTripsCount,
       });
     } catch (error) {
       logger.error('Error loading trip stats:', error);
@@ -209,7 +244,7 @@ export default function TripsTab() {
   const onRefresh = React.useCallback(async () => {
     logger.debug('🔄 TripsTab: Pull-to-refresh triggered');
     setRefreshing(true);
-    
+
     try {
       // Refetch RTK Query cache first (shared with HomeTab)
       await refetchTrips();
@@ -261,15 +296,19 @@ export default function TripsTab() {
           if (!isActive) return;
           const newOwnerId = (payload as any)?.new?.owner_id;
           const oldOwnerId = (payload as any)?.old?.owner_id;
-          logger.debug('🔄 TripsTab: Trip change detected:', payload.eventType, { newOwnerId, oldOwnerId, userId });
-          
+          logger.debug('🔄 TripsTab: Trip change detected:', payload.eventType, {
+            newOwnerId,
+            oldOwnerId,
+            userId,
+          });
+
           // For INSERT events, check if new trip belongs to current user
           if (payload.eventType === 'INSERT' && newOwnerId === userId) {
             logger.debug('🔄 TripsTab: New trip created by user, refreshing...');
             safeReload();
             return;
           }
-          
+
           // For UPDATE/DELETE events, check if trip belonged to current user
           if (newOwnerId === userId || oldOwnerId === userId) {
             logger.debug('🔄 TripsTab: Trip modified/deleted for user, refreshing...');
@@ -277,34 +316,38 @@ export default function TripsTab() {
           }
         })
         // Cambios en colaboradores: refrescar si afecta al usuario directamente o a un trip que es suyo
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_collaborators' }, (payload) => {
-          if (!isActive) return;
-          const newUserId = (payload as any)?.new?.user_id;
-          const oldUserId = (payload as any)?.old?.user_id;
-          const tripId = (payload as any)?.new?.trip_id || (payload as any)?.old?.trip_id;
-          if (newUserId === userId || oldUserId === userId) {
-            safeReload();
-            return;
-          }
-          if (tripId) {
-            // Verificar si el trip afectado pertenece al usuario (owner) para reflejar nuevos contadores
-            (async () => {
-              try {
-                const { data } = await supabase
-                  .from('trips')
-                  .select('owner_id')
-                  .eq('id', tripId)
-                  .maybeSingle();
-                if (!isActive) return;
-                if ((data as any)?.owner_id === userId) {
-                  safeReload();
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'trip_collaborators' },
+          (payload) => {
+            if (!isActive) return;
+            const newUserId = (payload as any)?.new?.user_id;
+            const oldUserId = (payload as any)?.old?.user_id;
+            const tripId = (payload as any)?.new?.trip_id || (payload as any)?.old?.trip_id;
+            if (newUserId === userId || oldUserId === userId) {
+              safeReload();
+              return;
+            }
+            if (tripId) {
+              // Verificar si el trip afectado pertenece al usuario (owner) para reflejar nuevos contadores
+              (async () => {
+                try {
+                  const { data } = await supabase
+                    .from('trips')
+                    .select('owner_id')
+                    .eq('id', tripId)
+                    .maybeSingle();
+                  if (!isActive) return;
+                  if ((data as any)?.owner_id === userId) {
+                    safeReload();
+                  }
+                } catch {
+                  // noop
                 }
-              } catch {
-                // noop
-              }
-            })();
+              })();
+            }
           }
-        })
+        )
         .subscribe();
     })();
 
@@ -319,7 +362,7 @@ export default function TripsTab() {
     loading,
     'trips.length': trips.length,
     'trips[0]': trips[0],
-    'breakdown?.all.length': breakdown?.all?.length
+    'breakdown?.all.length': breakdown?.all?.length,
   });
 
   return (
@@ -328,7 +371,7 @@ export default function TripsTab() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           padding: 16,
-          paddingTop: Platform.OS === 'ios' ? 60 : 20
+          paddingTop: Platform.OS === 'ios' ? 60 : 20,
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -344,26 +387,32 @@ export default function TripsTab() {
       >
         {/* Header */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{
-            fontSize: 32,
-            fontWeight: '900',
-            color: '#1A1A1A',
-            marginBottom: 8
-          }}>
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: '900',
+              color: '#1A1A1A',
+              marginBottom: 8,
+            }}
+          >
             Mis Viajes
           </Text>
-          <Text style={{
-            fontSize: 16,
-            color: '#666666',
-            fontWeight: '500'
-          }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: '#666666',
+              fontWeight: '500',
+            }}
+          >
             Planea y gestiona tus aventuras
           </Text>
         </View>
 
         {/* Vista de Mapa Button */}
         <TouchableOpacity
-          onPress={() => Alert.alert('Mapa', 'Funcionalidad de mapa de trips próximamente disponible')}
+          onPress={() =>
+            Alert.alert('Mapa', 'Funcionalidad de mapa de trips próximamente disponible')
+          }
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: 16,
@@ -378,22 +427,26 @@ export default function TripsTab() {
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 8,
-            elevation: 3
+            elevation: 3,
           }}
         >
-          <Text style={{
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#007AFF',
-            marginRight: 8
-          }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: '#007AFF',
+              marginRight: 8,
+            }}
+          >
             🗺️
           </Text>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#007AFF'
-          }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: '#007AFF',
+            }}
+          >
             Vista de Mapa
           </Text>
         </TouchableOpacity>
@@ -409,7 +462,7 @@ export default function TripsTab() {
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,
-            elevation: 5
+            elevation: 5,
           }}
         >
           <LinearGradient
@@ -420,112 +473,134 @@ export default function TripsTab() {
               borderRadius: 16,
               padding: 18,
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
             }}
           >
-            <Text style={{
-              color: '#FFFFFF',
-              fontWeight: '700',
-              fontSize: 18
-            }}>
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontWeight: '700',
+                fontSize: 18,
+              }}
+            >
               + Nuevo Viaje
             </Text>
           </LinearGradient>
         </TouchableOpacity>
 
         {/* Stats Cards */}
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 12
-        }}>
-          <View style={{
-            flex: 1,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 16,
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 3
-          }}>
-            <Text style={{
-              fontSize: 32,
-              fontWeight: '900',
-              color: '#007AFF',
-              marginBottom: 4
-            }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+            gap: 12,
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 16,
+              padding: 16,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: '900',
+                color: '#007AFF',
+                marginBottom: 4,
+              }}
+            >
               {stats.totalTrips}
             </Text>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: '#666666',
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#666666',
+                textAlign: 'center',
+              }}
+            >
               Total de Viajes
             </Text>
           </View>
 
-          <View style={{
-            flex: 1,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 16,
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 3
-          }}>
-            <Text style={{
-              fontSize: 32,
-              fontWeight: '900',
-              color: '#34C759',
-              marginBottom: 4
-            }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 16,
+              padding: 16,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: '900',
+                color: '#34C759',
+                marginBottom: 4,
+              }}
+            >
               {stats.upcomingTrips}
             </Text>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: '#666666',
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#666666',
+                textAlign: 'center',
+              }}
+            >
               Próximos
             </Text>
           </View>
 
-          <View style={{
-            flex: 1,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 16,
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 3
-          }}>
-            <Text style={{
-              fontSize: 32,
-              fontWeight: '900',
-              color: '#FF9500',
-              marginBottom: 4
-            }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 16,
+              padding: 16,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: '900',
+                color: '#FF9500',
+                marginBottom: 4,
+              }}
+            >
               {stats.groupTrips}
             </Text>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: '#666666',
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#666666',
+                textAlign: 'center',
+              }}
+            >
               Viajes Grupales
             </Text>
           </View>
@@ -533,49 +608,59 @@ export default function TripsTab() {
 
         {/* Lista de Trips */}
         {loading ? (
-          <View style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 32,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 24
-          }}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 16,
+              padding: 32,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 24,
+            }}
+          >
             <ActivityIndicator size="large" color="#8B5CF6" />
-            <Text style={{
-              fontSize: 16,
-              color: '#666666',
-              marginTop: 16,
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: '#666666',
+                marginTop: 16,
+                textAlign: 'center',
+              }}
+            >
               Cargando tus viajes...
             </Text>
           </View>
         ) : trips.length === 0 ? (
-          <View style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 32,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 24
-          }}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 16,
+              padding: 32,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 24,
+            }}
+          >
             <Text style={{ fontSize: 48, marginBottom: 16 }}>�️</Text>
-            <Text style={{
-              fontSize: 20,
-              fontWeight: '700',
-              color: '#1A1A1A',
-              marginBottom: 8,
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: '#1A1A1A',
+                marginBottom: 8,
+                textAlign: 'center',
+              }}
+            >
               ¡Aún no tienes viajes!
             </Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#666666',
-              marginBottom: 24,
-              textAlign: 'center'
-            }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: '#666666',
+                marginBottom: 24,
+                textAlign: 'center',
+              }}
+            >
               Crea tu primer viaje y comienza a planificar tu aventura
             </Text>
             <TouchableOpacity
@@ -588,7 +673,7 @@ export default function TripsTab() {
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 6,
-                elevation: 3
+                elevation: 3,
               }}
             >
               <LinearGradient
@@ -600,14 +685,16 @@ export default function TripsTab() {
                   paddingHorizontal: 24,
                   paddingVertical: 12,
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
                 }}
               >
-                <Text style={{
-                  color: '#FFFFFF',
-                  fontWeight: '700',
-                  fontSize: 16
-                }}>
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 16,
+                  }}
+                >
                   + Crear Mi Primer Viaje
                 </Text>
               </LinearGradient>
@@ -621,11 +708,11 @@ export default function TripsTab() {
               onTripUpdated={(updatedTrip) => {
                 // Si el viaje fue eliminado (status = 'cancelled'), removerlo de la lista
                 if (updatedTrip.status === 'cancelled') {
-                  setTrips(prevTrips => prevTrips.filter(t => t.id !== updatedTrip.id));
+                  setTrips((prevTrips) => prevTrips.filter((t) => t.id !== updatedTrip.id));
                 } else {
                   // Actualizar el trip en el array local
-                  setTrips(prevTrips =>
-                    prevTrips.map(t => t.id === updatedTrip.id ? updatedTrip : t)
+                  setTrips((prevTrips) =>
+                    prevTrips.map((t) => (t.id === updatedTrip.id ? updatedTrip : t))
                   );
                 }
                 // Recargar estadísticas para reflejar cambios

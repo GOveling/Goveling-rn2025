@@ -1,6 +1,6 @@
 /**
  * 🗺️ Trips Slice
- * 
+ *
  * Manages trips state with:
  * - Trips breakdown (all, upcoming, planning, active)
  * - Loading/error states
@@ -32,21 +32,18 @@ const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (real-time priority)
  * Load user trips with breakdown
  * Gets userId from auth context internally
  */
-export const loadTrips = createAsyncThunk(
-  'trips/loadTrips',
-  async (_, { rejectWithValue }) => {
-    try {
-      logger.info('[tripsSlice] Loading trips breakdown');
-      
-      const breakdown = await getUserTripsBreakdown();
-      
-      return { breakdown };
-    } catch (error: any) {
-      logger.error('[tripsSlice] Load failed:', error);
-      return rejectWithValue(error.message);
-    }
+export const loadTrips = createAsyncThunk('trips/loadTrips', async (_, { rejectWithValue }) => {
+  try {
+    logger.info('[tripsSlice] Loading trips breakdown');
+
+    const breakdown = await getUserTripsBreakdown();
+
+    return { breakdown };
+  } catch (error: any) {
+    logger.error('[tripsSlice] Load failed:', error);
+    return rejectWithValue(error.message);
   }
-);
+});
 
 /**
  * Refresh trips (force reload)
@@ -56,9 +53,9 @@ export const refreshTrips = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       logger.info('[tripsSlice] Refreshing trips');
-      
+
       const breakdown = await getUserTripsBreakdown();
-      
+
       return { breakdown };
     } catch (error: any) {
       return rejectWithValue(error.message);
@@ -108,7 +105,7 @@ const tripsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       });
-    
+
     // refreshTrips
     builder
       .addCase(refreshTrips.fulfilled, (state, action) => {
@@ -129,13 +126,14 @@ export const selectAllTrips = (state: any) => state.trips.breakdown?.all || [];
 export const selectUpcomingTrips = (state: any) => state.trips.breakdown?.upcoming || [];
 export const selectPlanningTrips = (state: any) => state.trips.breakdown?.planning || [];
 export const selectActiveTrip = (state: any) => state.trips.breakdown?.active || null;
-export const selectTripsCounts = (state: any) => state.trips.breakdown?.counts || { total: 0, upcoming: 0, planning: 0, active: 0 };
+export const selectTripsCounts = (state: any) =>
+  state.trips.breakdown?.counts || { total: 0, upcoming: 0, planning: 0, active: 0 };
 export const selectTripsLoading = (state: any) => state.trips.loading;
 export const selectTripsError = (state: any) => state.trips.error;
 
 export const selectIsStale = (state: any) => {
   const { lastFetch } = state.trips;
-  return !lastFetch || (Date.now() - lastFetch) > CACHE_DURATION;
+  return !lastFetch || Date.now() - lastFetch > CACHE_DURATION;
 };
 
 // ===== ACTIONS =====

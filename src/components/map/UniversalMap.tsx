@@ -99,26 +99,32 @@ const WebDirectMap: React.FC<UniversalMapProps> = ({ userLocation, places, style
           el.style.background = '#007AFF';
           el.style.borderRadius = '50%';
           el.style.boxShadow = '0 0 0 3px rgba(0,122,255,0.3)';
-          new maplibregl.Marker(el).setLngLat([userLocation.longitude, userLocation.latitude]).addTo(map);
+          new maplibregl.Marker(el)
+            .setLngLat([userLocation.longitude, userLocation.latitude])
+            .addTo(map);
         }
         // Marcadores lugares
-        places.filter(p => p.coordinates).forEach((p, idx) => {
-          const el = document.createElement('div');
-          el.style.width = '24px';
-          el.style.height = '24px';
-          el.style.background = '#FF3B30';
-          el.style.color = '#fff';
-          el.style.fontSize = '12px';
-          el.style.fontWeight = '600';
-          el.style.display = 'flex';
-          el.style.alignItems = 'center';
-          el.style.justifyContent = 'center';
-          el.style.borderRadius = '50%';
-          el.style.border = '2px solid #fff';
-          el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)';
-          el.innerText = String(idx + 1);
-          new maplibregl.Marker(el).setLngLat([p.coordinates!.lng, p.coordinates!.lat]).addTo(map);
-        });
+        places
+          .filter((p) => p.coordinates)
+          .forEach((p, idx) => {
+            const el = document.createElement('div');
+            el.style.width = '24px';
+            el.style.height = '24px';
+            el.style.background = '#FF3B30';
+            el.style.color = '#fff';
+            el.style.fontSize = '12px';
+            el.style.fontWeight = '600';
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+            el.style.justifyContent = 'center';
+            el.style.borderRadius = '50%';
+            el.style.border = '2px solid #fff';
+            el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)';
+            el.innerText = String(idx + 1);
+            new maplibregl.Marker(el)
+              .setLngLat([p.coordinates!.lng, p.coordinates!.lat])
+              .addTo(map);
+          });
 
         fitBoundsIfNeeded(map, maplibregl, userLocation, places);
       });
@@ -128,9 +134,17 @@ const WebDirectMap: React.FC<UniversalMapProps> = ({ userLocation, places, style
       cancelled = true;
       if (map) map.remove();
     };
-  }, [userLocation?.latitude, userLocation?.longitude, JSON.stringify(places.map(p => p.coordinates))]);
+  }, [
+    userLocation?.latitude,
+    userLocation?.longitude,
+    JSON.stringify(places.map((p) => p.coordinates)),
+  ]);
 
-  return <View style={[styles.flex, style]}><div ref={divRef} style={{ width: '100%', height: '100%' }} /></View>;
+  return (
+    <View style={[styles.flex, style]}>
+      <div ref={divRef} style={{ width: '100%', height: '100%' }} />
+    </View>
+  );
 };
 
 /* ============= NATIVE WEBVIEW FALLBACK (Expo Go) ============= */
@@ -143,7 +157,7 @@ const WebViewMap: React.FC<UniversalMapProps> = ({ userLocation, places, style }
       i,
       name: p.name || p.title || `Lugar ${i + 1}`,
       coord: p.coordinates || null,
-    }))
+    })),
   });
 
   const html = `<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>
@@ -162,7 +176,7 @@ const WebViewMap: React.FC<UniversalMapProps> = ({ userLocation, places, style }
 
   return (
     <View style={[styles.flex, style]}>
-      <WebView originWhitelist={["*"]} source={{ html }} style={styles.flex} />
+      <WebView originWhitelist={['*']} source={{ html }} style={styles.flex} />
     </View>
   );
 };
@@ -197,38 +211,48 @@ const NativeMapLibreComponent: React.FC<UniversalMapProps> = ({ userLocation, pl
           </NativeMapLibre.PointAnnotation>
         )}
 
-        {places.filter(p => p.coordinates).map((place, idx) => (
-          <NativeMapLibre.PointAnnotation
-            id={`place-${idx}`}
-            key={`place-${idx}`}
-            coordinate={[place.coordinates!.lng, place.coordinates!.lat]}
-          >
-            <View style={styles.placeDot}>
-              <Text style={styles.placeDotText}>{idx + 1}</Text>
-            </View>
-          </NativeMapLibre.PointAnnotation>
-        ))}
+        {places
+          .filter((p) => p.coordinates)
+          .map((place, idx) => (
+            <NativeMapLibre.PointAnnotation
+              id={`place-${idx}`}
+              key={`place-${idx}`}
+              coordinate={[place.coordinates!.lng, place.coordinates!.lat]}
+            >
+              <View style={styles.placeDot}>
+                <Text style={styles.placeDotText}>{idx + 1}</Text>
+              </View>
+            </NativeMapLibre.PointAnnotation>
+          ))}
       </NativeMapLibre.MapView>
     </View>
   );
 };
 
 /* ============= Helpers ============= */
-function getInitialCenter(userLocation: { latitude: number; longitude: number } | null, places: PlaceLike[]): [number, number] {
+function getInitialCenter(
+  userLocation: { latitude: number; longitude: number } | null,
+  places: PlaceLike[]
+): [number, number] {
   if (userLocation) return [userLocation.longitude, userLocation.latitude];
-  const first = places.find(p => p.coordinates);
+  const first = places.find((p) => p.coordinates);
   if (first?.coordinates) return [first.coordinates.lng, first.coordinates.lat];
   return [-3.7038, 40.4168]; // Madrid
 }
 
-function fitBoundsIfNeeded(map: any, maplibregl: any, userLocation: { latitude: number; longitude: number } | null, places: PlaceLike[]) {
+function fitBoundsIfNeeded(
+  map: any,
+  maplibregl: any,
+  userLocation: { latitude: number; longitude: number } | null,
+  places: PlaceLike[]
+) {
   const bounds = new maplibregl.LngLatBounds();
   let added = false;
   if (userLocation) {
     bounds.extend([userLocation.longitude, userLocation.latitude]);
     added = true;
   }
-  places.forEach(p => {
+  places.forEach((p) => {
     if (p.coordinates) {
       bounds.extend([p.coordinates.lng, p.coordinates.lat]);
       added = true;
@@ -247,7 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#fff'
+    borderColor: '#fff',
   },
   placeDot: {
     width: 24,
@@ -257,19 +281,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   placeDotText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   placeDotInner: {
     width: 8,
     height: 8,
     backgroundColor: '#fff',
-    borderRadius: 4
-  }
+    borderRadius: 4,
+  },
 });
 
 export default UniversalMap;

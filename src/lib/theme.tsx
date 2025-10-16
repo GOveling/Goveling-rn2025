@@ -1,4 +1,3 @@
-
 // src/lib/theme.ts
 import React, { createContext, useContext } from 'react';
 import { Appearance, ColorSchemeName } from 'react-native';
@@ -19,7 +18,7 @@ export type AppTheme = {
     chipTextActive: string;
   };
   radius: { md: number; lg: number; xl: number };
-  spacing: (n:number)=> number;
+  spacing: (n: number) => number;
 };
 
 export const palettes = {
@@ -29,14 +28,14 @@ export const palettes = {
     text: '#101114',
     textMuted: '#6B7280',
     // Zeppelin brand
-    primary: '#DE3D00', /* Orange from blimp */
+    primary: '#DE3D00' /* Orange from blimp */,
     primaryText: '#FFFFFF',
     border: '#E5E7EB',
     chipBg: '#ECECF1',
-    chipBgActive: '#4B2A95', /* Purple accent */
+    chipBgActive: '#4B2A95' /* Purple accent */,
     chipText: '#101114',
     chipTextActive: '#FFFFFF',
-    accent: '#4B2A95'
+    accent: '#4B2A95',
   },
   dark: {
     background: '#0B0B0E',
@@ -50,13 +49,13 @@ export const palettes = {
     chipBgActive: '#6A3CC6',
     chipText: '#FFFFFF',
     chipTextActive: '#FFFFFF',
-    accent: '#6A3CC6'
-  }
+    accent: '#6A3CC6',
+  },
 };
 
 const ThemeCtx = createContext<AppTheme | null>(null);
 
-export function ThemeProvider({ children }:{ children: React.ReactNode }){
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const scheme: ColorSchemeName = Appearance.getColorScheme() || 'light';
   const mode = scheme === 'dark' ? 'dark' : 'light';
   const p = mode === 'dark' ? palettes.dark : palettes.light;
@@ -64,25 +63,24 @@ export function ThemeProvider({ children }:{ children: React.ReactNode }){
     mode,
     colors: p,
     radius: { md: 10, lg: 16, xl: 24 },
-    spacing: (n)=> n * 8,
+    spacing: (n) => n * 8,
   };
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
 }
 
-export function useTheme(){
+export function useTheme() {
   const t = useContext(ThemeCtx);
   if (!t) throw new Error('useTheme must be used within ThemeProvider');
   return t;
 }
 
-
 export const typography = {
   family: 'System',
   sizes: { largeTitle: 34, title: 28, headline: 17, body: 17, caption: 13 },
-  weight: { regular: '400', semibold: '600', bold: '700' }
+  weight: { regular: '400', semibold: '600', bold: '700' },
 };
 
 export const elevations = {
-  card: { boxShadow: '0px 0px 12px rgba(0, 0, 0, 0.06)', elevation:2 },
-  raised: { boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.12)', elevation:4 }
+  card: { boxShadow: '0px 0px 12px rgba(0, 0, 0, 0.06)', elevation: 2 },
+  raised: { boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.12)', elevation: 4 },
 };

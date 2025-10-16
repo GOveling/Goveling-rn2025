@@ -13,7 +13,7 @@ interface PlaceCardProps {
 
 export default function PlaceCard({ place, onPress, style, compact = false }: PlaceCardProps) {
   const { isFavorite, toggleFavorite, loading } = useFavorites();
-  
+
   const handleFavoritePress = async (e: any) => {
     e.stopPropagation();
     const success = await toggleFavorite(place);
@@ -25,7 +25,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
     console.log(`[PlaceCard] ${place.name} renderPhoto called`);
     console.log(`[PlaceCard] ${place.name} place.photos:`, place.photos);
     console.log(`[PlaceCard] ${place.name} photos length:`, place.photos?.length);
-    
+
     if (place.photos && place.photos.length > 0) {
       console.log(`[PlaceCard] ${place.name} showing photo:`, place.photos[0]);
       return (
@@ -38,7 +38,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
         />
       );
     }
-    
+
     console.log(`[PlaceCard] ${place.name} NO PHOTOS - showing fallback`);
     // Fallback placeholder
     return (
@@ -46,18 +46,15 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
         <Text style={styles.placeholderIcon}>🏞</Text>
       </View>
     );
-  };  const renderStatus = () => {
+  };
+  const renderStatus = () => {
     if (place.openNow === undefined) return null;
-    
+
     return (
-      <View style={[
-        styles.statusBadge,
-        { backgroundColor: place.openNow ? '#D1FAE5' : '#FEE2E2' }
-      ]}>
-        <Text style={[
-          styles.statusText,
-          { color: place.openNow ? '#065F46' : '#991B1B' }
-        ]}>
+      <View
+        style={[styles.statusBadge, { backgroundColor: place.openNow ? '#D1FAE5' : '#FEE2E2' }]}
+      >
+        <Text style={[styles.statusText, { color: place.openNow ? '#065F46' : '#991B1B' }]}>
           {place.openNow ? 'Abierto' : 'Cerrado'}
         </Text>
       </View>
@@ -73,27 +70,31 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
       <View style={[styles.photoContainer, compact && styles.photoContainerCompact]}>
         {renderPhoto()}
       </View>
-      
+
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <Text style={[styles.placeName, compact && styles.placeNameCompact]} numberOfLines={compact ? 1 : 2}>
+          <Text
+            style={[styles.placeName, compact && styles.placeNameCompact]}
+            numberOfLines={compact ? 1 : 2}
+          >
             {place.name}
           </Text>
-          <TouchableOpacity 
-            style={styles.favoriteButton} 
+          <TouchableOpacity
+            style={styles.favoriteButton}
             onPress={handleFavoritePress}
             disabled={loading}
           >
-            <Text style={styles.favoriteIcon}>
-              {isFavorite(place.id) ? '❤️' : '🤍'}
-            </Text>
+            <Text style={styles.favoriteIcon}>{isFavorite(place.id) ? '❤️' : '🤍'}</Text>
           </TouchableOpacity>
         </View>
 
         {place.address && (
           <View style={styles.addressRow}>
             <Text style={styles.addressIcon}>📍</Text>
-            <Text style={[styles.addressText, compact && styles.addressTextCompact]} numberOfLines={compact ? 1 : 2}>
+            <Text
+              style={[styles.addressText, compact && styles.addressTextCompact]}
+              numberOfLines={compact ? 1 : 2}
+            >
               {place.address}
             </Text>
           </View>
@@ -119,7 +120,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
               )}
             </View>
           )}
-          
+
           {renderStatus()}
         </View>
       </View>

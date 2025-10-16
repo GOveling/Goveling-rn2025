@@ -11,7 +11,7 @@ import {
   StyleSheet,
   Linking,
   Platform,
-  Alert
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
@@ -53,7 +53,7 @@ export default function PlaceDetailModal({
   tripTitle,
   onAddToTrip,
   isAlreadyInTrip = false,
-  onRemoveFromTrip
+  onRemoveFromTrip,
 }: PlaceDetailModalProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
@@ -131,7 +131,7 @@ export default function PlaceDetailModal({
       coordinates: place.coordinates,
       hasCoordinates: !!place.coordinates,
       lat: place.coordinates?.lat,
-      lng: place.coordinates?.lng
+      lng: place.coordinates?.lng,
     });
 
     if (place.coordinates && place.coordinates.lat && place.coordinates.lng) {
@@ -140,7 +140,10 @@ export default function PlaceDetailModal({
       setShowMiniMap(true);
     } else {
       console.log('No valid coordinates found');
-      Alert.alert('Ubicación no disponible', 'No hay coordenadas para mostrar este lugar en el mapa');
+      Alert.alert(
+        'Ubicación no disponible',
+        'No hay coordenadas para mostrar este lugar en el mapa'
+      );
     }
   };
 
@@ -153,7 +156,7 @@ export default function PlaceDetailModal({
       hasWebsite: !!place.website,
       websiteType: typeof place.website,
       placeKeys: Object.keys(place),
-      place: place
+      place: place,
     });
 
     if (place.website && place.website.trim()) {
@@ -182,7 +185,7 @@ export default function PlaceDetailModal({
       openingHoursType: typeof place.openingHours,
       openingHoursRawType: typeof place.opening_hours_raw,
       placeKeys: Object.keys(place),
-      place: place
+      place: place,
     });
 
     let scheduleText = '';
@@ -193,7 +196,10 @@ export default function PlaceDetailModal({
     } else if (place.opening_hours_raw) {
       if (typeof place.opening_hours_raw === 'string') {
         scheduleText = place.opening_hours_raw;
-      } else if (place.opening_hours_raw.weekday_text && Array.isArray(place.opening_hours_raw.weekday_text)) {
+      } else if (
+        place.opening_hours_raw.weekday_text &&
+        Array.isArray(place.opening_hours_raw.weekday_text)
+      ) {
         scheduleText = place.opening_hours_raw.weekday_text.join('\n');
       } else if (place.opening_hours_raw.periods) {
         scheduleText = 'Horarios disponibles (ver detalles en el lugar)';
@@ -205,11 +211,9 @@ export default function PlaceDetailModal({
     }
 
     if (scheduleText.trim()) {
-      Alert.alert(
-        'Horarios de funcionamiento',
-        scheduleText,
-        [{ text: 'Cerrar', style: 'default' }]
-      );
+      Alert.alert('Horarios de funcionamiento', scheduleText, [
+        { text: 'Cerrar', style: 'default' },
+      ]);
     } else {
       Alert.alert('Horarios no disponibles', 'No hay información de horarios para este lugar');
     }
@@ -223,9 +227,7 @@ export default function PlaceDetailModal({
     Alert.alert(
       'Funcionalidad próxima',
       'Las direcciones paso a paso llegarán pronto a Goveling. Por ahora puedes usar tu app de mapas favorita.',
-      [
-        { text: 'Entendido', style: 'default' }
-      ]
+      [{ text: 'Entendido', style: 'default' }]
     );
 
     // Código original comentado para futuro uso
@@ -302,14 +304,10 @@ export default function PlaceDetailModal({
     if (place.openNow === undefined) return null;
 
     return (
-      <View style={[
-        styles.statusBadge,
-        { backgroundColor: place.openNow ? '#D1FAE5' : '#FEE2E2' }
-      ]}>
-        <Text style={[
-          styles.statusText,
-          { color: place.openNow ? '#065F46' : '#991B1B' }
-        ]}>
+      <View
+        style={[styles.statusBadge, { backgroundColor: place.openNow ? '#D1FAE5' : '#FEE2E2' }]}
+      >
+        <Text style={[styles.statusText, { color: place.openNow ? '#065F46' : '#991B1B' }]}>
           {place.openNow ? 'Abierto' : 'Cerrado'}
         </Text>
       </View>
@@ -345,10 +343,7 @@ export default function PlaceDetailModal({
           >
             <Image
               source={{ uri: photo }}
-              style={[
-                styles.photo,
-                selectedPhotoIndex === index && styles.photoSelected
-              ]}
+              style={[styles.photo, selectedPhotoIndex === index && styles.photoSelected]}
               resizeMode="cover"
             />
             {index === 0 && (
@@ -385,20 +380,14 @@ export default function PlaceDetailModal({
                 resizeMode="cover"
               />
             ) : (
-              <LinearGradient
-                colors={['#F3F4F6', '#E5E7EB']}
-                style={styles.headerImage}
-              >
+              <LinearGradient colors={['#F3F4F6', '#E5E7EB']} style={styles.headerImage}>
                 <Text style={styles.headerPlaceholder}>📍</Text>
               </LinearGradient>
             )}
 
             {/* Blur overlay con controles o fallback */}
             <View style={styles.headerOverlay}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-              >
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                 <View style={styles.closeButtonBlur}>
                   <Text style={styles.closeButtonText}>✕</Text>
                 </View>
@@ -411,7 +400,7 @@ export default function PlaceDetailModal({
               >
                 <View style={styles.saveButtonBlur}>
                   <Text style={styles.saveButtonText}>
-                    {isAlreadyInTrip ? '❤️' : (isFavorite(place.id) ? '❤️' : '🤍')}
+                    {isAlreadyInTrip ? '❤️' : isFavorite(place.id) ? '❤️' : '🤍'}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -419,11 +408,7 @@ export default function PlaceDetailModal({
           </View>
 
           {/* Contenido principal */}
-          <ScrollView
-            style={styles.content}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
             {/* Información básica */}
             <View style={styles.basicInfo}>
               <View style={styles.titleRow}>
@@ -449,9 +434,7 @@ export default function PlaceDetailModal({
                   {place.distance_km && (
                     <>
                       <Text style={styles.separator}>•</Text>
-                      <Text style={styles.distanceText}>
-                        {place.distance_km.toFixed(2)} km
-                      </Text>
+                      <Text style={styles.distanceText}>{place.distance_km.toFixed(2)} km</Text>
                     </>
                   )}
                 </View>
@@ -479,11 +462,13 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Categorías</Text>
                 <View style={styles.tagsContainer}>
-                  {processPlaceCategories(place.types || [], place.category, 4).map((category, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{category}</Text>
-                    </View>
-                  ))}
+                  {processPlaceCategories(place.types || [], place.category, 4).map(
+                    (category, index) => (
+                      <View key={index} style={styles.tag}>
+                        <Text style={styles.tagText}>{category}</Text>
+                      </View>
+                    )
+                  )}
                 </View>
               </View>
             )}
@@ -492,10 +477,7 @@ export default function PlaceDetailModal({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Acciones</Text>
               <View style={styles.actionsGrid}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={handleDirections}
-                >
+                <TouchableOpacity style={styles.actionButton} onPress={handleDirections}>
                   {renderActionIcon(
                     directionsLottieRef,
                     require('../../assets/animations/cycle.json'),
@@ -519,7 +501,9 @@ export default function PlaceDetailModal({
                     setLocationLottieError,
                     !place.coordinates
                   )}
-                  <Text style={[styles.actionText, !place.coordinates && styles.actionTextDisabled]}>
+                  <Text
+                    style={[styles.actionText, !place.coordinates && styles.actionTextDisabled]}
+                  >
                     Ubicación
                   </Text>
                 </TouchableOpacity>
@@ -569,10 +553,7 @@ export default function PlaceDetailModal({
           {/* Botón principal flotante - Solo mostrar si no está ya en un viaje */}
           {!isAlreadyInTrip && (
             <View style={styles.floatingButtonContainer}>
-              <TouchableOpacity
-                style={styles.floatingButton}
-                onPress={handleAddToTrip}
-              >
+              <TouchableOpacity style={styles.floatingButton} onPress={handleAddToTrip}>
                 <LinearGradient
                   colors={['#8B5CF6', '#EC4899']}
                   style={styles.floatingButtonGradient}

@@ -20,17 +20,20 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function applyMigration() {
   console.log('🚀 Applying address field migration...');
-  
+
   try {
     // First, let's check current schema
     const { data: schemaData, error: schemaError } = await supabase.rpc('get_columns', {
-      table_name: 'profiles'
+      table_name: 'profiles',
     });
-    
+
     if (schemaError) {
       console.log('📋 Could not query schema, proceeding with migration...');
     } else {
-      console.log('📋 Current profiles table columns:', schemaData?.map(col => col.column_name) || 'Unknown');
+      console.log(
+        '📋 Current profiles table columns:',
+        schemaData?.map((col) => col.column_name) || 'Unknown'
+      );
     }
 
     // Apply the migration SQL
@@ -61,19 +64,19 @@ async function applyMigration() {
     `;
 
     const { error } = await supabase.rpc('exec_sql', { sql: migrationSQL });
-    
+
     if (error) {
       console.error('❌ Migration failed:', error);
-      
+
       // Try alternative approach using individual SQL statements
       console.log('🔄 Trying alternative approach...');
-      
+
       const statements = [
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address text;",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address_lat double precision;",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address_lng double precision;"
+        'ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address text;',
+        'ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address_lat double precision;',
+        'ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address_lng double precision;',
       ];
-      
+
       for (const statement of statements) {
         try {
           const { error: stmtError } = await supabase.rpc('exec_sql', { sql: statement });
@@ -95,13 +98,12 @@ async function applyMigration() {
       .from('profiles')
       .select('*')
       .limit(1);
-      
+
     if (verifyError) {
       console.error('❌ Could not verify migration:', verifyError);
     } else {
       console.log('✅ Migration verified - profiles table is accessible');
     }
-
   } catch (error) {
     console.error('❌ Unexpected error:', error);
   }

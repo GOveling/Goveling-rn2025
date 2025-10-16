@@ -9,8 +9,8 @@ export interface InboxNotification {
   data?: any;
   created_at: string;
   viewed_at?: string | null; // optional column, see migration suggestion
-  is_read?: boolean | null;   // optional column, see migration suggestion
-  read_at?: string | null;    // legacy/read marker
+  is_read?: boolean | null; // optional column, see migration suggestion
+  read_at?: string | null; // legacy/read marker
 }
 
 export interface Invitation {
@@ -29,7 +29,11 @@ export interface Invitation {
 
 export function useNotifications() {
   const safeParse = (s: string) => {
-    try { return JSON.parse(s); } catch { return {}; }
+    try {
+      return JSON.parse(s);
+    } catch {
+      return {};
+    }
   };
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<InboxNotification[]>([]);
@@ -47,113 +51,133 @@ export function useNotifications() {
     return { uid, email };
   }, []);
 
-  const fetchNotifications = useCallback(async (uid?: string) => {
-    if (!uid && !userId) return;
-    const target = uid || userId!;
-    const { data, error } = await supabase
-      .from('notifications_inbox')
-      .select('id,user_id,title,body,data,created_at,viewed_at,is_read,read_at')
-      .eq('user_id', target)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    if (!error && data) {
-      const rows = data as InboxNotification[];
-      // Collect trip_ids missing trip_name in data and inviter ids missing inviter_name
-      const needTrip: string[] = [];
-      const needInviter: string[] = [];
-      const parsedData: any[] = [];
-      for (const n of rows) {
-        const d = typeof (n as any).data === 'string' ? safeParse((n as any).data as any) : (n as any).data || {};
-        parsedData.push(d);
-        if (d && d.trip_id && !d.trip_name) needTrip.push(d.trip_id);
-        const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
-        if (inviterId && !d?.inviter_name) needInviter.push(inviterId);
-      }
-
-      let tripMap = new Map<string, string>();
-      if (needTrip.length > 0) {
-        const unique = Array.from(new Set(needTrip));
-        const { data: tripsRes } = await supabase.from('trips').select('id,title').in('id', unique);
-        if (Array.isArray(tripsRes)) {
-          for (const t of tripsRes as any[]) tripMap.set(t.id, t.title || null);
+  const fetchNotifications = useCallback(
+    async (uid?: string) => {
+      if (!uid && !userId) return;
+      const target = uid || userId!;
+      const { data, error } = await supabase
+        .from('notifications_inbox')
+        .select('id,user_id,title,body,data,created_at,viewed_at,is_read,read_at')
+        .eq('user_id', target)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (!error && data) {
+        const rows = data as InboxNotification[];
+        // Collect trip_ids missing trip_name in data and inviter ids missing inviter_name
+        const needTrip: string[] = [];
+        const needInviter: string[] = [];
+        const parsedData: any[] = [];
+        for (const n of rows) {
+          const d =
+            typeof (n as any).data === 'string'
+              ? safeParse((n as any).data as any)
+              : (n as any).data || {};
+          parsedData.push(d);
+          if (d && d.trip_id && !d.trip_name) needTrip.push(d.trip_id);
+          const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
+          if (inviterId && !d?.inviter_name) needInviter.push(inviterId);
         }
-      }
 
-      let inviterMap = new Map<string, string>();
-      if (needInviter.length > 0) {
-        const uniqueInviters = Array.from(new Set(needInviter));
-        const { data: ownersRes } = await supabase.from('profiles').select('id,display_name,email').in('id', uniqueInviters);
-        if (Array.isArray(ownersRes)) {
-          for (const row of ownersRes as any[]) {
-            if (row?.id) inviterMap.set(row.id, row.display_name || row.email || null);
+        let tripMap = new Map<string, string>();
+        if (needTrip.length > 0) {
+          const unique = Array.from(new Set(needTrip));
+          const { data: tripsRes } = await supabase
+            .from('trips')
+            .select('id,title')
+            .in('id', unique);
+          if (Array.isArray(tripsRes)) {
+            for (const t of tripsRes as any[]) tripMap.set(t.id, t.title || null);
           }
         }
+
+        let inviterMap = new Map<string, string>();
+        if (needInviter.length > 0) {
+          const uniqueInviters = Array.from(new Set(needInviter));
+          const { data: ownersRes } = await supabase
+            .from('profiles')
+            .select('id,display_name,email')
+            .in('id', uniqueInviters);
+          if (Array.isArray(ownersRes)) {
+            for (const row of ownersRes as any[]) {
+              if (row?.id) inviterMap.set(row.id, row.display_name || row.email || null);
+            }
+          }
+        }
+
+        const enriched = rows.map((n, idx) => {
+          const d = parsedData[idx] || {};
+          let newData = d;
+          if (d && d.trip_id && !d.trip_name && tripMap.has(d.trip_id)) {
+            newData = { ...newData, trip_name: tripMap.get(d.trip_id) };
+          }
+          const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
+          if (inviterId && !d?.inviter_name && inviterMap.has(inviterId)) {
+            newData = { ...newData, inviter_name: inviterMap.get(inviterId) };
+          }
+          return { ...n, data: newData } as InboxNotification;
+        });
+        setNotifications(enriched);
       }
+    },
+    [userId]
+  );
 
-      const enriched = rows.map((n, idx) => {
-        const d = parsedData[idx] || {};
-        let newData = d;
-        if (d && d.trip_id && !d.trip_name && tripMap.has(d.trip_id)) {
-          newData = { ...newData, trip_name: tripMap.get(d.trip_id) };
+  const fetchInvitations = useCallback(
+    async (email?: string) => {
+      if (!email && !userEmail) return;
+      const target = (email || userEmail!) as string;
+      const { data, error } = await supabase
+        .from('trip_invitations')
+        .select('id, trip_id, email, role, status, created_at, expires_at, owner_id')
+        .eq('email', target)
+        .in('status', ['pending', 'accepted', 'declined']);
+      if (!error && data) {
+        const baseInv = data as Invitation[];
+        // Enrich with trip title and inviter name (owner profile)
+        const tripIds = Array.from(new Set(baseInv.map((i) => i.trip_id).filter(Boolean)));
+        const ownerIds = Array.from(
+          new Set(baseInv.map((i) => i.owner_id).filter(Boolean))
+        ) as string[];
+
+        const [tripsRes, ownersRes] = await Promise.all([
+          tripIds.length > 0
+            ? supabase.from('trips').select('id,title').in('id', tripIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          ownerIds.length > 0
+            ? supabase.from('profiles').select('id,display_name,email').in('id', ownerIds)
+            : Promise.resolve({ data: [], error: null } as any),
+        ]);
+
+        const tripMap = new Map<string, string>();
+        if (!tripsRes.error && Array.isArray(tripsRes.data)) {
+          for (const row of tripsRes.data as any[]) {
+            if (row?.id) tripMap.set(row.id, row.title || null);
+          }
         }
-        const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
-        if (inviterId && !d?.inviter_name && inviterMap.has(inviterId)) {
-          newData = { ...newData, inviter_name: inviterMap.get(inviterId) };
+        const ownerMap = new Map<string, { name: string | null }>();
+        if (!ownersRes.error && Array.isArray(ownersRes.data)) {
+          for (const row of ownersRes.data as any[]) {
+            if (row?.id) ownerMap.set(row.id, { name: row.display_name || row.email || null });
+          }
         }
-        return { ...n, data: newData } as InboxNotification;
-      });
-      setNotifications(enriched);
-    }
-  }, [userId]);
 
-  const fetchInvitations = useCallback(async (email?: string) => {
-    if (!email && !userEmail) return;
-    const target = (email || userEmail!) as string;
-    const { data, error } = await supabase
-      .from('trip_invitations')
-      .select('id, trip_id, email, role, status, created_at, expires_at, owner_id')
-      .eq('email', target)
-      .in('status', ['pending', 'accepted', 'declined']);
-    if (!error && data) {
-      const baseInv = data as Invitation[];
-      // Enrich with trip title and inviter name (owner profile)
-      const tripIds = Array.from(new Set(baseInv.map(i => i.trip_id).filter(Boolean)));
-      const ownerIds = Array.from(new Set(baseInv.map(i => i.owner_id).filter(Boolean))) as string[];
-
-      const [tripsRes, ownersRes] = await Promise.all([
-        tripIds.length > 0
-          ? supabase.from('trips').select('id,title').in('id', tripIds)
-          : Promise.resolve({ data: [], error: null } as any),
-        ownerIds.length > 0
-          ? supabase.from('profiles').select('id,display_name,email').in('id', ownerIds)
-          : Promise.resolve({ data: [], error: null } as any)
-      ]);
-
-      const tripMap = new Map<string, string>();
-      if (!tripsRes.error && Array.isArray(tripsRes.data)) {
-        for (const row of tripsRes.data as any[]) {
-          if (row?.id) tripMap.set(row.id, row.title || null);
-        }
+        const enriched = baseInv.map((i) => ({
+          ...i,
+          trip_title: tripMap.get(i.trip_id) || null,
+          inviter_name: i.owner_id ? ownerMap.get(i.owner_id)?.name || null : null,
+        }));
+        setInvitations(enriched);
       }
-      const ownerMap = new Map<string, { name: string | null }>();
-      if (!ownersRes.error && Array.isArray(ownersRes.data)) {
-        for (const row of ownersRes.data as any[]) {
-          if (row?.id) ownerMap.set(row.id, { name: row.display_name || row.email || null });
-        }
-      }
-
-      const enriched = baseInv.map(i => ({
-        ...i,
-        trip_title: tripMap.get(i.trip_id) || null,
-        inviter_name: i.owner_id ? (ownerMap.get(i.owner_id)?.name || null) : null,
-      }));
-      setInvitations(enriched);
-    }
-  }, [userEmail]);
+    },
+    [userEmail]
+  );
 
   const refresh = useCallback(async () => {
     const { uid, email } = await fetchUser();
-    if (!uid) { setLoading(false); return; }
+    if (!uid) {
+      setLoading(false);
+      return;
+    }
     await Promise.all([fetchNotifications(uid), fetchInvitations(email || undefined)]);
     setLoading(false);
   }, [fetchInvitations, fetchNotifications, fetchUser]);
@@ -167,32 +191,71 @@ export function useNotifications() {
     if (!userId) return;
     const ch = supabase
       .channel(`notifications-${userId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications_inbox', filter: `user_id=eq.${userId}` }, (payload) => {
-        setNotifications(prev => [payload.new as InboxNotification, ...prev].slice(0, 20));
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications_inbox', filter: `user_id=eq.${userId}` }, (payload) => {
-        setNotifications(prev => prev.map(n => n.id === (payload.new as any).id ? (payload.new as InboxNotification) : n));
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications_inbox',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          setNotifications((prev) => [payload.new as InboxNotification, ...prev].slice(0, 20));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications_inbox',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          setNotifications((prev) =>
+            prev.map((n) =>
+              n.id === (payload.new as any).id ? (payload.new as InboxNotification) : n
+            )
+          );
+        }
+      )
       .subscribe();
     channelRef.current = ch;
-    return () => { try { if (ch) supabase.removeChannel(ch); } catch { } };
+    return () => {
+      try {
+        if (ch) supabase.removeChannel(ch);
+      } catch {}
+    };
   }, [userId]);
 
   useEffect(() => {
     if (!userEmail) return;
     const ch = supabase
       .channel(`invitations-${userEmail}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_invitations', filter: `email=eq.${userEmail}` }, () => {
-        fetchInvitations();
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_invitations',
+          filter: `email=eq.${userEmail}`,
+        },
+        () => {
+          fetchInvitations();
+        }
+      )
       .subscribe();
-    return () => { try { if (ch) supabase.removeChannel(ch); } catch { } };
+    return () => {
+      try {
+        if (ch) supabase.removeChannel(ch);
+      } catch {}
+    };
   }, [userEmail, fetchInvitations]);
 
   // Badge count: pending invitations + unviewed general notifications
   const totalCount = useMemo(() => {
-    const pendingInv = invitations.filter(i => (i.status || 'pending') === 'pending').length;
-    const unviewed = notifications.filter(n => (n.viewed_at == null)).length;
+    const pendingInv = invitations.filter((i) => (i.status || 'pending') === 'pending').length;
+    const unviewed = notifications.filter((n) => n.viewed_at == null).length;
     return pendingInv + unviewed;
   }, [invitations, notifications]);
 
@@ -223,7 +286,9 @@ export function useNotifications() {
       .update({ is_read: true, read_at: now })
       .eq('id', id);
     if (!error) {
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true, read_at: now } : n));
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true, read_at: now } : n))
+      );
     }
   }, []);
 
@@ -238,42 +303,48 @@ export function useNotifications() {
     fetchNotifications();
   }, [userId, fetchNotifications]);
 
-  const acceptInvitation = useCallback(async (invitationId: number) => {
-    try {
-      const { error } = await supabase.rpc('accept_invitation', { invitation_id: invitationId });
-      if (error) throw error;
-      await fetchInvitations(); // Refresh invitations
-    } catch (error) {
-      console.error('RPC accept_invitation failed, falling back to client logic:', error);
-      // Fallback to client-side logic
+  const acceptInvitation = useCallback(
+    async (invitationId: number) => {
       try {
-        const { acceptInvitation: acceptClient } = await import('~/lib/team');
-        await acceptClient(invitationId as any);
-        await fetchInvitations();
-      } catch (inner) {
-        console.error('Client-side accept failed:', inner);
-        throw inner;
+        const { error } = await supabase.rpc('accept_invitation', { invitation_id: invitationId });
+        if (error) throw error;
+        await fetchInvitations(); // Refresh invitations
+      } catch (error) {
+        console.error('RPC accept_invitation failed, falling back to client logic:', error);
+        // Fallback to client-side logic
+        try {
+          const { acceptInvitation: acceptClient } = await import('~/lib/team');
+          await acceptClient(invitationId as any);
+          await fetchInvitations();
+        } catch (inner) {
+          console.error('Client-side accept failed:', inner);
+          throw inner;
+        }
       }
-    }
-  }, [fetchInvitations]);
+    },
+    [fetchInvitations]
+  );
 
-  const rejectInvitation = useCallback(async (invitationId: number) => {
-    try {
-      const { error } = await supabase.rpc('reject_invitation', { invitation_id: invitationId });
-      if (error) throw error;
-      await fetchInvitations(); // Refresh invitations
-    } catch (error) {
-      console.error('RPC reject_invitation failed, falling back to client logic:', error);
+  const rejectInvitation = useCallback(
+    async (invitationId: number) => {
       try {
-        const { rejectInvitation: rejectClient } = await import('~/lib/team');
-        await rejectClient(invitationId as any);
-        await fetchInvitations();
-      } catch (inner) {
-        console.error('Client-side reject failed:', inner);
-        throw inner;
+        const { error } = await supabase.rpc('reject_invitation', { invitation_id: invitationId });
+        if (error) throw error;
+        await fetchInvitations(); // Refresh invitations
+      } catch (error) {
+        console.error('RPC reject_invitation failed, falling back to client logic:', error);
+        try {
+          const { rejectInvitation: rejectClient } = await import('~/lib/team');
+          await rejectClient(invitationId as any);
+          await fetchInvitations();
+        } catch (inner) {
+          console.error('Client-side reject failed:', inner);
+          throw inner;
+        }
       }
-    }
-  }, [fetchInvitations]);
+    },
+    [fetchInvitations]
+  );
 
   return {
     loading,

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 serve(async (req) => {
   try {
@@ -8,10 +8,12 @@ serve(async (req) => {
       throw new Error('Email is required');
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
       console.log('⚠️ RESEND_API_KEY not configured, skipping actual send.');
-      return new Response(JSON.stringify({ ok: true, skipped: true }), { headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ ok: true, skipped: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const subject = `Invitación a colaborar${tripName ? ` en "${tripName}"` : ''}`;
@@ -36,7 +38,7 @@ serve(async (req) => {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -52,9 +54,14 @@ serve(async (req) => {
       throw new Error(`Resend error: ${txt}`);
     }
     const data = await res.json();
-    return new Response(JSON.stringify({ ok: true, emailId: data.id }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ ok: true, emailId: data.id }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (e) {
     console.error('send-invite-email error', e);
-    return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ ok: false, error: e.message }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 });

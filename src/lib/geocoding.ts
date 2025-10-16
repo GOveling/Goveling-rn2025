@@ -16,7 +16,9 @@ const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 const USER_AGENT = 'GovelingApp/1.0 (contact@goveling.example)';
 
 async function jsonFetch(url: string) {
-  const resp = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': USER_AGENT } });
+  const resp = await fetch(url, {
+    headers: { Accept: 'application/json', 'User-Agent': USER_AGENT },
+  });
   if (!resp.ok) throw new Error('Geocoding HTTP ' + resp.status);
   return resp.json();
 }
@@ -33,12 +35,14 @@ export async function reverseGeocode(lat: number, lng: number): Promise<GeocodeR
       state: addr.state,
       country: addr.country,
       countryCode: addr.country_code,
-      boundingBox: Array.isArray(data.boundingbox) ? [
-        parseFloat(data.boundingbox[0]),
-        parseFloat(data.boundingbox[1]),
-        parseFloat(data.boundingbox[2]),
-        parseFloat(data.boundingbox[3])
-      ] : undefined
+      boundingBox: Array.isArray(data.boundingbox)
+        ? [
+            parseFloat(data.boundingbox[0]),
+            parseFloat(data.boundingbox[1]),
+            parseFloat(data.boundingbox[2]),
+            parseFloat(data.boundingbox[3]),
+          ]
+        : undefined,
     };
   } catch {
     return null;
@@ -47,7 +51,9 @@ export async function reverseGeocode(lat: number, lng: number): Promise<GeocodeR
 
 export async function forwardGeocode(query: string, limit = 1): Promise<GeocodeResult[]> {
   try {
-    const data = await jsonFetch(`${NOMINATIM_BASE}/search?format=jsonv2&q=${encodeURIComponent(query)}&limit=${limit}`);
+    const data = await jsonFetch(
+      `${NOMINATIM_BASE}/search?format=jsonv2&q=${encodeURIComponent(query)}&limit=${limit}`
+    );
     if (!Array.isArray(data)) return [];
     return data.map((d: any) => ({
       lat: parseFloat(d.lat),
@@ -57,12 +63,14 @@ export async function forwardGeocode(query: string, limit = 1): Promise<GeocodeR
       state: d.address?.state,
       country: d.address?.country,
       countryCode: d.address?.country_code,
-      boundingBox: Array.isArray(d.boundingbox) ? [
-        parseFloat(d.boundingbox[0]),
-        parseFloat(d.boundingbox[1]),
-        parseFloat(d.boundingbox[2]),
-        parseFloat(d.boundingbox[3])
-      ] : undefined
+      boundingBox: Array.isArray(d.boundingbox)
+        ? [
+            parseFloat(d.boundingbox[0]),
+            parseFloat(d.boundingbox[1]),
+            parseFloat(d.boundingbox[2]),
+            parseFloat(d.boundingbox[3]),
+          ]
+        : undefined,
     }));
   } catch {
     return [];

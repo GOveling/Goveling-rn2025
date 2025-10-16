@@ -13,7 +13,7 @@ export const uiCategoriesGeneral: UICategory[] = [
   { name: 'Alojamiento', icon: '🏨', group: 'general', internal: 'hotel' },
   { name: 'Transporte', icon: '🚗', group: 'general', internal: 'transport' },
   { name: 'Entretenimiento', icon: '🎭', group: 'general', internal: 'entertainment' },
-  { name: 'Compras', icon: '🛍️', group: 'general', internal: 'shopping' }
+  { name: 'Compras', icon: '🛍️', group: 'general', internal: 'shopping' },
 ];
 
 export const uiCategoriesSpecific: UICategory[] = [
@@ -22,13 +22,19 @@ export const uiCategoriesSpecific: UICategory[] = [
   { name: 'Playas', icon: '🏖️', group: 'specific', internal: 'beach' },
   { name: 'Monumentos', icon: '🗿', group: 'specific', internal: 'attraction' },
   { name: 'Iglesias', icon: '⛪', group: 'specific', internal: 'attraction' },
-  { name: 'Centros Comerciales', icon: '🏬', group: 'specific', internal: 'shopping' }
+  { name: 'Centros Comerciales', icon: '🏬', group: 'specific', internal: 'shopping' },
 ];
 
 // Map display name -> internal category
 export const categoryDisplayToInternal: Record<string, string> = [
   ...uiCategoriesGeneral,
-  ...uiCategoriesSpecific
-].reduce((acc, c) => { acc[c.name] = c.internal; return acc; }, {} as Record<string,string>);
+  ...uiCategoriesSpecific,
+].reduce(
+  (acc, c) => {
+    acc[c.name] = c.internal;
+    return acc;
+  },
+  {} as Record<string, string>
+);
 
 export const allUICategories: UICategory[] = [...uiCategoriesGeneral, ...uiCategoriesSpecific];

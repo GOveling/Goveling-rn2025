@@ -1,6 +1,6 @@
 /**
  * 📦 Redux Store Configuration
- * 
+ *
  * Main Redux Toolkit store with:
  * - userSlice (user profile & auth state)
  * - tripsSlice (trips data & breakdowns)
@@ -11,8 +11,8 @@
 
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
-import { 
-  persistStore, 
+import {
+  persistStore,
   persistReducer,
   FLUSH,
   REHYDRATE,
@@ -61,8 +61,8 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     })
-    .concat(tripsApi.middleware as any) // Add RTK Query middleware
-    .concat(userApi.middleware as any), // Add userApi middleware
+      .concat(tripsApi.middleware as any) // Add RTK Query middleware
+      .concat(userApi.middleware as any), // Add userApi middleware
   devTools: process.env.NODE_ENV !== 'production',
 });
 

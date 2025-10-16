@@ -24,13 +24,13 @@ const { height: screenHeight } = Dimensions.get('window');
 // Obtener el usuario desde el contexto de autenticación
 const useAuth = () => {
   const [user, setUser] = useState<any>(null);
-  
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
   }, []);
-  
+
   return { user };
 };
 
@@ -107,7 +107,7 @@ export default function PersonalInfoScreen() {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       return age - 1;
     }
@@ -119,7 +119,7 @@ export default function PersonalInfoScreen() {
 
     console.log('Cargando datos del perfil para usuario:', user.id);
     setLoading(true);
-    
+
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -190,11 +190,13 @@ export default function PersonalInfoScreen() {
 
     console.log('Guardando datos del perfil:', profileData);
     setLoading(true);
-    
+
     try {
       const updateData = {
         full_name: profileData.full_name.trim(),
-        birth_date: profileData.birth_date ? profileData.birth_date.toISOString().split('T')[0] : null,
+        birth_date: profileData.birth_date
+          ? profileData.birth_date.toISOString().split('T')[0]
+          : null,
         gender: profileData.gender || null,
         country: profileData.country || null,
         city_state: profileData.city_state || null,
@@ -208,13 +210,16 @@ export default function PersonalInfoScreen() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          ...updateData,
-        }, {
-          onConflict: 'id'
-        })
+        .upsert(
+          {
+            id: user.id,
+            email: user.email,
+            ...updateData,
+          },
+          {
+            onConflict: 'id',
+          }
+        )
         .select();
 
       if (error) {
@@ -227,7 +232,7 @@ export default function PersonalInfoScreen() {
       // Actualizar la edad calculada en el estado local
       const updatedData = {
         ...profileData,
-        age: profileData.birth_date ? calculateAge(profileData.birth_date) : null
+        age: profileData.birth_date ? calculateAge(profileData.birth_date) : null,
       };
       setProfileData(updatedData);
       setOriginalData(updatedData);
@@ -248,14 +253,14 @@ export default function PersonalInfoScreen() {
   };
 
   const updateField = (field: keyof ProfileData, value: any) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+    setProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
-    
+
     if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
       setShowDatePicker(false);
       return;
@@ -274,12 +279,12 @@ export default function PersonalInfoScreen() {
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
   const getGenderLabel = (value: string) => {
-    const option = genderOptions.find(o => o.value === value);
+    const option = genderOptions.find((o) => o.value === value);
     return option ? `${option.icon} ${option.label}` : '';
   };
 
@@ -295,25 +300,19 @@ export default function PersonalInfoScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <LinearGradient
-          colors={['#6366F1', '#8B5CF6']}
-          style={styles.header}
-        >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+        <LinearGradient colors={['#6366F1', '#8B5CF6']} style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          
+
           <Text style={styles.headerTitle}>Información Personal</Text>
-          
+
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => {
@@ -328,15 +327,13 @@ export default function PersonalInfoScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text style={styles.editButtonText}>
-                {isEditing ? 'Guardar' : 'Editar'}
-              </Text>
+              <Text style={styles.editButtonText}>{isEditing ? 'Guardar' : 'Editar'}</Text>
             )}
           </TouchableOpacity>
         </LinearGradient>
 
         {/* Content */}
-        <ScrollView 
+        <ScrollView
           style={styles.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -375,30 +372,34 @@ export default function PersonalInfoScreen() {
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Ionicons name="calendar" size={20} color="#6366F1" />
-                    <Text style={[styles.dateButtonText, { 
-                      color: profileData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
-                    }]}>
-                      {profileData.birth_date 
+                    <Text
+                      style={[
+                        styles.dateButtonText,
+                        {
+                          color: profileData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
+                        },
+                      ]}
+                    >
+                      {profileData.birth_date
                         ? formatDate(profileData.birth_date)
-                        : 'Seleccionar fecha'
-                      }
+                        : 'Seleccionar fecha'}
                     </Text>
                   </TouchableOpacity>
                 ) : (
                   <View style={styles.displayField}>
                     <Text style={styles.displayText}>
-                      {profileData.birth_date ? formatDate(profileData.birth_date) : 'No especificado'}
+                      {profileData.birth_date
+                        ? formatDate(profileData.birth_date)
+                        : 'No especificado'}
                     </Text>
                   </View>
                 )}
-                
+
                 {/* Mostrar edad calculada */}
                 {profileData.age !== null && (
                   <View style={styles.ageContainer}>
                     <Ionicons name="time" size={16} color="#6366F1" />
-                    <Text style={styles.ageText}>
-                      Edad: {profileData.age} años
-                    </Text>
+                    <Text style={styles.ageText}>Edad: {profileData.age} años</Text>
                   </View>
                 )}
               </View>
@@ -412,7 +413,9 @@ export default function PersonalInfoScreen() {
                     onPress={() => setShowGenderPicker(true)}
                   >
                     <Text style={styles.pickerButtonText}>
-                      {profileData.gender ? getGenderLabel(profileData.gender) : '👤 Seleccionar género'}
+                      {profileData.gender
+                        ? getGenderLabel(profileData.gender)
+                        : '👤 Seleccionar género'}
                     </Text>
                     <Ionicons name="chevron-down" size={20} color="#6366F1" />
                   </TouchableOpacity>
@@ -519,10 +522,9 @@ export default function PersonalInfoScreen() {
                 ) : (
                   <View style={styles.displayField}>
                     <Text style={styles.displayText}>
-                      {profileData.country_code && profileData.mobile_phone 
+                      {profileData.country_code && profileData.mobile_phone
                         ? `${profileData.country_code} ${profileData.mobile_phone}`
-                        : 'No especificado'
-                      }
+                        : 'No especificado'}
                     </Text>
                   </View>
                 )}
@@ -534,11 +536,7 @@ export default function PersonalInfoScreen() {
         {/* Botones de acción cuando está editando */}
         {isEditing && (
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={cancelEdit}
-              disabled={loading}
-            >
+            <TouchableOpacity style={styles.cancelButton} onPress={cancelEdit} disabled={loading}>
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
 
@@ -614,7 +612,7 @@ export default function PersonalInfoScreen() {
                   key={option.value}
                   style={[
                     styles.pickerOption,
-                    profileData.gender === option.value && styles.pickerOptionSelected
+                    profileData.gender === option.value && styles.pickerOptionSelected,
                   ]}
                   onPress={() => {
                     updateField('gender', option.value);
@@ -622,10 +620,12 @@ export default function PersonalInfoScreen() {
                   }}
                 >
                   <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
-                  <Text style={[
-                    styles.pickerOptionText,
-                    profileData.gender === option.value && styles.pickerOptionTextSelected
-                  ]}>
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      profileData.gender === option.value && styles.pickerOptionTextSelected,
+                    ]}
+                  >
                     {option.label}
                   </Text>
                 </TouchableOpacity>
