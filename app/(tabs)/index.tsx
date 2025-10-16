@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, RefreshControl, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
-import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip, getUserTripsBreakdown } from '~/lib/home';
+import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getWeatherCached } from '~/lib/weather';
 import { useSettingsStore } from '~/lib/settingsStore';
@@ -23,6 +23,7 @@ import StatCards from '~/components/home/StatCards';
 import TravelModeCard from '~/components/home/TravelModeCard';
 import { useAppSelector } from '../../src/store/hooks';
 import { selectBreakdown } from '../../src/store/slices/tripsSlice';
+import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
 export default function HomeTab() {
   const { t } = useTranslation();
@@ -31,18 +32,17 @@ export default function HomeTab() {
   const { units, setUnits } = useSettingsStore();
   const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
 
-  // Test Redux store
-  const breakdown = useAppSelector(selectBreakdown);
-  React.useEffect(() => {
-    logger.info('✅ Redux store working! Breakdown:', breakdown);
-  }, [breakdown]);
+  // RTK Query for trips - automatic caching & refetching
+  const { data: breakdown, isLoading: tripsLoading, refetch: refetchTrips } = useGetTripsBreakdownQuery();
+  
+  // Derive data from breakdown
+  const currentTrip = breakdown?.active || null;
+  const upcomingTripsCount = breakdown?.counts.upcoming || 0;
 
   const [city, setCity] = React.useState<string>('—');
   const [temp, setTemp] = React.useState<number | undefined>(undefined);
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
-  const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
-  const [currentTrip, setCurrentTrip] = React.useState<any>(null);
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
   
   // Memoized callbacks for child components
@@ -71,14 +71,10 @@ export default function HomeTab() {
     setRefreshing(true);
     
     try {
-      // Refresh all data in parallel with consolidated trips query
+      // Refresh all data in parallel - RTK Query handles trips caching
       await Promise.all([
         recomputeSavedPlaces(),
-        (async () => {
-          const tripsData = await getUserTripsBreakdown();
-          setCurrentTrip(tripsData.active);
-          setUpcomingTripsCount(tripsData.counts.upcoming);
-        })(),
+        refetchTrips(), // RTK Query refetch - respects cache
         (async () => {
           const p = await getCurrentPosition();
           if (p) {
@@ -99,7 +95,7 @@ export default function HomeTab() {
     } finally {
       setRefreshing(false);
     }
-  }, [recomputeSavedPlaces, units]);
+  }, [recomputeSavedPlaces, refetchTrips, units]);
 
   React.useEffect(() => {
     registerDeviceToken().catch(() => { });
@@ -180,20 +176,9 @@ export default function HomeTab() {
       try {
         logger.debug('🏠 HomeTab: Initial data loading started');
         
-        // Use consolidated query for better performance (50% less queries)
-        const [_, tripsData] = await Promise.all([
-          recomputeSavedPlaces(),
-          getUserTripsBreakdown()
-        ]);
-
-        setCurrentTrip(tripsData.active);
-        setUpcomingTripsCount(tripsData.counts.upcoming);
-        
-        logger.debug('🏠 HomeTab: Trips breakdown loaded -', {
-          active: tripsData.counts.active,
-          upcoming: tripsData.counts.upcoming,
-          planning: tripsData.counts.planning
-        });
+        // RTK Query handles trips data automatically via useGetTripsBreakdownQuery
+        // Just need to recompute saved places
+        await recomputeSavedPlaces();
         
         logger.debug('🏠 HomeTab: Initial data loading completed');
       } catch (e) {
@@ -269,13 +254,9 @@ export default function HomeTab() {
           debounceTimeout = setTimeout(async () => {
             logger.debug('🏠 HomeTab: Executing debounced trips refresh after 2 seconds');
             try {
-              const tripsData = await getUserTripsBreakdown();
-              setUpcomingTripsCount(tripsData.counts.upcoming);
-              setCurrentTrip(tripsData.active);
-              logger.debug('🏠 HomeTab: Updated trips breakdown -', {
-                upcoming: tripsData.counts.upcoming,
-                active: tripsData.counts.active
-              });
+              // RTK Query refetch - respects cache and auto-updates derived state
+              await refetchTrips();
+              logger.debug('🏠 HomeTab: Trips data refreshed via RTK Query');
             } catch (error) {
               logger.error('🏠 HomeTab: Error updating trips:', error);
             }
