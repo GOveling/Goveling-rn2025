@@ -406,10 +406,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               paddingVertical: 6,
               borderWidth: 1,
               borderColor: 'rgba(0, 0, 0, 0.08)',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 2,
+              boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+    elevation: 2,
               elevation: 1
             }}>
               <Text style={{ fontSize: 14, marginRight: 4 }}>
@@ -457,10 +455,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       backgroundColor: '#FFFFFF',
       borderRadius: 24,
       overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.12)',
+    elevation: 12,
       elevation: 6,
       marginBottom: 24
     }}>
@@ -520,9 +516,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               <Text style={{ 
                 fontSize: 32, 
                 marginBottom: 8,
-                textShadowColor: 'rgba(0,0,0,0.5)',
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 3,
+                textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
               }}>
                 {getFirstCountryFlag()}
               </Text>
@@ -531,9 +525,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 fontWeight: '700',
                 color: '#FFFFFF',
                 textAlign: 'center',
-                textShadowColor: 'rgba(0,0,0,0.8)',
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 4,
+                textShadow: '1px 1px 4px rgba(0,0,0,0.8)',
                 letterSpacing: 1,
               }}>
                 {getCountryName(tripData.countryCodes[0]) || tripData.countryCodes[0]}

@@ -848,9 +848,7 @@ const styles = {
     fontWeight: 'bold' as const,
     color: 'white',
     marginBottom: 16,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadow: '0px 1px 2px rgba(0,0,0,0.3)',
   },
   fieldContainer: {
     marginBottom: 20,
@@ -884,13 +882,8 @@ const styles = {
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
     minHeight: 56,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
+    elevation: 3,
     elevation: 2,
   },
   dateButtonSelected: {
@@ -930,13 +923,8 @@ const styles = {
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
     minHeight: 56,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
+    elevation: 3,
     elevation: 2,
   },
   pickerButtonSelected: {
@@ -1041,13 +1029,8 @@ const styles = {
     backgroundColor: '#6366F1', // Header mantiene el color del tema
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
     elevation: 3,
   },
   datePickerContent: {
@@ -1079,13 +1062,8 @@ const styles = {
     maxWidth: 380,
     alignSelf: 'center' as const,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 8,
     elevation: 5,
   },
   // Estilos para Gender Picker Modal

@@ -282,10 +282,8 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         style={{
           borderRadius: 20,
           padding: 24,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.25,
-          shadowRadius: 15,
+          boxShadow: '0px 6px 15px rgba(0, 0, 0, 0.25)',
+    elevation: 15,
           elevation: 10
         }}
       >
@@ -443,10 +441,8 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           style={{
             borderRadius: 16,
             padding: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+    elevation: 12,
             elevation: 8
           }}
         >
@@ -512,10 +508,8 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       backgroundColor: 'white',
       borderRadius: 16,
       padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 8,
       elevation: 5
     }}>
       <Skeleton width="50%" height={18} />
@@ -540,10 +534,8 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       backgroundColor: 'white',
       borderRadius: 16,
       padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 8,
       elevation: 5
     }}>
       {planningTripsCount > 0 ? (

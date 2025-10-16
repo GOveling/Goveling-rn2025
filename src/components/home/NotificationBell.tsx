@@ -388,7 +388,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             // Left accent (slightly thicker)
             borderLeftWidth: 4,
             borderLeftColor: pressed ? darkenHex(iconMeta.border, 0.12) : iconMeta.border,
-            // subtle highlight
+            // Note: Shadow props kept here due to dynamic color (iconMeta.border) - boxShadow doesn't support this in RN
             shadowColor: iconMeta.border,
             shadowOpacity: pressed ? 0.25 : (n.viewed_at == null ? 0.18 : 0),
             shadowRadius: pressed ? 8 : (n.viewed_at == null ? 6 : 0),

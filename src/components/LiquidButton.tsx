@@ -25,47 +25,42 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
       case 'primary':
         return {
           gradientColors: ['#007AFF', '#5AC8FA'] as const,
-          shadowColor: '#007AFF',
+          boxShadow: '0px 8px 16px rgba(0, 122, 255, 0.3)',
           textColor: '#FFFFFF',
           borderColor: 'transparent',
           useGradient: true,
-          shadowOpacity: 0.3,
         };
       case 'accent':
         return {
           gradientColors: ['#FF3B30', '#FF9500'] as const,
-          shadowColor: '#FF3B30',
+          boxShadow: '0px 8px 16px rgba(255, 59, 48, 0.3)',
           textColor: '#FFFFFF',
           borderColor: 'transparent',
           useGradient: true,
-          shadowOpacity: 0.3,
         };
       case 'success':
         return {
           gradientColors: ['#34C759', '#30D158'] as const,
-          shadowColor: '#34C759',
+          boxShadow: '0px 8px 16px rgba(52, 199, 89, 0.3)',
           textColor: '#FFFFFF',
           borderColor: 'transparent',
           useGradient: true,
-          shadowOpacity: 0.3,
         };
       case 'glass':
         return {
           gradientColors: ['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.1)'] as const,
-          shadowColor: '#000000',
+          boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.15)',
           textColor: '#1C1C1E',
           borderColor: 'rgba(255,255,255,0.3)',
           useGradient: false,
-          shadowOpacity: 0.15,
         };
       default: // secondary
         return {
           gradientColors: ['rgba(248,249,250,0.95)', 'rgba(248,249,250,0.85)'] as const,
-          shadowColor: '#000000',
+          boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.12)',
           textColor: '#1C1C1E',
           borderColor: 'rgba(0,0,0,0.08)',
           useGradient: false,
-          shadowOpacity: 0.12,
         };
     }
   };
@@ -80,7 +75,7 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
         color: config.textColor,
         textAlign: 'center',
         letterSpacing: 0.3,
-        // Efecto text shadow sutil para iOS
+        // textShadow is not deprecated for Text components
         textShadowColor: variant === 'secondary' || variant === 'glass' 
           ? 'rgba(0,0,0,0.08)' 
           : 'rgba(0,0,0,0.25)',
@@ -98,10 +93,7 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
     minHeight: 56,
     borderRadius: 18,
     overflow: 'hidden' as const,
-    shadowColor: config.shadowColor,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: disabled ? 0.05 : config.shadowOpacity,
-    shadowRadius: 16,
+    boxShadow: disabled ? '0px 8px 16px rgba(0, 0, 0, 0.05)' : config.boxShadow,
     elevation: disabled ? 2 : 12,
     opacity: disabled ? 0.6 : 1,
     transform: [{ scale: disabled ? 0.98 : 1 }],

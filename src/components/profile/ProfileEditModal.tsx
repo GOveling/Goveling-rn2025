@@ -446,10 +446,8 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                       borderRadius: 60,
                       borderWidth: 4,
                       borderColor: '#fff',
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 8,
+                      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+    elevation: 8,
                       ...(Platform.OS === 'android' && { elevation: 8 })
                     }}
                   />
@@ -466,10 +464,8 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                       justifyContent: 'center',
                       borderWidth: 4,
                       borderColor: '#fff',
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 8,
+                      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+    elevation: 8,
                       ...(Platform.OS === 'android' && { elevation: 8 })
                     }}
                   >
