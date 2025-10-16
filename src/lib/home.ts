@@ -141,7 +141,7 @@ export async function getUserTripsBreakdown(): Promise<TripsBreakdown> {
     active,
     counts: {
       total: allTrips.length,
-      upcoming: upcoming.length,
+      upcoming: upcoming.length + planning.length, // Include planning trips in upcoming count
       planning: planning.length,
       active: active ? 1 : 0
     }
