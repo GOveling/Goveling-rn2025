@@ -853,9 +853,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     opacity: 0.5,
   },
-  actionIconText: {
-    fontSize: 24,
-  },
   actionText: {
     color: '#1F2937',
     fontSize: 12,

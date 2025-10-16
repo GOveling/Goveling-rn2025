@@ -277,12 +277,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 24,
   },
-  placeDotInner: {
-    backgroundColor: '#fff',
-    borderRadius: 4,
-    height: 8,
-    width: 8,
-  },
   placeDotText: {
     color: '#fff',
     fontSize: 12,

@@ -189,9 +189,6 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
   },
-  photoCompact: {
-    height: 120,
-  },
   photoContainer: {
     backgroundColor: '#F3F4F6',
     borderRadius: 12,
@@ -204,21 +201,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     height: 120,
     marginBottom: 8,
-  },
-  photoLabel: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 8,
-    color: 'white',
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    position: 'absolute',
-    top: 8,
-  },
-  photoLabelText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
   },
   placeName: {
     color: '#1F2937',
