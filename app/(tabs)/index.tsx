@@ -21,6 +21,8 @@ import { logger } from '~/utils/logger';
 import LocationWidget from '~/components/home/LocationWidget';
 import StatCards from '~/components/home/StatCards';
 import TravelModeCard from '~/components/home/TravelModeCard';
+import { useAppSelector } from '../../src/store/hooks';
+import { selectBreakdown } from '../../src/store/slices/tripsSlice';
 
 export default function HomeTab() {
   const { t } = useTranslation();
@@ -28,6 +30,12 @@ export default function HomeTab() {
   const router = useRouter();
   const { units, setUnits } = useSettingsStore();
   const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
+
+  // Test Redux store
+  const breakdown = useAppSelector(selectBreakdown);
+  React.useEffect(() => {
+    logger.info('✅ Redux store working! Breakdown:', breakdown);
+  }, [breakdown]);
 
   const [city, setCity] = React.useState<string>('—');
   const [temp, setTemp] = React.useState<number | undefined>(undefined);

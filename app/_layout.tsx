@@ -9,6 +9,9 @@ import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-nativ
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { StatusBar } from 'expo-status-bar';
 import { logger } from '~/utils/logger';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from '~/store';
 
 // Error Boundary para capturar errores
 class ErrorBoundary extends React.Component<
@@ -101,10 +104,12 @@ export default function Root() {
   
   return (
     <ErrorBoundary>
-      <I18nextProvider i18n={i18n}>
-        <ThemeProvider>
-          <AuthProvider>
-            <ToastProvider>
+      <Provider store={store}>
+        <PersistGate loading={<ActivityIndicator size="large" />} persistor={persistor}>
+          <I18nextProvider i18n={i18n}>
+            <ThemeProvider>
+              <AuthProvider>
+                <ToastProvider>
               <>
                 {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
                 <Stack screenOptions={{
@@ -128,6 +133,8 @@ export default function Root() {
           </AuthProvider>
         </ThemeProvider>
       </I18nextProvider>
+        </PersistGate>
+      </Provider>
     </ErrorBoundary>
   );
 }
