@@ -18,13 +18,15 @@ import { useRouter } from 'expo-router';
 import NotificationBell from '~/components/home/NotificationBell';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
 import { logger } from '~/utils/logger';
+import LocationWidget from '~/components/home/LocationWidget';
+import StatCards from '~/components/home/StatCards';
+import TravelModeCard from '~/components/home/TravelModeCard';
 
 export default function HomeTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
   const { units, setUnits } = useSettingsStore();
-  const toggleUnits = () => setUnits(units === 'c' ? 'f' : 'c');
   const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
 
   const [city, setCity] = React.useState<string>('—');
@@ -34,6 +36,16 @@ export default function HomeTab() {
   const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
   const [currentTrip, setCurrentTrip] = React.useState<any>(null);
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
+  
+  // Memoized callbacks for child components
+  const toggleUnits = React.useCallback(() => {
+    setUnits(units === 'c' ? 'f' : 'c');
+  }, [units, setUnits]);
+  
+  const toggleTravelMode = React.useCallback(() => {
+    setTravelModeEnabled(!travelModeEnabled);
+  }, [travelModeEnabled, setTravelModeEnabled]);
+  
   const recomputeSavedPlaces = React.useCallback(async () => {
     logger.debug('🏠 HomeTab: recomputeSavedPlaces called');
     try {
@@ -349,194 +361,30 @@ export default function HomeTab() {
           />
         }
       >
-        {/* Header con gradiente */}
-        <LinearGradient
-          colors={['#4A90E2', '#9B59B6']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{
-            paddingTop: 50,
-            paddingHorizontal: 20,
-            paddingBottom: 20,
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>📍 {city}</Text>
-                <Text style={{ fontSize: 16, color: 'white', marginLeft: 8 }}>• {new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}</Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity onPress={toggleUnits} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-                <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
-                <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
-                  {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°{units === 'c' ? 'C' : 'F'}
-                </Text>
-              </TouchableOpacity>
-
-              <NotificationBell iconColor="#fff" />
-            </View>
-          </View>
-        </LinearGradient>
+        {/* Header con gradiente - Memoized LocationWidget */}
+        <LocationWidget
+          city={city}
+          temp={temp}
+          units={units}
+          onToggleUnits={toggleUnits}
+        />
 
         <View style={{ padding: 16, gap: 16 }}>
-          {/* Cards de estadísticas */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              onPress={() => router.push('/(tabs)/explore')}
-            >
-              <LinearGradient
-                colors={['#8B5CF6', '#A855F7']}
-                style={{
-                  padding: 20,
-                  borderRadius: 16,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 120
-                }}
-              >
-                <Text style={{ fontSize: 16, color: 'white', marginBottom: 4 }}>📍</Text>
-                <Text style={{ fontSize: 32, color: 'white', fontWeight: 'bold', marginBottom: 4 }}>
-                  {savedPlacesCount}
-                </Text>
-                <Text style={{ fontSize: 14, color: 'white', textAlign: 'center' }}>
-                  Lugares Guardados
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              onPress={() => router.push('/(tabs)/trips')}
-            >
-              <LinearGradient
-                colors={['#F97316', '#EA580C']}
-                style={{
-                  padding: 20,
-                  borderRadius: 16,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 120
-                }}
-              >
-                <Text style={{ fontSize: 16, color: 'white', marginBottom: 4 }}>📅</Text>
-                <Text style={{ fontSize: 32, color: 'white', fontWeight: 'bold', marginBottom: 4 }}>
-                  {upcomingTripsCount}
-                </Text>
-                <Text style={{ fontSize: 14, color: 'white', textAlign: 'center' }}>
-                  Próximos Viajes
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+          {/* Cards de estadísticas - Memoized StatCards */}
+          <StatCards
+            savedPlacesCount={savedPlacesCount}
+            upcomingTripsCount={upcomingTripsCount}
+          />
 
           {/* Viaje Activo */}
           <CurrentTripCard />
 
-          {/* Estado del Modo Travel */}
-          <View style={{
-            backgroundColor: 'white',
-            borderRadius: 16,
-            padding: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 5
-          }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-                Estado del Modo Travel
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 4,
-                  borderRadius: 12,
-                  backgroundColor: !travelModeEnabled ? '#E5E7EB' : 'transparent'
-                }}>
-                  <Text style={{
-                    fontSize: 12,
-                    color: !travelModeEnabled ? '#6B7280' : '#9CA3AF',
-                    fontWeight: !travelModeEnabled ? '600' : '400'
-                  }}>
-                    Inactivo
-                  </Text>
-                </View>
-                <View style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 4,
-                  borderRadius: 12,
-                  backgroundColor: travelModeEnabled ? '#D1FAE5' : 'transparent'
-                }}>
-                  <Text style={{
-                    fontSize: 12,
-                    color: travelModeEnabled ? '#059669' : '#9CA3AF',
-                    fontWeight: travelModeEnabled ? '600' : '400'
-                  }}>
-                    Viajando
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => setTravelModeEnabled(!travelModeEnabled)}
-            >
-              <LinearGradient
-                colors={['#10B981', '#059669']}
-                style={{
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  marginBottom: 12
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                  ✈️ Acceder al Modo Travel
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                alignItems: 'center',
-                backgroundColor: '#F9FAFB',
-                borderWidth: 1,
-                borderColor: '#E5E7EB',
-                marginBottom: 12
-              }}
-              onPress={() => currentTrip && Alert.alert('Trip Details', 'Funcionalidad de detalles del trip próximamente disponible')}
-            >
-              <Text style={{ color: '#374151', fontSize: 16, fontWeight: '500' }}>
-                Ver Detalles
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => currentTrip && Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible')}
-            >
-              <LinearGradient
-                colors={['#3B82F6', '#1D4ED8']}
-                style={{
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: 'center'
-                }}
-              >
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                  Ver Detalles de Ruta IA
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+          {/* Estado del Modo Travel - Memoized TravelModeCard */}
+          <TravelModeCard
+            travelModeEnabled={travelModeEnabled}
+            onToggleTravelMode={toggleTravelMode}
+            currentTrip={currentTrip}
+          />
 
           {/* Alertas Cercanas */}
           <NearbyAlerts />
