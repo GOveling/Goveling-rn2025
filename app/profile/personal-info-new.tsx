@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -10,9 +11,12 @@ import {
   TextInput,
   SafeAreaView,
 } from 'react-native';
+
 import { router } from 'expo-router';
-import { supabase } from '../../src/lib/supabase';
+
 import { User } from '@supabase/supabase-js';
+
+import { supabase } from '../../src/lib/supabase';
 
 interface ProfileData {
   full_name: string;

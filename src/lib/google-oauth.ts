@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
+
 import Constants from 'expo-constants';
+
 import { getSafeRedirectUrl } from './oauth-urls';
 import { API_KEYS, API_VALIDATORS } from '../config/apiKeys';
 

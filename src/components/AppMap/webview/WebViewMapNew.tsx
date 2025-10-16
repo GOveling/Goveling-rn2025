@@ -1,9 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { WebView } from 'react-native-webview';
+
 import { View, TouchableOpacity, Text, Alert } from 'react-native';
+
 import * as Location from 'expo-location';
-import { AppMapProps } from '../types';
+
+import { WebView } from 'react-native-webview';
+
 import { MAP_STYLE_URL } from '../../../config/maps';
+import { AppMapProps } from '../types';
 
 const buildHtml = (
   props: AppMapProps & { userLocation?: { latitude: number; longitude: number } }

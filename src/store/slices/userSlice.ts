@@ -9,6 +9,7 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+
 import { supabase } from '../../lib/supabase';
 import { logger } from '../../utils/logger';
 

@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import maplibregl from 'maplibre-gl';
+
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { AppMapProps } from '../types';
 import { MAP_STYLE_URL } from '../../../config/maps';
+import { AppMapProps } from '../types';
 
 export default function WebDomMap({
   center,

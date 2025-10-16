@@ -1,7 +1,9 @@
 import * as Location from 'expo-location';
+
 import { supabase } from '~/lib/supabase';
-import { LocationCache } from './weatherCache';
 import { logger } from '~/utils/logger';
+
+import { LocationCache } from './weatherCache';
 
 export type Trip = {
   id: string;

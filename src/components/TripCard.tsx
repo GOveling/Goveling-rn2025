@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
+
 import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { useAuth } from '~/contexts/AuthContext';
+import { supabase } from '~/lib/supabase';
 import {
   getTripStats,
   getCountryFlagByName,
@@ -11,16 +17,15 @@ import {
   getCountryImage,
   TripStats,
 } from '~/lib/tripUtils';
-import TripDetailsModal from './TripDetailsModal';
-import LiquidButton from './LiquidButton';
-import { useAuth } from '~/contexts/AuthContext';
 import {
   getCurrentUser,
   resolveUserRoleForTrip,
   resolveCurrentUserRoleForTripId,
 } from '~/lib/userUtils';
-import { supabase } from '~/lib/supabase';
+
 import { CountryImage } from './CountryImage';
+import LiquidButton from './LiquidButton';
+import TripDetailsModal from './TripDetailsModal';
 import { useGetProfileQuery } from '../store/api/userApi';
 
 interface TripData {

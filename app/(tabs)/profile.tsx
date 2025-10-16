@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import React from 'react';
+
 import {
   View,
   Text,
@@ -13,12 +13,17 @@ import {
   Image,
   Modal,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { supabase } from '~/lib/supabase';
-import { useAuth } from '~/contexts/AuthContext';
+
 import { Ionicons, MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+
 import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
+import { useAuth } from '~/contexts/AuthContext';
+import { supabase } from '~/lib/supabase';
+
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../../src/store/api/userApi';
 
@@ -509,188 +514,188 @@ export default function ProfileTab() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  headerSection: {
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    backgroundColor: '#fff',
-  },
   avatarContainer: {
-    position: 'relative',
     marginBottom: 16,
+    position: 'relative',
   },
   avatarGradient: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 60,
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
     elevation: 8,
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#fff',
+    height: 120,
+    justifyContent: 'center',
+    width: 120,
   },
   avatarImage: {
-    width: 120,
-    height: 120,
     borderRadius: 60,
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
     elevation: 8,
+    height: 120,
+    width: 120,
   },
-  editButton: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#4F8EF7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
-    zIndex: 10,
-    borderWidth: 3,
-    borderColor: '#fff',
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  userDescription: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-  levelBadge: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  levelText: {
-    fontSize: 14,
-    fontWeight: '600',
+  avatarText: {
     color: '#fff',
-  },
-  statsCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 16,
-    padding: 20,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
-  },
-  statsTitle: {
-    fontSize: 18,
+    fontSize: 36,
     fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 20,
-    textAlign: 'center',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    width: '48%',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#4F8EF7',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 18,
+  container: {
+    backgroundColor: '#F8F9FA',
+    flex: 1,
   },
   detailsButton: {
     alignSelf: 'center',
     marginTop: 10,
   },
   detailsButtonText: {
-    fontSize: 16,
     color: '#4F8EF7',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  editButton: {
+    alignItems: 'center',
+    backgroundColor: '#4F8EF7',
+    borderColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 3,
+    bottom: 0,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 4,
+    height: 40,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 0,
+    width: 40,
+    zIndex: 10,
+  },
+  headerSection: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+  },
+  levelBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  levelText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
   },
   menuContainer: {
     backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginTop: 20,
     borderRadius: 16,
-    overflow: 'hidden',
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 4,
+    marginHorizontal: 20,
+    marginTop: 20,
+    overflow: 'hidden',
+  },
+  menuIconContainer: {
+    alignItems: 'center',
+    borderRadius: 12,
+    height: 40,
+    justifyContent: 'center',
+    marginRight: 16,
+    width: 40,
+  },
+  menuLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
   },
   menuSection: {
-    flexDirection: 'row',
     alignItems: 'center',
+    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
-  menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  menuSubtitle: {
+    color: '#666',
+    fontSize: 14,
   },
   menuText: {
     flex: 1,
   },
   menuTitle: {
+    color: '#1a1a1a',
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 2,
   },
-  menuSubtitle: {
-    fontSize: 14,
-    color: '#666',
-  },
   signOutButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 16,
-    paddingVertical: 16,
-    borderWidth: 1,
     borderColor: '#FF3B30',
+    borderRadius: 16,
+    borderWidth: 1,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 4,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+    paddingVertical: 16,
   },
   signOutText: {
+    color: '#FF3B30',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF3B30',
     marginLeft: 8,
+  },
+  statItem: {
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '48%',
+  },
+  statLabel: {
+    color: '#666',
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  statNumber: {
+    color: '#4F8EF7',
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 4,
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 20,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  statsTitle: {
+    color: '#1a1a1a',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  userDescription: {
+    color: '#666',
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  userName: {
+    color: '#1a1a1a',
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
   },
 });

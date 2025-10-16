@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+
 import { View, Modal, TouchableOpacity, Text, StyleSheet, Platform, StatusBar } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
+
 import AppMap from './AppMap';
 
 interface MiniMapModalProps {
@@ -135,52 +138,52 @@ const MiniMapModal: React.FC<MiniMapModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  closeButton: {
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
   container: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
+    flex: 1,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingBottom: 16,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
   },
   headerSpacer: {
     width: 32,
   },
-  mapContainer: {
-    flex: 1,
+  headerTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  infoContainer: {
+    backgroundColor: '#F9FAFB',
+    borderTopColor: '#E5E7EB',
+    borderTopWidth: 1,
+    padding: 20,
   },
   map: {
     flex: 1,
   },
-  infoContainer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+  mapContainer: {
+    flex: 1,
   },
   placeName: {
+    color: '#1F2937',
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 12,
   },
 });

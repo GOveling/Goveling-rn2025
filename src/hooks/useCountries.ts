@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Country } from '../types/geo';
+
 import { apiService } from '../lib/apiService';
+import { Country } from '../types/geo';
 
 interface UseCountriesReturn {
   countries: Country[];

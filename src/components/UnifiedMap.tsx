@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import { Platform, View, Text, StyleSheet, Dimensions } from 'react-native';
+
 import { WebView } from 'react-native-webview';
 
 // Tipos unificados para todos los mapas
@@ -408,37 +410,37 @@ function fitMapBounds(
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#f0f0f0',
+    flex: 1,
   },
   map: {
     flex: 1,
   },
-  userLocationMarker: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
-    borderWidth: 3,
-    borderColor: 'white',
-    boxShadow: '0px 0px 6px rgba(0, 122, 255, 0.3)',
-    elevation: 6,
-  },
   placeMarker: {
-    width: 32,
-    height: 32,
+    alignItems: 'center',
     backgroundColor: '#FF3B30',
+    borderColor: 'white',
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
     elevation: 4,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   placeMarkerText: {
     color: 'white',
     fontSize: 12,
     fontWeight: '600',
+  },
+  userLocationMarker: {
+    backgroundColor: '#007AFF',
+    borderColor: 'white',
+    borderRadius: 10,
+    borderWidth: 3,
+    boxShadow: '0px 0px 6px rgba(0, 122, 255, 0.3)',
+    elevation: 6,
+    height: 20,
+    width: 20,
   },
 });

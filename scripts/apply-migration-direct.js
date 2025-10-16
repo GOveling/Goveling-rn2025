@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // Script para aplicar la migración mobile_phone usando la API REST de Supabase
-const https = require('https');
 const fs = require('fs');
+const https = require('https');
 require('dotenv').config();
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;

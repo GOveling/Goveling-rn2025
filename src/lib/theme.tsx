@@ -1,5 +1,6 @@
 // src/lib/theme.ts
 import React, { createContext, useContext } from 'react';
+
 import { Appearance, ColorSchemeName } from 'react-native';
 
 export type AppTheme = {

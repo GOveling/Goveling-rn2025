@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
+
 import { View, Text, ActivityIndicator } from 'react-native';
+
 import { useRouter } from 'expo-router';
-import { supabase } from '~/lib/supabase';
+
 import {
   analyzeOAuthCallback,
   waitForSession,
   logOAuthDebugInfo,
 } from '~/lib/oauth-callback-utils';
+import { supabase } from '~/lib/supabase';
 
 export default function AuthCallback() {
   const router = useRouter();

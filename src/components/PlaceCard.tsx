@@ -1,6 +1,8 @@
 // src/components/PlaceCard.tsx
 import React from 'react';
+
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
 
@@ -129,80 +131,53 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 }
 
 const styles = StyleSheet.create({
+  addressIcon: {
+    color: '#6B7280',
+    fontSize: 14,
+    marginRight: 4,
+  },
+  addressRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  addressText: {
+    color: '#6B7280',
+    flex: 1,
+    fontSize: 14,
+  },
+  addressTextCompact: {
+    fontSize: 13,
+  },
+  bottomRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   container: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
+    marginBottom: 12,
+    padding: 16,
   },
   containerCompact: {
+    borderRadius: 12,
+    marginBottom: 8,
     padding: 12,
-    marginBottom: 8,
-    borderRadius: 12,
-  },
-  photoContainer: {
-    marginBottom: 10,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
-    height: 160,
-    position: 'relative',
-  },
-  photoContainerCompact: {
-    height: 120,
-    marginBottom: 8,
-    borderRadius: 8,
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-  },
-  photoCompact: {
-    height: 120,
-  },
-  placeholderPhoto: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderIcon: {
-    fontSize: 32,
-    color: '#9CA3AF',
-  },
-  photoLabel: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    color: 'white',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  photoLabelText: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: '500',
   },
   content: {
     flex: 1,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  distanceText: {
+    color: '#9CA3AF',
+    fontSize: 12,
     marginBottom: 8,
   },
-  placeName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    flex: 1,
-  },
-  placeNameCompact: {
-    fontSize: 16,
-    marginBottom: 4,
+  distanceTextCompact: {
+    fontSize: 11,
+    marginBottom: 6,
   },
   favoriteButton: {
     padding: 4,
@@ -210,70 +185,97 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     fontSize: 20,
   },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+  photo: {
+    height: '100%',
+    width: '100%',
   },
-  addressIcon: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginRight: 4,
+  photoCompact: {
+    height: 120,
   },
-  addressText: {
-    fontSize: 14,
-    color: '#6B7280',
-    flex: 1,
+  photoContainer: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    height: 160,
+    marginBottom: 10,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  addressTextCompact: {
-    fontSize: 13,
-  },
-  distanceText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  photoContainerCompact: {
+    borderRadius: 8,
+    height: 120,
     marginBottom: 8,
   },
-  distanceTextCompact: {
-    fontSize: 11,
-    marginBottom: 6,
+  photoLabel: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 8,
+    color: 'white',
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    position: 'absolute',
+    top: 8,
   },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  photoLabelText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  placeName: {
+    color: '#1F2937',
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  placeNameCompact: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  placeholderIcon: {
+    color: '#9CA3AF',
+    fontSize: 32,
+  },
+  placeholderPhoto: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   ratingContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-  },
-  starIcon: {
-    fontSize: 14,
-    color: '#F59E0B',
-    marginRight: 2,
+    flexDirection: 'row',
   },
   ratingText: {
+    color: '#1F2937',
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
     marginRight: 4,
   },
   ratingTextCompact: {
     fontSize: 13,
   },
   reviewsText: {
-    fontSize: 14,
     color: '#6B7280',
+    fontSize: 14,
   },
   reviewsTextCompact: {
     fontSize: 13,
   },
+  starIcon: {
+    color: '#F59E0B',
+    fontSize: 14,
+    marginRight: 2,
+  },
   statusBadge: {
+    borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  titleRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
 });

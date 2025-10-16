@@ -1,7 +1,10 @@
 import React from 'react';
+
 import { View, Text, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
-import { useTheme } from '~/lib/theme';
+
 import { useRouter } from 'expo-router';
+
+import { useTheme } from '~/lib/theme';
 
 export default function BookingTab() {
   const { colors, spacing } = useTheme();

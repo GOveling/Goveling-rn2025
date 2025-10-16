@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
+
 import {
   View,
   Text,
@@ -12,10 +12,18 @@ import {
   Animated,
   Modal,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
 import * as Location from 'expo-location';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import AppMap from '../../src/components/AppMap';
+import PlaceCard from '../../src/components/PlaceCard';
+import PlaceDetailModal from '../../src/components/PlaceDetailModal';
 import {
   allUICategories,
   uiCategoriesGeneral,
@@ -23,11 +31,7 @@ import {
   categoryDisplayToInternal,
 } from '../../src/lib/categories';
 import { reverseGeocode } from '../../src/lib/geocoding';
-import PlaceDetailModal from '../../src/components/PlaceDetailModal';
-import PlaceCard from '../../src/components/PlaceCard';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppMap from '../../src/components/AppMap';
+import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
 import { supabase } from '../../src/lib/supabase';
 
 export default function ExploreTab() {

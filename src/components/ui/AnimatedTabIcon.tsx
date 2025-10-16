@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
+
 import { View, Text, StyleSheet, Platform } from 'react-native';
+
 import LottieView from 'lottie-react-native';
 
 interface AnimatedTabIconProps {
@@ -60,18 +62,18 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 4,
+  animation: {
+    height: '100%',
+    width: '100%',
   },
   animationContainer: {
     marginBottom: 2,
     overflow: 'hidden',
   },
-  animation: {
-    width: '100%',
-    height: '100%',
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
   },
   label: {
     fontSize: 10,

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
-import { CityResult } from '../types/geo';
+
 import { apiService } from '../lib/apiService';
+import { CityResult } from '../types/geo';
 
 interface UseCitiesByCountryReturn {
   cities: CityResult[];

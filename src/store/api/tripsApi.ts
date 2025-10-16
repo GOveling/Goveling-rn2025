@@ -9,6 +9,7 @@
  */
 
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
+
 import { getUserTripsBreakdown } from '../../lib/home';
 import type { TripsBreakdown, Trip } from '../../lib/home';
 import { supabase } from '../../lib/supabase';

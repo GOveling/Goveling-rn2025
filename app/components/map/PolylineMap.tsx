@@ -1,4 +1,5 @@
 import React from 'react';
+
 import MapTilerMap from '../../../src/components/MapTilerMap';
 
 type Coord = { lat: number; lng: number };

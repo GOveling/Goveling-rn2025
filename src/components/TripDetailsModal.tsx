@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -12,9 +13,15 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import i18n from '~/i18n';
 import { supabase } from '~/lib/supabase';
+import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import {
   getCurrentUser,
@@ -23,11 +30,9 @@ import {
   resolveUserRoleForTrip,
   UserProfile,
 } from '~/lib/userUtils';
-import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
-import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
+
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
-import i18n from '~/i18n';
 
 // Mapas para obtener íconos de alojamiento y transporte
 const accommodationIcons: { [key: string]: string } = {

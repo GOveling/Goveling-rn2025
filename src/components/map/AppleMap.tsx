@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { View, StyleSheet } from 'react-native';
 
 // Intentar importar react-native-maps, usar fallback si no está disponible

@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { TouchableOpacity, Text, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface LiquidButtonProps {
   title: string;

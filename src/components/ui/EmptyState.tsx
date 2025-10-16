@@ -1,8 +1,10 @@
 // src/components/ui/EmptyState.tsx
 import React from 'react';
+
 import { View, Text, Image } from 'react-native';
-import { useTheme } from '../../lib/theme';
+
 import { ThemedButton } from './Themed';
+import { useTheme } from '../../lib/theme';
 
 export function EmptyState({
   title,

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+
 import { View, TouchableOpacity, Text, Alert } from 'react-native';
-import { AppMapProps } from '../types';
-import { MAP_STYLE_URL } from '../../../config/maps';
+
 import * as Location from 'expo-location';
+
+import { MAP_STYLE_URL } from '../../../config/maps';
+import { AppMapProps } from '../types';
 
 let MapboxGL: any = null;
 try {

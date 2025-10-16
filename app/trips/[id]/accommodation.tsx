@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -14,14 +15,17 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { supabase } from '~/lib/supabase';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
-import HotelBookingModal from '~/components/HotelBookingModal';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import ConditionalMapView from '~/components/ConditionalMapView';
+import HotelBookingModal from '~/components/HotelBookingModal';
+import { supabase } from '~/lib/supabase';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

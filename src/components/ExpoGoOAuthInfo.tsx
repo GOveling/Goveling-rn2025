@@ -1,6 +1,9 @@
 import React from 'react';
+
 import { View, Text, StyleSheet, Alert } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
+
 import { getPlatformInfo } from '~/lib/google-oauth';
 
 interface ExpoGoOAuthInfoProps {
@@ -53,14 +56,18 @@ export default function ExpoGoOAuthInfo({ isDark = false }: ExpoGoOAuthInfoProps
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
     borderRadius: 12,
     borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 16,
+    marginHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
   textContainer: {
     flex: 1,
@@ -69,9 +76,5 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
   },
 });

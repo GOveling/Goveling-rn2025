@@ -1,15 +1,19 @@
-import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback } from 'react';
-import { Tabs } from 'expo-router';
+
 import { Platform } from 'react-native';
-import { AnimatedTabIcon } from '../../src/components/ui/AnimatedTabIcon';
+
+import { Tabs } from 'expo-router';
+
+import { useTranslation } from 'react-i18next';
+
 import { ProtectedRoute } from '../../src/components/ProtectedRoute';
+import { AnimatedTabIcon } from '../../src/components/ui/AnimatedTabIcon';
 
 // Importar archivos Lottie
-const homeAnimation = require('../../assets/lottie/home.json');
-const exploreAnimation = require('../../assets/lottie/explore.json');
-const tripsAnimation = require('../../assets/lottie/my-trips.json');
 const bookingAnimation = require('../../assets/lottie/booking.json');
+const exploreAnimation = require('../../assets/lottie/explore.json');
+const homeAnimation = require('../../assets/lottie/home.json');
+const tripsAnimation = require('../../assets/lottie/my-trips.json');
 const profileAnimation = require('../../assets/lottie/profile.json');
 
 export default function TabLayout() {

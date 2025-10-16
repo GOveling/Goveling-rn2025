@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -15,9 +16,12 @@ import {
   TextStyle,
   ImageStyle,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { supabase } from '~/lib/supabase';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
+
 import { GOOGLE_CONSOLE_SETUP_INSTRUCTIONS } from '~/lib/oauth-urls';
 
 interface OAuthHelpProps {
@@ -71,31 +74,19 @@ export default function OAuthHelp({ isDark = false, visible = true }: OAuthHelpP
 }
 
 const styles = StyleSheet.create({
+  bold: {
+    fontWeight: '600',
+  },
   container: {
+    borderRadius: 12,
+    borderWidth: 1,
     marginHorizontal: 20,
     marginVertical: 8,
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  subtitle: {
-    fontSize: 12,
-    marginBottom: 8,
   },
   expandButton: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
     paddingVertical: 4,
   },
@@ -105,16 +96,28 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   expandedContent: {
+    borderTopColor: 'rgba(0,0,0,0.1)',
+    borderTopWidth: 1,
     marginTop: 8,
     paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 4,
   },
   solutionText: {
     fontSize: 12,
     lineHeight: 16,
   },
-  bold: {
+  subtitle: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  title: {
+    flex: 1,
+    fontSize: 14,
     fontWeight: '600',
+    marginLeft: 8,
   },
 });

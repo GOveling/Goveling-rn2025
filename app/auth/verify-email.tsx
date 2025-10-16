@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 import {
   View,
   Text,
@@ -13,11 +14,14 @@ import {
   StatusBar,
   Appearance,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { supabase } from '~/lib/supabase';
-import { router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -368,65 +372,8 @@ export default function VerifyEmailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 40,
-    paddingTop: Platform.OS === 'ios' ? 20 : 0,
-  },
   backButton: {
     padding: 8,
-  },
-  themeToggle: {
-    padding: 8,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#6366F1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logoEmoji: {
-    fontSize: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  emailText: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   codeContainer: {
     flexDirection: 'row',
@@ -435,24 +382,61 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   codeInput: {
-    width: 45,
-    height: 55,
-    borderWidth: 2,
     borderRadius: 12,
+    borderWidth: 2,
     fontSize: 24,
     fontWeight: 'bold',
+    height: 55,
+    textAlign: 'center',
+    width: 45,
+  },
+  container: {
+    flex: 1,
+  },
+  emailText: {
+    fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
   },
-  verifyButton: {
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+  gradient: {
+    flex: 1,
   },
-  verifyButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 40,
+    paddingTop: Platform.OS === 'ios' ? 20 : 0,
+  },
+  helpContainer: {
+    alignItems: 'center',
+  },
+  helpText: {
+    fontSize: 12,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  logoCircle: {
+    alignItems: 'center',
+    backgroundColor: '#6366F1',
+    borderRadius: 40,
+    height: 80,
+    justifyContent: 'center',
+    marginBottom: 20,
+    width: 80,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logoEmoji: {
+    fontSize: 40,
+  },
+  resendButton: {
+    padding: 8,
+  },
+  resendButtonText: {
+    fontSize: 14,
     fontWeight: '600',
   },
   resendContainer: {
@@ -463,19 +447,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
   },
-  resendButton: {
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  themeToggle: {
     padding: 8,
   },
-  resendButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  helpContainer: {
-    alignItems: 'center',
-  },
-  helpText: {
-    fontSize: 12,
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: 4,
+  },
+  verifyButton: {
+    alignItems: 'center',
+    borderRadius: 25,
+    height: 50,
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  verifyButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

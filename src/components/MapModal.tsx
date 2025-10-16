@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+
 import { View, Text, TouchableOpacity, Modal, Alert, StyleSheet, Platform } from 'react-native';
+
 import * as Location from 'expo-location';
+
 import { Ionicons } from '@expo/vector-icons';
-import { EnhancedPlace } from '../lib/placesSearch';
+
 import AppMap from './AppMap';
+import { EnhancedPlace } from '../lib/placesSearch';
 
 interface MapModalProps {
   visible: boolean;
@@ -90,28 +94,28 @@ export default function MapModal({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-  },
-  iconBtn: { padding: 8 },
-  title: { fontSize: 18, fontWeight: '600', color: '#333' },
-  map: { flex: 1 },
+  container: { backgroundColor: '#fff', flex: 1 },
   footer: {
-    position: 'absolute',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     bottom: 0,
     left: 0,
-    right: 0,
-    backgroundColor: 'rgba(255,255,255,0.9)',
     padding: 8,
-    alignItems: 'center',
+    position: 'absolute',
+    right: 0,
   },
-  footerText: { fontSize: 12, color: '#444' },
+  footerText: { color: '#444', fontSize: 12 },
+  header: {
+    alignItems: 'center',
+    borderBottomColor: '#e5e5e5',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+  },
+  iconBtn: { padding: 8 },
+  map: { flex: 1 },
+  title: { color: '#333', fontSize: 18, fontWeight: '600' },
 });

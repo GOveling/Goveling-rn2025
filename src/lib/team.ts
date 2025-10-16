@@ -1,5 +1,5 @@
-import { supabase } from '~/lib/supabase';
 import { sendPush } from '~/lib/push_send';
+import { supabase } from '~/lib/supabase';
 
 /** Invite a user by email. If the user exists, send push; always send email separately (Resend path). */
 export async function inviteToTrip(trip_id: string, email: string, role: 'viewer' | 'editor') {

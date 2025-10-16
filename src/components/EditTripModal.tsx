@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -12,9 +13,12 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { supabase } from '~/lib/supabase';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 
@@ -585,33 +589,234 @@ export default function EditTripModal({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
+  budgetContainer: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+  },
+  budgetInput: {
+    color: '#374151',
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 14,
   },
   cancelButton: {
     padding: 8,
   },
-  headerTitle: {
+  checkbox: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderRadius: 4,
+    borderWidth: 2,
+    height: 20,
+    justifyContent: 'center',
+    marginRight: 12,
+    width: 20,
+  },
+  checkboxChecked: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  checkboxContainer: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  checkboxSelected: {
+    backgroundColor: '#F0F9FF',
+    borderColor: '#007AFF',
+  },
+  checkboxText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  container: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  currencySymbol: {
+    color: '#374151',
     fontSize: 18,
     fontWeight: '600',
+    marginRight: 8,
+  },
+  dateButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  dateButtonEnd: {
+    borderBottomRightRadius: 12,
+    borderLeftWidth: 0,
+    borderTopRightRadius: 12,
+  },
+  dateButtonStart: {
+    borderBottomLeftRadius: 12,
+    borderRightWidth: 0,
+    borderTopLeftRadius: 12,
+  },
+  dateButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  dateContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  dateSeparator: {
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 1,
+    borderColor: '#D1D5DB',
+    borderTopWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 14,
+  },
+  deleteButton: {
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  deleteButtonText: {
+    color: '#DC2626',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  deleteSection: {
+    backgroundColor: '#FFFFFF',
+    borderTopColor: '#E5E7EB',
+    borderTopWidth: 1,
+    padding: 20,
+  },
+  header: {
+    alignItems: 'center',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+  },
+  headerTitle: {
     color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  label: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  picker: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  pickerCancel: {
+    color: '#6B7280',
+    fontSize: 16,
+  },
+  pickerDone: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pickerHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+  },
+  pickerItem: {
+    alignItems: 'center',
+    borderBottomColor: '#F3F4F6',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    paddingVertical: 16,
+  },
+  pickerItemIcon: {
+    fontSize: 24,
+    marginRight: 16,
+  },
+  pickerItemSelected: {
+    backgroundColor: '#F0F9FF',
+  },
+  pickerItemText: {
+    color: '#374151',
+    flex: 1,
+    fontSize: 16,
+  },
+  pickerList: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  pickerModal: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  pickerText: {
+    color: '#374151',
+    fontSize: 16,
+  },
+  pickerTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
   },
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     backgroundColor: '#007AFF',
     borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   saveButtonDisabled: {
     backgroundColor: '#D1D5DB',
@@ -624,212 +829,11 @@ const styles = StyleSheet.create({
   saveButtonTextDisabled: {
     color: '#9CA3AF',
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
   section: {
     marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    backgroundColor: '#FFFFFF',
   },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
-  },
-  dateButtonStart: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    borderRightWidth: 0,
-  },
-  dateButtonEnd: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    borderLeftWidth: 0,
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#374151',
-    marginLeft: 8,
-  },
-  dateSeparator: {
-    paddingHorizontal: 8,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#D1D5DB',
-    paddingVertical: 14,
-    backgroundColor: '#F9FAFB',
-  },
-  budgetContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  currencySymbol: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginRight: 8,
-  },
-  budgetInput: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#374151',
-  },
-  picker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
-  },
-  pickerText: {
-    fontSize: 16,
-    color: '#374151',
-  },
-  pickerModal: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  pickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  pickerCancel: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  pickerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  pickerDone: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  pickerList: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  pickerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  pickerItemSelected: {
-    backgroundColor: '#F0F9FF',
-  },
-  pickerItemIcon: {
-    fontSize: 24,
-    marginRight: 16,
-  },
-  pickerItemText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#374151',
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
-  },
-  checkboxSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F9FF',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  checkboxChecked: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  checkboxText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  deleteSection: {
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  deleteButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#DC2626',
-    marginLeft: 8,
   },
 });

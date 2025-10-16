@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -14,11 +15,14 @@ import {
   StatusBar,
   Appearance,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { supabase } from '../../src/lib/supabase';
-import { router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -418,44 +422,14 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  themeToggle: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
+  buttonGradient: {
     alignItems: 'center',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 16,
-    borderRadius: 12,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    marginLeft: 12,
+    paddingVertical: 18,
   },
   card: {
-    marginHorizontal: 20,
     borderRadius: 24,
+    elevation: 16,
+    marginHorizontal: 20,
     padding: 32,
     shadowColor: '#000',
     shadowOffset: {
@@ -464,90 +438,120 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 16,
   },
-  logoContainer: {
+  checkbox: {
     alignItems: 'center',
-    marginBottom: 32,
+    borderRadius: 4,
+    borderWidth: 2,
+    height: 20,
+    justifyContent: 'center',
+    marginRight: 8,
+    width: 20,
   },
-  logo: {
-    width: 100,
-    height: 100,
+  checkboxChecked: {
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
   },
-  formContainer: {
-    gap: 20,
+  checkboxContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
-  inputContainer: {
-    position: 'relative',
+  checkboxText: {
+    fontSize: 14,
   },
-  input: {
-    height: 56,
-    borderWidth: 1.5,
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+  container: {
+    flex: 1,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
+    marginBottom: 20,
+    marginHorizontal: 20,
+    padding: 16,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    marginLeft: 12,
   },
   eyeIcon: {
     position: 'absolute',
     right: 16,
     top: 16,
   },
-  rememberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: -8,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderRadius: 4,
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#6366F1',
-    borderColor: '#6366F1',
-  },
-  checkboxText: {
-    fontSize: 14,
-  },
   forgotText: {
     fontSize: 14,
     fontWeight: '600',
   },
-  mainButton: {
-    marginTop: 8,
-    borderRadius: 16,
-    overflow: 'hidden',
+  formContainer: {
+    gap: 20,
   },
-  buttonGradient: {
-    paddingVertical: 18,
+  gradient: {
+    flex: 1,
+  },
+  input: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    fontSize: 16,
+    height: 56,
+    paddingHorizontal: 20,
+  },
+  inputContainer: {
+    position: 'relative',
+  },
+  logo: {
+    height: 100,
+    width: 100,
+  },
+  logoContainer: {
     alignItems: 'center',
+    marginBottom: 32,
+  },
+  mainButton: {
+    borderRadius: 16,
+    marginTop: 8,
+    overflow: 'hidden',
   },
   mainButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
   },
+  rememberRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -8,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
   switchContainer: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
     marginTop: 8,
-  },
-  switchText: {
-    fontSize: 16,
   },
   switchLink: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  switchText: {
+    fontSize: 16,
+  },
+  themeToggle: {
+    alignItems: 'center',
+    borderRadius: 22,
+    height: 44,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 20,
+    top: 60,
+    width: 44,
+    zIndex: 10,
   },
 });

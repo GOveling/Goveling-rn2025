@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+
 import { Platform, View, Text, StyleSheet } from 'react-native';
+
 import { WebView } from 'react-native-webview';
 
 // Intent: Estrategia multiplataforma optimizada:
@@ -265,34 +267,34 @@ function fitBoundsIfNeeded(
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  userDot: {
-    width: 18,
-    height: 18,
-    backgroundColor: '#007AFF',
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
   placeDot: {
-    width: 24,
-    height: 24,
+    alignItems: 'center',
     backgroundColor: '#FF3B30',
+    borderColor: '#fff',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#fff',
-    alignItems: 'center',
+    height: 24,
     justifyContent: 'center',
+    width: 24,
+  },
+  placeDotInner: {
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    height: 8,
+    width: 8,
   },
   placeDotText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
   },
-  placeDotInner: {
-    width: 8,
-    height: 8,
-    backgroundColor: '#fff',
-    borderRadius: 4,
+  userDot: {
+    backgroundColor: '#007AFF',
+    borderColor: '#fff',
+    borderRadius: 9,
+    borderWidth: 2,
+    height: 18,
+    width: 18,
   },
 });
 

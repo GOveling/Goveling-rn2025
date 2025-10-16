@@ -20,9 +20,16 @@
       "jsx": true
     },
     "ecmaVersion": "latest",
-    "sourceType": "module",
-    "project": "./tsconfig.json"
+    "sourceType": "module"
   },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "parserOptions": {
+        "project": "./tsconfig.json"
+      }
+    }
+  ],
   "plugins": ["react", "react-hooks", "react-native", "@typescript-eslint", "prettier", "import"],
   "rules": {
     "prettier/prettier": "error",

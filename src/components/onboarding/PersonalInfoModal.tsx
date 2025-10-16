@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -11,14 +12,17 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCountries } from '../../hooks/useCountries';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
+
 import { useCitiesByCountry } from '../../hooks/useCitiesByCountry';
+import { useCountries } from '../../hooks/useCountries';
+import { supabase } from '../../lib/supabase';
 import { Country, CityResult } from '../../types/geo';
 
 interface PersonalInfoModalProps {

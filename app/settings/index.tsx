@@ -1,9 +1,13 @@
-import { useTranslation } from 'react-i18next';
-import { setLanguage } from '../../src/i18n';
 import React from 'react';
+
 import { View, Text, TouchableOpacity, Appearance } from 'react-native';
-import { supabase } from '~/lib/supabase';
+
+import { useTranslation } from 'react-i18next';
+
 import i18n from '~/i18n';
+import { supabase } from '~/lib/supabase';
+
+import { setLanguage } from '../../src/i18n';
 
 export default function Settings() {
   const { t } = useTranslation();

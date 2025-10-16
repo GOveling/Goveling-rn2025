@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import {
   Alert,
   FlatList,
@@ -14,13 +15,15 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
+
 import { Ionicons } from '@expo/vector-icons';
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import { useTranslation } from 'react-i18next';
+
+import { ensureMultipleUserProfiles } from '~/lib/profileUtils';
 import { supabase } from '~/lib/supabase';
 import { inviteToTrip, removeCollaborator } from '~/lib/team';
-import { ensureMultipleUserProfiles } from '~/lib/profileUtils';
 import { getTripCollaborators, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
-import { useTranslation } from 'react-i18next';
 
 type Role = 'owner' | 'editor' | 'viewer';
 

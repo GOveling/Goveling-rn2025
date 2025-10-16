@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { supabase } from '~/lib/supabase';
 
 // Custom hook for optimized data fetching with caching

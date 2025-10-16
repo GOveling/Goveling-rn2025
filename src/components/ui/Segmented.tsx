@@ -1,7 +1,10 @@
 // src/components/ui/Segmented.tsx
 import React from 'react';
+
 import { Platform, View } from 'react-native';
+
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
+
 import { ThemedChip } from './Themed';
 
 export function Segmented({

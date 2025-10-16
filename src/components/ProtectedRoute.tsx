@@ -1,7 +1,10 @@
 import React from 'react';
+
 import { View, Text, ActivityIndicator } from 'react-native';
-import { useAuth } from '~/contexts/AuthContext';
+
 import { Redirect } from 'expo-router';
+
+import { useAuth } from '~/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

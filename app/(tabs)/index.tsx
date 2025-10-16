@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
+
 export const options = { headerShown: false };
-import { useTheme } from '~/lib/theme';
 import React from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+
 import {
   View,
   Text,
@@ -13,8 +13,20 @@ import {
   RefreshControl,
   Animated,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
+import { useRouter } from 'expo-router';
+
+import { useFocusEffect } from '@react-navigation/native';
+
+import CurrentTripCard from '~/components/home/CurrentTripCard';
+import LocationWidget from '~/components/home/LocationWidget';
+import NearbyAlerts from '~/components/home/NearbyAlerts';
+import NotificationBell from '~/components/home/NotificationBell';
+import StatCards from '~/components/home/StatCards';
+import TravelModeCard from '~/components/home/TravelModeCard';
+import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
 import {
   getCurrentPosition,
   reverseCityCached,
@@ -23,23 +35,17 @@ import {
   getSavedPlaces,
   getActiveOrNextTrip,
 } from '~/lib/home';
-import { supabase } from '~/lib/supabase';
-import { getWeatherCached } from '~/lib/weather';
-import { useSettingsStore } from '~/lib/settingsStore';
-import { useTravel } from '~/lib/travelStore';
-import CurrentTripCard from '~/components/home/CurrentTripCard';
-import NearbyAlerts from '~/components/home/NearbyAlerts';
 import { registerDeviceToken } from '~/lib/push';
-import { useRouter } from 'expo-router';
-import NotificationBell from '~/components/home/NotificationBell';
-import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
+import { useSettingsStore } from '~/lib/settingsStore';
+import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
+import { useTravel } from '~/lib/travelStore';
+import { getWeatherCached } from '~/lib/weather';
 import { logger } from '~/utils/logger';
-import LocationWidget from '~/components/home/LocationWidget';
-import StatCards from '~/components/home/StatCards';
-import TravelModeCard from '~/components/home/TravelModeCard';
+
+import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 import { useAppSelector } from '../../src/store/hooks';
 import { selectBreakdown } from '../../src/store/slices/tripsSlice';
-import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
 export default function HomeTab() {
   const { t } = useTranslation();

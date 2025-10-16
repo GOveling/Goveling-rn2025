@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface TravelModeCardProps {

@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react';
+
 import { View, ActivityIndicator, Text } from 'react-native';
-import { useAuth } from '~/contexts/AuthContext';
+
 import { router, useSegments, useRootNavigationState, Redirect } from 'expo-router';
+
+import { useAuth } from '~/contexts/AuthContext';
 // import { useOnboarding } from '~/hooks/useOnboarding';
 // import WelcomeModal from './onboarding/WelcomeModal';
 // import PersonalInfoModal from './onboarding/PersonalInfoModal';

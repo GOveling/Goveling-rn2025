@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system';
+
 import CryptoJS from 'crypto-js';
+
 import { supabase } from '~/lib/supabase';
 
 // AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC)

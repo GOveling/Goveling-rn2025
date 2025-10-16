@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
+
+import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 import { resolveUserRoleForTrip } from '~/lib/userUtils';
-import { useAuth } from '~/contexts/AuthContext';
+
 import PlaceDetailModal from '../../../src/components/PlaceDetailModal';
 
 interface Place {

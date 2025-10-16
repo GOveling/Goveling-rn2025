@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { supabase } from '../lib/supabase';
 
 interface OnboardingState {
   showWelcome: boolean;

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { FlatList, FlatListProps, View, Text } from 'react-native';
 
 // Optimized FlatList with better performance for large datasets

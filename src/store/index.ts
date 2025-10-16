@@ -9,6 +9,7 @@
  * - DevTools enabled in development
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import {
@@ -21,15 +22,14 @@ import {
   PURGE,
   REGISTER,
 } from 'redux-persist';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import slices
-import userReducer from './slices/userSlice';
-import tripsReducer from './slices/tripsSlice';
-
-// Import RTK Query APIs
 import { tripsApi } from './api/tripsApi';
 import { userApi } from './api/userApi';
+import tripsReducer from './slices/tripsSlice';
+import userReducer from './slices/userSlice';
+
+// Import RTK Query APIs
 
 // Persist config
 const persistConfig = {

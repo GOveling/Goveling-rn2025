@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+
 import { View, Text, ActivityIndicator, Alert } from 'react-native';
+
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { supabase } from '~/lib/supabase';
+
 import TripDetailsModal from '~/components/TripDetailsModal';
+import { supabase } from '~/lib/supabase';
 
 interface TripData {
   id: string;

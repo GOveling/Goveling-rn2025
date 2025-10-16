@@ -1,6 +1,8 @@
 // src/components/ui/Skeleton.tsx
 import React, { useRef, useEffect } from 'react';
+
 import { Animated, View, ViewStyle } from 'react-native';
+
 import { useTheme } from '../../lib/theme';
 
 export function Skeleton({

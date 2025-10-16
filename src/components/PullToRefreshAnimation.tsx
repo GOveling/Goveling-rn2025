@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { View, Animated, Easing } from 'react-native';
 
 interface PullToRefreshAnimationProps {

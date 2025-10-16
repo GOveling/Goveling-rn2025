@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { supabase } from '~/lib/supabase';
 
 export interface InboxNotification {
@@ -78,7 +79,7 @@ export function useNotifications() {
           if (inviterId && !d?.inviter_name) needInviter.push(inviterId);
         }
 
-        let tripMap = new Map<string, string>();
+        const tripMap = new Map<string, string>();
         if (needTrip.length > 0) {
           const unique = Array.from(new Set(needTrip));
           const { data: tripsRes } = await supabase
@@ -90,7 +91,7 @@ export function useNotifications() {
           }
         }
 
-        let inviterMap = new Map<string, string>();
+        const inviterMap = new Map<string, string>();
         if (needInviter.length > 0) {
           const uniqueInviters = Array.from(new Set(needInviter));
           const { data: ownersRes } = await supabase

@@ -1,6 +1,8 @@
 // src/components/ui/BottomSheet.tsx
 import React, { useMemo, useRef } from 'react';
+
 import { View, Text } from 'react-native';
+
 import { useTheme } from '../../lib/theme';
 let BottomSheet: any = null;
 try {

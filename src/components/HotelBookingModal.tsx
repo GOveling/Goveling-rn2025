@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -11,9 +12,12 @@ import {
   Image,
   Linking,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { affiliates } from '~/lib/affiliates';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

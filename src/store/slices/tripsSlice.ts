@@ -9,9 +9,10 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { logger } from '../../utils/logger';
+
 import { getUserTripsBreakdown } from '../../lib/home';
 import type { TripsBreakdown } from '../../lib/home';
+import { logger } from '../../utils/logger';
 
 // ===== TYPES =====
 

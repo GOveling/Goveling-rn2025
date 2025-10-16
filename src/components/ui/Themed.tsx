@@ -1,5 +1,6 @@
 // src/components/ui/Themed.tsx
 import React from 'react';
+
 import {
   TouchableOpacity,
   View,
@@ -9,7 +10,9 @@ import {
   TextStyle,
   GestureResponderEvent,
 } from 'react-native';
+
 import * as Haptics from 'expo-haptics';
+
 import { useTheme } from '../../lib/theme';
 
 type BtnProps = {

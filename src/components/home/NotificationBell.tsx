@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+
 import {
   Modal,
   Platform,
@@ -11,10 +12,13 @@ import {
   Alert,
   Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNotifications } from '~/hooks/useNotifications';
-import { useTranslation } from 'react-i18next';
+
 import { useRouter } from 'expo-router';
+
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+
+import { useNotifications } from '~/hooks/useNotifications';
 
 interface Props {
   iconColor?: string;
@@ -418,7 +422,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
       let name: any = 'notifications';
       let bg = '#E5E7EB';
       let border = '#E5E7EB';
-      let color = '#1F2937';
+      const color = '#1F2937';
 
       switch (type) {
         case 'trip_invite':

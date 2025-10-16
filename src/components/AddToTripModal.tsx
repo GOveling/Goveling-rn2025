@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   View,
   Text,
@@ -11,11 +12,15 @@ import {
   Alert,
   InteractionManager,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '~/lib/supabase';
-import NewTripModal from './NewTripModal';
+
 import { EnhancedPlace } from '~/lib/placesSearch';
+import { supabase } from '~/lib/supabase';
+
+import NewTripModal from './NewTripModal';
 
 interface AddToTripModalProps {
   visible: boolean;
@@ -279,81 +284,17 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
 
 const styles = StyleSheet.create({
   backdrop: {
-    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
     justifyContent: 'flex-end',
   },
-  sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-  },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#F3F4F6',
-  },
-  placeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 14,
-  },
-  placeText: {
-    marginLeft: 8,
-    color: '#374151',
-    fontSize: 14,
-    flexShrink: 1,
-  },
-  newBtn: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  newBtnBg: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 18,
+    height: 36,
     justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  newBtnText: {
-    color: '#fff',
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  sectionHeader: {
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  loadingBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  loadingText: {
-    marginLeft: 8,
-    color: '#6B7280',
+    width: 36,
   },
   empty: {
     alignItems: 'center',
@@ -363,16 +304,68 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 8,
   },
-  tripItem: {
-    flexDirection: 'row',
+  header: {
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  tripTitle: {
-    fontSize: 16,
+  loadingBox: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingVertical: 12,
+  },
+  loadingText: {
+    color: '#6B7280',
+    marginLeft: 8,
+  },
+  newBtn: {
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  newBtnBg: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  newBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  placeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 14,
+    marginTop: 6,
+  },
+  placeText: {
+    color: '#374151',
+    flexShrink: 1,
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  sectionHeader: {
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  title: {
     color: '#111827',
+    fontSize: 18,
     fontWeight: '600',
   },
   tripDates: {
@@ -382,6 +375,18 @@ const styles = StyleSheet.create({
   tripDesc: {
     color: '#6B7280',
     marginTop: 4,
+  },
+  tripItem: {
+    alignItems: 'center',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    paddingVertical: 12,
+  },
+  tripTitle: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

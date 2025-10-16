@@ -1,7 +1,8 @@
 // src/lib/useFavorites.ts
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from './supabase';
+
 import { EnhancedPlace } from './placesSearch';
+import { supabase } from './supabase';
 
 interface FavoritePlace {
   id: string;

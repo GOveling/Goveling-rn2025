@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -11,9 +12,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { Ionicons } from '@expo/vector-icons';
+
 import { supabase } from '~/lib/supabase';
+
 import NewTripModal from './NewTripModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -273,148 +278,148 @@ export default function TripSelectorModal({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+  bottomPadding: {
+    height: 40,
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    alignItems: 'center',
     backgroundColor: '#F3F4F6',
-    alignItems: 'center',
+    borderRadius: 20,
+    height: 40,
     justifyContent: 'center',
-  },
-  headerContent: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  headerPlaceholder: {
     width: 40,
+  },
+  container: {
+    backgroundColor: '#F8F9FA',
+    flex: 1,
   },
   content: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
+  emptyState: {
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 60,
+  },
+  emptyStateSubtitle: {
+    color: '#6B7280',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  emptyStateTitle: {
+    color: '#374151',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+  },
+  headerContent: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerPlaceholder: {
+    width: 40,
+  },
+  headerSubtitle: {
+    color: '#6B7280',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  headerTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   loadingText: {
-    fontSize: 16,
     color: '#6B7280',
+    fontSize: 16,
     marginTop: 16,
-  },
-  tripsList: {
-    flex: 1,
-    paddingHorizontal: 20,
   },
   newTripButton: {
-    marginTop: 20,
-    marginBottom: 24,
     borderRadius: 16,
-    overflow: 'hidden',
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
     elevation: 4,
+    marginBottom: 24,
+    marginTop: 20,
+    overflow: 'hidden',
   },
   newTripGradient: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 16,
     paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   newTripText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginLeft: 8,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
   },
   tripCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginBottom: 12,
     boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.05)',
     elevation: 2,
+    marginBottom: 12,
   },
   tripCardContent: {
     padding: 16,
   },
-  tripCardHeader: {
-    flexDirection: 'row',
+  tripCardFooter: {
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tripCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  tripTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    flex: 1,
+  tripDates: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  tripDatesText: {
+    color: '#6B7280',
+    fontSize: 13,
+    marginLeft: 6,
   },
   tripDescription: {
-    fontSize: 14,
     color: '#6B7280',
+    fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
   },
-  tripCardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  tripTitle: {
+    color: '#1F2937',
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
   },
-  tripDates: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tripDatesText: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginLeft: 6,
-  },
-  bottomPadding: {
-    height: 40,
+  tripsList: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
 });

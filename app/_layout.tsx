@@ -1,17 +1,23 @@
 import React from 'react';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../src/i18n';
-import { ToastProvider } from '../src/components/ui/Toast';
-import { ThemeProvider } from '../src/lib/theme';
-import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
-import { Stack, useSegments, Redirect } from 'expo-router';
+
 import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+
+import { Stack, useSegments, Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { logger } from '~/utils/logger';
+
+import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
+
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+
 import { store, persistor } from '~/store';
+import { logger } from '~/utils/logger';
+
+import { ToastProvider } from '../src/components/ui/Toast';
+import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
+import i18n from '../src/i18n';
+import { ThemeProvider } from '../src/lib/theme';
 
 // Error Boundary para capturar errores
 class ErrorBoundary extends React.Component<
@@ -143,27 +149,27 @@ export default function Root() {
 
 const styles = StyleSheet.create({
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F7F7FA',
+    flex: 1,
+    justifyContent: 'center',
     padding: 20,
   },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FF3B30',
-    marginBottom: 12,
+  errorHint: {
+    color: '#999',
+    fontSize: 12,
+    textAlign: 'center',
   },
   errorMessage: {
-    fontSize: 14,
     color: '#666',
-    textAlign: 'center',
+    fontSize: 14,
     marginBottom: 16,
-  },
-  errorHint: {
-    fontSize: 12,
-    color: '#999',
     textAlign: 'center',
+  },
+  errorTitle: {
+    color: '#FF3B30',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
 });

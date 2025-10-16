@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+
 import { router } from 'expo-router';
-import { supabase } from '../lib/supabase';
+
 import { Session, User } from '@supabase/supabase-js';
+
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;

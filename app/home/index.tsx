@@ -1,18 +1,22 @@
 import { useTranslation } from 'react-i18next';
+
 export const options = { headerShown: false };
-import { useTheme } from '~/lib/theme';
 import React from 'react';
+
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
-import { getCurrentPosition, reverseCity, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
-import { getWeather } from '~/lib/weather';
-import { useSettingsStore } from '~/lib/settingsStore';
-import { useTravel } from '~/lib/travelStore';
+import { useRouter } from 'expo-router';
+
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
+import { getCurrentPosition, reverseCity, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
 import { registerDeviceToken } from '~/lib/push';
-import { useRouter } from 'expo-router';
+import { useSettingsStore } from '~/lib/settingsStore';
+import { useTheme } from '~/lib/theme';
+import { useTravel } from '~/lib/travelStore';
+import { getWeather } from '~/lib/weather';
 
 export default function Home() {
   const { t } = useTranslation();

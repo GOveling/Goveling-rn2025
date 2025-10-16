@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -8,13 +9,16 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '../../src/lib/supabase';
-import { EnhancedPlace } from '../../src/lib/placesSearch';
+
 import TripSelectorModal from '../../src/components/TripSelectorModal';
+import { EnhancedPlace } from '../../src/lib/placesSearch';
+import { supabase } from '../../src/lib/supabase';
 
 export default function AddToTripScreen() {
   const router = useRouter();
@@ -240,127 +244,127 @@ export default function AddToTripScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  header: {
+  addressContainer: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+  },
+  addressText: {
+    color: '#6B7280',
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    marginLeft: 8,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    height: 40,
     justifyContent: 'center',
     marginRight: 16,
+    width: 40,
   },
-  headerContent: {
+  container: {
+    backgroundColor: '#F8F9FA',
     flex: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 24,
   },
+  header: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerSubtitle: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  headerTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    color: '#6B7280',
+    fontSize: 16,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  placeHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   placeInfo: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
+    elevation: 2,
     marginBottom: 24,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 2,
-  },
-  placeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
   },
   placeName: {
-    fontSize: 18,
-    fontWeight: '600',
     color: '#1F2937',
     flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
     marginRight: 12,
   },
   ratingContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    flexDirection: 'row',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
   },
   ratingText: {
+    color: '#92400E',
     fontSize: 14,
     fontWeight: '500',
-    color: '#92400E',
     marginLeft: 4,
-  },
-  addressContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  addressText: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    marginLeft: 8,
-    flex: 1,
   },
   selectTripButton: {
     borderRadius: 16,
+    elevation: 4,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
   },
   selectTripGradient: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 16,
     paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   selectTripText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginLeft: 8,
   },
 });

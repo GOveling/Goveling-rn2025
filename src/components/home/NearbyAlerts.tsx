@@ -1,11 +1,15 @@
-import { useTranslation } from 'react-i18next';
 import React from 'react';
+
 import { View, Text, TouchableOpacity } from 'react-native';
-import { useTravel } from '~/lib/travelStore';
-import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
+
 import * as Notifications from 'expo-notifications';
-import { supabase } from '~/lib/supabase';
+
+import { useTranslation } from 'react-i18next';
+
+import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
 import { sendPush } from '~/lib/push_send';
+import { supabase } from '~/lib/supabase';
+import { useTravel } from '~/lib/travelStore';
 
 interface NearbyAlertsProps {
   tripId?: string;

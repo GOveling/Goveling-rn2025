@@ -1,13 +1,17 @@
-import { useTranslation } from 'react-i18next';
 import React from 'react';
+
 import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+
 import { Skeleton } from '~/components/ui/Skeleton';
+import { useTripRefresh } from '~/contexts/TripRefreshContext';
 import { Trip, getActiveOrNextTrip, getPlanningTripsCount, getActiveTrips } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
-import { useTripRefresh } from '~/contexts/TripRefreshContext';
 import { setGlobalTripRefresh } from '~/lib/tripRefresh';
 
 const daysDiff = (a: Date, b: Date): number =>

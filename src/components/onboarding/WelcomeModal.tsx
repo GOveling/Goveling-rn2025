@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 import { View, Text, Modal, Animated, Dimensions, StyleSheet } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
@@ -254,86 +257,86 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   confettiContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
+    left: 0,
     pointerEvents: 'none',
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   confettiParticle: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
     borderRadius: 4,
-    top: height + 50,
+    height: 8,
     left: width / 2,
+    position: 'absolute',
+    top: height + 50,
+    width: 8,
   },
   container: {
-    width: width * 0.85,
-    height: height * 0.6,
     borderRadius: 24,
-    overflow: 'hidden',
-    elevation: 20,
     boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.3)',
     elevation: 20,
+    elevation: 20,
+    height: height * 0.6,
+    overflow: 'hidden',
+    width: width * 0.85,
+  },
+  dot: {
+    borderRadius: 6,
+    height: 12,
+    marginHorizontal: 6,
+    width: 12,
+  },
+  dotsContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 30,
   },
   gradient: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 40,
-  },
-  iconContainer: {
-    marginBottom: 30,
-    padding: 20,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   icon: {
     textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 40,
-    textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
-    lineHeight: 36,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  iconContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 50,
     marginBottom: 30,
+    padding: 20,
   },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginHorizontal: 6,
-  },
-  progressContainer: {
-    width: '100%',
-    marginTop: 20,
+  overlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    flex: 1,
+    justifyContent: 'center',
   },
   progressBackground: {
-    height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 2,
+    height: 4,
     overflow: 'hidden',
   },
   progressBar: {
-    height: '100%',
     backgroundColor: 'white',
     borderRadius: 2,
+    height: '100%',
+  },
+  progressContainer: {
+    marginTop: 20,
+    width: '100%',
+  },
+  title: {
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+    lineHeight: 36,
+    marginBottom: 40,
+    textAlign: 'center',
+    textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
   },
 });

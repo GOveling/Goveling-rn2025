@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
 import {
   View,
   Text,
@@ -13,14 +14,17 @@ import {
   Dimensions,
   FlatList,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { router } from 'expo-router';
-import { supabase } from '../../src/lib/supabase';
+
 import { useAuth } from '../../src/contexts/AuthContext';
-import { useCountries } from '../../src/hooks/useCountries';
 import { useCitiesByCountry } from '../../src/hooks/useCitiesByCountry';
+import { useCountries } from '../../src/hooks/useCountries';
+import { supabase } from '../../src/lib/supabase';
 import { Country, CityResult } from '../../src/types/geo';
 
 const { height: screenHeight } = Dimensions.get('window');
@@ -802,7 +806,7 @@ export default function PersonalInfoScreen() {
                   value={citySearchQuery}
                   onChangeText={setCitySearchQuery}
                   placeholder="Buscar ciudad..."
-                  style={[styles.searchInput]}
+                  style={styles.searchInput}
                   placeholderTextColor="#666"
                   clearButtonMode="while-editing"
                 />

@@ -10,18 +10,19 @@ try {
   console.warn('[i18n] Could not load intl-pluralrules polyfill:', e);
 }
 
+import * as Localization from 'expo-localization';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import * as Localization from 'expo-localization';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import en from './locales/en.json';
 import es from './locales/es.json';
-import pt from './locales/pt.json';
 import fr from './locales/fr.json';
 import it from './locales/it.json';
-import zh from './locales/zh.json';
 import ja from './locales/ja.json';
+import pt from './locales/pt.json';
+import zh from './locales/zh.json';
 
 console.log('[i18n] Initializing i18n...');
 
@@ -238,7 +239,7 @@ async function edgeTranslate(text: string, lang: string) {
 const _t = i18n.t.bind(i18n);
 i18n.t = function (key: string, opts?: any) {
   const lang = i18n.language || 'en';
-  let val = _t(key, opts);
+  const val = _t(key, opts);
   // when key is auto.<Original Text> and result equals the original text, try runtime translate
   if (key.startsWith('auto.') && typeof val === 'string') {
     const original = key.slice(5);

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+
 import {
   View,
   Text,
@@ -11,11 +12,14 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { supabase } from '../../src/lib/supabase';
+
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { supabase } from '../../src/lib/supabase';
 
 const styles = {
   container: {

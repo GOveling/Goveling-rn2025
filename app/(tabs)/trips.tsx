@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
 import {
   View,
   Text,
@@ -10,15 +11,19 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '~/lib/theme';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+
+import { useFocusEffect } from '@react-navigation/native';
+
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { useTheme } from '~/lib/theme';
+import { logger } from '~/utils/logger';
+
 import NewTripModal from '../../src/components/NewTripModal';
 import TripCard from '../../src/components/TripCard';
-import { useFocusEffect } from '@react-navigation/native';
-import { logger } from '~/utils/logger';
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
 export default function TripsTab() {

@@ -1,5 +1,6 @@
 // src/components/PlaceDetailModal.tsx
 import React from 'react';
+
 import {
   View,
   Text,
@@ -13,15 +14,18 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import LottieView from 'lottie-react-native';
-import { EnhancedPlace } from '../lib/placesSearch';
 import { useRouter } from 'expo-router';
-import { useFavorites } from '../lib/useFavorites';
+
+import LottieView from 'lottie-react-native';
+
+import AddToTripModal from './AddToTripModal';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
-import AddToTripModal from './AddToTripModal';
 import { processPlaceCategories } from '../lib/categoryProcessor';
+import { EnhancedPlace } from '../lib/placesSearch';
+import { useFavorites } from '../lib/useFavorites';
 
 // Conditional BlurView import
 let BlurView: any = View;
@@ -609,108 +613,108 @@ export default function PlaceDetailModal({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#F8F9FA',
+    flex: 1,
   },
   header: {
     height: SCREEN_HEIGHT * 0.3,
     position: 'relative',
   },
   headerImage: {
-    width: '100%',
+    alignItems: 'center',
     height: '100%',
     justifyContent: 'center',
-    alignItems: 'center',
+    width: '100%',
   },
   headerPlaceholder: {
-    fontSize: 48,
     color: '#9CA3AF',
+    fontSize: 48,
   },
   headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    alignItems: 'flex-start',
     bottom: 0,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    left: 0,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   closeButton: {
     borderRadius: 20,
     overflow: 'hidden',
   },
   closeButtonBlur: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   closeButtonText: {
+    color: '#1F2937',
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
   },
   saveButton: {
     borderRadius: 20,
     overflow: 'hidden',
   },
   saveButtonBlur: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   saveButtonText: {
     fontSize: 20,
   },
   content: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    flex: 1,
     marginTop: -24,
   },
   basicInfo: {
-    padding: 20,
-    borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    borderBottomWidth: 1,
+    padding: 20,
   },
   titleRow: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 12,
   },
   placeName: {
+    color: '#1F2937',
     flex: 1,
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
     marginRight: 12,
   },
   statusBadge: {
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
   },
   addressRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginBottom: 12,
   },
   addressIcon: {
@@ -718,48 +722,48 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   addressText: {
+    color: '#6B7280',
     flex: 1,
     fontSize: 16,
-    color: '#6B7280',
     lineHeight: 22,
   },
   ratingRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   starIcon: {
     fontSize: 16,
     marginRight: 4,
   },
   ratingText: {
+    color: '#1F2937',
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
     marginRight: 4,
   },
   reviewsText: {
-    fontSize: 16,
     color: '#6B7280',
+    fontSize: 16,
     marginRight: 8,
   },
   separator: {
-    fontSize: 16,
     color: '#D1D5DB',
+    fontSize: 16,
     marginRight: 8,
   },
   distanceText: {
-    fontSize: 14,
     color: '#6B7280',
+    fontSize: 14,
   },
   section: {
-    padding: 20,
-    borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    borderBottomWidth: 1,
+    padding: 20,
   },
   sectionTitle: {
+    color: '#1F2937',
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 12,
   },
   photosContainer: {
@@ -773,40 +777,40 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   photo: {
-    width: 120,
-    height: 80,
     borderRadius: 12,
+    height: 80,
+    width: 120,
   },
   placeholderImage: {
-    width: 120,
-    height: 80,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    height: 80,
+    justifyContent: 'center',
+    width: 120,
   },
   placeholderText: {
-    fontSize: 24,
     color: '#9CA3AF',
+    fontSize: 24,
   },
   photoLabel: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: 6,
+    left: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    position: 'absolute',
+    top: 6,
   },
   photoLabelText: {
-    fontSize: 10,
     color: '#FFFFFF',
+    fontSize: 10,
     fontWeight: '500',
   },
   description: {
+    color: '#4B5563',
     fontSize: 16,
     lineHeight: 24,
-    color: '#4B5563',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -815,35 +819,35 @@ const styles = StyleSheet.create({
   },
   tag: {
     backgroundColor: '#EEF2FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderColor: '#C7D2FE',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   tagText: {
-    fontSize: 14,
     color: '#3730A3',
+    fontSize: 14,
     fontWeight: '500',
   },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
     gap: 16,
+    justifyContent: 'space-between',
   },
   actionButton: {
     alignItems: 'center',
     width: '22%',
   },
   actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
     marginBottom: 8,
+    width: 56,
   },
   actionIconDisabled: {
     backgroundColor: '#F9FAFB',
@@ -853,9 +857,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   actionText: {
+    color: '#1F2937',
     fontSize: 12,
     fontWeight: '500',
-    color: '#1F2937',
     textAlign: 'center',
   },
   actionTextDisabled: {
@@ -879,54 +883,54 @@ const styles = StyleSheet.create({
     height: 100,
   },
   floatingButtonContainer: {
-    position: 'absolute',
+    backgroundColor: '#FFFFFF',
+    borderTopColor: '#F3F4F6',
+    borderTopWidth: 1,
     bottom: 0,
     left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    position: 'absolute',
+    right: 0,
   },
   floatingButton: {
     borderRadius: 16,
-    overflow: 'hidden',
     boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
     elevation: 8,
+    overflow: 'hidden',
   },
   floatingButtonGradient: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 16,
     paddingHorizontal: 24,
+    paddingVertical: 16,
   },
   floatingButtonIcon: {
     fontSize: 20,
     marginRight: 12,
   },
   floatingButtonText: {
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   // New styles for photo selection
   photoSelected: {
-    borderWidth: 3,
     borderColor: '#3B82F6',
+    borderWidth: 3,
   },
   photoSelectedOverlay: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
+    alignItems: 'center',
     backgroundColor: '#3B82F6',
     borderRadius: 12,
-    width: 24,
     height: 24,
     justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 24,
   },
   photoSelectedText: {
     color: '#FFFFFF',

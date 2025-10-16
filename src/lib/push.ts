@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+
 import * as Localization from 'expo-localization';
+import * as Notifications from 'expo-notifications';
+
 import { supabase } from '~/lib/supabase';
 
 // Foreground display behavior

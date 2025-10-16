@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import { Platform, View, Text, StyleSheet } from 'react-native';
-import { WebView } from 'react-native-webview';
+
 import * as Location from 'expo-location';
-import { getMapStyleURL } from '../config/maps';
+
+import { WebView } from 'react-native-webview';
+
 import LocationButton from './LocationButton';
+import { getMapStyleURL } from '../config/maps';
 
 interface MapLocation {
   latitude: number;
@@ -873,15 +877,14 @@ function fitBoundsIfNeeded(
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   errorContainer: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
     backgroundColor: 'rgba(255, 59, 48, 0.9)',
-    padding: 10,
     borderRadius: 8,
+    left: 10,
+    padding: 10,
+    position: 'absolute',
+    right: 10,
+    top: 10,
     zIndex: 1000,
   },
   errorText: {
@@ -889,4 +892,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  flex: { flex: 1 },
 });
