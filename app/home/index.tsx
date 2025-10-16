@@ -111,7 +111,7 @@ export default function Home(){
                 </Text>
               </TouchableOpacity>
               
-              <TouchableOpacity onPress={() => router.push('/home/inbox')} style={{ position: 'relative' }}>
+              <TouchableOpacity onPress={() => console.log('Inbox feature coming soon')} style={{ position: 'relative' }}>
                 <Text style={{ fontSize: 24 }}>🔔</Text>
                 <View style={{ 
                   position: 'absolute', 
@@ -330,7 +330,7 @@ export default function Home(){
                 borderRadius: 12,
                 padding: 12
               }}
-              onPress={() => router.push('/explore/place?id=santorini')}
+              onPress={() => console.log('Place detail coming soon')}
             >
               <View style={{
                 width: 60,

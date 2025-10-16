@@ -391,7 +391,7 @@ export default function ProfileScreen(){
         
         <TouchableOpacity 
           style={styles.detailsButton}
-          onPress={() => router.push('/profile/achievements')}
+          onPress={() => console.log('Achievements feature coming soon')}
         >
           <Text style={styles.detailsButtonText}>Ver detalles</Text>
         </TouchableOpacity>
@@ -420,7 +420,7 @@ export default function ProfileScreen(){
           title="Documentos de Viaje"
           subtitle="Pasaportes, visas, boletos"
           iconColor="#2196F3"
-          onPress={() => router.push('/profile/documents')}
+          onPress={() => console.log('Documents feature coming soon')}
         />
 
         <MenuSection
@@ -428,7 +428,7 @@ export default function ProfileScreen(){
           title="Mis Reseñas"
           subtitle="Gestiona tus reseñas de lugares"
           iconColor="#673AB7"
-          onPress={() => router.push('/explore/reviews')}
+          onPress={() => console.log('Reviews feature coming soon')}
         />
 
         <MenuSection
@@ -448,7 +448,7 @@ export default function ProfileScreen(){
           title="Logros de Viaje"
           subtitle={`Nivel 1 ${profileData.level} • ${profileData.stats.achievementPoints} puntos ganados`}
           iconColor="#673AB7"
-          onPress={() => router.push('/profile/achievements')}
+          onPress={() => console.log('Achievements feature coming soon')}
         />
 
         <MenuSection
