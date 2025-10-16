@@ -13,12 +13,17 @@ import {
 } from '@expo/vector-icons';
 import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
+import { useGetProfileQuery, useUpdateProfileMutation } from '../../src/store/api/userApi';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfileTab(){
   const { t } = useTranslation();
   const { user, signOut: authSignOut } = useAuth();
+  
+  // RTK Query: Get cached profile (5min cache)
+  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   
   React.useEffect(() => {
     console.log('📱 ProfileTab rendered');
@@ -39,6 +44,19 @@ export default function ProfileTab(){
     }
   });
 
+  // Sync RTK Query profile data with local state
+  React.useEffect(() => {
+    if (profile) {
+      setProfileData(prev => ({
+        ...prev,
+        fullName: profile.full_name || '',
+        description: profile.bio || 'Travel Enthusiast',
+        avatarUrl: profile.avatar_url || '',
+        initials: profile.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : ''
+      }));
+    }
+  }, [profile]);
+
   const [showPersonalModal, setShowPersonalModal] = React.useState(false);
   const [showProfileEditModal, setShowProfileEditModal] = React.useState(false);
 
@@ -54,34 +72,13 @@ export default function ProfileTab(){
   }, [showProfileEditModal]);
 
   React.useEffect(() => {
-    loadProfileData();
+    // RTK Query loads profile automatically on mount
+    // Just load travel stats
     loadTravelStats();
   }, []);
 
-  const loadProfileData = async () => {
-    try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.user.id)
-        .maybeSingle();
-      
-      if (profile) {
-        setProfileData(prev => ({
-          ...prev,
-          fullName: profile.full_name || '',
-          description: profile.description || 'Travel Enthusiast',
-          avatarUrl: profile.avatar_url || '',
-          initials: profile.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : ''
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    }
-  };
+  // No longer needed - RTK Query handles profile loading
+  // const loadProfileData = async () => { ... }
 
   const loadTravelStats = async () => {
     try {
@@ -465,7 +462,7 @@ export default function ProfileTab(){
         }} 
         userId={user?.id || ''} 
         userEmail={user?.email}
-        onSaved={loadProfileData}
+        onSaved={refetchProfile}
       />
 
       {/* Profile Edit Modal */}
@@ -477,7 +474,7 @@ export default function ProfileTab(){
         }}
         onSaved={() => {
           console.log('💾 Profile saved in ProfileEditModal');
-          loadProfileData();
+          refetchProfile();
           setShowProfileEditModal(false);
         }}
       />
@@ -511,7 +508,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
     elevation: 8,
-    elevation: 8,
   },
   avatarText: {
     fontSize: 36,
@@ -523,7 +519,6 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 8,
     elevation: 8,
   },
   editButton: {
@@ -537,7 +532,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
     elevation: 4,
     zIndex: 10,
     borderWidth: 3,
@@ -571,7 +565,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 8,
     elevation: 4,
   },
   statsTitle: {
@@ -619,7 +612,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 8,
     elevation: 4,
   },
   menuSection: {
@@ -669,7 +661,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FF3B30',
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 8,
     elevation: 4,
   },
   signOutText: {
