@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import { supabase } from '~/lib/supabase';
 import { LocationCache } from './weatherCache';
+import { logger } from '~/utils/logger';
 
 export type Trip = { id:string; name:string; start_date?:string|null; end_date?:string|null; cover_emoji?:string|null };
 
@@ -31,14 +32,143 @@ export function isFutureTrip(t:Trip){
   return parseLocalDate(t.start_date) > now;
 }
 
-export async function getPlanningTripsCount(): Promise<number> {
-  console.log('🏠 getPlanningTripsCount: Starting...');
+/**
+ * OPTIMIZED: Consolidated function to get all trip data in a single set of queries
+ * This replaces getPlanningTripsCount() and getUpcomingTripsCount() to reduce queries from 8 to 4
+ * 
+ * Performance improvement: 50% reduction in database queries
+ */
+export interface TripsBreakdown {
+  all: Trip[];
+  upcoming: Trip[];
+  planning: Trip[];
+  active: Trip | null;
+  counts: {
+    total: number;
+    upcoming: number;
+    planning: number;
+    active: number;
+  };
+}
+
+export async function getUserTripsBreakdown(): Promise<TripsBreakdown> {
+  logger.debug('🏠 getUserTripsBreakdown: Starting consolidated trip query...');
   
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
   
   if (!uid) {
-    console.log('🏠 getPlanningTripsCount: No authenticated user, returning 0');
+    logger.debug('🏠 getUserTripsBreakdown: No authenticated user, returning empty breakdown');
+    return {
+      all: [],
+      upcoming: [],
+      planning: [],
+      active: null,
+      counts: { total: 0, upcoming: 0, planning: 0, active: 0 }
+    };
+  }
+
+  logger.debug('🏠 getUserTripsBreakdown: Fetching trips for user:', uid);
+
+  // Execute all queries in parallel (4 queries total)
+  const [ownResult, ownByOwnerIdResult, collabIdsResult] = await Promise.all([
+    supabase.from('trips').select('id,title,start_date,end_date').eq('user_id', uid).neq('status', 'cancelled'),
+    supabase.from('trips').select('id,title,start_date,end_date').eq('owner_id', uid).neq('status', 'cancelled'),
+    supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid)
+  ]);
+  
+  const tripIds = (collabIdsResult.data || []).map(c => c.trip_id);
+  
+  // Conditional 4th query only if there are collaborator trips
+  const collabTripsResult = tripIds.length > 0 
+    ? await supabase.from('trips').select('id,title,start_date,end_date').in('id', tripIds).neq('status', 'cancelled')
+    : { data: [] };
+  
+  logger.debug('🏠 getUserTripsBreakdown: Query results - own:', ownResult.data?.length, 'ownByOwnerId:', ownByOwnerIdResult.data?.length, 'collab:', collabTripsResult.data?.length);
+  
+  // Combine and deduplicate trips
+  const allTripsRaw = [
+    ...(ownResult.data || []),
+    ...(ownByOwnerIdResult.data || []),
+    ...(collabTripsResult.data || [])
+  ];
+  
+  // Remove duplicates by id using Map
+  const tripsMap = new Map<string, Trip>();
+  allTripsRaw.forEach(t => {
+    if (!tripsMap.has(t.id)) {
+      tripsMap.set(t.id, {
+        id: t.id,
+        name: t.title,
+        start_date: t.start_date,
+        end_date: t.end_date
+      });
+    }
+  });
+  
+  const allTrips = Array.from(tripsMap.values());
+  logger.debug('🏠 getUserTripsBreakdown: Total unique trips after deduplication:', allTrips.length);
+
+  // Classify trips once
+  const now = new Date();
+  const planning: Trip[] = [];
+  const upcoming: Trip[] = [];
+  let active: Trip | null = null;
+
+  allTrips.forEach(trip => {
+    // Planning: no dates set
+    if (!trip.start_date || !trip.end_date) {
+      planning.push(trip);
+      return;
+    }
+    
+    // Active: currently in progress
+    if (isActiveTrip(trip)) {
+      if (!active) active = trip; // Only set first active trip
+      return;
+    }
+    
+    // Upcoming: future trips
+    if (isFutureTrip(trip)) {
+      upcoming.push(trip);
+    }
+  });
+
+  const breakdown: TripsBreakdown = {
+    all: allTrips,
+    upcoming,
+    planning,
+    active,
+    counts: {
+      total: allTrips.length,
+      upcoming: upcoming.length,
+      planning: planning.length,
+      active: active ? 1 : 0
+    }
+  };
+
+  logger.debug('🏠 getUserTripsBreakdown: Breakdown complete -', {
+    total: breakdown.counts.total,
+    upcoming: breakdown.counts.upcoming,
+    planning: breakdown.counts.planning,
+    active: breakdown.counts.active
+  });
+
+  return breakdown;
+}
+
+/**
+ * @deprecated Use getUserTripsBreakdown() instead for better performance
+ * This function makes redundant queries that are also executed by getUpcomingTripsCount()
+ */
+export async function getPlanningTripsCount(): Promise<number> {
+  logger.debug('🏠 getPlanningTripsCount: Starting...');
+  
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u?.user?.id;
+  
+  if (!uid) {
+    logger.debug('🏠 getPlanningTripsCount: No authenticated user, returning 0');
     return 0;
   }
 
@@ -66,21 +196,25 @@ export async function getPlanningTripsCount(): Promise<number> {
     return !trip.start_date || !trip.end_date;
   });
 
-  console.log('🏠 getPlanningTripsCount: Planning trips count:', planningTrips.length);
-  console.log('🏠 getPlanningTripsCount: Planning trips:', planningTrips.map(t => t.name));
+  logger.debug('🏠 getPlanningTripsCount: Planning trips count:', planningTrips.length);
+  logger.debug('🏠 getPlanningTripsCount: Planning trips:', planningTrips.map(t => t.name));
   
   return planningTrips.length;
 }
 
+/**
+ * @deprecated Use getUserTripsBreakdown() instead for better performance
+ * This function makes redundant queries that are also executed by getPlanningTripsCount()
+ */
 export async function getUpcomingTripsCount(): Promise<number> {
-  console.log('🏠 getUpcomingTripsCount: Starting...');
+  logger.debug('🏠 getUpcomingTripsCount: Starting...');
   
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
-  console.log('🏠 getUpcomingTripsCount: User ID:', uid || 'NOT FOUND');
+  logger.debug('🏠 getUpcomingTripsCount: User ID:', uid || 'NOT FOUND');
   
   if (!uid) {
-    console.log('🏠 getUpcomingTripsCount: No authenticated user, returning 0');
+    logger.debug('🏠 getUpcomingTripsCount: No authenticated user, returning 0');
     return 0;
   }
 
@@ -103,7 +237,7 @@ export async function getUpcomingTripsCount(): Promise<number> {
     index === self.findIndex(t => t.id === trip.id)
   );
 
-  console.log('🏠 getUpcomingTripsCount: Total unique trips found:', uniqueTrips.length);
+  logger.debug('🏠 getUpcomingTripsCount: Total unique trips found:', uniqueTrips.length);
 
   const now = new Date();
   
@@ -115,14 +249,14 @@ export async function getUpcomingTripsCount(): Promise<number> {
   // - Traveling (currently between start_date and end_date)
   
   const upcomingTrips = uniqueTrips.filter(trip => {
-    console.log(`🏠 Evaluating trip "${trip.name}":`, {
+    logger.debug(`🏠 Evaluating trip "${trip.name}":`, {
       start_date: trip.start_date,
       end_date: trip.end_date
     });
 
     // Planning trips (no dates set) - these count as upcoming
     if (!trip.start_date || !trip.end_date) {
-      console.log(`  ✅ Planning trip (no dates): ${trip.name}`);
+      logger.debug(`  ✅ Planning trip (no dates): ${trip.name}`);
       return true;
     }
 
@@ -131,27 +265,27 @@ export async function getUpcomingTripsCount(): Promise<number> {
 
     // Future trips (start date is in the future) - these count as upcoming
     if (now < startDate) {
-      console.log(`  ✅ Future trip: ${trip.name} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`);
+      logger.debug(`  ✅ Future trip: ${trip.name} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`);
       return true;
     }
 
     // Currently traveling (between start and end dates) - don't count
     if (now >= startDate && now <= endDate) {
-      console.log(`  ❌ Currently traveling: ${trip.name}`);
+      logger.debug(`  ❌ Currently traveling: ${trip.name}`);
       return false;
     }
 
     // Completed trips (end date is in the past) - don't count
     if (now > endDate) {
-      console.log(`  ❌ Completed trip: ${trip.name} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`);
+      logger.debug(`  ❌ Completed trip: ${trip.name} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`);
       return false;
     }
 
     return false;
   });
 
-  console.log('🏠 getUpcomingTripsCount: Upcoming trips count:', upcomingTrips.length);
-  console.log('🏠 getUpcomingTripsCount: Upcoming trips:', upcomingTrips.map(t => t.name));
+  logger.debug('🏠 getUpcomingTripsCount: Upcoming trips count:', upcomingTrips.length);
+  logger.debug('🏠 getUpcomingTripsCount: Upcoming trips:', upcomingTrips.map(t => t.name));
   
   return upcomingTrips.length;
 }
@@ -223,26 +357,26 @@ export async function getTripPlaces(trip_id:string){
 }
 
 export async function getSavedPlaces(){
-  console.log('🏠 getSavedPlaces: Starting...');
+  logger.debug('🏠 getSavedPlaces: Starting...');
   
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
-  console.log('🏠 getSavedPlaces: User ID:', uid || 'NOT FOUND');
+  logger.debug('🏠 getSavedPlaces: User ID:', uid || 'NOT FOUND');
   
   if (!uid) {
-    console.log('🏠 getSavedPlaces: No authenticated user, returning empty array');
+    logger.debug('🏠 getSavedPlaces: No authenticated user, returning empty array');
     return [];
   }
   
   // Get all trip IDs where user is owner or collaborator
-  console.log('🏠 getSavedPlaces: Fetching user trips...');
+  logger.debug('🏠 getSavedPlaces: Fetching user trips...');
   
   // First, let's check what trips exist in general
   const { data: allTrips, error: allTripsError } = await supabase.from('trips').select('id, user_id, owner_id, title').limit(10);
-  console.log('🏠 getSavedPlaces: Sample trips in database:', allTrips?.length || 0, allTripsError ? `(Error: ${allTripsError.message})` : '');
+  logger.debug('🏠 getSavedPlaces: Sample trips in database:', allTrips?.length || 0, allTripsError ? `(Error: ${allTripsError.message})` : '');
   if (allTrips && allTrips.length > 0) {
     allTrips.forEach((trip, idx) => {
-      console.log(`  Trip ${idx + 1}: ID=${trip.id}, user_id=${trip.user_id}, owner_id=${trip.owner_id}, title=${trip.title}`);
+      logger.debug(`  Trip ${idx + 1}: ID=${trip.id}, user_id=${trip.user_id}, owner_id=${trip.owner_id}, title=${trip.title}`);
     });
   }
   
@@ -251,9 +385,9 @@ export async function getSavedPlaces(){
   const { data: ownTrips2, error: ownTripsError2 } = await supabase.from('trips').select('id').eq('owner_id', uid).neq('status', 'cancelled');
   const { data: collabTrips, error: collabTripsError } = await supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid);
   
-  console.log('🏠 getSavedPlaces: Own trips (user_id):', ownTrips1?.length || 0, ownTripsError1 ? `(Error: ${ownTripsError1.message})` : '');
-  console.log('🏠 getSavedPlaces: Own trips (owner_id):', ownTrips2?.length || 0, ownTripsError2 ? `(Error: ${ownTripsError2.message})` : '');
-  console.log('🏠 getSavedPlaces: Collaborative trips:', collabTrips?.length || 0, collabTripsError ? `(Error: ${collabTripsError.message})` : '');
+  logger.debug('🏠 getSavedPlaces: Own trips (user_id):', ownTrips1?.length || 0, ownTripsError1 ? `(Error: ${ownTripsError1.message})` : '');
+  logger.debug('🏠 getSavedPlaces: Own trips (owner_id):', ownTrips2?.length || 0, ownTripsError2 ? `(Error: ${ownTripsError2.message})` : '');
+  logger.debug('🏠 getSavedPlaces: Collaborative trips:', collabTrips?.length || 0, collabTripsError ? `(Error: ${collabTripsError.message})` : '');
   
   const tripIds = [
     ...((ownTrips1 || []).map(t => t.id)),
@@ -264,43 +398,43 @@ export async function getSavedPlaces(){
   // Remove duplicates
   const uniqueTripIds = [...new Set(tripIds)];
   
-  console.log('🏠 getSavedPlaces: Total unique trip IDs:', uniqueTripIds.length);
-  console.log('🏠 getSavedPlaces: Trip IDs:', uniqueTripIds);
+  logger.debug('🏠 getSavedPlaces: Total unique trip IDs:', uniqueTripIds.length);
+  logger.debug('🏠 getSavedPlaces: Trip IDs:', uniqueTripIds);
   
   if (uniqueTripIds.length === 0) {
-    console.log('🏠 getSavedPlaces: No trips found for user, returning empty array');
+    logger.debug('🏠 getSavedPlaces: No trips found for user, returning empty array');
     return [];
   }
   
-  console.log('🏠 getSavedPlaces: Fetching places for trips...');
+  logger.debug('🏠 getSavedPlaces: Fetching places for trips...');
   const { data, error } = await supabase.from('trip_places').select('id, place_id, name, lat, lng, address, trip_id').in('trip_id', uniqueTripIds);
   
-  console.log('🏠 getSavedPlaces: Places query result:');
-  console.log('  Data count:', data?.length || 0);
-  console.log('  Error:', error?.message || 'None');
+  logger.debug('🏠 getSavedPlaces: Places query result:');
+  logger.debug('  Data count:', data?.length || 0);
+  logger.debug('  Error:', error?.message || 'None');
   
   if (data && data.length > 0) {
-    console.log('🏠 getSavedPlaces: Places breakdown by trip:');
+    logger.debug('🏠 getSavedPlaces: Places breakdown by trip:');
     const tripCounts = {};
     data.forEach(place => {
       tripCounts[place.trip_id] = (tripCounts[place.trip_id] || 0) + 1;
     });
     Object.entries(tripCounts).forEach(([tripId, count]) => {
-      console.log(`  Trip ${tripId}: ${count} places`);
+      logger.debug(`  Trip ${tripId}: ${count} places`);
     });
     
-    console.log('🏠 getSavedPlaces: Sample places:');
+    logger.debug('🏠 getSavedPlaces: Sample places:');
     data.slice(0, 3).forEach((place, idx) => {
-      console.log(`  ${idx + 1}. ${place.name} (Trip: ${place.trip_id})`);
+      logger.debug(`  ${idx + 1}. ${place.name} (Trip: ${place.trip_id})`);
     });
   }
   
   if (error) {
-    console.log('🏠 getSavedPlaces: Error occurred, returning empty array:', error.message);
+    logger.debug('🏠 getSavedPlaces: Error occurred, returning empty array:', error.message);
     return [];
   }
   
-  console.log('🏠 getSavedPlaces: Returning', (data || []).length, 'places');
+  logger.debug('🏠 getSavedPlaces: Returning', (data || []).length, 'places');
   return data || [];
 }
 

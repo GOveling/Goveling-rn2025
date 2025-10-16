@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, RefreshControl, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
-import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip, getUpcomingTripsCount } from '~/lib/home';
+import { getCurrentPosition, reverseCityCached, reverseGeocodeCoordinatesCached, getLocationFromCoordinatesCached, getSavedPlaces, getActiveOrNextTrip, getUserTripsBreakdown } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getWeatherCached } from '~/lib/weather';
 import { useSettingsStore } from '~/lib/settingsStore';
@@ -17,6 +17,7 @@ import { registerDeviceToken } from '~/lib/push';
 import { useRouter } from 'expo-router';
 import NotificationBell from '~/components/home/NotificationBell';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
+import { logger } from '~/utils/logger';
 
 export default function HomeTab() {
   const { t } = useTranslation();
@@ -34,32 +35,29 @@ export default function HomeTab() {
   const [currentTrip, setCurrentTrip] = React.useState<any>(null);
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
   const recomputeSavedPlaces = React.useCallback(async () => {
-    console.log('🏠 HomeTab: recomputeSavedPlaces called');
+    logger.debug('🏠 HomeTab: recomputeSavedPlaces called');
     try {
       const savedPlaces = await getSavedPlaces();
-      console.log('🏠 HomeTab: getSavedPlaces returned', savedPlaces.length, 'places');
+      logger.debug('🏠 HomeTab: getSavedPlaces returned', savedPlaces.length, 'places');
       setSavedPlacesCount(savedPlaces.length);
-      console.log('🏠 HomeTab: savedPlacesCount state updated to', savedPlaces.length);
+      logger.debug('🏠 HomeTab: savedPlacesCount state updated to', savedPlaces.length);
     } catch (e) {
-      console.log('🏠 HomeTab: Error recomputing saved places:', e);
+      logger.error('🏠 HomeTab: Error recomputing saved places:', e);
     }
   }, []);
 
   const onRefresh = React.useCallback(async () => {
-    console.log('🔄 HomeTab: Pull-to-refresh triggered');
+    logger.debug('🔄 HomeTab: Pull-to-refresh triggered');
     setRefreshing(true);
     
     try {
-      // Refresh all data in parallel
+      // Refresh all data in parallel with consolidated trips query
       await Promise.all([
         recomputeSavedPlaces(),
         (async () => {
-          const trip = await getActiveOrNextTrip();
-          setCurrentTrip(trip);
-        })(),
-        (async () => {
-          const upcomingCount = await getUpcomingTripsCount();
-          setUpcomingTripsCount(upcomingCount);
+          const tripsData = await getUserTripsBreakdown();
+          setCurrentTrip(tripsData.active);
+          setUpcomingTripsCount(tripsData.counts.upcoming);
         })(),
         (async () => {
           const p = await getCurrentPosition();
@@ -75,9 +73,9 @@ export default function HomeTab() {
         })()
       ]);
       
-      console.log('✅ HomeTab: Pull-to-refresh completed successfully');
+      logger.debug('✅ HomeTab: Pull-to-refresh completed successfully');
     } catch (error) {
-      console.error('❌ HomeTab: Pull-to-refresh error:', error);
+      logger.error('❌ HomeTab: Pull-to-refresh error:', error);
     } finally {
       setRefreshing(false);
     }
@@ -160,27 +158,33 @@ export default function HomeTab() {
   React.useEffect(() => {
     (async () => {
       try {
-        console.log('🏠 HomeTab: Initial data loading started');
-        await recomputeSavedPlaces();
-
-        const trip = await getActiveOrNextTrip();
-        setCurrentTrip(trip);
-
-        // Get the actual count of upcoming and planning trips
-        const upcomingCount = await getUpcomingTripsCount();
-        setUpcomingTripsCount(upcomingCount);
-        console.log('🏠 HomeTab: Upcoming trips count set to:', upcomingCount);
+        logger.debug('🏠 HomeTab: Initial data loading started');
         
-        console.log('🏠 HomeTab: Initial data loading completed');
+        // Use consolidated query for better performance (50% less queries)
+        const [_, tripsData] = await Promise.all([
+          recomputeSavedPlaces(),
+          getUserTripsBreakdown()
+        ]);
+
+        setCurrentTrip(tripsData.active);
+        setUpcomingTripsCount(tripsData.counts.upcoming);
+        
+        logger.debug('🏠 HomeTab: Trips breakdown loaded -', {
+          active: tripsData.counts.active,
+          upcoming: tripsData.counts.upcoming,
+          planning: tripsData.counts.planning
+        });
+        
+        logger.debug('🏠 HomeTab: Initial data loading completed');
       } catch (e) {
-        console.log('🏠 HomeTab: Error loading stats:', e);
+        logger.error('🏠 HomeTab: Error loading stats:', e);
       }
     })();
   }, []);
 
   // Recompute when screen gains focus
   useFocusEffect(React.useCallback(() => {
-    console.log('🏠 HomeTab: Screen gained focus, recomputing saved places');
+    logger.debug('🏠 HomeTab: Screen gained focus, recomputing saved places');
     recomputeSavedPlaces();
   }, [recomputeSavedPlaces]));
 
@@ -189,36 +193,36 @@ export default function HomeTab() {
     let channel: any;
     (async () => {
       try {
-        console.log('🏠 HomeTab: Setting up realtime subscription for trip_places changes');
+        logger.debug('🏠 HomeTab: Setting up realtime subscription for trip_places changes');
         channel = supabase
           .channel('home-saved-places')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_places' }, (payload) => {
-            console.log('🏠 HomeTab: Realtime change detected in trip_places:', payload.eventType);
+            logger.debug('🏠 HomeTab: Realtime change detected in trip_places:', payload.eventType);
             // Lightweight debounce if many rapid changes (timeout 120ms)
             if ((channel as any)._pending) {
-              console.log('🏠 HomeTab: Debouncing rapid changes...');
+              logger.debug('🏠 HomeTab: Debouncing rapid changes...');
               return;
             }
             (channel as any)._pending = true;
             setTimeout(() => {
               (channel as any)._pending = false;
-              console.log('🏠 HomeTab: Triggering recomputeSavedPlaces after realtime change');
+              logger.debug('🏠 HomeTab: Triggering recomputeSavedPlaces after realtime change');
               recomputeSavedPlaces();
             }, 120);
           })
           .subscribe();
       } catch (e) {
-        console.log('🏠 HomeTab: Realtime subscription error (trip_places):', e);
+        logger.error('🏠 HomeTab: Realtime subscription error (trip_places):', e);
       }
     })();
     return () => {
       try {
         if (channel) {
-          console.log('🏠 HomeTab: Cleaning up realtime subscription');
+          logger.debug('🏠 HomeTab: Cleaning up realtime subscription');
           supabase.removeChannel(channel);
         }
       } catch (e) {
-        console.log('🏠 HomeTab: Error cleaning up subscription:', e);
+        logger.error('🏠 HomeTab: Error cleaning up subscription:', e);
       }
     };
   }, [recomputeSavedPlaces]);
@@ -236,20 +240,24 @@ export default function HomeTab() {
         userId = user?.user?.id;
         if (!userId) return;
 
-        console.log('🏠 HomeTab: Setting up realtime subscription for trips changes');
+        logger.debug('🏠 HomeTab: Setting up realtime subscription for trips changes');
         
         const debouncedRefresh = async () => {
           if (debounceTimeout) {
             clearTimeout(debounceTimeout);
           }
           debounceTimeout = setTimeout(async () => {
-            console.log('🏠 HomeTab: Executing debounced trips refresh after 2 seconds');
+            logger.debug('🏠 HomeTab: Executing debounced trips refresh after 2 seconds');
             try {
-              const upcomingCount = await getUpcomingTripsCount();
-              setUpcomingTripsCount(upcomingCount);
-              console.log('🏠 HomeTab: Updated upcoming trips count to:', upcomingCount);
+              const tripsData = await getUserTripsBreakdown();
+              setUpcomingTripsCount(tripsData.counts.upcoming);
+              setCurrentTrip(tripsData.active);
+              logger.debug('🏠 HomeTab: Updated trips breakdown -', {
+                upcoming: tripsData.counts.upcoming,
+                active: tripsData.counts.active
+              });
             } catch (error) {
-              console.error('🏠 HomeTab: Error updating upcoming trips count:', error);
+              logger.error('🏠 HomeTab: Error updating trips:', error);
             }
             debounceTimeout = null;
           }, 2000); // 2 second debounce to prevent excessive refreshes
@@ -264,7 +272,7 @@ export default function HomeTab() {
             table: 'trips',
             filter: `owner_id=eq.${userId}`
           }, (payload) => {
-            console.log('🏠 HomeTab: Trip creation detected');
+            logger.debug('🏠 HomeTab: Trip creation detected');
             debouncedRefresh();
           })
           .on('postgres_changes', {
@@ -273,7 +281,7 @@ export default function HomeTab() {
             table: 'trips',
             filter: `owner_id=eq.${userId}`
           }, (payload) => {
-            console.log('🏠 HomeTab: Trip update detected');
+            logger.debug('🏠 HomeTab: Trip update detected');
             debouncedRefresh();
           })
           .on('postgres_changes', {
@@ -282,7 +290,7 @@ export default function HomeTab() {
             table: 'trips',
             filter: `owner_id=eq.${userId}`
           }, (payload) => {
-            console.log('🏠 HomeTab: Trip deletion detected');
+            logger.debug('🏠 HomeTab: Trip deletion detected');
             debouncedRefresh();
           })
           .subscribe();
@@ -296,13 +304,13 @@ export default function HomeTab() {
             table: 'trip_collaborators',
             filter: `user_id=eq.${userId}`
           }, (payload) => {
-            console.log('🏠 HomeTab: Trip collaboration change detected');
+            logger.debug('🏠 HomeTab: Trip collaboration change detected');
             debouncedRefresh();
           })
           .subscribe();
 
       } catch (e) {
-        console.log('🏠 HomeTab: Realtime subscription error (trips):', e);
+        logger.error('🏠 HomeTab: Realtime subscription error (trips):', e);
       }
     })();
 
@@ -312,15 +320,15 @@ export default function HomeTab() {
       }
       try {
         if (tripsChannel) {
-          console.log('🏠 HomeTab: Cleaning up trips realtime subscription');
+          logger.debug('🏠 HomeTab: Cleaning up trips realtime subscription');
           supabase.removeChannel(tripsChannel);
         }
         if (collaboratorsChannel) {
-          console.log('🏠 HomeTab: Cleaning up collaborators realtime subscription');
+          logger.debug('🏠 HomeTab: Cleaning up collaborators realtime subscription');
           supabase.removeChannel(collaboratorsChannel);
         }
       } catch (e) {
-        console.log('🏠 HomeTab: Error cleaning up trips subscriptions:', e);
+        logger.error('🏠 HomeTab: Error cleaning up trips subscriptions:', e);
       }
     };
   }, []);

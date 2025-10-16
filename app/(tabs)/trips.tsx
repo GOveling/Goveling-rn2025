@@ -8,6 +8,7 @@ import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import NewTripModal from '../../src/components/NewTripModal';
 import TripCard from '../../src/components/TripCard';
 import { useFocusEffect } from '@react-navigation/native';
+import { logger } from '~/utils/logger';
 
 export default function TripsTab() {
   const { colors, spacing } = useTheme();
@@ -51,11 +52,11 @@ export default function TripsTab() {
         .neq('status', 'cancelled');
 
       if (tripsError) {
-        console.error('Error loading trips:', tripsError);
+        logger.error('Error loading trips:', tripsError);
         return;
       }
 
-      console.log('🧪 TripsTab Debug: Raw trips for current user (owner_id/user_id match):',
+      logger.debug('🧪 TripsTab Debug: Raw trips for current user (owner_id/user_id match):',
         (allRelevantTrips || []).map(t => ({ id: t.id, title: t.title, owner_id: t.owner_id, user_id: t.user_id }))
       );
 
@@ -66,11 +67,11 @@ export default function TripsTab() {
         .eq('user_id', user.user.id);
 
       if (collabError) {
-        console.error('Error loading collaborator trips:', collabError);
+        logger.error('Error loading collaborator trips:', collabError);
       }
 
       const collabSet = new Set((collabTripIds || []).map(c => c.trip_id));
-  console.log('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
+  logger.debug('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
 
       // Unificar: trips directos + placeholders para collab-only (si alguno no estaba en la lista inicial)
       const baseTripsMap = new Map<string, any>();
@@ -78,7 +79,7 @@ export default function TripsTab() {
       collabSet.forEach(id => {
         if (!baseTripsMap.has(id)) baseTripsMap.set(id, { id, owner_id: null });
       });
-      console.log('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
+      logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
       const unifiedTrips = Array.from(baseTripsMap.values());
 
       // Obtener team data para cada trip (owner, collaborators, count) en paralelo
@@ -86,7 +87,7 @@ export default function TripsTab() {
       const tripsWithTeam = await Promise.all(unifiedTrips.map(async (t) => {
         const team = useRPC ? await getTripWithTeamRPC(t.id) : await getTripWithTeam(t.id);
         if (!team.trip) {
-          console.warn('🧪 TripsTab Debug: team.trip is null for id', t.id, 'team data:', team);
+          logger.warn('🧪 TripsTab Debug: team.trip is null for id', t.id, 'team data:', team);
         }
         return {
           ...t,
@@ -97,7 +98,7 @@ export default function TripsTab() {
         };
       }));
 
-      console.log('🧪 TripsTab Debug: tripsWithTeam summary:', tripsWithTeam.map(t => ({ id: t.id, collaboratorsCount: t.collaboratorsCount, isOwner: t.isOwner })) );
+      logger.debug('🧪 TripsTab Debug: tripsWithTeam summary:', tripsWithTeam.map(t => ({ id: t.id, collaboratorsCount: t.collaboratorsCount, isOwner: t.isOwner })) );
 
       // Sort trips according to business logic:
       // 1. Trips with start_date: sort by closest start_date first
@@ -129,7 +130,7 @@ export default function TripsTab() {
         return bCreatedDate.getTime() - aCreatedDate.getTime();
       });
 
-      console.log('🧪 TripsTab: Sorted trips order:', sortedTrips.map(t => ({ 
+      logger.debug('🧪 TripsTab: Sorted trips order:', sortedTrips.map(t => ({ 
         title: t.title, 
         start_date: t.start_date, 
         created_at: t.created_at 
@@ -141,16 +142,16 @@ export default function TripsTab() {
 
       // Get upcoming trips (future trips + planning trips without dates)
       // Exclude: completed trips and currently traveling trips
-      console.log('🧪 TripsTab: Analyzing upcoming trips...');
+      logger.debug('🧪 TripsTab: Analyzing upcoming trips...');
       const upcomingTrips = sortedTrips?.filter(trip => {
-        console.log(`🧪 Evaluating trip "${trip.title}":`, {
+        logger.debug(`🧪 Evaluating trip "${trip.title}":`, {
           start_date: trip.start_date,
           end_date: trip.end_date
         });
 
         // Planning trips (no dates set) - these count as upcoming
         if (!trip.start_date || !trip.end_date) {
-          console.log(`  ✅ Planning trip (no dates): ${trip.title}`);
+          logger.debug(`  ✅ Planning trip (no dates): ${trip.title}`);
           return true;
         }
 
@@ -160,26 +161,26 @@ export default function TripsTab() {
 
         // Future trips (start date is in the future) - these count as upcoming
         if (now < startDate) {
-          console.log(`  ✅ Future trip: ${trip.title} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`);
+          logger.debug(`  ✅ Future trip: ${trip.title} starts in ${Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days`);
           return true;
         }
 
         // Currently traveling (between start and end dates) - don't count
         if (now >= startDate && now <= endDate) {
-          console.log(`  ❌ Currently traveling: ${trip.title}`);
+          logger.debug(`  ❌ Currently traveling: ${trip.title}`);
           return false;
         }
 
         // Completed trips (end date is in the past) - don't count
         if (now > endDate) {
-          console.log(`  ❌ Completed trip: ${trip.title} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`);
+          logger.debug(`  ❌ Completed trip: ${trip.title} ended ${Math.ceil((now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days ago`);
           return false;
         }
 
         return false;
       }).length || 0;
 
-      console.log('🧪 TripsTab: Upcoming trips count:', upcomingTrips);
+      logger.debug('🧪 TripsTab: Upcoming trips count:', upcomingTrips);
 
       // Group trips: collaboratorsCount includes owner (+1 baked in team helper logic).
       // We consider group if total participants > 1.
@@ -194,7 +195,7 @@ export default function TripsTab() {
         groupTrips
       });
     } catch (error) {
-      console.error('Error loading trip stats:', error);
+      logger.error('Error loading trip stats:', error);
       // Keep default values if there's an error
     } finally {
       setLoading(false);
@@ -202,14 +203,14 @@ export default function TripsTab() {
   };
 
   const onRefresh = React.useCallback(async () => {
-    console.log('🔄 TripsTab: Pull-to-refresh triggered');
+    logger.debug('🔄 TripsTab: Pull-to-refresh triggered');
     setRefreshing(true);
     
     try {
       await loadTripStats();
-      console.log('✅ TripsTab: Pull-to-refresh completed successfully');
+      logger.debug('✅ TripsTab: Pull-to-refresh completed successfully');
     } catch (error) {
-      console.error('❌ TripsTab: Pull-to-refresh error:', error);
+      logger.error('❌ TripsTab: Pull-to-refresh error:', error);
     } finally {
       setRefreshing(false);
     }
@@ -253,18 +254,18 @@ export default function TripsTab() {
           if (!isActive) return;
           const newOwnerId = (payload as any)?.new?.owner_id;
           const oldOwnerId = (payload as any)?.old?.owner_id;
-          console.log('🔄 TripsTab: Trip change detected:', payload.eventType, { newOwnerId, oldOwnerId, userId });
+          logger.debug('🔄 TripsTab: Trip change detected:', payload.eventType, { newOwnerId, oldOwnerId, userId });
           
           // For INSERT events, check if new trip belongs to current user
           if (payload.eventType === 'INSERT' && newOwnerId === userId) {
-            console.log('🔄 TripsTab: New trip created by user, refreshing...');
+            logger.debug('🔄 TripsTab: New trip created by user, refreshing...');
             safeReload();
             return;
           }
           
           // For UPDATE/DELETE events, check if trip belonged to current user
           if (newOwnerId === userId || oldOwnerId === userId) {
-            console.log('🔄 TripsTab: Trip modified/deleted for user, refreshing...');
+            logger.debug('🔄 TripsTab: Trip modified/deleted for user, refreshing...');
             safeReload();
           }
         })
@@ -627,7 +628,7 @@ export default function TripsTab() {
         visible={showNewTripModal}
         onClose={() => setShowNewTripModal(false)}
         onTripCreated={(tripId) => {
-          console.log('✅ Viaje creado con ID:', tripId);
+          logger.debug('✅ Viaje creado con ID:', tripId);
           // Cerrar el modal
           setShowNewTripModal(false);
           // Recargar la lista de trips y estadísticas

@@ -8,6 +8,7 @@ import { Stack, useSegments, Redirect } from 'expo-router';
 import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native'
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { StatusBar } from 'expo-status-bar';
+import { logger } from '~/utils/logger';
 
 // Error Boundary para capturar errores
 class ErrorBoundary extends React.Component<
@@ -24,8 +25,8 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('🚨 Error Boundary caught:', error);
-    console.error('🚨 Error Info:', errorInfo);
+    logger.error('🚨 Error Boundary caught:', error);
+    logger.error('🚨 Error Info:', errorInfo);
   }
 
   render() {
@@ -52,14 +53,14 @@ function InlineAuthGuard() {
 
   const inAuthGroup = segments[0] === '(auth)' || segments[0] === 'auth';
 
-  console.log('DEBUG AuthGuard - user:', user);
-  console.log('DEBUG AuthGuard - loading:', loading);
-  console.log('DEBUG AuthGuard - segments:', segments);
-  console.log('DEBUG AuthGuard - inAuthGroup:', inAuthGroup);
+  logger.debug('DEBUG AuthGuard - user:', user);
+  logger.debug('DEBUG AuthGuard - loading:', loading);
+  logger.debug('DEBUG AuthGuard - segments:', segments);
+  logger.debug('DEBUG AuthGuard - inAuthGroup:', inAuthGroup);
 
   // Mientras carga mostramos un indicador
   if (loading) {
-    console.log('DEBUG AuthGuard - loading, showing spinner');
+    logger.debug('DEBUG AuthGuard - loading, showing spinner');
     return (
       <View style={{ 
         position: 'absolute', 
@@ -80,13 +81,13 @@ function InlineAuthGuard() {
 
   // Si no está autenticado y no está en la página de auth, redirigir a auth
   if (!user && !inAuthGroup) {
-    console.log('DEBUG AuthGuard - redirecting to auth');
+    logger.debug('DEBUG AuthGuard - redirecting to auth');
     return <Redirect href="/auth" />;
   }
 
   // Si está autenticado y está en la página de auth, redirigir a tabs
   if (user && inAuthGroup) {
-    console.log('DEBUG AuthGuard - redirecting to tabs');
+    logger.debug('DEBUG AuthGuard - redirecting to tabs');
     return <Redirect href="/(tabs)" />;
   }
 
@@ -96,7 +97,7 @@ function InlineAuthGuard() {
 
 export default function Root() {
   useFrameworkReady();
-  console.log('🚀 Root Layout mounting...');
+  logger.debug('🚀 Root Layout mounting...');
   
   return (
     <ErrorBoundary>
