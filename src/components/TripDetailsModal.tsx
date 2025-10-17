@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { COLORS } from '~/constants/colors';
 import i18n from '~/i18n';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
@@ -335,10 +336,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const getStatusConfig = () => {
     const status = getTripStatus();
     const configs = {
-      Completed: { bgColor: '#DCFCE7', textColor: '#166534' },
-      Upcoming: { bgColor: '#DBEAFE', textColor: '#1E40AF' },
-      Planning: { bgColor: '#F3E8FF', textColor: '#6B21A8' },
-      Traveling: { bgColor: '#FED7AA', textColor: '#C2410C' },
+      Completed: { bgColor: COLORS.status.successLight, textColor: COLORS.status.successDark },
+      Upcoming: { bgColor: COLORS.background.purple.ultraLight, textColor: COLORS.status.infoDark },
+      Planning: { bgColor: COLORS.background.purple.light, textColor: COLORS.primary.violet },
+      Traveling: { bgColor: COLORS.background.amber.light, textColor: COLORS.secondary.amberDark },
     };
     return configs[status as keyof typeof configs] || configs.Planning;
   };
@@ -349,9 +350,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       'owner' | 'editor' | 'viewer',
       { bgColor: string; textColor: string; label: string }
     > = {
-      owner: { bgColor: '#FEF3C7', textColor: '#92400E', label: 'Owner' },
-      editor: { bgColor: '#DBEAFE', textColor: '#1E40AF', label: 'Editor' },
-      viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: 'Viewer' },
+      owner: { bgColor: COLORS.background.amber.light, textColor: COLORS.secondary.amberDark, label: 'Owner' },
+      editor: { bgColor: COLORS.background.purple.ultraLight, textColor: COLORS.status.infoDark, label: 'Editor' },
+      viewer: { bgColor: COLORS.border.dark, textColor: COLORS.text.mediumDarkGray, label: 'Viewer' },
     };
     return configs[role];
   };
@@ -428,7 +429,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Fechas */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+          <Ionicons name="calendar-outline" size={20} color={COLORS.text.tertiary} />
           <Text style={styles.sectionTitle}>Dates</Text>
         </View>
         <Text style={styles.sectionContent}>
@@ -441,7 +442,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Viajeros + Invitaciones pendientes */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="people-outline" size={20} color="#6B7280" />
+          <Ionicons name="people-outline" size={20} color={COLORS.text.tertiary} />
           <Text style={styles.sectionTitle}>Travelers</Text>
           {pendingInvites > 0 && (
             <View style={styles.pendingBadgeContainer}>
@@ -458,12 +459,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Destino */}
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <Ionicons name="location-outline" size={20} color="#6B7280" />
-          <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginLeft: 8 }}>
+          <Ionicons name="location-outline" size={20} color={COLORS.text.tertiary} />
+          <Text style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}>
             Destination
           </Text>
         </View>
-        <Text style={{ fontSize: 16, color: '#6B7280' }}>
+        <Text style={{ fontSize: 16, color: COLORS.text.tertiary }}>
           {tripData.countries.length > 0 ? tripData.countries.join(', ') : 'To be defined'}
         </Text>
       </View>
@@ -471,12 +472,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Budget */}
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <Ionicons name="card-outline" size={20} color="#6B7280" />
-          <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginLeft: 8 }}>
+          <Ionicons name="card-outline" size={20} color={COLORS.text.tertiary} />
+          <Text style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}>
             Budget
           </Text>
         </View>
-        <Text style={{ fontSize: 16, color: '#6B7280' }}>
+        <Text style={{ fontSize: 16, color: COLORS.text.tertiary }}>
           {editableTrip.budget ? `$${editableTrip.budget.toLocaleString()}` : 'No budget set'}
         </Text>
       </View>
@@ -485,7 +486,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {editableTrip.accommodation_preference && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="bed-outline" size={20} color="#6B7280" />
+            <Ionicons name="bed-outline" size={20} color={COLORS.text.tertiary} />
             <Text style={styles.sectionTitle}>Accommodation</Text>
           </View>
           <View style={styles.tagContainer}>
@@ -509,7 +510,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {editableTrip.transport_preference && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="car-outline" size={20} color="#6B7280" />
+            <Ionicons name="car-outline" size={20} color={COLORS.text.tertiary} />
             <Text style={styles.sectionTitle}>Transport</Text>
           </View>
           <View style={styles.tagContainer}>
@@ -570,7 +571,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {hasMinimalProfiles && (
         <View style={styles.warningBanner}>
-          <Ionicons name="warning-outline" size={22} color="#EA580C" style={styles.warningIcon} />
+          <Ionicons name="warning-outline" size={22} color={COLORS.secondary.orangeDark} style={styles.warningIcon} />
           <View style={styles.warningContent}>
             <Text style={styles.warningTitle}>Perfiles incompletos</Text>
             <Text style={styles.warningText}>
@@ -648,7 +649,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Mensaje si no hay colaboradores */}
       {collaborators.length === 0 && (
         <View style={styles.emptyState}>
-          <Ionicons name="people-outline" size={32} color="#9CA3AF" />
+          <Ionicons name="people-outline" size={32} color={COLORS.text.lightGray} />
           <Text style={styles.emptyStateTitle}>No collaborators yet</Text>
           <Text style={styles.emptyStateText}>Invite friends to plan together</Text>
         </View>
@@ -693,7 +694,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const ItineraryTab = () => (
     <View style={styles.itineraryPlaceholder}>
-      <Ionicons name="map-outline" size={64} color="#D1D5DB" />
+      <Ionicons name="map-outline" size={64} color={COLORS.border.gray} />
       <Text style={styles.itineraryTitle}>Itinerary Coming Soon</Text>
       <Text style={styles.itineraryText}>Plan your day-by-day activities and routes</Text>
     </View>
@@ -727,7 +728,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             <Text style={styles.headerTitle}>{trip.title}</Text>
           </View>
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color="#6B7280" />
+            <Ionicons name="close" size={24} color={COLORS.text.tertiary} />
           </TouchableOpacity>
         </View>
 
@@ -735,7 +736,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         <View style={styles.subHeader}>
           <View style={styles.subHeaderRow}>
             <View style={styles.subHeaderItem}>
-              <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+              <Ionicons name="calendar-outline" size={16} color={COLORS.text.tertiary} />
               <Text style={styles.subHeaderText}>
                 {editableTrip.start_date && editableTrip.end_date
                   ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
@@ -743,7 +744,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               </Text>
             </View>
             <View style={styles.subHeaderItem}>
-              <Ionicons name="people-outline" size={16} color="#6B7280" />
+              <Ionicons name="people-outline" size={16} color={COLORS.text.tertiary} />
               <Text style={styles.subHeaderText}>
                 {tripData.collaboratorsCount} traveler{tripData.collaboratorsCount !== 1 ? 's' : ''}
               </Text>
@@ -790,7 +791,7 @@ const styles = StyleSheet.create({
   // Container styles
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.utility.white,
   },
   scrollViewContainer: {
     flex: 1,
@@ -806,7 +807,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border.dark,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -819,14 +820,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
   },
 
   // Sub-header styles
   subHeader: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background.tertiary,
   },
   subHeaderRow: {
     flexDirection: 'row',
@@ -839,16 +840,16 @@ const styles = StyleSheet.create({
   },
   subHeaderText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginLeft: 4,
   },
 
   // Tab styles
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: COLORS.utility.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border.dark,
   },
   tab: {
     flex: 1,
@@ -857,18 +858,18 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     borderBottomWidth: 2,
-    borderBottomColor: '#3B82F6',
+    borderBottomColor: COLORS.status.info,
   },
   tabText: {
     fontSize: 16,
   },
   tabTextActive: {
     fontWeight: '600',
-    color: '#3B82F6',
+    color: COLORS.status.info,
   },
   tabTextInactive: {
     fontWeight: '400',
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
   },
 
   // Overview section styles
@@ -884,7 +885,7 @@ const styles = StyleSheet.create({
   overviewTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     marginBottom: 8,
   },
   overviewButtonsRow: {
@@ -897,19 +898,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border.dark,
   },
   overviewButtonText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
   },
   editButton: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: COLORS.status.info,
+    borderColor: COLORS.status.info,
     marginTop: 20,
   },
   editButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -926,16 +927,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     marginLeft: 8,
   },
   sectionContent: {
     fontSize: 16,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
   },
   sectionContentMultiline: {
     fontSize: 16,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     lineHeight: 24,
   },
 
@@ -951,7 +952,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
   },
   tagIcon: {
     fontSize: 16,
@@ -959,7 +960,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 14,
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontWeight: '500',
   },
 
@@ -978,7 +979,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.utility.white,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -988,12 +989,12 @@ const styles = StyleSheet.create({
   teamTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     marginBottom: 20,
   },
   teamWarning: {
     flexDirection: 'row',
-    backgroundColor: '#FEF3C7',
+    backgroundColor: COLORS.background.amber.light,
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
@@ -1008,19 +1009,19 @@ const styles = StyleSheet.create({
   teamWarningTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#9A3412',
+    color: COLORS.secondary.amberDark,
     marginBottom: 4,
   },
   teamWarningText: {
     fontSize: 13,
-    color: '#9A3412',
+    color: COLORS.secondary.amberDark,
     lineHeight: 18,
   },
 
   // Team member styles
   memberCard: {
     flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background.tertiary,
     padding: 12,
     borderRadius: 8,
     marginBottom: 12,
@@ -1041,11 +1042,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
+    backgroundColor: COLORS.status.info,
     marginRight: 12,
   },
   memberInitialsText: {
-    color: 'white',
+    color: COLORS.utility.white,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -1055,27 +1056,27 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
   },
   memberEmail: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
   },
   memberRole: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: COLORS.status.info,
   },
   memberRoleText: {
-    color: 'white',
+    color: COLORS.utility.white,
     fontSize: 12,
     fontWeight: '600',
   },
 
   // Empty state styles
   emptyState: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
@@ -1085,25 +1086,25 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyStateTitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginTop: 8,
     textAlign: 'center',
   },
   emptyStateText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     marginTop: 4,
     textAlign: 'center',
   },
   emptyStateSubtitle: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -1112,17 +1113,17 @@ const styles = StyleSheet.create({
   teamTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     marginBottom: 20,
   },
 
   // Warning banner styles
   warningBanner: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: COLORS.background.amber.veryLight,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#FDBA74',
+    borderColor: COLORS.secondary.amberLight,
     marginBottom: 20,
     flexDirection: 'row',
   },
@@ -1136,41 +1137,41 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#9A3412',
+    color: COLORS.secondary.amberDark,
     marginBottom: 4,
   },
   warningText: {
     fontSize: 13,
-    color: '#9A3412',
+    color: COLORS.secondary.amberDark,
     lineHeight: 18,
   },
 
   // Owner card styles
   ownerCard: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: COLORS.background.amber.light,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#F59E0B',
+    borderColor: COLORS.secondary.amber,
   },
   ownerInitialsContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F59E0B',
+    backgroundColor: COLORS.secondary.amber,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   ownerBadge: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: COLORS.secondary.amber,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   ownerBadgeText: {
-    color: 'white',
+    color: COLORS.utility.white,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1180,19 +1181,19 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#6B7280',
+    backgroundColor: COLORS.text.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   memberInitials: {
-    color: 'white',
+    color: COLORS.utility.white,
     fontSize: 16,
     fontWeight: '700',
   },
   memberRole: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
   },
 
   // Action buttons container
@@ -1211,13 +1212,13 @@ const styles = StyleSheet.create({
   itineraryTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginTop: 16,
     textAlign: 'center',
   },
   itineraryText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -1226,25 +1227,25 @@ const styles = StyleSheet.create({
   descriptionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     marginBottom: 8,
   },
   descriptionText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     lineHeight: 24,
   },
 
   // Pending badge
   pendingBadgeContainer: {
     marginLeft: 8,
-    backgroundColor: '#F59E0B',
+    backgroundColor: COLORS.secondary.amber,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
   },
   pendingBadgeText: {
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontSize: 12,
     fontWeight: '600',
   },

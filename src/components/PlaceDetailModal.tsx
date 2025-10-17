@@ -27,6 +27,7 @@ import clockAnimation from '../../assets/animations/clock.json';
 import cycleAnimation from '../../assets/animations/cycle.json';
 import globeAnimation from '../../assets/animations/globe.json';
 import locationCircleAnimation from '../../assets/animations/location-circle.json';
+import { COLORS } from '../constants/colors';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
@@ -314,9 +315,19 @@ export default function PlaceDetailModal({
 
     return (
       <View
-        style={[styles.statusBadge, { backgroundColor: place.openNow ? '#D1FAE5' : '#FEE2E2' }]}
+        style={[
+          styles.statusBadge,
+          {
+            backgroundColor: place.openNow ? COLORS.status.successLight : COLORS.status.errorLight,
+          },
+        ]}
       >
-        <Text style={[styles.statusText, { color: place.openNow ? '#065F46' : '#991B1B' }]}>
+        <Text
+          style={[
+            styles.statusText,
+            { color: place.openNow ? COLORS.status.successDark : COLORS.status.errorDark },
+          ]}
+        >
           {place.openNow ? 'Abierto' : 'Cerrado'}
         </Text>
       </View>
@@ -389,7 +400,10 @@ export default function PlaceDetailModal({
                 resizeMode="cover"
               />
             ) : (
-              <LinearGradient colors={['#F3F4F6', '#E5E7EB']} style={styles.headerImage}>
+              <LinearGradient
+                colors={[COLORS.background.gray, COLORS.border.dark]}
+                style={styles.headerImage}
+              >
                 <Text style={styles.headerPlaceholder}>📍</Text>
               </LinearGradient>
             )}
@@ -564,7 +578,7 @@ export default function PlaceDetailModal({
             <View style={styles.floatingButtonContainer}>
               <TouchableOpacity style={styles.floatingButton} onPress={handleAddToTrip}>
                 <LinearGradient
-                  colors={['#8B5CF6', '#EC4899']}
+                  colors={[COLORS.primary.main, COLORS.primary.light]}
                   style={styles.floatingButtonGradient}
                 >
                   <Text style={styles.floatingButtonIcon}>➕</Text>
@@ -618,7 +632,7 @@ export default function PlaceDetailModal({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background.secondary,
     flex: 1,
   },
   header: {
@@ -632,7 +646,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerPlaceholder: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     fontSize: 48,
   },
   headerOverlay: {
@@ -653,7 +667,7 @@ const styles = StyleSheet.create({
   },
   closeButtonBlur: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: COLORS.background.whiteOpacity.strong,
     borderRadius: 20,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
@@ -662,7 +676,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   closeButtonText: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '600',
   },
@@ -672,7 +686,7 @@ const styles = StyleSheet.create({
   },
   saveButtonBlur: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: COLORS.background.whiteOpacity.strong,
     borderRadius: 20,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
@@ -684,14 +698,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   content: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.utility.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     flex: 1,
     marginTop: -24,
   },
   basicInfo: {
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.background.gray,
     borderBottomWidth: 1,
     padding: 20,
   },
@@ -702,7 +716,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   placeName: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     flex: 1,
     fontSize: 24,
     fontWeight: '700',
@@ -727,7 +741,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   addressText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     flex: 1,
     fontSize: 16,
     lineHeight: 22,
@@ -741,32 +755,32 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   ratingText: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 16,
     fontWeight: '600',
     marginRight: 4,
   },
   reviewsText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontSize: 16,
     marginRight: 8,
   },
   separator: {
-    color: '#D1D5DB',
+    color: COLORS.border.gray,
     fontSize: 16,
     marginRight: 8,
   },
   distanceText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontSize: 14,
   },
   section: {
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.background.gray,
     borderBottomWidth: 1,
     padding: 20,
   },
   sectionTitle: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
@@ -788,18 +802,18 @@ const styles = StyleSheet.create({
   },
   placeholderImage: {
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
     borderRadius: 12,
     height: 80,
     justifyContent: 'center',
     width: 120,
   },
   placeholderText: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     fontSize: 24,
   },
   photoLabel: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: COLORS.background.blackOpacity.strong,
     borderRadius: 6,
     left: 6,
     paddingHorizontal: 6,
@@ -808,12 +822,12 @@ const styles = StyleSheet.create({
     top: 6,
   },
   photoLabelText: {
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontSize: 10,
     fontWeight: '500',
   },
   description: {
-    color: '#4B5563',
+    color: COLORS.text.slateGray,
     fontSize: 16,
     lineHeight: 24,
   },
@@ -823,15 +837,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#C7D2FE',
+    backgroundColor: COLORS.background.purple.ultraLight,
+    borderColor: COLORS.border.purpleLight,
     borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   tagText: {
-    color: '#3730A3',
+    color: COLORS.primary.deepIndigo,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -847,7 +861,7 @@ const styles = StyleSheet.create({
   },
   actionIcon: {
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
     borderRadius: 28,
     height: 56,
     justifyContent: 'center',
@@ -855,17 +869,17 @@ const styles = StyleSheet.create({
     width: 56,
   },
   actionIconDisabled: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background.tertiary,
     opacity: 0.5,
   },
   actionText: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
   },
   actionTextDisabled: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
   },
   lottieIcon: {
     width: 32, // Tamaño optimizado para que quepa bien centrado
@@ -885,8 +899,8 @@ const styles = StyleSheet.create({
     height: 100,
   },
   floatingButtonContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#F3F4F6',
+    backgroundColor: COLORS.utility.white,
+    borderTopColor: COLORS.background.gray,
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
@@ -914,18 +928,18 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   floatingButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontSize: 18,
     fontWeight: '700',
   },
   // New styles for photo selection
   photoSelected: {
-    borderColor: '#3B82F6',
+    borderColor: COLORS.status.info,
     borderWidth: 3,
   },
   photoSelectedOverlay: {
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
+    backgroundColor: COLORS.status.info,
     borderRadius: 12,
     height: 24,
     justifyContent: 'center',
@@ -935,7 +949,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   photoSelectedText: {
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontSize: 12,
     fontWeight: '600',
   },

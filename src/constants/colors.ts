@@ -14,6 +14,7 @@ export const COLORS = {
     light: '#A855F7', // Light purple
     dark: '#7C3AED', // Dark purple
     violet: '#5B21B6', // Deep violet
+    deepIndigo: '#3730A3', // Deep indigo
     indigo: '#4B0082', // Indigo
     blue: '#6366F1', // Indigo blue
   },
@@ -24,6 +25,7 @@ export const COLORS = {
     orangeMain: '#F97316', // Orange main
     orangeDark: '#EA580C', // Dark orange
     amber: '#F59E0B', // Amber
+    amberLight: '#FDBA74', // Light amber
     amberDark: '#92400E', // Dark amber/brown
     amberMedium: '#A16207', // Medium amber
   },
@@ -38,9 +40,11 @@ export const COLORS = {
     purple: {
       light: '#EDE9FE', // Light purple background
       veryLight: '#F5F3FF', // Very light purple
+      ultraLight: '#EEF2FF', // Ultra light purple/indigo
     },
     amber: {
       light: '#FEF3C7', // Light amber background
+      veryLight: '#FFF7ED', // Very light amber/orange
     },
     transparent: 'transparent',
     // Backgrounds with opacity
@@ -53,6 +57,8 @@ export const COLORS = {
     blackOpacity: {
       light: 'rgba(0,0,0,0.1)',
       medium: 'rgba(0,0,0,0.3)',
+      strong: 'rgba(0,0,0,0.7)',
+      veryStrong: 'rgba(0,0,0,0.8)',
     },
     errorOpacity: {
       light: 'rgba(220,38,38,0.2)',
@@ -68,6 +74,7 @@ export const COLORS = {
     dark: '#111827', // Very dark text
     darkGray: '#1F2937', // Dark gray text
     mediumDarkGray: '#374151', // Medium dark gray
+    slateGray: '#4B5563', // Slate gray text
     white: '#FFFFFF', // White text
     lightGray: '#9CA3AF', // Light gray text
     mediumGray: '#333', // Medium gray (#333)
@@ -80,6 +87,7 @@ export const COLORS = {
     gray: '#D1D5DB', // Gray border
     dark: '#E5E7EB', // Dark border
     purple: '#4B0082', // Purple border
+    purpleLight: '#C7D2FE', // Light purple border
     blue: '#007aff', // Blue border
     indigo: '#6366F1', // Indigo border
     opacity: 'rgba(0,0,0,0.05)', // Transparent border
@@ -127,6 +135,17 @@ export const COLORS = {
     blue: ['#3B82F6', '#2563EB'],
     green: ['#10B981', '#059669'],
     blueInfo: ['#3B82F6', '#1D4ED8'],
+  },
+
+  // Decorative Colors (for confetti, animations, etc.)
+  decorative: {
+    coral: '#FF6B6B',
+    turquoise: '#4ECDC4',
+    skyBlue: '#45B7D1',
+    sage: '#96CEB4',
+    vanilla: '#FFEAA7',
+    plum: '#DDA0DD',
+    mint: '#98D8C8',
   },
 } as const;
 

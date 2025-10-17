@@ -3,6 +3,7 @@ import React from 'react';
 
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 
+import { COLORS } from '../constants/colors';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
 
@@ -54,9 +55,21 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
     return (
       <View
-        style={[styles.statusBadge, { backgroundColor: place.openNow ? '#D1FAE5' : '#FEE2E2' }]}
+        style={[
+          styles.statusBadge,
+          {
+            backgroundColor: place.openNow
+              ? COLORS.status.successLight
+              : COLORS.status.errorLight,
+          },
+        ]}
       >
-        <Text style={[styles.statusText, { color: place.openNow ? '#065F46' : '#991B1B' }]}>
+        <Text
+          style={[
+            styles.statusText,
+            { color: place.openNow ? COLORS.status.successDark : COLORS.status.errorDark },
+          ]}
+        >
           {place.openNow ? 'Abierto' : 'Cerrado'}
         </Text>
       </View>
@@ -132,7 +145,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
 const styles = StyleSheet.create({
   addressIcon: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontSize: 14,
     marginRight: 4,
   },
@@ -142,7 +155,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   addressText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     flex: 1,
     fontSize: 14,
   },
@@ -155,7 +168,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   container: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.utility.white,
     borderRadius: 16,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
@@ -171,7 +184,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   distanceText: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     fontSize: 12,
     marginBottom: 8,
   },
@@ -190,7 +203,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   photoContainer: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
     borderRadius: 12,
     height: 160,
     marginBottom: 10,
@@ -203,7 +216,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   placeName: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     flex: 1,
     fontSize: 18,
     fontWeight: '600',
@@ -213,7 +226,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   placeholderIcon: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     fontSize: 32,
   },
   placeholderPhoto: {
@@ -225,7 +238,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   ratingText: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 14,
     fontWeight: '600',
     marginRight: 4,
@@ -234,14 +247,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   reviewsText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontSize: 14,
   },
   reviewsTextCompact: {
     fontSize: 13,
   },
   starIcon: {
-    color: '#F59E0B',
+    color: COLORS.secondary.amber,
     fontSize: 14,
     marginRight: 2,
   },

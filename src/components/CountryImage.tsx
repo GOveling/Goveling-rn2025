@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 
 import { Image, View, ActivityIndicator } from 'react-native';
 
+import { COLORS } from '~/constants/colors';
+
 interface CountryImageProps {
   countryCode: string;
   width?: number;
@@ -123,7 +125,7 @@ export const CountryImage: React.FC<CountryImageProps> = ({
           style={{
             width: '100%',
             height: '100%',
-            backgroundColor: '#E5E7EB',
+            backgroundColor: COLORS.border.dark,
             justifyContent: 'center',
             alignItems: 'center',
           }}
@@ -160,7 +162,7 @@ export const CountryImage: React.FC<CountryImageProps> = ({
             bottom: 0,
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: 'rgba(255,255,255,0.8)',
+            backgroundColor: COLORS.background.whiteOpacity.strong,
           }}
         >
           <ActivityIndicator size="small" color="#6366F1" />

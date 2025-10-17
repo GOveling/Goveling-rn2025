@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { COLORS } from '~/constants/colors';
 import { EnhancedPlace } from '~/lib/placesSearch';
 import { supabase } from '~/lib/supabase';
 
@@ -199,13 +200,13 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
             <View style={styles.header}>
               <Text style={styles.title}>Añadir a un viaje</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <Ionicons name="close" size={22} color="#6B7280" />
+                <Ionicons name="close" size={22} color={COLORS.text.tertiary} />
               </TouchableOpacity>
             </View>
 
             {/* Place summary */}
             <View style={styles.placeRow}>
-              <Ionicons name="location" size={18} color="#6B7280" />
+              <Ionicons name="location" size={18} color={COLORS.text.tertiary} />
               <Text style={styles.placeText}>{place.name || 'Lugar'}</Text>
             </View>
 
@@ -217,7 +218,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                 end={{ x: 1, y: 0 }}
                 style={styles.newBtnBg}
               >
-                <Ionicons name="add" size={20} color="#fff" />
+                <Ionicons name="add" size={20} color={COLORS.utility.white} />
                 <Text style={styles.newBtnText}>Crear nuevo viaje</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -233,7 +234,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
               </View>
             ) : trips.length === 0 ? (
               <View style={styles.empty}>
-                <Ionicons name="airplane-outline" size={40} color="#9CA3AF" />
+                <Ionicons name="airplane-outline" size={40} color={COLORS.text.lightGray} />
                 <Text style={styles.emptyText}>Aún no tienes viajes</Text>
               </View>
             ) : (
@@ -262,7 +263,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                         </Text>
                       )}
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                    <Ionicons name="chevron-forward" size={18} color={COLORS.text.lightGray} />
                   </TouchableOpacity>
                 ))}
                 <View style={{ height: 24 }} />
@@ -284,13 +285,13 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: COLORS.background.blackOpacity.medium,
     flex: 1,
     justifyContent: 'flex-end',
   },
   closeBtn: {
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background.gray,
     borderRadius: 18,
     height: 36,
     justifyContent: 'center',
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginTop: 8,
   },
   header: {
@@ -316,7 +317,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   loadingText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginLeft: 8,
   },
   newBtn: {
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   newBtnText: {
-    color: '#fff',
+    color: COLORS.utility.white,
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   placeText: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     flexShrink: 1,
     fontSize: 14,
     marginLeft: 8,
@@ -351,12 +352,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontSize: 14,
     fontWeight: '600',
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.utility.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 20,
@@ -364,27 +365,27 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   title: {
-    color: '#111827',
+    color: COLORS.text.dark,
     fontSize: 18,
     fontWeight: '600',
   },
   tripDates: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginTop: 2,
   },
   tripDesc: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     marginTop: 4,
   },
   tripItem: {
     alignItems: 'center',
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border.dark,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     paddingVertical: 12,
   },
   tripTitle: {
-    color: '#111827',
+    color: COLORS.text.dark,
     fontSize: 16,
     fontWeight: '600',
   },

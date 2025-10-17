@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 
@@ -476,8 +477,8 @@ export default function EditTripModal({
             }}
             minimumDate={new Date()}
             // Mejorar contraste en iOS
-            textColor={Platform.OS === 'ios' ? '#000000' : undefined}
-            style={Platform.OS === 'ios' ? { backgroundColor: '#FFFFFF' } : undefined}
+            textColor={Platform.OS === 'ios' ? COLORS.utility.black : undefined}
+            style={Platform.OS === 'ios' ? { backgroundColor: COLORS.utility.white } : undefined}
           />
         )}
 
@@ -494,8 +495,8 @@ export default function EditTripModal({
             }}
             minimumDate={tripData.startDate || new Date()}
             // Mejorar contraste en iOS
-            textColor={Platform.OS === 'ios' ? '#000000' : undefined}
-            style={Platform.OS === 'ios' ? { backgroundColor: '#FFFFFF' } : undefined}
+            textColor={Platform.OS === 'ios' ? COLORS.utility.black : undefined}
+            style={Platform.OS === 'ios' ? { backgroundColor: COLORS.utility.white } : undefined}
           />
         )}
 
@@ -591,15 +592,15 @@ export default function EditTripModal({
 const styles = StyleSheet.create({
   budgetContainer: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.utility.white,
+    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
     paddingHorizontal: 16,
   },
   budgetInput: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     flex: 1,
     fontSize: 16,
     paddingVertical: 14,
@@ -609,8 +610,8 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.utility.white,
+    borderColor: COLORS.border.gray,
     borderRadius: 4,
     borderWidth: 2,
     height: 20,
@@ -619,13 +620,13 @@ const styles = StyleSheet.create({
     width: 20,
   },
   checkboxChecked: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: COLORS.status.info,
+    borderColor: COLORS.status.info,
   },
   checkboxContainer: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.utility.white,
+    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
@@ -634,16 +635,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   checkboxSelected: {
-    backgroundColor: '#F0F9FF',
-    borderColor: '#007AFF',
+    backgroundColor: COLORS.background.purple.ultraLight,
+    borderColor: COLORS.status.info,
   },
   checkboxText: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     fontWeight: '500',
   },
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.utility.white,
     flex: 1,
   },
   content: {
@@ -651,15 +652,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   currencySymbol: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontSize: 18,
     fontWeight: '600',
     marginRight: 8,
   },
   dateButton: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.utility.white,
+    borderColor: COLORS.border.gray,
     borderWidth: 1,
     flex: 1,
     flexDirection: 'row',
@@ -677,7 +678,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
   },
   dateButtonText: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     marginLeft: 8,
   },
@@ -686,17 +687,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dateSeparator: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background.tertiary,
     borderBottomWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: COLORS.border.gray,
     borderTopWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 14,
   },
   deleteButton: {
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FCA5A5',
+    backgroundColor: COLORS.status.errorLight,
+    borderColor: COLORS.status.errorLight,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
@@ -705,20 +706,20 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   deleteButtonText: {
-    color: '#DC2626',
+    color: COLORS.status.errorDark,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   deleteSection: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#E5E7EB',
+    backgroundColor: COLORS.utility.white,
+    borderTopColor: COLORS.border.dark,
     borderTopWidth: 1,
     padding: 20,
   },
   header: {
     alignItems: 'center',
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border.dark,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -727,13 +728,13 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   headerTitle: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.utility.white,
+    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     fontSize: 16,
@@ -741,15 +742,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   label: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   picker: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: COLORS.utility.white,
+    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
@@ -758,17 +759,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   pickerCancel: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontSize: 16,
   },
   pickerDone: {
-    color: '#007AFF',
+    color: COLORS.status.info,
     fontSize: 16,
     fontWeight: '600',
   },
   pickerHeader: {
     alignItems: 'center',
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border.dark,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -778,7 +779,7 @@ const styles = StyleSheet.create({
   },
   pickerItem: {
     alignItems: 'center',
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.background.gray,
     borderBottomWidth: 1,
     flexDirection: 'row',
     paddingVertical: 16,
@@ -788,10 +789,10 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   pickerItemSelected: {
-    backgroundColor: '#F0F9FF',
+    backgroundColor: COLORS.background.purple.ultraLight,
   },
   pickerItemText: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     flex: 1,
     fontSize: 16,
   },
@@ -800,34 +801,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   pickerModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.utility.white,
     flex: 1,
   },
   pickerText: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
   },
   pickerTitle: {
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.status.info,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   saveButtonDisabled: {
-    backgroundColor: '#D1D5DB',
+    backgroundColor: COLORS.border.gray,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.utility.white,
     fontSize: 16,
     fontWeight: '600',
   },
   saveButtonTextDisabled: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
   },
   section: {
     marginBottom: 24,

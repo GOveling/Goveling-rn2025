@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { COLORS } from '~/constants/colors';
+
 const { width, height } = Dimensions.get('window');
 
 interface WelcomeModalProps {
@@ -17,33 +19,33 @@ interface Step {
   title: string;
   color: string;
   icon: keyof typeof Ionicons.glyphMap;
-  gradient: string[];
+  gradient: readonly string[] | string[];
 }
 
 const steps: Step[] = [
   {
     title: '¡Bienvenido a Go Travel Connect!',
-    color: '#8B5CF6',
+    color: COLORS.primary.main,
     icon: 'sparkles',
-    gradient: ['#8B5CF6', '#A855F7'],
+    gradient: COLORS.gradients.purple,
   },
   {
     title: 'Explora el Mundo',
-    color: '#3B82F6',
+    color: COLORS.status.info,
     icon: 'location',
-    gradient: ['#3B82F6', '#6366F1'],
+    gradient: COLORS.gradients.blue,
   },
   {
     title: 'Conecta con Viajeros',
-    color: '#10B981',
+    color: COLORS.status.success,
     icon: 'people',
-    gradient: ['#10B981', '#059669'],
+    gradient: COLORS.gradients.green,
   },
   {
     title: 'Planifica tu Próxima Aventura',
-    color: '#F59E0B',
+    color: COLORS.secondary.amber,
     icon: 'calendar',
-    gradient: ['#F59E0B', '#D97706'],
+    gradient: [COLORS.secondary.amber, COLORS.secondary.amberMedium],
   },
 ];
 
@@ -93,7 +95,15 @@ const ConfettiParticle: React.FC<{
     outputRange: ['0deg', '360deg'],
   });
 
-  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+  const colors = [
+    COLORS.decorative.coral,
+    COLORS.decorative.turquoise,
+    COLORS.decorative.skyBlue,
+    COLORS.decorative.sage,
+    COLORS.decorative.vanilla,
+    COLORS.decorative.plum,
+    COLORS.decorative.mint,
+  ];
   const color = colors[index % colors.length];
 
   return (
@@ -235,7 +245,10 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                   style={[
                     styles.dot,
                     {
-                      backgroundColor: index === currentStep ? 'white' : 'rgba(255,255,255,0.3)',
+                      backgroundColor:
+                        index === currentStep
+                          ? COLORS.utility.white
+                          : COLORS.background.whiteOpacity.medium,
                       transform: [{ scale: index === currentStep ? 1.2 : 1 }],
                     },
                   ]}
@@ -304,25 +317,25 @@ const styles = StyleSheet.create({
     textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
   },
   iconContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: COLORS.background.whiteOpacity.medium,
     borderRadius: 50,
     marginBottom: 30,
     padding: 20,
   },
   overlay: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: COLORS.background.blackOpacity.veryStrong,
     flex: 1,
     justifyContent: 'center',
   },
   progressBackground: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: COLORS.background.whiteOpacity.medium,
     borderRadius: 2,
     height: 4,
     overflow: 'hidden',
   },
   progressBar: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.utility.white,
     borderRadius: 2,
     height: '100%',
   },
@@ -331,7 +344,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   title: {
-    color: 'white',
+    color: COLORS.text.white,
     fontSize: 28,
     fontWeight: 'bold',
     lineHeight: 36,
