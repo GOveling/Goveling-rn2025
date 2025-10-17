@@ -528,14 +528,12 @@ export default function ExploreTab() {
               </View>
             </View>
 
-            <View style={styles.searchButtonsRow}>
-              <TouchableOpacity
-                onPress={() => setShowMap(true)}
-                style={styles.searchLocationButton}
-              >
-                <Text style={styles.searchLocationText}>🗺️ Ver Mapa</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={() => setShowMap(true)}
+              style={styles.searchLocationButton}
+            >
+              <Text style={styles.searchLocationText}>🗺️ Ver Mapa</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Barra de búsqueda */}
@@ -963,8 +961,11 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   searchLocationButton: {
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#3B82F6',
     borderRadius: 8,
+    marginLeft: 12,
   },
   searchLocationGradient: {
     paddingHorizontal: 16,
@@ -973,7 +974,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   searchLocationText: {
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
   // Results section styles
