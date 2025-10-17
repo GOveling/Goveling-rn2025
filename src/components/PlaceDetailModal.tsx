@@ -115,6 +115,9 @@ export default function PlaceDetailModal({
 
   if (!place) return null;
 
+  console.log('[PlaceDetailModal] place.priceLevel:', place.priceLevel);
+  console.log('[PlaceDetailModal] place.name:', place.name);
+
   const handleLocation = () => {
     // Reproducir animación al hacer clic
     directionsLottieRef.current?.play();
@@ -398,6 +401,33 @@ export default function PlaceDetailModal({
                   )}
                 </View>
               )}
+
+              {/* Price Level */}
+              {place.priceLevel !== undefined &&
+                place.priceLevel !== null &&
+                (() => {
+                  // Convert Google price string to number
+                  const priceLevelNum =
+                    typeof place.priceLevel === 'string'
+                      ? ({
+                          PRICE_LEVEL_FREE: 0,
+                          PRICE_LEVEL_INEXPENSIVE: 1,
+                          PRICE_LEVEL_MODERATE: 2,
+                          PRICE_LEVEL_EXPENSIVE: 3,
+                          PRICE_LEVEL_VERY_EXPENSIVE: 4,
+                        }[place.priceLevel] ?? null)
+                      : place.priceLevel;
+
+                  const priceSymbols = ['Gratis', '$', '$$', '$$$', '$$$$'];
+                  const priceLabel = priceLevelNum !== null ? priceSymbols[priceLevelNum] : '';
+
+                  return priceLabel ? (
+                    <View style={styles.priceLevelRow}>
+                      <Text style={styles.priceLevelLabel}>Precio: </Text>
+                      <Text style={styles.priceLevelValue}>{priceLabel}</Text>
+                    </View>
+                  ) : null;
+                })()}
             </View>
 
             {/* Fotos adicionales */}
@@ -781,6 +811,21 @@ const styles = StyleSheet.create({
     color: COLORS.text.tertiary,
     fontSize: 16,
     marginRight: 8,
+  },
+  priceLevelRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  priceLevelLabel: {
+    color: COLORS.text.tertiary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  priceLevelValue: {
+    color: COLORS.status.success,
+    fontSize: 16,
+    fontWeight: '700',
   },
   separator: {
     color: COLORS.border.gray,

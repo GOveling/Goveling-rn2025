@@ -50,6 +50,36 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
       </View>
     );
   };
+  const renderPriceLevel = () => {
+    if (place.priceLevel === undefined || place.priceLevel === null) return null;
+
+    // Convert Google price string to number if needed
+    const priceLevelNum =
+      typeof place.priceLevel === 'string'
+        ? ({
+            PRICE_LEVEL_FREE: 0,
+            PRICE_LEVEL_INEXPENSIVE: 1,
+            PRICE_LEVEL_MODERATE: 2,
+            PRICE_LEVEL_EXPENSIVE: 3,
+            PRICE_LEVEL_VERY_EXPENSIVE: 4,
+          }[place.priceLevel] ?? null)
+        : place.priceLevel;
+
+    if (priceLevelNum === null) return null;
+
+    // Convertir nivel de precio (0-4) a símbolo de dólar
+    const priceSymbols = ['Gratis', '$', '$$', '$$$', '$$$$'];
+    const priceLabel = priceSymbols[priceLevelNum] || '';
+
+    if (!priceLabel) return null;
+
+    return (
+      <View style={styles.priceBadge}>
+        <Text style={styles.priceText}>{priceLabel}</Text>
+      </View>
+    );
+  };
+
   const renderStatus = () => {
     if (place.openNow === undefined) return null;
 
@@ -133,6 +163,8 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
               )}
             </View>
           )}
+
+          {renderPriceLevel()}
 
           {renderStatus()}
         </View>
@@ -255,6 +287,19 @@ const styles = StyleSheet.create({
     color: COLORS.secondary.amber,
     fontSize: 14,
     marginRight: 2,
+  },
+  priceBadge: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: 6,
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  priceText: {
+    color: COLORS.status.success,
+    fontSize: 12,
+    fontWeight: '700',
   },
   statusBadge: {
     borderRadius: 8,

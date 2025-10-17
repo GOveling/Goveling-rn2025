@@ -486,6 +486,27 @@ export default function TripPlacesScreen() {
                           )}
                         </View>
                       )}
+                      {place.price_level !== undefined && place.price_level !== null && (
+                        <View
+                          style={{
+                            backgroundColor: '#F8F9FA',
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            marginLeft: 8,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: '700',
+                              color: '#10B981',
+                            }}
+                          >
+                            {['Gratis', '$', '$$', '$$$', '$$$$'][place.price_level] || ''}
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
                     <Text
