@@ -8,7 +8,13 @@ import { useTranslation } from 'react-i18next';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
-import { getCurrentPosition, reverseCity, getSavedPlaces, getActiveOrNextTrip } from '~/lib/home';
+import {
+  getCurrentPosition,
+  reverseCity,
+  getSavedPlaces,
+  getActiveOrNextTrip,
+  type Trip,
+} from '~/lib/home';
 import { registerDeviceToken } from '~/lib/push';
 import { useSettingsStore } from '~/lib/settingsStore';
 import { useTheme } from '~/lib/theme';
@@ -30,7 +36,7 @@ export default function Home() {
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [upcomingTripsCount, setUpcomingTripsCount] = React.useState<number>(0);
-  const [currentTrip, setCurrentTrip] = React.useState<any>(null);
+  const [currentTrip, setCurrentTrip] = React.useState<Trip | null>(null);
 
   React.useEffect(() => {
     registerDeviceToken().catch(() => {});

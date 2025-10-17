@@ -285,11 +285,12 @@ export default function ExploreTab() {
         setSearchResults(resp.predictions || []);
       }
       setHasSearched(true);
-    } catch (e: any) {
-      console.error('[performSearch] Error during search:', e);
-      console.error('[performSearch] Error stack:', e.stack);
-      if (e.name !== 'AbortError') {
-        Alert.alert('Error', 'No se pudo completar la búsqueda: ' + e.message);
+    } catch (e: unknown) {
+      const error = e as Error;
+      console.error('[performSearch] Error during search:', error);
+      console.error('[performSearch] Error stack:', error.stack);
+      if (error.name !== 'AbortError') {
+        Alert.alert('Error', 'No se pudo completar la búsqueda: ' + error.message);
       }
       setSearchResults([]);
       setHasSearched(true);

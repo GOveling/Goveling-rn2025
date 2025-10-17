@@ -6,11 +6,19 @@ import { useRouter } from 'expo-router';
 
 import { useTheme } from '~/lib/theme';
 
+interface BookingOption {
+  title: string;
+  icon: string;
+  description: string;
+  color: string;
+  route: string;
+}
+
 export default function BookingTab() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
 
-  const bookingOptions = [
+  const bookingOptions: BookingOption[] = [
     {
       title: 'Vuelos',
       icon: '✈️',
@@ -55,7 +63,7 @@ export default function BookingTab() {
     },
   ];
 
-  const handleBookingPress = (option: any) => {
+  const handleBookingPress = (option: BookingOption) => {
     // Show alert for now since booking sections are coming soon
     Alert.alert(
       option.title,

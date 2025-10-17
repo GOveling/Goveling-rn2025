@@ -224,7 +224,7 @@ export default function HomeTab() {
 
   // Realtime subscription to trip_places changes for any trip the user is involved in
   React.useEffect(() => {
-    let channel: any;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       try {
         logger.debug('🏠 HomeTab: Setting up realtime subscription for trip_places changes');

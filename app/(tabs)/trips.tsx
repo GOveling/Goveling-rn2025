@@ -17,6 +17,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useFocusEffect } from '@react-navigation/native';
 
+import type { Trip } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import { useTheme } from '~/lib/theme';
@@ -40,7 +41,7 @@ export default function TripsTab() {
 
   // Estados
   const [showNewTripModal, setShowNewTripModal] = useState(false);
-  const [trips, setTrips] = useState<any[]>([]);
+  const [trips, setTrips] = useState<any[]>([]); // TODO: Use proper TripData type
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
