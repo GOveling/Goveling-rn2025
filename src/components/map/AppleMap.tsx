@@ -8,6 +8,7 @@ let Marker: any = null;
 let PROVIDER_DEFAULT: any = null;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const maps = require('react-native-maps');
   MapView = maps.default;
   Marker = maps.Marker;

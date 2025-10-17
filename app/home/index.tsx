@@ -1,9 +1,11 @@
 import React from 'react';
+
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
+
 import { useTranslation } from 'react-i18next';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';

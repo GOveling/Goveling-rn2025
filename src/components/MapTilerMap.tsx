@@ -809,6 +809,7 @@ const AppleMapsFallback: React.FC<MapTilerMapProps> = ({
   // Intentar cargar Apple Maps si está disponible
   let AppleMap: any = null;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     AppleMap = require('./map/AppleMap').default;
   } catch (e) {
     AppleMap = null;

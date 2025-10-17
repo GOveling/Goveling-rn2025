@@ -26,10 +26,15 @@ import MiniMapModal from './MiniMapModal';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
+import cycleAnimation from '../../assets/animations/cycle.json';
+import locationCircleAnimation from '../../assets/animations/location-circle.json';
+import globeAnimation from '../../assets/animations/globe.json';
+import clockAnimation from '../../assets/animations/clock.json';
 
 // Conditional BlurView import
 let BlurView: any = View;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   BlurView = require('expo-blur').BlurView;
 } catch (e) {
   // Fallback to regular View if expo-blur is not available
@@ -484,7 +489,7 @@ export default function PlaceDetailModal({
                 <TouchableOpacity style={styles.actionButton} onPress={handleDirections}>
                   {renderActionIcon(
                     directionsLottieRef,
-                    require('../../assets/animations/cycle.json'),
+                    cycleAnimation,
                     '🚴‍♂️', // Emoji de fallback para direcciones
                     directionsLottieError,
                     setDirectionsLottieError
@@ -499,7 +504,7 @@ export default function PlaceDetailModal({
                 >
                   {renderActionIcon(
                     callLottieRef,
-                    require('../../assets/animations/location-circle.json'),
+                    locationCircleAnimation,
                     '📍', // Emoji de fallback para ubicación
                     locationLottieError,
                     setLocationLottieError,
@@ -519,7 +524,7 @@ export default function PlaceDetailModal({
                 >
                   {renderActionIcon(
                     websiteLottieRef,
-                    require('../../assets/animations/globe.json'),
+                    globeAnimation,
                     '🌐', // Emoji de fallback para sitio web
                     websiteLottieError,
                     setWebsiteLottieError,
@@ -537,7 +542,7 @@ export default function PlaceDetailModal({
                 >
                   {renderActionIcon(
                     scheduleLottieRef,
-                    require('../../assets/animations/clock.json'),
+                    clockAnimation,
                     '📞', // Emoji de fallback para llamar
                     callLottieError,
                     setCallLottieError,
