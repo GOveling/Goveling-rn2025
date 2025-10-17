@@ -8,11 +8,8 @@ import {
   StatusBar,
   Alert,
   RefreshControl,
-  Animated,
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
 
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import LocationWidget from '~/components/home/LocationWidget';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
-import NotificationBell from '~/components/home/NotificationBell';
 import StatCards from '~/components/home/StatCards';
 import TravelModeCard from '~/components/home/TravelModeCard';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
@@ -31,7 +27,6 @@ import {
   reverseGeocodeCoordinatesCached,
   getLocationFromCoordinatesCached,
   getSavedPlaces,
-  getActiveOrNextTrip,
 } from '~/lib/home';
 import { registerDeviceToken } from '~/lib/push';
 import { useSettingsStore } from '~/lib/settingsStore';
@@ -42,22 +37,20 @@ import { getWeatherCached } from '~/lib/weather';
 import { logger } from '~/utils/logger';
 
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
-import { useAppSelector } from '../../src/store/hooks';
-import { selectBreakdown } from '../../src/store/slices/tripsSlice';
 
 export const options = { headerShown: false };
 
 export default function HomeTab() {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const router = useRouter();
+  const { t: _t } = useTranslation();
+  const { colors: _colors } = useTheme();
+  const _router = useRouter();
   const { units, setUnits } = useSettingsStore();
   const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
 
   // RTK Query for trips - automatic caching & refetching
   const {
     data: breakdown,
-    isLoading: tripsLoading,
+    isLoading: _tripsLoading,
     refetch: refetchTrips,
   } = useGetTripsBreakdownQuery();
 

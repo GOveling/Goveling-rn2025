@@ -15,8 +15,8 @@ interface BookingOption {
 }
 
 export default function BookingTab() {
-  const { colors, spacing } = useTheme();
-  const router = useRouter();
+  const { colors: _colors, spacing: _spacing } = useTheme();
+  const _router = useRouter();
 
   const bookingOptions: BookingOption[] = [
     {

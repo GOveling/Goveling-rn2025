@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 
 import {
   View,
@@ -9,7 +9,6 @@ import {
   StatusBar,
   Switch,
   Alert,
-  Animated,
   Modal,
 } from 'react-native';
 
@@ -19,13 +18,12 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AppMap from '../../src/components/AppMap';
 import PlaceCard from '../../src/components/PlaceCard';
 import PlaceDetailModal from '../../src/components/PlaceDetailModal';
 import {
-  allUICategories,
+  allUICategories as _allUICategories,
   uiCategoriesGeneral,
   uiCategoriesSpecific,
   categoryDisplayToInternal,
@@ -35,7 +33,7 @@ import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src
 import { supabase } from '../../src/lib/supabase';
 
 export default function ExploreTab() {
-  const { t, i18n } = useTranslation();
+  const { t: _t, i18n } = useTranslation();
   const router = useRouter();
   const { tripId, returnTo } = useLocalSearchParams<{ tripId?: string; returnTo?: string }>();
 
@@ -44,7 +42,7 @@ export default function ExploreTab() {
   const [expandedCategories, setExpandedCategories] = React.useState(false);
   const [nearCurrentLocation, setNearCurrentLocation] = React.useState(false); // inicia apagado
   const [showMap, setShowMap] = React.useState(false);
-  const [currentLocation, setCurrentLocation] = React.useState('Ubicación desactivada');
+  const [_currentLocation, setCurrentLocation] = React.useState('Ubicación desactivada');
   const [userCoords, setUserCoords] = React.useState<{ lat: number; lng: number } | undefined>(
     undefined
   );
