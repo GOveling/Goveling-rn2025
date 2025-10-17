@@ -5,6 +5,7 @@ import {
   FlatList,
   Image,
   Modal,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -355,132 +356,65 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
 
   const renderOwner = () =>
     ownerProfile ? (
-      <View
-        style={{
-          backgroundColor: '#FEF3C7',
-          borderRadius: 12,
-          padding: 16,
-          borderWidth: 1,
-          borderColor: '#F59E0B',
-          marginBottom: 12,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={styles.ownerCard}>
+        <View style={styles.ownerCardRow}>
           {ownerProfile.avatar_url ? (
-            <Image
-              source={{ uri: ownerProfile.avatar_url }}
-              style={{ width: 48, height: 48, borderRadius: 24, marginRight: 12 }}
-            />
+            <Image source={{ uri: ownerProfile.avatar_url }} style={styles.ownerAvatar} />
           ) : (
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: '#F59E0B',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12,
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: '700' }}>
+            <View style={styles.ownerInitials}>
+              <Text style={styles.ownerInitialsText}>
                 {getInitials(ownerProfile.full_name, ownerProfile.email)}
               </Text>
             </View>
           )}
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+          <View style={styles.ownerInfoContainer}>
+            <Text style={styles.ownerName}>
               {ownerProfile.full_name || t('trips.owner', 'Owner')}{' '}
               {currentUserId === ownerId ? `(${t('trips.you', 'You')})` : ''}
             </Text>
-            {!!ownerProfile.email && <Text style={{ color: '#6B7280' }}>{ownerProfile.email}</Text>}
+            {!!ownerProfile.email && <Text style={styles.ownerEmail}>{ownerProfile.email}</Text>}
           </View>
-          <View
-            style={{
-              backgroundColor: '#F59E0B',
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 12, fontWeight: '700' }}>
-              {t('trips.owner', 'Owner')}
-            </Text>
+          <View style={styles.ownerBadge}>
+            <Text style={styles.ownerBadgeText}>{t('trips.owner', 'Owner')}</Text>
           </View>
         </View>
       </View>
     ) : null;
 
   const renderMemberRow = (item: MemberItem) => (
-    <View
-      style={{
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        marginBottom: 10,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View style={styles.memberCard}>
+      <View style={styles.memberCardRow}>
         {item.profile?.avatar_url ? (
-          <Image
-            source={{ uri: item.profile.avatar_url }}
-            style={{ width: 40, height: 40, borderRadius: 20, marginRight: 12 }}
-          />
+          <Image source={{ uri: item.profile.avatar_url }} style={styles.memberAvatar} />
         ) : (
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: '#6B7280',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 12,
-            }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>
+          <View style={styles.memberInitials}>
+            <Text style={styles.memberInitialsText}>
               {getInitials(item.profile?.full_name, item.profile?.email)}
             </Text>
           </View>
         )}
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+        <View style={styles.memberInfoContainer}>
+          <Text style={styles.memberName}>
             {item.profile?.full_name || item.profile?.email || t('trips.member', 'Member')}{' '}
             {item.user_id === currentUserId ? `(${t('trips.you', 'You')})` : ''}
           </Text>
           {!!item.profile?.email && item.profile?.full_name && (
-            <Text style={{ color: '#6B7280' }}>{item.profile.email}</Text>
+            <Text style={styles.memberEmail}>{item.profile.email}</Text>
           )}
         </View>
         {/* Role selector (owner only) */}
         {canManage ? (
           <TouchableOpacity
             onPress={() => onChangeRole(item, item.role === 'viewer' ? 'editor' : 'viewer')}
-            style={{
-              backgroundColor: '#E5E7EB',
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 8,
-              marginRight: 10,
-            }}
+            style={styles.roleButton}
           >
-            <Text style={{ color: '#374151', fontWeight: '600' }}>
+            <Text style={styles.roleButtonText}>
               {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')}
             </Text>
           </TouchableOpacity>
         ) : (
-          <View
-            style={{
-              backgroundColor: '#E5E7EB',
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 8,
-              marginRight: 10,
-            }}
-          >
-            <Text style={{ color: '#374151', fontWeight: '600' }}>
+          <View style={styles.roleButton}>
+            <Text style={styles.roleButtonText}>
               {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')}
             </Text>
           </View>
@@ -492,11 +426,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
               console.log('Delete button pressed for user:', item.user_id);
               onRemoveMember(item);
             }}
-            style={{
-              padding: 8,
-              borderRadius: 4,
-              ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
-            }}
+            style={styles.removeButton}
             activeOpacity={0.7}
           >
             <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -507,33 +437,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   );
 
   const renderInvitationRow = (item: InvitationItem) => (
-    <View
-      style={{
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        marginBottom: 10,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: '#93C5FD',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 12,
-          }}
-        >
+    <View style={styles.invitationCard}>
+      <View style={styles.invitationCardRow}>
+        <View style={styles.memberInitials}>
           <Ionicons name="mail-outline" size={20} color="#1F2937" />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>{item.email}</Text>
-          <Text style={{ color: '#6B7280' }}>
+        <View style={styles.invitationLeftContainer}>
+          <Text style={styles.invitationEmail}>{item.email}</Text>
+          <Text style={styles.invitationRoleText}>
             {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')} •{' '}
             {item.status || 'pending'}
           </Text>
@@ -571,21 +482,21 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   const inviteDisabled = !canInvite || inviting || !inviteValidation.valid;
 
   const renderMembersTab = () => (
-    <View style={{ flex: 1 }}>
+    <View style={styles.tabContentWrapper}>
       {renderOwner()}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.tabInnerWrapper}>
           <FlatList
             data={members}
             keyExtractor={(m) => m.user_id}
             renderItem={({ item }) => renderMemberRow(item)}
             keyboardShouldPersistTaps="always"
             keyboardDismissMode="on-drag"
-            contentContainerStyle={{ paddingBottom: 160 }}
+            contentContainerStyle={styles.flatListPadding}
             ListEmptyComponent={
-              <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+              <View style={styles.emptyContainer}>
                 <Ionicons name="people-outline" size={28} color="#9CA3AF" />
-                <Text style={{ color: '#6B7280', marginTop: 6 }}>
+                <Text style={styles.emptyText}>
                   {t('trips.no_collaborators_yet', 'No collaborators yet')}
                 </Text>
               </View>
@@ -595,14 +506,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       </TouchableWithoutFeedback>
 
       {canInvite && (
-        <View
-          style={{ borderTopWidth: 1, borderTopColor: '#E5E7EB', paddingTop: 12, marginTop: 4 }}
-        >
-          <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 8 }}>
+        <View style={styles.inviteFormContainer}>
+          <Text style={styles.inviteFormTitle}>
             {t('trips.invite_new_member', 'Invite a new member')}
           </Text>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <View style={{ flex: 1 }}>
+          <View style={styles.inviteFormRow}>
+            <View style={styles.inviteEmailInputContainer}>
               <TextInput
                 value={inviteEmail}
                 onChangeText={setInviteEmail}
@@ -615,16 +524,10 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 onSubmitEditing={() => {
                   // Keep keyboard open unless invite is valid and sent explicitly
                 }}
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#E5E7EB',
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-                }}
+                style={styles.inviteEmailInput}
               />
               {inviteEmail.length > 0 && !inviteValidation.valid && (
-                <Text style={{ color: '#EF4444', marginTop: 6, fontSize: 12 }}>
+                <Text style={styles.inviteErrorText}>
                   {inviteValidation.reason === 'format' &&
                     t('trips.invalid_email_format', 'Invalid email format')}
                   {inviteValidation.reason === 'self' &&
@@ -644,14 +547,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 Keyboard.dismiss();
                 setInviteRole(inviteRole === 'viewer' ? 'editor' : 'viewer');
               }}
-              style={{
-                backgroundColor: '#E5E7EB',
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                borderRadius: 10,
-              }}
+              style={styles.inviteRoleButton}
             >
-              <Text style={{ fontWeight: '700', color: '#374151' }}>
+              <Text style={styles.inviteRoleButtonText}>
                 {inviteRole === 'viewer'
                   ? t('trips.viewer', 'Viewer')
                   : t('trips.editor', 'Editor')}
@@ -665,20 +563,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 }
               }}
               disabled={inviteDisabled}
-              style={{
-                backgroundColor: '#8B5CF6',
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                borderRadius: 10,
-                opacity: inviteDisabled ? 0.5 : 1,
-              }}
+              style={[styles.inviteSubmitButton, inviteDisabled && styles.inviteSubmitButtonDisabled]}
             >
               {inviting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{ color: 'white', fontWeight: '700' }}>
-                  {t('trips.invite', 'Invite')}
-                </Text>
+                <Text style={styles.inviteSubmitButtonText}>{t('trips.invite', 'Invite')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -688,17 +578,15 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   );
 
   const renderInvitationsTab = () => (
-    <View style={{ flex: 1 }}>
+    <View style={styles.tabContentWrapper}>
       <FlatList
         data={invitations.filter((i) => (i.status || 'pending') === 'pending')}
         keyExtractor={(i) => String(i.id)}
         renderItem={({ item }) => renderInvitationRow(item)}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+          <View style={styles.emptyContainer}>
             <Ionicons name="mail-open-outline" size={28} color="#9CA3AF" />
-            <Text style={{ color: '#6B7280', marginTop: 6 }}>
-              {t('trips.no_invitations', 'No invitations')}
-            </Text>
+            <Text style={styles.emptyText}>{t('trips.no_invitations', 'No invitations')}</Text>
           </View>
         }
       />
@@ -711,35 +599,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
     const bg = accepted ? '#DCFCE7' : declined ? '#FFE4E6' : '#F3F4F6';
     const bd = accepted ? '#16A34A' : declined ? '#EF4444' : '#E5E7EB';
     return (
-      <View
-        style={{
-          backgroundColor: bg,
-          borderLeftWidth: 4,
-          borderLeftColor: bd,
-          borderRadius: 12,
-          padding: 12,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          marginBottom: 10,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: '#E5E7EB',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 12,
-            }}
-          >
+      <View style={[styles.historyCard, { backgroundColor: bg, borderLeftColor: bd }]}>
+        <View style={styles.historyCardRow}>
+          <View style={styles.memberInitials}>
             <Ionicons name={accepted ? 'checkmark-circle' : 'close-circle'} size={22} color={bd} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>{item.email}</Text>
-            <Text style={{ color: '#6B7280' }}>
+          <View style={styles.historyLeftContainer}>
+            <Text style={styles.historyEmail}>{item.email}</Text>
+            <Text style={styles.historyStatus}>
               {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')} •{' '}
               {accepted ? t('trips.accepted', 'Accepted') : t('trips.declined', 'Declined')}
             </Text>
@@ -750,7 +617,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   };
 
   const renderHistoryTab = () => (
-    <View style={{ flex: 1 }}>
+    <View style={styles.tabContentWrapper}>
       <FlatList
         data={invitations.filter(
           (i) => (i.status || '') === 'accepted' || (i.status || '') === 'declined'
@@ -758,11 +625,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         keyExtractor={(i) => String(i.id)}
         renderItem={({ item }) => renderHistoryRow(item)}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+          <View style={styles.emptyContainer}>
             <Ionicons name="time-outline" size={28} color="#9CA3AF" />
-            <Text style={{ color: '#6B7280', marginTop: 6 }}>
-              {t('trips.no_history', 'No history')}
-            </Text>
+            <Text style={styles.emptyText}>{t('trips.no_history', 'No history')}</Text>
           </View>
         }
       />
@@ -776,30 +641,17 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <View style={styles.modalContainer}>
         {/* Header */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 16,
-            paddingTop: 14,
-            paddingBottom: 10,
-            borderBottomWidth: 1,
-            borderBottomColor: '#E5E7EB',
-          }}
-        >
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
-            {t('trips.manageTeam', 'Manage Team')}
-          </Text>
-          <TouchableOpacity onPress={onClose}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{t('trips.manageTeam', 'Manage Team')}</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
         {/* Tabs */}
-        <View style={{ padding: 12 }}>
+        <View style={styles.tabsContainer}>
           <SegmentedControl
             values={[
               t('trips.members', 'Members'),
@@ -819,15 +671,13 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-          style={{ flex: 1 }}
+          style={styles.keyboardAvoidView}
         >
-          <View style={{ flex: 1, paddingHorizontal: 16, paddingBottom: 16 }}>
+          <View style={styles.contentContainer}>
             {loading ? (
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={styles.loadingContainer}>
                 <ActivityIndicator />
-                <Text style={{ marginTop: 8, color: '#6B7280' }}>
-                  {t('common.loading', 'Loading...')}
-                </Text>
+                <Text style={styles.loadingText}>{t('common.loading', 'Loading...')}</Text>
               </View>
             ) : activeIndex === 0 ? (
               renderMembersTab()
@@ -843,4 +693,321 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   );
 };
 
+const styles = StyleSheet.create({
+  // Modal container
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  
+  // Header styles
+  header: {
+    backgroundColor: '#F3F4F6',
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  
+  // Tabs styles
+  tabsContainer: {
+    padding: 12,
+  },
+  
+  // Content styles
+  keyboardAvoidView: {
+    flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  tabContentWrapper: {
+    flex: 1,
+  },
+  tabInnerWrapper: {
+    flex: 1,
+  },
+  flatListPadding: {
+    paddingBottom: 160,
+  },
+  
+  // Loading state
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    color: '#6B7280',
+  },
+  
+  // Owner card styles
+  ownerCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    marginBottom: 10,
+  },
+  ownerCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ownerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  ownerInitials: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  ownerInitialsText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+  ownerInfoContainer: {
+    flex: 1,
+  },
+  ownerName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  ownerEmail: {
+    color: '#92400E',
+  },
+  ownerBadge: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  ownerBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  
+  // Member card styles
+  memberCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  memberCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  memberInitials: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6B7280',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  memberInitialsText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+  memberInfoContainer: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  memberEmail: {
+    color: '#6B7280',
+  },
+  roleButton: {
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  roleButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  removeButton: {
+    padding: 8,
+    borderRadius: 4,
+  },
+  
+  // Invitation card styles
+  invitationCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  invitationCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  invitationLeftContainer: {
+    flex: 1,
+  },
+  invitationEmail: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  invitationRoleText: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  invitationCancelButton: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  invitationCancelButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  
+  // Invite form styles
+  inviteFormContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 12,
+    marginTop: 4,
+  },
+  inviteFormTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  inviteFormRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  inviteEmailInputContainer: {
+    flex: 1,
+  },
+  inviteEmailInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+  },
+  inviteErrorText: {
+    color: '#EF4444',
+    marginTop: 6,
+    fontSize: 12,
+  },
+  inviteRoleButton: {
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  inviteRoleButtonText: {
+    fontWeight: '700',
+    color: '#374151',
+  },
+  inviteSubmitButton: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  inviteSubmitButtonDisabled: {
+    opacity: 0.5,
+  },
+  inviteSubmitButtonText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+  
+  // Empty state styles
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  emptyText: {
+    color: '#6B7280',
+    marginTop: 6,
+  },
+  
+  // History tab styles
+  historyCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  historyCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  historyLeftContainer: {
+    flex: 1,
+  },
+  historyEmail: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  historyStatus: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  historyDateText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+});
+
 export default ManageTeamModal;
+
