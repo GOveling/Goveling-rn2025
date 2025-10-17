@@ -156,6 +156,7 @@ export default function PersonalInfoScreen() {
       </TouchableOpacity>
     )
   );
+  CityItem.displayName = 'CityItem';
 
   useEffect(() => {
     loadProfileData();

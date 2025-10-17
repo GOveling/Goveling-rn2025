@@ -159,6 +159,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
       </TouchableOpacity>
     )
   );
+  CityItem.displayName = 'CityItem';
 
   useEffect(() => {
     if (visible && userId) {
