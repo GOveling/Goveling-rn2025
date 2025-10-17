@@ -13,6 +13,7 @@ import {
   StatusBar,
   Dimensions,
   FlatList,
+  StyleSheet,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -693,7 +694,7 @@ export default function PersonalInfoScreen() {
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Seleccionar Género</Text>
-              <View style={{ width: 60 }} />
+              <View style={styles.pickerHeaderSpacer} />
             </View>
             <ScrollView style={styles.pickerContent}>
               {genderOptions.map((option) => (
@@ -736,7 +737,7 @@ export default function PersonalInfoScreen() {
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Seleccionar País</Text>
-              <View style={{ width: 60 }} />
+              <View style={styles.pickerHeaderSpacer} />
             </View>
             <ScrollView style={styles.pickerContent}>
               {countries.map((country) => (
@@ -790,18 +791,11 @@ export default function PersonalInfoScreen() {
                 <Text style={styles.pickerCancel}>Cancelar</Text>
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Seleccionar Ciudad</Text>
-              <View style={{ width: 60 }} />
+              <View style={styles.pickerHeaderSpacer} />
             </View>
 
             {/* Información y búsqueda */}
-            <View
-              style={{
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderBottomWidth: 1,
-                borderBottomColor: '#E5E7EB',
-              }}
-            >
+            <View style={styles.citySearchContainer}>
               {cities.length > 10 && (
                 <TextInput
                   value={citySearchQuery}
@@ -854,7 +848,7 @@ export default function PersonalInfoScreen() {
                 ListFooterComponent={() => {
                   if (displayedCitiesCount < cities.length && !citySearchQuery) {
                     return (
-                      <View style={{ padding: 20, alignItems: 'center' }}>
+                      <View style={styles.loadMoreFooterContainer}>
                         <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreCities}>
                           <Text style={styles.loadMoreText}>
                             Cargar más ciudades ({cities.length - displayedCitiesCount} restantes)
@@ -874,7 +868,7 @@ export default function PersonalInfoScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -1238,4 +1232,20 @@ const styles = {
     textAlign: 'center' as const,
     fontWeight: '600' as const,
   },
-};
+  // Picker header spacer
+  pickerHeaderSpacer: {
+    width: 60,
+  },
+  // City search container
+  citySearchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  // Load more footer container
+  loadMoreFooterContainer: {
+    padding: 20,
+    alignItems: 'center' as const,
+  },
+});
