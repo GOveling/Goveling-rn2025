@@ -409,9 +409,7 @@ export default function ExploreTab() {
                     showsVerticalScrollIndicator={false}
                   >
                     {/* Sección General */}
-                    <Text style={styles.categorySectionTitle}>
-                      General
-                    </Text>
+                    <Text style={styles.categorySectionTitle}>General</Text>
                     {[...generalCategories].map((cat) => {
                       const isSelected = selectedCategories.includes(cat.name);
                       return (
@@ -429,16 +427,12 @@ export default function ExploreTab() {
                               style={styles.categoryItemSelected}
                             >
                               <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
-                              <Text style={styles.categoryItemTextSelected}>
-                                {cat.name}
-                              </Text>
+                              <Text style={styles.categoryItemTextSelected}>{cat.name}</Text>
                             </LinearGradient>
                           ) : (
                             <View style={styles.categoryItemUnselected}>
                               <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
-                              <Text style={styles.categoryItemTextUnselected}>
-                                {cat.name}
-                              </Text>
+                              <Text style={styles.categoryItemTextUnselected}>{cat.name}</Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -446,9 +440,7 @@ export default function ExploreTab() {
                     })}
 
                     {/* Sección Lugares Específicos */}
-                    <Text style={styles.categorySectionTitle}>
-                      Lugares Específicos
-                    </Text>
+                    <Text style={styles.categorySectionTitle}>Lugares Específicos</Text>
                     {[...specificCategories].map((cat) => {
                       const isSelected = selectedCategories.includes(cat.name);
                       return (
@@ -526,10 +518,7 @@ export default function ExploreTab() {
               <Text style={styles.searchInputText}>Cerca de mi ubicación actual</Text>
             </View>
 
-            <TouchableOpacity
-              onPress={() => setShowMap(true)}
-              style={styles.searchLocationButton}
-            >
+            <TouchableOpacity onPress={() => setShowMap(true)} style={styles.searchLocationButton}>
               <Text style={styles.searchLocationText}>🗺️ Ver Mapa</Text>
             </TouchableOpacity>
           </View>
@@ -544,11 +533,12 @@ export default function ExploreTab() {
               style={styles.searchInput}
               placeholderTextColor="#9CA3AF"
             />
-            <TouchableOpacity onPress={performSearch} disabled={loading} style={styles.searchButtonWrapper}>
-              <LinearGradient
-                colors={['#8B5CF6', '#EC4899']}
-                style={styles.searchGradient}
-              >
+            <TouchableOpacity
+              onPress={performSearch}
+              disabled={loading}
+              style={styles.searchButtonWrapper}
+            >
+              <LinearGradient colors={['#8B5CF6', '#EC4899']} style={styles.searchGradient}>
                 <Text style={styles.searchButtonText}>{loading ? '…' : '🔍'}</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -920,6 +910,9 @@ const styles = StyleSheet.create({
 
   // Search input styles
   searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#F9FAFB',
