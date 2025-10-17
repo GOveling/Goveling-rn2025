@@ -1027,6 +1027,173 @@ const styles = StyleSheet.create({
     color: '#4B0082',
   },
   
+  // Category panel styles
+  categoryPanel: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    overflow: 'hidden',
+  },
+  categoryPanelContent: {
+    padding: 16,
+    paddingBottom: 12,
+  },
+  categorySectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 10,
+  },
+  categoryItemButton: {
+    marginBottom: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  categoryItemSelected: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryItemUnselected: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryItemIcon: {
+    fontSize: 16,
+    marginRight: 12,
+  },
+  categoryItemTextSelected: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'white',
+  },
+  categoryItemTextUnselected: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  categoryItemsScrollView: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  categoryItemsScrollViewContent: {
+    paddingRight: 4,
+  },
+  
+  // Search input styles
+  searchInputContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  searchInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  searchInputIcon: {
+    marginRight: 12,
+  },
+  searchInputField: {
+    flex: 1,
+  },
+  searchInputText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  searchButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchClearButton: {
+    padding: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  searchClearButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  searchLocationButton: {
+    padding: 12,
+    borderRadius: 8,
+  },
+  searchLocationGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchLocationText: {
+    fontSize: 16,
+  },
+  
+  // Results section styles
+  resultsSection: {
+    marginBottom: 16,
+  },
+  resultsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  resultsHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  resultsHeaderIcon: {
+    marginRight: 8,
+    fontSize: 20,
+  },
+  resultsHeaderTitle: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  resultsMapButton: {
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+  },
+  resultsEmptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  resultsEmptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  resultsEmptyText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
+  resultsLoadingContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  resultsLoadingText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  
   // Search button styles
   searchButtonContainer: {
     marginTop: 12,
