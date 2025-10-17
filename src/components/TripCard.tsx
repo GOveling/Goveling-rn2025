@@ -164,7 +164,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     return () => {
       try {
         if (channel) supabase.removeChannel(channel);
-      } catch {}
+      } catch {
+        // Ignore cleanup errors on unmount
+      }
     };
   }, [trip.id]);
 

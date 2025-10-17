@@ -122,7 +122,9 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
     setBatchSignal((v) => v + 1);
     try {
       await markAllAsRead();
-    } catch {}
+    } catch {
+      // Ignore mark-as-read errors
+    }
   };
 
   // Badge bounce when totalCount decreases
@@ -202,7 +204,9 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
         router.push(route as any);
         return;
       }
-    } catch {}
+    } catch {
+      // Ignore navigation errors
+    }
   };
 
   const handleAcceptInvitation = async (invitation: any) => {

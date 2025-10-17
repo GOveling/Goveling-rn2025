@@ -80,7 +80,9 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
               `Tu compañero está llegando a ${nearest.name}`,
               { type: 'nearby', place_id: nearest.place_id }
             );
-        } catch {}
+        } catch {
+          // Ignore notification errors
+        }
       })();
     }
   }, [enabled, pos, list]);
