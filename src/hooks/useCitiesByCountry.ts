@@ -57,8 +57,7 @@ export const useCitiesByCountry = (): UseCitiesByCountryReturn => {
     } catch (err) {
       // Ignorar AbortError - es esperado cuando se cancela una request anterior
       if (err instanceof Error && err.name === 'AbortError') {
-        console.log(`🔄 City fetch aborted for ${countryCode} (normal behavior)`);
-        return;
+        return; // Ya está logueado en apiService
       }
 
       const errorMessage =
