@@ -12,6 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -373,137 +374,54 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <LinearGradient
-          colors={['#6366F1', '#8B5CF6']}
-          style={{
-            paddingTop: Platform.OS === 'ios' ? 60 : 40,
-            paddingHorizontal: 20,
-            paddingBottom: 16,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <TouchableOpacity
-              onPress={onClose}
-              style={{
-                padding: 8,
-                borderRadius: 20,
-                backgroundColor: 'rgba(255,255,255,0.15)',
-              }}
-            >
+        <LinearGradient colors={['#6366F1', '#8B5CF6']} style={styles.header}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={22} color="#fff" />
             </TouchableOpacity>
 
-            <Text
-              style={{
-                color: '#fff',
-                fontSize: 18,
-                fontWeight: '700',
-                flex: 1,
-                textAlign: 'center',
-                marginHorizontal: 16,
-              }}
-            >
-              Editar Perfil
-            </Text>
+            <Text style={styles.headerTitle}>Editar Perfil</Text>
 
-            <TouchableOpacity
-              onPress={saveProfile}
-              disabled={loading}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor: 'rgba(34,197,94,0.9)',
-              }}
-            >
+            <TouchableOpacity onPress={saveProfile} disabled={loading} style={styles.saveButton}>
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Guardar</Text>
+                <Text style={styles.saveButtonText}>Guardar</Text>
               )}
             </TouchableOpacity>
           </View>
         </LinearGradient>
 
-        <ScrollView style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
-          <View style={{ padding: 20 }}>
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.contentContainer}>
             {/* Avatar Section */}
-            <View style={{ alignItems: 'center', marginBottom: 30 }}>
+            <View style={styles.avatarSection}>
               <TouchableOpacity
                 onPress={pickImage}
                 disabled={uploading}
-                style={{ position: 'relative' }}
+                style={styles.avatarTouchable}
               >
                 {profileData.avatar_url ? (
-                  <Image
-                    source={{ uri: profileData.avatar_url }}
-                    style={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: 60,
-                      borderWidth: 4,
-                      borderColor: '#fff',
-                      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-                      elevation: 8,
-                      ...(Platform.OS === 'android' && { elevation: 8 }),
-                    }}
-                  />
+                  <Image source={{ uri: profileData.avatar_url }} style={styles.avatarImage} />
                 ) : (
                   <LinearGradient
                     colors={['#4F8EF7', '#FF8C42']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: 60,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderWidth: 4,
-                      borderColor: '#fff',
-                      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-                      elevation: 8,
-                      ...(Platform.OS === 'android' && { elevation: 8 }),
-                    }}
+                    style={styles.avatarPlaceholder}
                   >
-                    <Text
-                      style={{
-                        fontSize: 36,
-                        fontWeight: 'bold',
-                        color: '#fff',
-                      }}
-                    >
+                    <Text style={styles.avatarInitials}>
                       {getInitials(profileData.full_name || 'GO')}
                     </Text>
                   </LinearGradient>
                 )}
 
                 {/* Edit Icon */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    backgroundColor: '#4F8EF7',
-                    borderRadius: 20,
-                    width: 40,
-                    height: 40,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: 3,
-                    borderColor: '#fff',
-                  }}
-                >
+                <View style={styles.editIconContainer}>
                   {uploading ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
@@ -512,14 +430,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                 </View>
               </TouchableOpacity>
 
-              <Text
-                style={{
-                  marginTop: 12,
-                  color: '#6b7280',
-                  fontSize: 14,
-                  textAlign: 'center',
-                }}
-              >
+              <Text style={styles.changePhotoText}>
                 {uploading
                   ? 'Optimizando imagen...'
                   : 'Selecciona una imagen. Se optimizará automáticamente.'}
@@ -527,46 +438,20 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
             </View>
 
             {/* Nombre Completo */}
-            <View style={{ marginBottom: 24 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: 8,
-                }}
-              >
-                Nombre completo
-              </Text>
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Nombre completo</Text>
               <TextInput
                 value={profileData.full_name}
                 onChangeText={(text) => setProfileData((prev) => ({ ...prev, full_name: text }))}
                 placeholder="Tu nombre completo"
-                style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 16,
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.1)',
-                }}
+                style={styles.textInput}
                 placeholderTextColor="#666"
               />
             </View>
 
             {/* Descripción */}
-            <View style={{ marginBottom: 24 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: 8,
-                }}
-              >
-                Descripción
-              </Text>
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Descripción</Text>
               <TextInput
                 value={profileData.description}
                 onChangeText={(text) => {
@@ -577,64 +462,21 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                 placeholder="Entusiasta de Viajes"
                 multiline
                 maxLength={70}
-                style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 16,
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.1)',
-                  height: 80,
-                  textAlignVertical: 'top',
-                }}
+                style={[styles.textInput, styles.textInputMultiline]}
                 placeholderTextColor="#666"
               />
-              <Text
-                style={{
-                  marginTop: 6,
-                  fontSize: 12,
-                  color: '#6366F1',
-                  textAlign: 'right',
-                }}
-              >
+              <Text style={styles.characterCount}>
                 {profileData.description.length}/70 caracteres
               </Text>
             </View>
 
             {/* Email (solo lectura) */}
-            <View style={{ marginBottom: 24 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: 8,
-                }}
-              >
-                Email
-              </Text>
-              <View
-                style={{
-                  backgroundColor: '#F3F4F6',
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.05)',
-                }}
-              >
-                <Text style={{ fontSize: 16, color: '#6B7280' }}>{profileData.email}</Text>
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Email</Text>
+              <View style={styles.emailContainer}>
+                <Text style={styles.emailText}>{profileData.email}</Text>
               </View>
-              <Text
-                style={{
-                  marginTop: 6,
-                  fontSize: 12,
-                  color: '#6B7280',
-                }}
-              >
-                El email no se puede cambiar
-              </Text>
+              <Text style={styles.emailHelperText}>El email no se puede cambiar</Text>
             </View>
           </View>
         </ScrollView>
@@ -644,3 +486,161 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 };
 
 export default ProfileEditModal;
+
+const styles = StyleSheet.create({
+  // Modal & Container
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
+  },
+  saveButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(34,197,94,0.9)',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  contentContainer: {
+    padding: 20,
+  },
+
+  // Avatar Section
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  avatarTouchable: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#fff',
+    elevation: 8,
+  },
+  avatarPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#fff',
+    elevation: 8,
+  },
+  avatarInitials: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  editIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#4F8EF7',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  uploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  changePhotoText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6366F1',
+    fontWeight: '600',
+  },
+
+  // Form Fields
+  fieldContainer: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  textInputMultiline: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#6366F1',
+    textAlign: 'right',
+  },
+
+  // Email Field
+  emailContainer: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  emailText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  emailHelperText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#6B7280',
+  },
+});

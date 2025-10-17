@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import * as Notifications from 'expo-notifications';
 
@@ -88,76 +88,34 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
   }, [enabled, pos, list]);
 
   return (
-    <View
-      style={{
-        backgroundColor: '#FEF3C7',
-        borderRadius: 16,
-        padding: 20,
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-        elevation: 5,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: '#F59E0B',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 12,
-          }}
-        >
-          <Text style={{ fontSize: 20 }}>🎯</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>🎯</Text>
         </View>
 
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#92400E', marginBottom: 4 }}>
-            Alertas Cercanas
-          </Text>
-          <Text style={{ fontSize: 14, color: '#A16207' }}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Alertas Cercanas</Text>
+          <Text style={styles.headerSubtitle}>
             Activa el Modo Viaje para ver lugares guardados cercanos
           </Text>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={{
-          backgroundColor: '#F59E0B',
-          paddingVertical: 12,
-          paddingHorizontal: 20,
-          borderRadius: 12,
-          alignItems: 'center',
-        }}
-        onPress={() => setEnabled(!enabled)}
-      >
-        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-          {enabled ? 'Desactivar' : 'Activar'}
-        </Text>
+      <TouchableOpacity style={styles.toggleButton} onPress={() => setEnabled(!enabled)}>
+        <Text style={styles.toggleButtonText}>{enabled ? 'Desactivar' : 'Activar'}</Text>
       </TouchableOpacity>
 
       {enabled && list.length > 0 && (
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ fontSize: 14, color: '#92400E', marginBottom: 8 }}>
-            {list.length} lugares encontrados cerca
-          </Text>
+        <View style={styles.placesContainer}>
+          <Text style={styles.placesHeader}>{list.length} lugares encontrados cerca</Text>
           {list.slice(0, 3).map((item, index) => (
-            <View
-              key={item.id || item.place_id}
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                paddingVertical: 4,
-              }}
-            >
-              <Text style={{ fontSize: 14, color: '#92400E', flex: 1 }}>
+            <View key={item.id || item.place_id} style={styles.placeItem}>
+              <Text style={styles.placeName}>
                 {index + 1}. {item.name}
               </Text>
               {typeof item.distance_m === 'number' && (
-                <Text style={{ fontSize: 12, color: '#A16207' }}>
-                  {(item.distance_m / 1000).toFixed(2)} km
-                </Text>
+                <Text style={styles.placeDistance}>{(item.distance_m / 1000).toFixed(2)} km</Text>
               )}
             </View>
           ))}
@@ -165,6 +123,86 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
       )}
     </View>
   );
+});
+
+const styles = StyleSheet.create({
+  // Main Container
+  container: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 5,
+  },
+
+  // Header Section
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 20,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#A16207',
+  },
+
+  // Toggle Button
+  toggleButton: {
+    backgroundColor: '#F59E0B',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  toggleButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Places List
+  placesContainer: {
+    marginTop: 12,
+  },
+  placesHeader: {
+    fontSize: 14,
+    color: '#92400E',
+    marginBottom: 8,
+  },
+  placeItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  placeName: {
+    fontSize: 14,
+    color: '#92400E',
+    flex: 1,
+  },
+  placeDistance: {
+    fontSize: 12,
+    color: '#A16207',
+  },
 });
 
 export default NearbyAlerts;

@@ -202,10 +202,7 @@ export default function AuthScreen() {
       <LinearGradient colors={backgroundColors} style={styles.gradient}>
         {/* Theme Toggle */}
         <TouchableOpacity
-          style={[
-            styles.themeToggle,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)' },
-          ]}
+          style={[styles.themeToggle, isDark ? styles.themeToggleDark : styles.themeToggleLight]}
           onPress={toggleTheme}
         >
           <Ionicons name={isDark ? 'sunny' : 'moon'} size={24} color="rgba(255,255,255,0.8)" />
@@ -220,11 +217,13 @@ export default function AuthScreen() {
             <View
               style={[
                 styles.errorContainer,
-                { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : 'rgba(254,226,226,0.9)' },
+                isDark ? styles.errorContainerDark : styles.errorContainerLight,
               ]}
             >
               <Ionicons name="alert-circle" size={20} color={isDark ? '#FCA5A5' : '#DC2626'} />
-              <Text style={[styles.errorText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>
+              <Text
+                style={[styles.errorText, isDark ? styles.errorTextDark : styles.errorTextLight]}
+              >
                 {authError}
               </Text>
               <TouchableOpacity onPress={() => setAuthError(null)}>
@@ -234,12 +233,7 @@ export default function AuthScreen() {
           )}
 
           {/* Card Container */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)' },
-            ]}
-          >
+          <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
             {/* Logo */}
             <View style={styles.logoContainer}>
               <Image
@@ -254,14 +248,7 @@ export default function AuthScreen() {
               {mode === 'signup' && (
                 <View style={styles.inputContainer}>
                   <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                        color: isDark ? '#fff' : '#000',
-                        backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
-                      },
-                    ]}
+                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="Full Name"
                     placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                     value={fullName}
@@ -276,14 +263,7 @@ export default function AuthScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={emailInputRef}
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                      color: isDark ? '#fff' : '#000',
-                      backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
-                    },
-                  ]}
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="Email Address"
                   placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                   value={email}
@@ -298,14 +278,7 @@ export default function AuthScreen() {
               <View style={styles.inputContainer}>
                 <TextInput
                   ref={passwordInputRef}
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                      color: isDark ? '#fff' : '#000',
-                      backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
-                    },
-                  ]}
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="Password"
                   placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                   value={password}
@@ -332,14 +305,7 @@ export default function AuthScreen() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     ref={confirmPasswordInputRef}
-                    style={[
-                      styles.input,
-                      {
-                        borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
-                        color: isDark ? '#fff' : '#000',
-                        backgroundColor: isDark ? 'transparent' : 'rgba(255,255,255,0.9)',
-                      },
-                    ]}
+                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="Confirm Password"
                     placeholderTextColor={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
                     value={confirmPassword}
@@ -370,19 +336,21 @@ export default function AuthScreen() {
                     <View
                       style={[
                         styles.checkbox,
-                        { borderColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)' },
+                        isDark ? styles.checkboxDark : styles.checkboxLight,
                         rememberMe && styles.checkboxChecked,
                       ]}
                     >
                       {rememberMe && <Ionicons name="checkmark" size={16} color="#fff" />}
                     </View>
-                    <Text style={[styles.checkboxText, { color: isDark ? '#fff' : '#333' }]}>
+                    <Text
+                      style={[styles.checkboxText, isDark ? styles.textDark : styles.textLight]}
+                    >
                       Remember me
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => router.push('/auth/forgot-password' as any)}>
-                    <Text style={[styles.forgotText, { color: isDark ? '#fff' : '#6366F1' }]}>
+                    <Text style={[styles.forgotText, isDark ? styles.linkDark : styles.linkLight]}>
                       Forgot password?
                     </Text>
                   </TouchableOpacity>
@@ -391,7 +359,7 @@ export default function AuthScreen() {
 
               {/* Main Button */}
               <TouchableOpacity
-                style={[styles.mainButton, { opacity: loading ? 0.6 : 1 }]}
+                style={[styles.mainButton, loading && styles.buttonLoading]}
                 onPress={mode === 'signup' ? signUp : signIn}
                 disabled={loading}
               >
@@ -404,11 +372,16 @@ export default function AuthScreen() {
 
               {/* Switch Mode */}
               <View style={styles.switchContainer}>
-                <Text style={[styles.switchText, { color: isDark ? '#fff' : '#666' }]}>
+                <Text
+                  style={[
+                    styles.switchText,
+                    isDark ? styles.switchTextDark : styles.switchTextLight,
+                  ]}
+                >
                   {mode === 'signup' ? 'Already have an account? ' : 'Don&apos;t have an account? '}
                 </Text>
                 <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
-                  <Text style={[styles.switchLink, { color: isDark ? '#fff' : '#6366F1' }]}>
+                  <Text style={[styles.switchLink, isDark ? styles.linkDark : styles.linkLight]}>
                     {mode === 'signup' ? 'Sign in' : 'Sign up'}
                   </Text>
                 </TouchableOpacity>
@@ -553,5 +526,84 @@ const styles = StyleSheet.create({
     top: 60,
     width: 44,
     zIndex: 10,
+  },
+
+  // Theme-specific input styles
+  inputDark: {
+    borderColor: 'rgba(255,255,255,0.3)',
+    color: '#fff',
+    backgroundColor: 'transparent',
+  },
+  inputLight: {
+    borderColor: 'rgba(0,0,0,0.2)',
+    color: '#000',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+
+  // Theme-specific checkbox border
+  checkboxDark: {
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  checkboxLight: {
+    borderColor: 'rgba(0,0,0,0.3)',
+  },
+
+  // Theme-specific text colors
+  textDark: {
+    color: '#fff',
+  },
+  textLight: {
+    color: '#333',
+  },
+
+  // Theme-specific link color
+  linkLight: {
+    color: '#6366F1',
+  },
+  linkDark: {
+    color: '#fff',
+  },
+
+  // Theme-specific switch text colors
+  switchTextLight: {
+    color: '#666',
+  },
+  switchTextDark: {
+    color: '#fff',
+  },
+
+  // Loading button opacity
+  buttonLoading: {
+    opacity: 0.6,
+  },
+
+  // Theme toggle background
+  themeToggleDark: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  themeToggleLight: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+
+  // Error container
+  errorContainerDark: {
+    backgroundColor: 'rgba(220,38,38,0.2)',
+  },
+  errorContainerLight: {
+    backgroundColor: 'rgba(254,226,226,0.9)',
+  },
+  errorTextDark: {
+    color: '#FCA5A5',
+  },
+  errorTextLight: {
+    color: '#DC2626',
+  },
+
+  // Card background
+  cardDark: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  cardLight: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
   },
 });

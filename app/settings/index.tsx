@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Appearance } from 'react-native';
+import { View, Text, TouchableOpacity, Appearance, StyleSheet } from 'react-native';
 
 import { useTranslation } from 'react-i18next';
 
@@ -28,65 +28,111 @@ export default function Settings() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 12, gap: 12 }}>
-      <Text style={{ fontSize: 22, fontWeight: '900' }}>Configuración</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Configuración</Text>
 
       <Text>Idioma</Text>
-      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+      <View style={styles.row}>
         {['en', 'es', 'pt', 'fr', 'it', 'zh', 'ja'].map((l) => (
           <TouchableOpacity
             key={l}
             onPress={() => setLang(l)}
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: lang === l ? '#007aff' : '#ddd',
-            }}
+            style={[
+              styles.optionButton,
+              lang === l ? styles.optionButtonActive : styles.optionButtonInactive,
+            ]}
           >
             <Text>{l.toUpperCase()}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={{ marginTop: 8 }}>Tema</Text>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <Text style={styles.label}>Tema</Text>
+      <View style={styles.rowNoWrap}>
         <TouchableOpacity
           onPress={() => setDark(false)}
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: !dark ? '#007aff' : '#ddd',
-          }}
+          style={[
+            styles.optionButton,
+            !dark ? styles.optionButtonActive : styles.optionButtonInactive,
+          ]}
         >
           <Text>Claro</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setDark(true)}
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: dark ? '#007aff' : '#ddd',
-          }}
+          style={[
+            styles.optionButton,
+            dark ? styles.optionButtonActive : styles.optionButtonInactive,
+          ]}
         >
           <Text>Oscuro</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        onPress={save}
-        style={{ backgroundColor: '#007aff', padding: 12, borderRadius: 8, marginTop: 12 }}
-      >
-        <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '800' }}>Guardar</Text>
+      <TouchableOpacity onPress={save} style={styles.saveButton}>
+        <Text style={styles.saveButtonText}>Guardar</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  // Main Container
+  container: {
+    flex: 1,
+    padding: 12,
+    gap: 12,
+  },
+
+  // Header
+  title: {
+    fontSize: 22,
+    fontWeight: '900',
+  },
+
+  // Labels
+  label: {
+    marginTop: 8,
+  },
+
+  // Language/Theme Row
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  rowNoWrap: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  // Option Button Base
+  optionButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  optionButtonActive: {
+    borderColor: '#007aff',
+  },
+  optionButtonInactive: {
+    borderColor: '#ddd',
+  },
+
+  // Save Button
+  saveButton: {
+    backgroundColor: '#007aff',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  saveButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '800',
+  },
+});
 
 // v155 language picker
 const languages = ['en', 'es', 'pt', 'fr', 'it', 'zh', 'ja'];

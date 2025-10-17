@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { useRouter } from 'expo-router';
 
@@ -82,25 +82,9 @@ const HomeDaySummary = React.memo(function HomeDaySummary() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          padding: 14,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: '#eee',
-          backgroundColor: '#fff',
-        }}
-      >
-        <View
-          style={{
-            width: '45%',
-            height: 16,
-            backgroundColor: '#f3f4f6',
-            borderRadius: 8,
-            marginBottom: 8,
-          }}
-        />
-        <View style={{ width: '80%', height: 12, backgroundColor: '#f3f4f6', borderRadius: 6 }} />
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingSkeleton1} />
+        <View style={styles.loadingSkeleton2} />
       </View>
     );
   }
@@ -110,63 +94,135 @@ const HomeDaySummary = React.memo(function HomeDaySummary() {
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
 
   return (
-    <View
-      style={{
-        padding: 14,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#eee',
-        backgroundColor: '#fff',
-        gap: 10,
-      }}
-    >
-      <Text style={{ fontWeight: '900', fontSize: 16 }}>{t('Resumen de hoy')}</Text>
-      <Text style={{ opacity: 0.8 }}>
+    <View style={styles.container}>
+      <Text style={styles.title}>{t('Resumen de hoy')}</Text>
+      <Text style={styles.subtitle}>
         {trip.title || 'Trip'} — {progress.done}/{progress.total} visitados ({pct}%)
       </Text>
-      <View
-        style={{ height: 8, backgroundColor: '#f3f4f6', borderRadius: 999, overflow: 'hidden' }}
-      >
-        <View style={{ width: `${pct}%`, backgroundColor: '#34c759', height: 8 }} />
+      <View style={styles.progressBarContainer}>
+        <View style={[styles.progressBarFill, { width: `${pct}%` }]} />
       </View>
       {progress.next ? (
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
+        <View style={styles.rowContainer}>
           <View>
-            <Text style={{ fontWeight: '700' }}>{t('Siguiente:')}</Text>
-            <Text style={{ opacity: 0.8 }}>{progress.next.name}</Text>
+            <Text style={styles.nextLabel}>{t('Siguiente:')}</Text>
+            <Text style={styles.nextName}>{progress.next.name}</Text>
           </View>
           <TouchableOpacity
             onPress={() =>
               Alert.alert('Live Mode', 'Funcionalidad de modo live próximamente disponible')
             }
-            style={{ backgroundColor: '#007aff', paddingVertical: 8, borderRadius: 10 }}
+            style={styles.travelModeButton}
           >
-            <Text style={{ color: '#fff', fontWeight: '800' }}>{t('Abrir Travel Mode')}</Text>
+            <Text style={styles.travelModeButtonText}>{t('Abrir Travel Mode')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Text style={{ fontWeight: '700' }}>{t('¡Itinerario completado! 🎉')}</Text>
+        <View style={styles.rowContainer}>
+          <Text style={styles.completedText}>{t('¡Itinerario completado! 🎉')}</Text>
           <TouchableOpacity
             onPress={() => Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible')}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: '#ddd',
-            }}
+            style={styles.routeButton}
           >
-            <Text style={{ fontWeight: '800' }}>{t('Ver ruta')}</Text>
+            <Text style={styles.routeButtonText}>{t('Ver ruta')}</Text>
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
+});
+
+const styles = StyleSheet.create({
+  // Loading State
+  loadingContainer: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  loadingSkeleton1: {
+    width: '45%',
+    height: 16,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  loadingSkeleton2: {
+    width: '80%',
+    height: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 6,
+  },
+
+  // Main Container
+  container: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    backgroundColor: '#fff',
+    gap: 10,
+  },
+
+  // Text Styles
+  title: {
+    fontWeight: '900',
+    fontSize: 16,
+  },
+  subtitle: {
+    opacity: 0.8,
+  },
+
+  // Progress Bar
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    backgroundColor: '#34c759',
+    height: 8,
+  },
+
+  // Next/Completed Section
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  nextLabel: {
+    fontWeight: '700',
+  },
+  nextName: {
+    opacity: 0.8,
+  },
+  completedText: {
+    fontWeight: '700',
+  },
+
+  // Buttons
+  travelModeButton: {
+    backgroundColor: '#007aff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  travelModeButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+  routeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  routeButtonText: {
+    fontWeight: '800',
+  },
 });
 
 export default HomeDaySummary;

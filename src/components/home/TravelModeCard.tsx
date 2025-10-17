@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -18,62 +18,26 @@ interface TravelModeCardProps {
 const TravelModeCard = React.memo<TravelModeCardProps>(
   function TravelModeCard({ travelModeEnabled, onToggleTravelMode, currentTrip }) {
     return (
-      <View
-        style={{
-          backgroundColor: 'white',
-          borderRadius: 16,
-          padding: 20,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 5,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-            Estado del Modo Travel
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 4,
-                borderRadius: 12,
-                backgroundColor: !travelModeEnabled ? '#E5E7EB' : 'transparent',
-              }}
-            >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Estado del Modo Travel</Text>
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusBadge, !travelModeEnabled ? styles.inactiveBadge : null]}>
               <Text
-                style={{
-                  fontSize: 12,
-                  color: !travelModeEnabled ? '#6B7280' : '#9CA3AF',
-                  fontWeight: !travelModeEnabled ? '600' : '400',
-                }}
+                style={[
+                  styles.statusText,
+                  !travelModeEnabled ? styles.inactiveText : styles.dimmedText,
+                ]}
               >
                 Inactivo
               </Text>
             </View>
-            <View
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 4,
-                borderRadius: 12,
-                backgroundColor: travelModeEnabled ? '#D1FAE5' : 'transparent',
-              }}
-            >
+            <View style={[styles.statusBadge, travelModeEnabled ? styles.activeBadge : null]}>
               <Text
-                style={{
-                  fontSize: 12,
-                  color: travelModeEnabled ? '#059669' : '#9CA3AF',
-                  fontWeight: travelModeEnabled ? '600' : '400',
-                }}
+                style={[
+                  styles.statusText,
+                  travelModeEnabled ? styles.activeText : styles.dimmedText,
+                ]}
               >
                 Viajando
               </Text>
@@ -82,31 +46,13 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
         </View>
 
         <TouchableOpacity onPress={onToggleTravelMode}>
-          <LinearGradient
-            colors={['#10B981', '#059669']}
-            style={{
-              padding: 16,
-              borderRadius: 12,
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-              ✈️ Acceder al Modo Travel
-            </Text>
+          <LinearGradient colors={['#10B981', '#059669']} style={styles.gradientButton}>
+            <Text style={styles.gradientButtonText}>✈️ Acceder al Modo Travel</Text>
           </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={{
-            padding: 16,
-            borderRadius: 12,
-            alignItems: 'center',
-            backgroundColor: '#F9FAFB',
-            borderWidth: 1,
-            borderColor: '#E5E7EB',
-            marginBottom: 12,
-          }}
+          style={styles.detailsButton}
           onPress={() =>
             currentTrip &&
             Alert.alert(
@@ -115,7 +61,7 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
             )
           }
         >
-          <Text style={{ color: '#374151', fontSize: 16, fontWeight: '500' }}>Ver Detalles</Text>
+          <Text style={styles.detailsButtonText}>Ver Detalles</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -123,17 +69,8 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
             currentTrip && Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible')
           }
         >
-          <LinearGradient
-            colors={['#3B82F6', '#1D4ED8']}
-            style={{
-              padding: 16,
-              borderRadius: 12,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-              Ver Detalles de Ruta IA
-            </Text>
+          <LinearGradient colors={['#3B82F6', '#1D4ED8']} style={styles.routeButton}>
+            <Text style={styles.gradientButtonText}>Ver Detalles de Ruta IA</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -147,5 +84,98 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
     );
   }
 );
+
+const styles = StyleSheet.create({
+  // Main Container
+  container: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+
+  // Header Section
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  // Status Badges
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  inactiveBadge: {
+    backgroundColor: '#E5E7EB',
+  },
+  activeBadge: {
+    backgroundColor: '#D1FAE5',
+  },
+  statusText: {
+    fontSize: 12,
+  },
+  inactiveText: {
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  activeText: {
+    color: '#059669',
+    fontWeight: '600',
+  },
+  dimmedText: {
+    color: '#9CA3AF',
+    fontWeight: '400',
+  },
+
+  // Buttons
+  gradientButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  detailsButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  routeButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+
+  // Button Text
+  gradientButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  detailsButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});
 
 export default TravelModeCard;
