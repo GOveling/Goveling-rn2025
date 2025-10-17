@@ -58,9 +58,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
         style={[
           styles.statusBadge,
           {
-            backgroundColor: place.openNow
-              ? COLORS.status.successLight
-              : COLORS.status.errorLight,
+            backgroundColor: place.openNow ? COLORS.status.successLight : COLORS.status.errorLight,
           },
         ]}
       >

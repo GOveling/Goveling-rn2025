@@ -350,9 +350,21 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       'owner' | 'editor' | 'viewer',
       { bgColor: string; textColor: string; label: string }
     > = {
-      owner: { bgColor: COLORS.background.amber.light, textColor: COLORS.secondary.amberDark, label: 'Owner' },
-      editor: { bgColor: COLORS.background.purple.ultraLight, textColor: COLORS.status.infoDark, label: 'Editor' },
-      viewer: { bgColor: COLORS.border.dark, textColor: COLORS.text.mediumDarkGray, label: 'Viewer' },
+      owner: {
+        bgColor: COLORS.background.amber.light,
+        textColor: COLORS.secondary.amberDark,
+        label: 'Owner',
+      },
+      editor: {
+        bgColor: COLORS.background.purple.ultraLight,
+        textColor: COLORS.status.infoDark,
+        label: 'Editor',
+      },
+      viewer: {
+        bgColor: COLORS.border.dark,
+        textColor: COLORS.text.mediumDarkGray,
+        label: 'Viewer',
+      },
     };
     return configs[role];
   };
@@ -460,7 +472,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
           <Ionicons name="location-outline" size={20} color={COLORS.text.tertiary} />
-          <Text style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}>
+          <Text
+            style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}
+          >
             Destination
           </Text>
         </View>
@@ -473,7 +487,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
           <Ionicons name="card-outline" size={20} color={COLORS.text.tertiary} />
-          <Text style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}>
+          <Text
+            style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}
+          >
             Budget
           </Text>
         </View>
@@ -571,7 +587,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {hasMinimalProfiles && (
         <View style={styles.warningBanner}>
-          <Ionicons name="warning-outline" size={22} color={COLORS.secondary.orangeDark} style={styles.warningIcon} />
+          <Ionicons
+            name="warning-outline"
+            size={22}
+            color={COLORS.secondary.orangeDark}
+            style={styles.warningIcon}
+          />
           <View style={styles.warningContent}>
             <Text style={styles.warningTitle}>Perfiles incompletos</Text>
             <Text style={styles.warningText}>
