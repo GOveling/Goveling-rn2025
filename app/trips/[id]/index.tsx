@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { View, Text, ActivityIndicator, Alert } from 'react-native';
 
@@ -35,13 +35,7 @@ export default function TripDetailScreen() {
   const [trip, setTrip] = useState<TripData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      loadTrip();
-    }
-  }, [id]);
-
-  const loadTrip = async () => {
+  const loadTrip = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.from('trips').select('*').eq('id', id).single();
@@ -61,7 +55,13 @@ export default function TripDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
+
+  useEffect(() => {
+    if (id) {
+      loadTrip();
+    }
+  }, [id, loadTrip]);
 
   const handleClose = () => {
     router.back();

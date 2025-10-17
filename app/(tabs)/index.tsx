@@ -207,7 +207,7 @@ export default function HomeTab() {
         logger.error('🏠 HomeTab: Error loading stats:', e);
       }
     })();
-  }, []);
+  }, [recomputeSavedPlaces]);
 
   // Recompute when screen gains focus
   useFocusEffect(
@@ -378,7 +378,7 @@ export default function HomeTab() {
         logger.error('🏠 HomeTab: Error cleaning up trips subscriptions:', e);
       }
     };
-  }, []);
+  }, [refetchTrips]);
 
   return (
     <TripRefreshProvider>

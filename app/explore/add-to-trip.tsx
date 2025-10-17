@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   View,
@@ -30,11 +30,7 @@ export default function AddToTripScreen() {
   const [showTripSelector, setShowTripSelector] = useState(false);
   const [addingToTrip, setAddingToTrip] = useState(false);
 
-  useEffect(() => {
-    loadPlaceDetails();
-  }, [placeId]);
-
-  const loadPlaceDetails = async () => {
+  const loadPlaceDetails = useCallback(async () => {
     try {
       setLoading(true);
       if (!placeId) {
@@ -68,7 +64,11 @@ export default function AddToTripScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [placeId, name, router]);
+
+  useEffect(() => {
+    loadPlaceDetails();
+  }, [loadPlaceDetails]);
 
   const handleTripSelected = async (tripId: string, tripTitle: string) => {
     if (!place) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   View,
@@ -84,14 +84,7 @@ const PersonalInfoScreen: React.FC = () => {
     emergency_contact_relationship: '',
   });
 
-  // Cargar datos del perfil
-  useEffect(() => {
-    if (user && !authLoading) {
-      loadProfileData();
-    }
-  }, [user, authLoading]);
-
-  const loadProfileData = async () => {
+  const loadProfileData = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -137,7 +130,14 @@ const PersonalInfoScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  // Cargar datos del perfil
+  useEffect(() => {
+    if (user && !authLoading) {
+      loadProfileData();
+    }
+  }, [user, authLoading, loadProfileData]);
 
   const saveProfileData = async () => {
     if (!user) return;
