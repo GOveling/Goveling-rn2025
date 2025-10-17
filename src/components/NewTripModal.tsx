@@ -365,7 +365,12 @@ export default function NewTripModal({
                   style={styles.dateButton}
                 >
                   <Ionicons name="calendar-outline" size={20} color="#007AFF" />
-                  <Text style={[styles.dateButtonText, !tripData.startDate && { color: COLORS.text.lightGray }]}>
+                  <Text
+                    style={[
+                      styles.dateButtonText,
+                      !tripData.startDate && { color: COLORS.text.lightGray },
+                    ]}
+                  >
                     {tripData.startDate ? formatDate(tripData.startDate) : 'Fecha inicio'}
                   </Text>
                 </TouchableOpacity>
@@ -375,7 +380,12 @@ export default function NewTripModal({
                   style={styles.dateButton}
                 >
                   <Ionicons name="calendar-outline" size={20} color="#007AFF" />
-                  <Text style={[styles.dateButtonText, !tripData.endDate && { color: COLORS.text.lightGray }]}>
+                  <Text
+                    style={[
+                      styles.dateButtonText,
+                      !tripData.endDate && { color: COLORS.text.lightGray },
+                    ]}
+                  >
                     {tripData.endDate ? formatDate(tripData.endDate) : 'Fecha fin'}
                   </Text>
                 </TouchableOpacity>

@@ -496,7 +496,11 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           >
             <TouchableOpacity
               onPress={onClose}
-              style={{ padding: 8, borderRadius: 20, backgroundColor: COLORS.background.whiteOpacity.light }}
+              style={{
+                padding: 8,
+                borderRadius: 20,
+                backgroundColor: COLORS.background.whiteOpacity.light,
+              }}
             >
               <Ionicons name="close" size={22} color={COLORS.utility.white} />
             </TouchableOpacity>
@@ -568,7 +572,14 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="information-circle" size={20} color={COLORS.secondary.orangeDark} />
-                <Text style={{ marginLeft: 8, color: COLORS.secondary.amberDark, fontSize: 14, fontWeight: '600' }}>
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    color: COLORS.secondary.amberDark,
+                    fontSize: 14,
+                    fontWeight: '600',
+                  }}
+                >
                   Completa la información básica
                 </Text>
               </View>
@@ -593,7 +604,14 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.status.success} />
-                <Text style={{ marginLeft: 8, color: COLORS.status.successDark, fontSize: 14, fontWeight: '600' }}>
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    color: COLORS.status.successDark,
+                    fontSize: 14,
+                    fontWeight: '600',
+                  }}
+                >
                   ¡Perfil completo!
                 </Text>
               </View>

@@ -81,7 +81,9 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
         letterSpacing: 0.3,
         // textShadow is not deprecated for Text components
         textShadowColor:
-          variant === 'secondary' || variant === 'glass' ? COLORS.utility.shadow.light : COLORS.utility.shadow.gray,
+          variant === 'secondary' || variant === 'glass'
+            ? COLORS.utility.shadow.light
+            : COLORS.utility.shadow.gray,
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
       }}
