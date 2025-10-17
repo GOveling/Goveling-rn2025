@@ -40,7 +40,9 @@
     "added_to_trip_with_details": "{{inviter}} te ha agregado al trip {{trip}}",
     "added_to_trip_title_named": "Te agregaron al viaje \"{{trip}}\"",
     "added_to_trip_title": "Te agregaron a un viaje",
-    "added_to_trip_role": "Fuiste agregado como {{role}}"
+    "added_to_trip_role": "Fuiste agregado como {{role}}",
+    "trip_unavailable_title": "Viaje no disponible",
+    "trip_unavailable_message": "Este viaje ha sido eliminado y ya no está disponible."
   },
   "auto": {
     "+ New Trip": "+ Nuevo Viaje",
@@ -106,6 +108,7 @@
     "No hay destinos pendientes hoy 🎉": "No hay destinos pendientes hoy 🎉",
     "No hay documentos aún": "No hay documentos aún",
     "No hay trips aún": "No hay trips aún",
+    "No notifications": "Sin notificaciones",
     "No tienes notificaciones": "No tienes notificaciones",
     "No tienes trips": "No tienes trips",
     "No tienes viajes": "No tienes viajes",

@@ -138,6 +138,7 @@
     "Nearby Alerts": "Nearby Alerts",
     "No hay alojamientos": "No hay alojamientos",
     "No hay colaboradores": "No hay colaboradores",
+    "No notifications": "No notifications",
     "No hay destinos pendientes hoy 🎉": "No hay destinos pendientes hoy 🎉",
     "No hay documentos aún": "No hay documentos aún",
     "No hay trips aún": "No hay trips aún",
@@ -217,6 +218,8 @@
     "added_to_trip_with_details": "{{inviter}} has added you to the trip {{trip}}",
     "added_to_trip_title_named": "You were added to trip \"{{trip}}\"",
     "added_to_trip_title": "You were added to a trip",
-    "added_to_trip_role": "You were added as {{role}}"
+    "added_to_trip_role": "You were added as {{role}}",
+    "trip_unavailable_title": "Trip not available",
+    "trip_unavailable_message": "This trip has been deleted and is no longer available."
   }
 }

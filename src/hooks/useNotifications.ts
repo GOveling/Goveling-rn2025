@@ -80,14 +80,21 @@ export function useNotifications() {
         }
 
         const tripMap = new Map<string, string>();
+        const cancelledTripIds = new Set<string>();
         if (needTrip.length > 0) {
           const unique = Array.from(new Set(needTrip));
           const { data: tripsRes } = await supabase
             .from('trips')
-            .select('id,title')
+            .select('id,title,status')
             .in('id', unique);
           if (Array.isArray(tripsRes)) {
-            for (const t of tripsRes as any[]) tripMap.set(t.id, t.title || null);
+            for (const t of tripsRes as any[]) {
+              tripMap.set(t.id, t.title || null);
+              // Track cancelled trips to filter them out
+              if (t.status === 'cancelled') {
+                cancelledTripIds.add(t.id);
+              }
+            }
           }
         }
 
@@ -105,18 +112,67 @@ export function useNotifications() {
           }
         }
 
-        const enriched = rows.map((n, idx) => {
-          const d = parsedData[idx] || {};
-          let newData = d;
-          if (d && d.trip_id && !d.trip_name && tripMap.has(d.trip_id)) {
-            newData = { ...newData, trip_name: tripMap.get(d.trip_id) };
-          }
-          const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
-          if (inviterId && !d?.inviter_name && inviterMap.has(inviterId)) {
-            newData = { ...newData, inviter_name: inviterMap.get(inviterId) };
-          }
-          return { ...n, data: newData } as InboxNotification;
-        });
+        // Collect IDs of notifications to delete (orphaned/invalid)
+        const notificationsToDelete: number[] = [];
+
+        const enriched = rows
+          .map((n, idx) => {
+            const d = parsedData[idx] || {};
+            let newData = d;
+            if (d && d.trip_id && !d.trip_name && tripMap.has(d.trip_id)) {
+              newData = { ...newData, trip_name: tripMap.get(d.trip_id) };
+            }
+            const inviterId = d?.inviter_id || d?.owner_id || d?.actor_id || d?.added_by;
+            if (inviterId && !d?.inviter_name && inviterMap.has(inviterId)) {
+              newData = { ...newData, inviter_name: inviterMap.get(inviterId) };
+            }
+            return { ...n, data: newData } as InboxNotification;
+          })
+          // Filter out invalid notifications
+          .filter((n) => {
+            const d = n.data;
+            const tripId = d?.trip_id || d?.tripId;
+
+            // If notification has a trip_id, validate it exists
+            if (tripId) {
+              // Remove if trip was cancelled
+              if (cancelledTripIds.has(tripId)) {
+                notificationsToDelete.push(n.id);
+                return false;
+              }
+
+              // Remove if trip doesn't exist in database (orphaned notification)
+              // This happens when the trip was in needTrip array but not found in DB
+              if (needTrip.includes(tripId) && !tripMap.has(tripId)) {
+                notificationsToDelete.push(n.id);
+                return false;
+              }
+            }
+
+            return true;
+          });
+
+        // Delete orphaned notifications from database
+        if (notificationsToDelete.length > 0) {
+          // Fire and forget - don't await to avoid blocking UI
+          supabase
+            .from('notifications_inbox')
+            .delete()
+            .in('id', notificationsToDelete)
+            .then(({ error: deleteError }) => {
+              if (deleteError) {
+                console.error(
+                  '[useNotifications] Error deleting orphaned notifications:',
+                  deleteError
+                );
+              } else {
+                console.log(
+                  `[useNotifications] Cleaned up ${notificationsToDelete.length} orphaned notifications`
+                );
+              }
+            });
+        }
+
         setNotifications(enriched);
       }
     },

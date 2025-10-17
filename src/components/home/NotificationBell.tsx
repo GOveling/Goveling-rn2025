@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useNotifications } from '~/hooks/useNotifications';
+import { supabase } from '~/lib/supabase';
 
 interface Props {
   iconColor?: string;
@@ -149,7 +150,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
     prevCountRef.current = totalCount;
   }, [totalCount, badgeScale]);
 
-  const handleNotificationPress = (n: any) => {
+  const handleNotificationPress = async (n: any) => {
     // Mark as read first
     if (!n.is_read) {
       markOneAsRead(n.id);
@@ -163,6 +164,27 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
 
       // Handle specific notification types with different navigation
       if (tripId) {
+        // Check if trip exists and is not cancelled before navigating
+        const { data: trip, error } = await supabase
+          .from('trips')
+          .select('id, status, title')
+          .eq('id', tripId)
+          .single();
+
+        // If trip doesn't exist or is cancelled, show alert
+        if (error || !trip || trip.status === 'cancelled') {
+          Alert.alert(
+            t('notifications.trip_unavailable_title', 'Trip not available'),
+            t(
+              'notifications.trip_unavailable_message',
+              'This trip has been deleted and is no longer available.'
+            ),
+            [{ text: t('common.ok', 'OK') }]
+          );
+          onClose();
+          return;
+        }
+
         onClose();
 
         // For invitation sent notifications - redirect to Manage Team > Invitations tab
