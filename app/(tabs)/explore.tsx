@@ -336,16 +336,12 @@ export default function ExploreTab() {
           <View style={styles.section}>
             {/* Header del filtro (colapsado/expandido) */}
             <View
-              style={{
-                backgroundColor: expandedCategories ? 'white' : '#FBF9FF',
-                borderWidth: 1,
-                borderColor: '#C6B4F5',
-                borderRadius: 16,
-                paddingHorizontal: 14,
-                paddingVertical: 14,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+              style={[
+                styles.categoryFilterHeader,
+                expandedCategories
+                  ? styles.categoryFilterHeaderExpanded
+                  : styles.categoryFilterHeaderCollapsed,
+              ]}
             >
               <TouchableOpacity
                 onPress={() => setExpandedCategories(!expandedCategories)}
@@ -405,17 +401,7 @@ export default function ExploreTab() {
             {/* Panel expandido */}
             {expandedCategories && (
               <View style={styles.searchButtonContainer}>
-                <View
-                  style={{
-                    backgroundColor: 'white',
-                    borderWidth: 1,
-                    borderColor: '#E5E7EB',
-                    borderTopWidth: 0,
-                    borderBottomLeftRadius: 16,
-                    borderBottomRightRadius: 16,
-                    overflow: 'hidden',
-                  }}
-                >
+                <View style={styles.categoryPanel}>
                   {/* Scroll interno solo para las categorías, manteniendo el header arriba fijo */}
                   <ScrollView
                     style={styles.resultsContainer}
@@ -857,6 +843,23 @@ const styles = StyleSheet.create({
   categoryChipRemoveText: {
     fontSize: 16,
     color: '#4B0082',
+  },
+
+  // Category filter header styles
+  categoryFilterHeader: {
+    borderWidth: 1,
+    borderColor: '#C6B4F5',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryFilterHeaderExpanded: {
+    backgroundColor: 'white',
+  },
+  categoryFilterHeaderCollapsed: {
+    backgroundColor: '#FBF9FF',
   },
 
   // Category panel styles
