@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   RefreshControl,
+  StyleSheet,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
@@ -384,7 +385,7 @@ export default function HomeTab() {
     <TripRefreshProvider>
       <StatusBar barStyle="light-content" />
       <ScrollView
-        style={{ flex: 1, backgroundColor: '#F7F7FA' }}
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -399,7 +400,7 @@ export default function HomeTab() {
         {/* Header con gradiente - Memoized LocationWidget */}
         <LocationWidget city={city} temp={temp} units={units} onToggleUnits={toggleUnits} />
 
-        <View style={{ padding: 16, gap: 16 }}>
+        <View style={styles.content}>
           {/* Cards de estadísticas - Memoized StatCards */}
           <StatCards savedPlacesCount={savedPlacesCount} upcomingTripsCount={upcomingTripsCount} />
 
@@ -417,53 +418,23 @@ export default function HomeTab() {
           <NearbyAlerts />
 
           {/* Lugares Populares Globalmente */}
-          <View
-            style={{
-              backgroundColor: 'white',
-              borderRadius: 16,
-              padding: 20,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 5,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16,
-              }}
-            >
+          <View style={styles.popularPlacesCard}>
+            <View style={styles.popularPlacesHeader}>
               <View>
-                <Text
-                  style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}
-                >
-                  📈 Lugares Populares
-                </Text>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>
-                  Globalmente
-                </Text>
+                <Text style={styles.popularPlacesTitle}>📈 Lugares Populares</Text>
+                <Text style={styles.popularPlacesTitleLine2}>Globalmente</Text>
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>Siguiente:</Text>
-                <Text style={{ fontSize: 12, color: '#6B7280' }}>4:52</Text>
-                <TouchableOpacity style={{ marginTop: 4 }}>
-                  <Text style={{ fontSize: 16, color: '#8B5CF6' }}>🔄 Actualizar</Text>
+              <View style={styles.popularPlacesInfo}>
+                <Text style={styles.nextUpdateLabel}>Siguiente:</Text>
+                <Text style={styles.nextUpdateTime}>4:52</Text>
+                <TouchableOpacity style={styles.refreshButton}>
+                  <Text style={styles.refreshButtonText}>🔄 Actualizar</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             <TouchableOpacity
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#F3E8FF',
-                borderRadius: 12,
-                padding: 12,
-              }}
+              style={styles.placeItem}
               onPress={() =>
                 Alert.alert(
                   'Santorini',
@@ -471,36 +442,20 @@ export default function HomeTab() {
                 )
               }
             >
-              <View
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 8,
-                  backgroundColor: '#FEF3C7',
-                  marginRight: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 24 }}>🌅</Text>
+              <View style={styles.placeImage}>
+                <Text style={styles.placeEmoji}>🌅</Text>
               </View>
 
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                  <Text
-                    style={{ fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 }}
-                  >
-                    Santorini Sunset Point
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>4.9</Text>
+              <View style={styles.placeContent}>
+                <View style={styles.placeTitleRow}>
+                  <Text style={styles.placeTitle}>Santorini Sunset Point</Text>
+                  <View style={styles.ratingRow}>
+                    <Text style={styles.ratingStar}>⭐</Text>
+                    <Text style={styles.ratingValue}>4.9</Text>
                   </View>
                 </View>
-                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
-                  📍 Santorini, Greece
-                </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
+                <Text style={styles.placeLocation}>📍 Santorini, Greece</Text>
+                <Text style={styles.placeDescription}>
                   One of the world's most photographed sunsets with breathtaking views over the
                   Aegean Sea...
                 </Text>
@@ -512,3 +467,122 @@ export default function HomeTab() {
     </TripRefreshProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  // Container
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#F7F7FA',
+  },
+  content: {
+    padding: 16,
+    gap: 16,
+  },
+
+  // Popular Places Card
+  popularPlacesCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  popularPlacesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  popularPlacesTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  popularPlacesTitleLine2: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  popularPlacesInfo: {
+    alignItems: 'flex-end',
+  },
+  nextUpdateLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  nextUpdateTime: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  refreshButton: {
+    marginTop: 4,
+  },
+  refreshButtonText: {
+    fontSize: 16,
+    color: '#8B5CF6',
+  },
+
+  // Place Item
+  placeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3E8FF',
+    borderRadius: 12,
+    padding: 12,
+  },
+  placeImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#FEF3C7',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeEmoji: {
+    fontSize: 24,
+  },
+  placeContent: {
+    flex: 1,
+  },
+  placeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  placeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginRight: 8,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingStar: {
+    fontSize: 14,
+    color: '#F59E0B',
+    marginRight: 2,
+  },
+  ratingValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  placeLocation: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  placeDescription: {
+    fontSize: 12,
+    color: '#6B7280',
+    lineHeight: 16,
+  },
+});
