@@ -6,13 +6,13 @@ import { Tabs } from 'expo-router';
 
 import { useTranslation } from 'react-i18next';
 
-import { ProtectedRoute } from '../../src/components/ProtectedRoute';
-import { AnimatedTabIcon } from '../../src/components/ui/AnimatedTabIcon';
 import bookingAnimation from '../../assets/lottie/booking.json';
 import exploreAnimation from '../../assets/lottie/explore.json';
 import homeAnimation from '../../assets/lottie/home.json';
 import tripsAnimation from '../../assets/lottie/my-trips.json';
 import profileAnimation from '../../assets/lottie/profile.json';
+import { ProtectedRoute } from '../../src/components/ProtectedRoute';
+import { AnimatedTabIcon } from '../../src/components/ui/AnimatedTabIcon';
 
 export default function TabLayout() {
   const { t } = useTranslation();

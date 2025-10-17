@@ -23,13 +23,13 @@ import LottieView from 'lottie-react-native';
 import AddToTripModal from './AddToTripModal';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
+import clockAnimation from '../../assets/animations/clock.json';
+import cycleAnimation from '../../assets/animations/cycle.json';
+import globeAnimation from '../../assets/animations/globe.json';
+import locationCircleAnimation from '../../assets/animations/location-circle.json';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
-import cycleAnimation from '../../assets/animations/cycle.json';
-import locationCircleAnimation from '../../assets/animations/location-circle.json';
-import globeAnimation from '../../assets/animations/globe.json';
-import clockAnimation from '../../assets/animations/clock.json';
 
 // Conditional BlurView import
 let BlurView: any = View;
