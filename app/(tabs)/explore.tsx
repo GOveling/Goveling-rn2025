@@ -10,6 +10,7 @@ import {
   Switch,
   Alert,
   Modal,
+  StyleSheet,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -304,82 +305,35 @@ export default function ExploreTab() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+      <View style={styles.container}>
         {/* Header */}
-        <View
-          style={{
-            backgroundColor: '#F3F4F6',
-            paddingTop: 50,
-            paddingHorizontal: 20,
-            paddingBottom: 20,
-            borderBottomLeftRadius: 24,
-            borderBottomRightRadius: 24,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-            <View
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 12,
-                backgroundColor: '#FEF3C7',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 16,
-              }}
-            >
-              <Text style={{ fontSize: 24 }}>🔍</Text>
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerIconContainer}>
+              <Text style={styles.headerIcon}>🔍</Text>
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>
                 {tripId ? 'Agregar Lugares' : 'Explorar Lugares'}
               </Text>
-              <Text style={{ fontSize: 14, color: '#6B7280' }}>
+              <Text style={styles.headerSubtitle}>
                 {tripId
                   ? `Agregando lugares a: ${tripTitle}`
                   : 'Descubre destinos de ensueño para tu próxima aventura'}
               </Text>
             </View>
 
-            <View
-              style={{
-                width: 80,
-                height: 40,
-                borderRadius: 20,
-                overflow: 'hidden',
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: '#FF6B35',
-                  width: 60,
-                  height: 40,
-                  borderRadius: 30,
-                  transform: [{ rotate: '15deg' }],
-                  position: 'absolute',
-                  right: -10,
-                  top: 0,
-                }}
-              />
-              <View
-                style={{
-                  backgroundColor: '#8B5CF6',
-                  width: 40,
-                  height: 25,
-                  borderRadius: 15,
-                  position: 'absolute',
-                  right: 15,
-                  bottom: 8,
-                }}
-              />
+            <View style={styles.toggleContainer}>
+              <View style={[styles.toggleTrackOn, { transform: [{ rotate: '15deg' }] }]} />
+              <View style={styles.toggleTrackOff} />
             </View>
           </View>
         </View>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
           {/* Filtros Categorías (UI/UX Mejorado) */}
-          <View style={{ marginBottom: 16 }}>
+          <View style={styles.section}>
             {/* Header del filtro (colapsado/expandido) */}
             <View
               style={{
@@ -395,28 +349,20 @@ export default function ExploreTab() {
             >
               <TouchableOpacity
                 onPress={() => setExpandedCategories(!expandedCategories)}
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                style={styles.sectionRow}
                 activeOpacity={0.85}
               >
-                <Text style={{ fontSize: 18, marginRight: 10 }}>
+                <Text style={styles.categoryIcon}>
                   🧪{/* Icono funnel placeholder */}
                 </Text>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
+                <Text style={styles.categoryTitle}>
                   Buscar Categorías
                 </Text>
               </TouchableOpacity>
 
               {selectedCategories.length > 0 && (
-                <View
-                  style={{
-                    backgroundColor: '#F1E9FF',
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 20,
-                    marginRight: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#5B21B6' }}>
+                <View style={styles.categoryExpandButton}>
+                  <Text style={styles.categoryExpandText}>
                     {selectedCategories.length}
                   </Text>
                 </View>
@@ -428,7 +374,7 @@ export default function ExploreTab() {
                   else setExpandedCategories(!expandedCategories);
                 }}
               >
-                <Text style={{ fontSize: 18, color: '#6B7280' }}>
+                <Text style={styles.categoryEmptyIcon}>
                   {selectedCategories.length > 0 ? '×' : expandedCategories ? '˄' : '˅'}
                 </Text>
               </TouchableOpacity>
@@ -439,8 +385,8 @@ export default function ExploreTab() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={{ marginTop: 10 }}
-                contentContainerStyle={{ paddingRight: 4 }}
+                style={styles.categoryScrollView}
+                contentContainerStyle={styles.categoryScrollViewContent}
               >
                 {selectedCategories.map((cat) => {
                   const data = [...generalCategories, ...specificCategories].find(
@@ -449,29 +395,19 @@ export default function ExploreTab() {
                   return (
                     <View
                       key={cat}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: '#EFE4FF',
-                        borderColor: '#C6B4F5',
-                        borderWidth: 1,
-                        paddingHorizontal: 14,
-                        height: 40,
-                        borderRadius: 22,
-                        marginRight: 8,
-                      }}
+                      style={[styles.categoryChip, styles.categoryChipSelected]}
                     >
-                      <Text style={{ fontSize: 14, color: '#4B0082', marginRight: 6 }}>
+                      <Text style={styles.categoryChipIcon}>
                         {data?.icon}
                       </Text>
-                      <Text style={{ fontSize: 14, color: '#4B0082', fontWeight: '500' }}>
+                      <Text style={styles.categoryChipText}>
                         {cat}
                       </Text>
                       <TouchableOpacity
                         onPress={() => toggleCategory(cat)}
-                        style={{ marginLeft: 8 }}
+                        style={styles.categoryChipRemove}
                       >
-                        <Text style={{ fontSize: 16, color: '#4B0082' }}>×</Text>
+                        <Text style={styles.categoryChipRemoveText}>×</Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -481,7 +417,7 @@ export default function ExploreTab() {
 
             {/* Panel expandido */}
             {expandedCategories && (
-              <View style={{ marginTop: 12 }}>
+              <View style={styles.searchButtonContainer}>
                 <View
                   style={{
                     backgroundColor: 'white',
@@ -495,7 +431,7 @@ export default function ExploreTab() {
                 >
                   {/* Scroll interno solo para las categorías, manteniendo el header arriba fijo */}
                   <ScrollView
-                    style={{ maxHeight: 420 }}
+                    style={styles.resultsContainer}
                     contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
                     showsVerticalScrollIndicator={false}
                   >
@@ -931,3 +867,260 @@ export default function ExploreTab() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  // Container styles
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  
+  // Header styles
+  header: {
+    backgroundColor: '#F3F4F6',
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  headerIcon: {
+    fontSize: 24,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  
+  // Toggle switch styles
+  toggleContainer: {
+    width: 80,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  toggleTrackOn: {
+    backgroundColor: '#FF6B35',
+    width: 60,
+    height: 40,
+    borderRadius: 30,
+    position: 'absolute',
+    right: -10,
+    top: 0,
+  },
+  toggleTrackOff: {
+    backgroundColor: '#8B5CF6',
+    width: 40,
+    height: 25,
+    borderRadius: 15,
+    position: 'absolute',
+    right: 15,
+    bottom: 8,
+  },
+  
+  // Content styles
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    padding: 16,
+  },
+  
+  // Section styles
+  section: {
+    marginBottom: 16,
+  },
+  sectionRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  // Category styles
+  categoryIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  categoryExpandButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  categoryExpandText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5B21B6',
+  },
+  categoryEmptyIcon: {
+    fontSize: 18,
+    color: '#6B7280',
+  },
+  categoryScrollView: {
+    marginTop: 10,
+  },
+  categoryScrollViewContent: {
+    paddingRight: 4,
+  },
+  
+  // Category chip styles  
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1.5,
+  },
+  categoryChipSelected: {
+    backgroundColor: '#EDE9FE',
+    borderColor: '#4B0082',
+  },
+  categoryChipUnselected: {
+    backgroundColor: '#fff',
+    borderColor: '#D1D5DB',
+  },
+  categoryChipIcon: {
+    fontSize: 14,
+    color: '#4B0082',
+    marginRight: 6,
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: '#4B0082',
+    fontWeight: '500',
+  },
+  categoryChipRemove: {
+    marginLeft: 8,
+  },
+  categoryChipRemoveText: {
+    fontSize: 16,
+    color: '#4B0082',
+  },
+  
+  // Search button styles
+  searchButtonContainer: {
+    marginTop: 12,
+  },
+  searchButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  searchGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  
+  // Results styles
+  resultsContainer: {
+    maxHeight: 420,
+  },
+  resultCard: {
+    marginBottom: 12,
+  },
+  
+  // Loading/Empty states
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  
+  // Map modal styles
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  mapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  mapHeaderButton: {
+    padding: 8,
+  },
+  mapHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  mapHeaderSpacer: {
+    width: 40,
+  },
+  mapContainer: {
+    flex: 1,
+  },
+  
+  // Place modal overlay
+  placeModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    elevation: 9999,
+  },
+});
