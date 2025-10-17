@@ -539,16 +539,16 @@ export default function ExploreTab() {
           </View>
 
           {/* Barra de búsqueda */}
-          <View style={styles.searchButtonContainer}>
+          <View style={styles.searchContainer}>
             <TextInput
               placeholder="Busca tu próximo destino..."
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={performSearch}
-              style={styles.searchButton}
+              style={styles.searchInput}
               placeholderTextColor="#9CA3AF"
             />
-            <TouchableOpacity onPress={performSearch} disabled={loading}>
+            <TouchableOpacity onPress={performSearch} disabled={loading} style={styles.searchButtonWrapper}>
               <LinearGradient
                 colors={['#8B5CF6', '#EC4899']}
                 style={styles.searchGradient}
@@ -1030,6 +1030,28 @@ const styles = StyleSheet.create({
   },
 
   // Search button styles
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  searchButtonWrapper: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   searchButtonContainer: {
     marginTop: 12,
   },
@@ -1039,7 +1061,9 @@ const styles = StyleSheet.create({
   },
   searchGradient: {
     paddingVertical: 14,
+    paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   searchButtonText: {
     color: 'white',
