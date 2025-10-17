@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -305,34 +305,12 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         colors={['#10B981', '#3B82F6', '#8B5CF6']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: '0px 6px 15px rgba(0, 0, 0, 0.25)',
-          elevation: 15,
-          elevation: 10,
-        }}
+        style={styles.activeTripGradient}
       >
         {/* Header */}
-        <View style={{ marginBottom: 20 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: 'white',
-                opacity: 0.9,
-              }}
-            >
-              ✈️ Viaje Activo
-            </Text>
+        <View style={styles.activeTripHeader}>
+          <View style={styles.activeTripHeaderRow}>
+            <Text style={styles.activeTripLabel}>✈️ Viaje Activo</Text>
             {activeTrips.length > 1 && (
               <TouchableOpacity
                 onPress={() => {
@@ -343,14 +321,9 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
                   setSelectedActiveTrip(activeTrips[nextIndex]);
                   setTrip(activeTrips[nextIndex]);
                 }}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 20,
-                }}
+                style={styles.activeTripSwitchButton}
               >
-                <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
+                <Text style={styles.activeTripSwitchText}>
                   {activeTrips.findIndex((trip) => trip.id === selectedActiveTrip.id) + 1}/
                   {activeTrips.length}
                 </Text>
@@ -358,26 +331,10 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             )}
           </View>
 
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: '800',
-              color: 'white',
-              marginBottom: 8,
-            }}
-          >
-            {selectedActiveTrip.name || 'Mi Viaje'}
-          </Text>
+          <Text style={styles.activeTripName}>{selectedActiveTrip.name || 'Mi Viaje'}</Text>
 
           {selectedActiveTrip.start_date && selectedActiveTrip.end_date && (
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '500',
-                color: 'white',
-                opacity: 0.9,
-              }}
-            >
+            <Text style={styles.activeTripDates}>
               📅 {formatDate(selectedActiveTrip.start_date)} -{' '}
               {formatDate(selectedActiveTrip.end_date)}
             </Text>
@@ -385,86 +342,39 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         </View>
 
         {/* Action Buttons */}
-        <View style={{ gap: 12 }}>
+        <View style={styles.activeTripActions}>
           {/* Acceder a Modo Travel Button - Principal */}
           <TouchableOpacity
             onPress={() => showComingSoonAlert('El Modo Travel')}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              paddingVertical: 14,
-              paddingHorizontal: 20,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.2)',
-            }}
+            style={styles.activeTripTravelButton}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600', marginRight: 8 }}>
-                🚀 Acceder a Modo Travel
-              </Text>
+            <View style={styles.activeTripTravelButtonContent}>
+              <Text style={styles.activeTripTravelButtonText}>🚀 Acceder a Modo Travel</Text>
             </View>
           </TouchableOpacity>
 
           {/* Action Buttons Row */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={styles.activeTripButtonRow}>
             <TouchableOpacity
               onPress={() => router.push(`/trips/${selectedActiveTrip.id}`)}
-              style={{
-                flex: 1,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.15)',
-              }}
+              style={styles.activeTripSecondaryButton}
             >
-              <Text
-                style={{ color: 'white', fontSize: 13, fontWeight: '600', textAlign: 'center' }}
-              >
-                🔍 Ver Detalles del Viaje
-              </Text>
+              <Text style={styles.activeTripSecondaryButtonText}>🔍 Ver Detalles del Viaje</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => showComingSoonAlert('El Itinerario')}
-              style={{
-                flex: 1,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.15)',
-              }}
+              style={styles.activeTripSecondaryButton}
             >
-              <Text
-                style={{ color: 'white', fontSize: 13, fontWeight: '600', textAlign: 'center' }}
-              >
-                📋 Ver Itinerario
-              </Text>
+              <Text style={styles.activeTripSecondaryButtonText}>📋 Ver Itinerario</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Multiple Trips Indicator */}
         {activeTrips.length > 1 && (
-          <View
-            style={{
-              marginTop: 16,
-              paddingTop: 16,
-              borderTopWidth: 1,
-              borderTopColor: 'rgba(255,255,255,0.2)',
-            }}
-          >
-            <Text
-              style={{
-                color: 'white',
-                fontSize: 12,
-                opacity: 0.8,
-                textAlign: 'center',
-              }}
-            >
+          <View style={styles.activeTripMultipleIndicator}>
+            <Text style={styles.activeTripMultipleText}>
               Tienes {activeTrips.length} viajes activos • Toca para cambiar
             </Text>
           </View>
@@ -491,77 +401,22 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           colors={['#10B981', '#3B82F6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={{
-            borderRadius: 16,
-            padding: 20,
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-            elevation: 12,
-            elevation: 8,
-          }}
+          style={styles.futureTripGradient}
         >
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-            }}
-          >
+          <View style={styles.futureTripContent}>
             {/* Contenido del lado izquierdo */}
-            <View style={{ flex: 1, marginRight: 16 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: 'white',
-                  marginBottom: 4,
-                  opacity: 0.9,
-                }}
-              >
-                Tu próximo viaje comienza en:
-              </Text>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: '800',
-                  color: 'white',
-                  marginBottom: 8,
-                }}
-              >
-                {countdownText}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: '700',
-                  color: 'white',
-                }}
-              >
-                {tripName}
-              </Text>
+            <View style={styles.futureTripLeft}>
+              <Text style={styles.futureTripLabel}>Tu próximo viaje comienza en:</Text>
+              <Text style={styles.futureTripCountdown}>{countdownText}</Text>
+              <Text style={styles.futureTripName}>{tripName}</Text>
             </View>
 
             {/* Botón del lado derecho */}
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/explore')}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                paddingVertical: 10,
-                paddingHorizontal: 16,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.3)',
-                alignSelf: 'flex-start',
-              }}
+              style={styles.futureTripButton}
             >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: 'white',
-                }}
-              >
-                ➕ Agregar más lugares
-              </Text>
+              <Text style={styles.futureTripButtonText}>➕ Agregar más lugares</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -572,16 +427,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
   // Loading state
   if (loading)
     return (
-      <View
-        style={{
-          backgroundColor: 'white',
-          borderRadius: 16,
-          padding: 20,
-          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-          elevation: 8,
-          elevation: 5,
-        }}
-      >
+      <View style={styles.loadingContainer}>
         <Skeleton width="50%" height={18} />
         <Skeleton width="80%" height={14} />
         <Skeleton width="40%" height={14} />
@@ -600,70 +446,44 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
 
   // No trip state
   return (
-    <View
-      style={{
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 20,
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-        elevation: 8,
-        elevation: 5,
-      }}
-    >
+    <View style={styles.noTripContainer}>
       {planningTripsCount > 0 ? (
         // Has planning trips - encourage user to complete them
         <>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
-            ¡Completa tus viajes!
-          </Text>
-          <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
+          <Text style={styles.noTripTitle}>¡Completa tus viajes!</Text>
+          <Text style={styles.noTripSubtitle}>
             Tienes {planningTripsCount} viaje{planningTripsCount > 1 ? 's' : ''} sin fecha. Agrega
             lugares y fechas para comenzar a planificar
           </Text>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <TouchableOpacity onPress={() => router.push('/trips')} style={{ flex: 1 }}>
+          <View style={styles.noTripButtonRow}>
+            <TouchableOpacity onPress={() => router.push('/trips')} style={styles.noTripButton}>
               <LinearGradient
                 colors={['#10B981', '#059669']}
-                style={{
-                  paddingVertical: 12,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                }}
+                style={styles.noTripButtonGradient}
               >
-                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
-                  Completar Viajes
-                </Text>
+                <Text style={styles.noTripButtonText}>Completar Viajes</Text>
               </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/explore')} style={{ flex: 1 }}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/explore')}
+              style={styles.noTripButton}
+            >
               <LinearGradient
                 colors={['#F59E0B', '#D97706']}
-                style={{
-                  paddingVertical: 12,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                }}
+                style={styles.noTripButtonGradient}
               >
-                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
-                  Agregar Lugares
-                </Text>
+                <Text style={styles.noTripButtonText}>Agregar Lugares</Text>
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push('/trips?openModal=true')}
-              style={{ flex: 1 }}
+              style={styles.noTripButton}
             >
               <LinearGradient
                 colors={['#8B5CF6', '#7C3AED']}
-                style={{
-                  paddingVertical: 12,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                }}
+                style={styles.noTripButtonGradient}
               >
-                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
-                  {t('+ New Trip')}
-                </Text>
+                <Text style={styles.noTripButtonText}>{t('+ New Trip')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -671,30 +491,219 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       ) : (
         // No trips at all - encourage user to create first trip
         <>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
-            {t('No tienes viajes')}
-          </Text>
-          <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
-            {t('Crea tu primer viaje para comenzar')}
-          </Text>
+          <Text style={styles.noTripTitle}>{t('No tienes viajes')}</Text>
+          <Text style={styles.noTripSubtitle}>{t('Crea tu primer viaje para comenzar')}</Text>
           <TouchableOpacity onPress={() => router.push('/trips?openModal=true')}>
-            <LinearGradient
-              colors={['#10B981', '#059669']}
-              style={{
-                paddingVertical: 12,
-                borderRadius: 12,
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                {t('+ New Trip')}
-              </Text>
+            <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripSingleButton}>
+              <Text style={styles.noTripSingleButtonText}>{t('+ New Trip')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </>
       )}
     </View>
   );
+});
+
+const styles = StyleSheet.create({
+  // Active Trip Styles
+  activeTripGradient: {
+    borderRadius: 20,
+    padding: 24,
+    elevation: 10,
+  },
+  activeTripHeader: {
+    marginBottom: 20,
+  },
+  activeTripHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  activeTripLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    opacity: 0.9,
+  },
+  activeTripSwitchButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  activeTripSwitchText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  activeTripName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: 'white',
+    marginBottom: 8,
+  },
+  activeTripDates: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'white',
+    opacity: 0.9,
+  },
+  activeTripActions: {
+    gap: 12,
+  },
+  activeTripTravelButton: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  activeTripTravelButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeTripTravelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  activeTripButtonRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  activeTripSecondaryButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  activeTripSecondaryButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  activeTripMultipleIndicator: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.2)',
+  },
+  activeTripMultipleText: {
+    color: 'white',
+    fontSize: 12,
+    opacity: 0.8,
+    textAlign: 'center',
+  },
+
+  // Future Trip Styles
+  futureTripGradient: {
+    borderRadius: 16,
+    padding: 20,
+    elevation: 8,
+  },
+  futureTripContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  futureTripLeft: {
+    flex: 1,
+    marginRight: 16,
+  },
+  futureTripLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 4,
+    opacity: 0.9,
+  },
+  futureTripCountdown: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: 'white',
+    marginBottom: 8,
+  },
+  futureTripName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'white',
+  },
+  futureTripButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignSelf: 'flex-start',
+  },
+  futureTripButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
+  },
+
+  // Loading State
+  loadingContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 5,
+  },
+
+  // No Trip State
+  noTripContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 5,
+  },
+  noTripTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  noTripSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  noTripButtonRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  noTripButton: {
+    flex: 1,
+  },
+  noTripButtonGradient: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  noTripButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  noTripSingleButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  noTripSingleButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default CurrentTripCard;
