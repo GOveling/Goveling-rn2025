@@ -667,7 +667,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
             fontStyle={styles.segmentedControlFont}
             activeFontStyle={styles.segmentedControlActiveFont}
           />
-        </View>{' '}
+        </View>
         {/* Content with keyboard handling */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
