@@ -23,6 +23,13 @@ interface Place {
   category: string;
   photo_url?: string;
   added_at: string;
+  google_rating?: number;
+  reviews_count?: number;
+  price_level?: number;
+  editorial_summary?: string;
+  opening_hours?: { weekdayDescriptions?: string[] } | null;
+  website?: string;
+  phone?: string;
 }
 
 export default function TripPlacesScreen() {
@@ -212,6 +219,13 @@ export default function TripPlacesScreen() {
     category: place.category,
     photos: place.photo_url ? [place.photo_url] : undefined,
     source: 'trip_places',
+    rating: place.google_rating,
+    reviews_count: place.reviews_count,
+    priceLevel: place.price_level,
+    editorialSummary: place.editorial_summary,
+    openingHours: place.opening_hours?.weekdayDescriptions,
+    website: place.website,
+    phone: place.phone,
   });
 
   // Function to handle place removal from modal (via heart button)
@@ -435,16 +449,44 @@ export default function TripPlacesScreen() {
                   </Text>
 
                   <View style={{ flex: 1 }}>
-                    <Text
+                    <View
                       style={{
-                        fontSize: 18,
-                        fontWeight: '700',
-                        color: '#1A1A1A',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                         marginBottom: 4,
                       }}
                     >
-                      {place.name}
-                    </Text>
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          fontWeight: '700',
+                          color: '#1A1A1A',
+                          flex: 1,
+                        }}
+                      >
+                        {place.name}
+                      </Text>
+                      {place.google_rating && (
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            marginLeft: 8,
+                          }}
+                        >
+                          <Text style={{ fontSize: 14, marginRight: 2 }}>⭐</Text>
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A' }}>
+                            {place.google_rating}
+                          </Text>
+                          {place.reviews_count && (
+                            <Text style={{ fontSize: 12, color: '#999999', marginLeft: 4 }}>
+                              ({place.reviews_count})
+                            </Text>
+                          )}
+                        </View>
+                      )}
+                    </View>
 
                     <Text
                       style={{
@@ -456,11 +498,52 @@ export default function TripPlacesScreen() {
                       {place.address}
                     </Text>
 
+                    {/* Editorial Summary / About */}
+                    {place.editorial_summary && (
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: '#555555',
+                          lineHeight: 18,
+                          marginBottom: 8,
+                          fontStyle: 'italic',
+                        }}
+                        numberOfLines={2}
+                      >
+                        {place.editorial_summary}
+                      </Text>
+                    )}
+
+                    {/* Horarios */}
+                    {place.opening_hours?.weekdayDescriptions &&
+                      place.opening_hours.weekdayDescriptions.length > 0 && (
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            marginBottom: 6,
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, marginRight: 4 }}>🕐</Text>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: '#10B981',
+                              fontWeight: '500',
+                            }}
+                            numberOfLines={1}
+                          >
+                            {place.opening_hours.weekdayDescriptions[0]}
+                          </Text>
+                        </View>
+                      )}
+
                     <View
                       style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        marginTop: 4,
                       }}
                     >
                       <Text

@@ -30,7 +30,8 @@ export interface EnhancedPlace {
   geocoded?: boolean;
   opening_hours_raw?: any;
   openingHours?: string[];
-  // Nuevos campos
+  // Nuevos campos de Google Places API (New)
+  editorialSummary?: string;
   primaryType?: string;
   primaryTypeDisplayName?: string;
   viewport?: any;
