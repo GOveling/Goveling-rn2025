@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  StyleSheet,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
@@ -536,21 +537,11 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             elevation: pressed ? 4 : n.viewed_at == null ? 2 : 0,
           })}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: iconMeta.bg,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 10,
-              }}
-            >
+          <View style={styles.notificationContent}>
+            <View style={[styles.iconContainer, { backgroundColor: iconMeta.bg }]}>
               <Ionicons name={iconMeta.name} size={18} color={iconMeta.color} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.notificationTextContainer}>
               <Text
                 style={{
                   fontWeight: n.is_read ? '500' : '700',
@@ -560,17 +551,15 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                 {formattedText.title}
               </Text>
               {formattedText.body ? (
-                <Text style={{ color: '#6B7280', marginTop: 2 }}>{formattedText.body}</Text>
+                <Text style={styles.notificationBodyText}>{formattedText.body}</Text>
               ) : null}
               {n.created_at && (
-                <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 4 }}>
+                <Text style={styles.notificationTimeText}>
                   {new Date(n.created_at).toLocaleString()}
                 </Text>
               )}
             </View>
-            {!n.is_read && (
-              <View style={{ width: 8, height: 8, backgroundColor: '#EF4444', borderRadius: 4 }} />
-            )}
+            {!n.is_read && <View style={styles.unreadDot} />}
           </View>
         </Pressable>
       </Animated.View>
@@ -582,7 +571,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
       {/** Accessibility: dynamic label by type mix */}
       <TouchableOpacity
         onPress={onOpen}
-        style={{ padding: 8, position: 'relative' }}
+        style={styles.bellButton}
         accessibilityRole="button"
         accessibilityLabel={(() => {
           if (totalCount <= 0) return t('home.inbox', 'Inbox');
@@ -622,23 +611,12 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
         <Ionicons name="notifications-outline" size={24} color={iconColor} />
         {totalCount > 0 && (
           <Animated.View
-            style={{
-              position: 'absolute',
-              top: 2,
-              right: 2,
-              backgroundColor: badgeColor,
-              minWidth: 18,
-              height: 18,
-              borderRadius: 9,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingHorizontal: 4,
-              transform: [{ scale: badgeScale }],
-            }}
+            style={[
+              styles.badge,
+              { backgroundColor: badgeColor, transform: [{ scale: badgeScale }] },
+            ]}
           >
-            <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>
-              {totalCount > 9 ? '9+' : totalCount}
-            </Text>
+            <Text style={styles.badgeText}>{totalCount > 9 ? '9+' : totalCount}</Text>
           </Animated.View>
         )}
       </TouchableOpacity>
@@ -649,27 +627,14 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
         presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
         onRequestClose={onClose}
       >
-        <View style={{ flex: 1, backgroundColor: 'white' }}>
+        <View style={styles.modalContainer}>
           {/* Header */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingHorizontal: 16,
-              paddingTop: 14,
-              paddingBottom: 10,
-              borderBottomWidth: 1,
-              borderBottomColor: '#E5E7EB',
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
-              {t('home.inbox', 'Inbox')}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>{t('home.inbox', 'Inbox')}</Text>
+            <View style={styles.headerActions}>
               {notifications.some((n) => !n.is_read) && (
                 <TouchableOpacity onPress={handleMarkAllAsRead}>
-                  <Text style={{ color: '#2563EB', fontWeight: '600' }}>
+                  <Text style={styles.markAllReadText}>
                     {t('auto.Mark all as read', 'Mark all as read')}
                   </Text>
                 </TouchableOpacity>
@@ -684,17 +649,17 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             ref={(ref) => {
               scrollRef.current = ref;
             }}
-            contentContainerStyle={{ padding: 16 }}
+            contentContainerStyle={styles.scrollContent}
           >
             {loading ? (
-              <View style={{ padding: 16, alignItems: 'center' }}>
-                <Text style={{ color: '#6B7280' }}>
+              <View style={styles.centerMessage}>
+                <Text style={styles.centerMessageText}>
                   {t('auto.Loading notifications...', 'Loading notifications...')}
                 </Text>
               </View>
             ) : pendingInv.length === 0 && historyInv.length === 0 && notifications.length === 0 ? (
-              <View style={{ padding: 16, alignItems: 'center' }}>
-                <Text style={{ color: '#6B7280' }}>
+              <View style={styles.centerMessage}>
+                <Text style={styles.centerMessageText}>
                   {t('auto.No notifications', 'No notifications')}
                 </Text>
               </View>
@@ -702,52 +667,21 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
               <>
                 {/* Pending Invitation Highlight */}
                 {pendingInv.length > 0 && (
-                  <View style={{ marginBottom: 16 }}>
-                    <Text
-                      style={{
-                        fontWeight: '700',
-                        color: '#1F2937',
-                        marginBottom: 12,
-                        fontSize: 16,
-                      }}
-                    >
+                  <View style={styles.pendingSection}>
+                    <Text style={styles.sectionTitle}>
                       {t('notifications.pending_invitations', 'Pending invitations')}
                     </Text>
                     {pendingInv.map((inv) => (
-                      <View
-                        key={inv.id}
-                        style={{
-                          backgroundColor: '#EFF6FF',
-                          borderLeftWidth: 4,
-                          borderLeftColor: '#3B82F6',
-                          borderRadius: 12,
-                          padding: 16,
-                          borderWidth: 1,
-                          borderColor: '#E5E7EB',
-                          marginBottom: 12,
-                        }}
-                      >
-                        <View
-                          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
-                        >
-                          <View
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 20,
-                              backgroundColor: '#3B82F6',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginRight: 12,
-                            }}
-                          >
+                      <View key={inv.id} style={styles.invitationCard}>
+                        <View style={styles.invitationHeader}>
+                          <View style={styles.invitationIconContainer}>
                             <Ionicons name="person-add" size={20} color="white" />
                           </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontWeight: '700', color: '#1F2937', fontSize: 16 }}>
+                          <View style={styles.invitationTextContainer}>
+                            <Text style={styles.invitationTitle}>
                               {t('notifications.trip_invitation', 'Trip invitation')}
                             </Text>
-                            <Text style={{ color: '#374151', marginTop: 2 }}>
+                            <Text style={styles.invitationRole}>
                               {t(
                                 'notifications.invited_as_role',
                                 'You have been invited as {{role}}',
@@ -760,7 +694,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                               )}
                             </Text>
                             {(inv.inviter_name || inv.trip_title) && (
-                              <Text style={{ color: '#374151', marginTop: 2 }}>
+                              <Text style={styles.invitationDetails}>
                                 {t(
                                   'notifications.invited_by_to_trip',
                                   'By {{inviter}} to {{trip}}',
@@ -773,30 +707,26 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                               </Text>
                             )}
                             {inv.created_at && (
-                              <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 4 }}>
+                              <Text style={styles.invitationTime}>
                                 {new Date(inv.created_at).toLocaleDateString()}
                               </Text>
                             )}
                           </View>
                         </View>
-                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <View style={styles.invitationActions}>
                           <TouchableOpacity
                             onPress={() => handleAcceptInvitation(inv)}
                             disabled={actionLoading === inv.id}
-                            style={{
-                              flex: 1,
-                              backgroundColor: '#10B981',
-                              paddingVertical: 12,
-                              paddingHorizontal: 16,
-                              borderRadius: 8,
-                              alignItems: 'center',
-                              opacity: actionLoading === inv.id ? 0.7 : 1,
-                            }}
+                            style={[
+                              styles.invitationButton,
+                              styles.acceptButton,
+                              { opacity: actionLoading === inv.id ? 0.7 : 1 },
+                            ]}
                           >
                             {actionLoading === inv.id ? (
                               <ActivityIndicator color="white" size="small" />
                             ) : (
-                              <Text style={{ color: 'white', fontWeight: '700' }}>
+                              <Text style={styles.invitationButtonText}>
                                 {t('trips.accept', 'Accept')}
                               </Text>
                             )}
@@ -804,20 +734,16 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                           <TouchableOpacity
                             onPress={() => handleRejectInvitation(inv)}
                             disabled={actionLoading === inv.id}
-                            style={{
-                              flex: 1,
-                              backgroundColor: '#EF4444',
-                              paddingVertical: 12,
-                              paddingHorizontal: 16,
-                              borderRadius: 8,
-                              alignItems: 'center',
-                              opacity: actionLoading === inv.id ? 0.7 : 1,
-                            }}
+                            style={[
+                              styles.invitationButton,
+                              styles.rejectButton,
+                              { opacity: actionLoading === inv.id ? 0.7 : 1 },
+                            ]}
                           >
                             {actionLoading === inv.id ? (
                               <ActivityIndicator color="white" size="small" />
                             ) : (
-                              <Text style={{ color: 'white', fontWeight: '700' }}>
+                              <Text style={styles.invitationButtonText}>
                                 {t('trips.reject', 'Reject')}
                               </Text>
                             )}
@@ -835,26 +761,22 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
 
                 {/* History of invitations (accepted/declined) */}
                 {historyInv.length > 0 && (
-                  <View style={{ marginTop: 8 }}>
-                    <Text style={{ color: '#6B7280', marginBottom: 8 }}>
+                  <View style={styles.historySection}>
+                    <Text style={styles.historyTitle}>
                       {t('auto.Invitation history', 'Invitation history')}
                     </Text>
                     {historyInv.map((inv) => (
                       <View
                         key={inv.id}
-                        style={{
-                          backgroundColor: inv.status === 'accepted' ? '#ECFDF5' : '#FFF7ED',
-                          borderLeftWidth: 4,
-                          borderLeftColor: inv.status === 'accepted' ? '#10B981' : '#F97316',
-                          borderRadius: 12,
-                          padding: 12,
-                          borderWidth: 1,
-                          borderColor: '#E5E7EB',
-                          marginBottom: 8,
-                        }}
+                        style={[
+                          styles.historyCard,
+                          inv.status === 'accepted'
+                            ? styles.historyCardAccepted
+                            : styles.historyCardDeclined,
+                        ]}
                       >
-                        <Text style={{ fontWeight: '600', color: '#111827' }}>{inv.email}</Text>
-                        <Text style={{ color: '#6B7280' }}>
+                        <Text style={styles.historyEmail}>{inv.email}</Text>
+                        <Text style={styles.historyDetails}>
                           {inv.role === 'viewer'
                             ? t('trips.viewer', 'Viewer')
                             : t('trips.editor', 'Editor')}{' '}
@@ -875,5 +797,218 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  // Bell Button
+  bellButton: {
+    padding: 8,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  // Modal Container
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  markAllReadText: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+
+  // ScrollView
+  scrollContent: {
+    padding: 16,
+  },
+
+  // Loading/Empty States
+  centerMessage: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  centerMessageText: {
+    color: '#6B7280',
+  },
+
+  // Section Title
+  sectionTitle: {
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 12,
+    fontSize: 16,
+  },
+
+  // Notification Row (NotificationRow component)
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  notificationTextContainer: {
+    flex: 1,
+  },
+  notificationBodyText: {
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  notificationTimeText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    backgroundColor: '#EF4444',
+    borderRadius: 4,
+  },
+
+  // Pending Invitations
+  pendingSection: {
+    marginBottom: 16,
+  },
+  invitationCard: {
+    backgroundColor: '#EFF6FF',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  invitationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  invitationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  invitationTextContainer: {
+    flex: 1,
+  },
+  invitationTitle: {
+    fontWeight: '700',
+    color: '#1F2937',
+    fontSize: 16,
+  },
+  invitationRole: {
+    color: '#374151',
+    marginTop: 2,
+  },
+  invitationDetails: {
+    color: '#374151',
+    marginTop: 2,
+  },
+  invitationTime: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  invitationActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  invitationButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  acceptButton: {
+    backgroundColor: '#10B981',
+  },
+  rejectButton: {
+    backgroundColor: '#EF4444',
+  },
+  invitationButtonText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+
+  // History Section
+  historySection: {
+    marginTop: 8,
+  },
+  historyTitle: {
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  historyCard: {
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+  },
+  historyCardAccepted: {
+    backgroundColor: '#ECFDF5',
+    borderLeftColor: '#10B981',
+  },
+  historyCardDeclined: {
+    backgroundColor: '#FFF7ED',
+    borderLeftColor: '#F97316',
+  },
+  historyEmail: {
+    fontWeight: '600',
+    color: '#111827',
+  },
+  historyDetails: {
+    color: '#6B7280',
+  },
+});
 
 export default NotificationBell;
