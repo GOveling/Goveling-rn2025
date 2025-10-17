@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { COLORS } from '~/constants/colors';
 import { useCitiesByCountry } from '~/hooks/useCitiesByCountry';
 import { useCountries } from '~/hooks/useCountries';
 import { forwardGeocode } from '~/lib/geocoding';
@@ -151,12 +152,12 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             {item.city}
           </Text>
           {item.population > 0 && (
-            <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: COLORS.text.tertiary, marginTop: 2 }}>
               {item.population.toLocaleString('es-ES')} hab.
             </Text>
           )}
         </View>
-        {isSelected && <Ionicons name="checkmark" size={18} color="#6366F1" />}
+        {isSelected && <Ionicons name="checkmark" size={18} color={COLORS.primary.indigo} />}
       </TouchableOpacity>
     )
   );
@@ -495,24 +496,24 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           >
             <TouchableOpacity
               onPress={onClose}
-              style={{ padding: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)' }}
+              style={{ padding: 8, borderRadius: 20, backgroundColor: COLORS.background.whiteOpacity.light }}
             >
-              <Ionicons name="close" size={22} color="#fff" />
+              <Ionicons name="close" size={22} color={COLORS.utility.white} />
             </TouchableOpacity>
             <View style={{ alignItems: 'center', flex: 1, paddingHorizontal: 16 }}>
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>
+              <Text style={{ color: COLORS.utility.white, fontSize: 18, fontWeight: '700' }}>
                 Información Personal
               </Text>
               {initialLoaded && (
                 <View style={{ marginTop: 4, alignItems: 'center' }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+                  <Text style={{ color: COLORS.background.whiteOpacity.strong, fontSize: 12 }}>
                     Progreso: {getCompletionPercentage()}%
                   </Text>
                   <View
                     style={{
                       width: 120,
                       height: 3,
-                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      backgroundColor: COLORS.background.whiteOpacity.medium,
                       borderRadius: 2,
                       marginTop: 2,
                     }}
@@ -521,7 +522,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       style={{
                         width: `${getCompletionPercentage()}%`,
                         height: '100%',
-                        backgroundColor: '#fff',
+                        backgroundColor: COLORS.utility.white,
                         borderRadius: 2,
                       }}
                     />
@@ -537,41 +538,41 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 paddingVertical: 8,
                 borderRadius: 20,
                 backgroundColor: isProfileComplete()
-                  ? 'rgba(34,197,94,0.9)'
-                  : 'rgba(255,255,255,0.2)',
+                  ? COLORS.status.success
+                  : COLORS.background.whiteOpacity.medium,
               }}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={COLORS.utility.white} />
               ) : (
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Guardar</Text>
+                <Text style={{ color: COLORS.utility.white, fontWeight: '600' }}>Guardar</Text>
               )}
             </TouchableOpacity>
           </View>
         </LinearGradient>
         <ScrollView
-          style={{ flex: 1, backgroundColor: '#F8F9FA' }}
+          style={{ flex: 1, backgroundColor: COLORS.background.tertiary }}
           contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
         >
           {/* Progress Message */}
           {initialLoaded && !isProfileComplete() && (
             <View
               style={{
-                backgroundColor: '#FEF3C7',
+                backgroundColor: COLORS.background.amber.veryLight,
                 borderRadius: 12,
                 padding: 16,
                 marginBottom: 20,
                 borderLeftWidth: 4,
-                borderLeftColor: '#F59E0B',
+                borderLeftColor: COLORS.secondary.orangeDark,
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="information-circle" size={20} color="#F59E0B" />
-                <Text style={{ marginLeft: 8, color: '#92400E', fontSize: 14, fontWeight: '600' }}>
+                <Ionicons name="information-circle" size={20} color={COLORS.secondary.orangeDark} />
+                <Text style={{ marginLeft: 8, color: COLORS.secondary.amberDark, fontSize: 14, fontWeight: '600' }}>
                   Completa la información básica
                 </Text>
               </View>
-              <Text style={{ color: '#92400E', fontSize: 12, marginTop: 4 }}>
+              <Text style={{ color: COLORS.secondary.amberDark, fontSize: 12, marginTop: 4 }}>
                 Necesitamos tu nombre, fecha de nacimiento y ubicación para personalizar tu
                 experiencia.
               </Text>
@@ -582,21 +583,21 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           {initialLoaded && isProfileComplete() && (
             <View
               style={{
-                backgroundColor: '#D1FAE5',
+                backgroundColor: COLORS.status.successLight,
                 borderRadius: 12,
                 padding: 16,
                 marginBottom: 20,
                 borderLeftWidth: 4,
-                borderLeftColor: '#10B981',
+                borderLeftColor: COLORS.status.success,
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={{ marginLeft: 8, color: '#065F46', fontSize: 14, fontWeight: '600' }}>
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.status.success} />
+                <Text style={{ marginLeft: 8, color: COLORS.status.successDark, fontSize: 14, fontWeight: '600' }}>
                   ¡Perfil completo!
                 </Text>
               </View>
-              <Text style={{ color: '#065F46', fontSize: 12, marginTop: 4 }}>
+              <Text style={{ color: COLORS.status.successDark, fontSize: 12, marginTop: 4 }}>
                 Tu información básica está completa. Puedes agregar más detalles si lo deseas.
               </Text>
             </View>
