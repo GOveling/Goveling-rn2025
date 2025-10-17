@@ -215,7 +215,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
     return () => {
       try {
         supabase.removeChannel(channel);
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     };
   }, [visible, tripId, fetchAll, fetchInvitations, fetchMembers]);
 

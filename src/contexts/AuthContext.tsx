@@ -114,7 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Navigate to auth screen to show login/signup immediately
       try {
         router.replace('/auth');
-      } catch {}
+      } catch {
+        // Ignore navigation errors on sign out
+      }
     } catch (error) {
       console.error('🔐 ❌ Error in AuthContext signOut:', error);
       throw error;

@@ -225,7 +225,9 @@ export function useNotifications() {
     return () => {
       try {
         if (ch) supabase.removeChannel(ch);
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     };
   }, [userId]);
 
@@ -249,7 +251,9 @@ export function useNotifications() {
     return () => {
       try {
         if (ch) supabase.removeChannel(ch);
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
     };
   }, [userEmail, fetchInvitations]);
 

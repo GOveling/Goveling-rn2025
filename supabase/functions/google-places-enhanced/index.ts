@@ -241,7 +241,9 @@ function extractJson(text: string): any | null {
   // Try direct parse
   try {
     return JSON.parse(text);
-  } catch {}
+  } catch {
+    // Invalid JSON, continue to extraction
+  }
   // Find first '{' and last '}'
   const first = text.indexOf('{');
   const last = text.lastIndexOf('}');
@@ -249,7 +251,9 @@ function extractJson(text: string): any | null {
     const slice = text.slice(first, last + 1);
     try {
       return JSON.parse(slice);
-    } catch {}
+    } catch {
+      // Invalid JSON slice, continue
+    }
   }
   // Try bracket matching for array
   const arrFirst = text.indexOf('[');
@@ -258,13 +262,17 @@ function extractJson(text: string): any | null {
     const arrSlice = text.slice(arrFirst, arrLast + 1);
     try {
       return JSON.parse(arrSlice);
-    } catch {}
+    } catch {
+      // Invalid JSON array, continue
+    }
   }
   // Remove markdown fences
   const fence = text.replace(/```json|```/gi, '');
   try {
     return JSON.parse(fence);
-  } catch {}
+  } catch {
+    // All parsing attempts failed
+  }
   return null;
 }
 
@@ -286,7 +294,9 @@ async function rateLimitedGeocode(address: string): Promise<{ lat: number; lng: 
       const lng = parseFloat(d.lon);
       if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
     }
-  } catch {}
+  } catch {
+    // Geocoding failed
+  }
   return null;
 }
 
