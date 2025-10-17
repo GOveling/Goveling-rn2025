@@ -457,10 +457,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           </Text>
           <View style={styles.noTripButtonRow}>
             <TouchableOpacity onPress={() => router.push('/trips')} style={styles.noTripButton}>
-              <LinearGradient
-                colors={['#10B981', '#059669']}
-                style={styles.noTripButtonGradient}
-              >
+              <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripButtonGradient}>
                 <Text style={styles.noTripButtonText}>Completar Viajes</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -468,10 +465,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               onPress={() => router.push('/(tabs)/explore')}
               style={styles.noTripButton}
             >
-              <LinearGradient
-                colors={['#F59E0B', '#D97706']}
-                style={styles.noTripButtonGradient}
-              >
+              <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.noTripButtonGradient}>
                 <Text style={styles.noTripButtonText}>Agregar Lugares</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -479,10 +473,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               onPress={() => router.push('/trips?openModal=true')}
               style={styles.noTripButton}
             >
-              <LinearGradient
-                colors={['#8B5CF6', '#7C3AED']}
-                style={styles.noTripButtonGradient}
-              >
+              <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.noTripButtonGradient}>
                 <Text style={styles.noTripButtonText}>{t('+ New Trip')}</Text>
               </LinearGradient>
             </TouchableOpacity>

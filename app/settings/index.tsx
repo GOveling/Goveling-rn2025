@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, Appearance, StyleSheet } from 'react-nati
 
 import { useTranslation } from 'react-i18next';
 
+import { COLORS } from '~/constants/colors';
 import i18n from '~/i18n';
 import { supabase } from '~/lib/supabase';
 
@@ -114,21 +115,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   optionButtonActive: {
-    borderColor: '#007aff',
+    borderColor: COLORS.border.blue,
   },
   optionButtonInactive: {
-    borderColor: '#ddd',
+    borderColor: COLORS.border.light,
   },
 
   // Save Button
   saveButton: {
-    backgroundColor: '#007aff',
+    backgroundColor: COLORS.border.blue,
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
   },
   saveButtonText: {
-    color: '#fff',
+    color: COLORS.utility.white2,
     textAlign: 'center',
     fontWeight: '800',
   },

@@ -5,6 +5,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
+import { COLORS } from '~/constants/colors';
+
 interface StatCardsProps {
   savedPlacesCount: number;
   upcomingTripsCount: number;
@@ -26,7 +28,7 @@ const StatCards = React.memo<StatCardsProps>(
           style={styles.cardTouchable}
           onPress={() => router.push('/(tabs)/explore')}
         >
-          <LinearGradient colors={['#8B5CF6', '#A855F7']} style={styles.gradientCard}>
+          <LinearGradient colors={COLORS.gradients.purple} style={styles.gradientCard}>
             <Text style={styles.iconText}>📍</Text>
             <Text style={styles.countText}>{savedPlacesCount}</Text>
             <Text style={styles.labelText}>Lugares Guardados</Text>
@@ -35,7 +37,7 @@ const StatCards = React.memo<StatCardsProps>(
 
         {/* Próximos Viajes Card */}
         <TouchableOpacity style={styles.cardTouchable} onPress={() => router.push('/(tabs)/trips')}>
-          <LinearGradient colors={['#F97316', '#EA580C']} style={styles.gradientCard}>
+          <LinearGradient colors={COLORS.gradients.orange} style={styles.gradientCard}>
             <Text style={styles.iconText}>📅</Text>
             <Text style={styles.countText}>{upcomingTripsCount}</Text>
             <Text style={styles.labelText}>Próximos Viajes</Text>
@@ -77,18 +79,18 @@ const styles = StyleSheet.create({
   // Text Styles
   iconText: {
     fontSize: 16,
-    color: 'white',
+    color: COLORS.text.white,
     marginBottom: 4,
   },
   countText: {
     fontSize: 32,
-    color: 'white',
+    color: COLORS.text.white,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   labelText: {
     fontSize: 14,
-    color: 'white',
+    color: COLORS.text.white,
     textAlign: 'center',
   },
 });

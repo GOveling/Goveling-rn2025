@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import type { Trip } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
@@ -29,6 +30,7 @@ import TripCard from '../../src/components/TripCard';
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
 export default function TripsTab() {
+  const { t } = useTranslation();
   const { colors, spacing } = useTheme();
   const router = useRouter();
   const { openModal } = useLocalSearchParams();
@@ -391,12 +393,8 @@ export default function TripsTab() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {t('trips.title')}
-          </Text>
-          <Text style={styles.subtitle}>
-            {t('trips.subtitle')}
-          </Text>
+          <Text style={styles.title}>{t('trips.title')}</Text>
+          <Text style={styles.subtitle}>{t('trips.subtitle')}</Text>
         </View>
 
         {/* Vista de Mapa Button */}
@@ -406,58 +404,37 @@ export default function TripsTab() {
           }
           style={styles.mapButton}
         >
-          <Text style={styles.mapButtonIcon}>
-            🗺️
-          </Text>
-          <Text style={styles.mapButtonText}>
-            Vista de Mapa
-          </Text>
+          <Text style={styles.mapButtonIcon}>🗺️</Text>
+          <Text style={styles.mapButtonText}>Vista de Mapa</Text>
         </TouchableOpacity>
 
         {/* Nuevo Viaje Button */}
-        <TouchableOpacity
-          onPress={() => setShowNewTripModal(true)}
-          style={styles.newTripContainer}
-        >
+        <TouchableOpacity onPress={() => setShowNewTripModal(true)} style={styles.newTripContainer}>
           <LinearGradient
             colors={['#8B5CF6', '#EC4899']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.newTripGradient}
           >
-            <Text style={styles.newTripText}>
-              + Nuevo Viaje
-            </Text>
+            <Text style={styles.newTripText}>+ Nuevo Viaje</Text>
           </LinearGradient>
         </TouchableOpacity>
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statValueBlue}>
-              {stats.totalTrips}
-            </Text>
-            <Text style={styles.statLabel}>
-              Total de Viajes
-            </Text>
+            <Text style={styles.statValueBlue}>{stats.totalTrips}</Text>
+            <Text style={styles.statLabel}>Total de Viajes</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statValueGreen}>
-              {stats.upcomingTrips}
-            </Text>
-            <Text style={styles.statLabel}>
-              Próximos
-            </Text>
+            <Text style={styles.statValueGreen}>{stats.upcomingTrips}</Text>
+            <Text style={styles.statLabel}>Próximos</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statValueOrange}>
-              {stats.groupTrips}
-            </Text>
-            <Text style={styles.statLabel}>
-              Viajes Grupales
-            </Text>
+            <Text style={styles.statValueOrange}>{stats.groupTrips}</Text>
+            <Text style={styles.statLabel}>Viajes Grupales</Text>
           </View>
         </View>
 
@@ -465,16 +442,12 @@ export default function TripsTab() {
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#8B5CF6" />
-            <Text style={styles.loadingText}>
-              Cargando tus viajes...
-            </Text>
+            <Text style={styles.loadingText}>Cargando tus viajes...</Text>
           </View>
         ) : trips.length === 0 ? (
           <View style={styles.centerContainer}>
             <Text style={styles.emptyEmoji}>🗺️</Text>
-            <Text style={styles.emptyTitle}>
-              ¡Aún no tienes viajes!
-            </Text>
+            <Text style={styles.emptyTitle}>¡Aún no tienes viajes!</Text>
             <Text style={styles.emptyMessage}>
               Crea tu primer viaje y comienza a planificar tu aventura
             </Text>
@@ -488,9 +461,7 @@ export default function TripsTab() {
                 end={{ x: 1, y: 0 }}
                 style={styles.emptyCreateButtonGradient}
               >
-                <Text style={styles.emptyCreateButtonText}>
-                  + Crear Mi Primer Viaje
-                </Text>
+                <Text style={styles.emptyCreateButtonText}>+ Crear Mi Primer Viaje</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

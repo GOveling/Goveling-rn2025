@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Alert,
   FlatList,
+  StyleSheet,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -179,7 +180,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
 
   useEffect(() => {
     console.log('📞 Country changed effect triggered:', form.country);
-    if (form.country) {
+    if (form.country && countries.length > 0) {
       const c = countries.find((c) => c.country_code === form.country);
       console.log('📞 Found country data:', c);
       if (c) {
@@ -191,12 +192,14 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
         console.log('📞 Loading cities for country:', form.country);
         loadCitiesForCountry(form.country);
       }
-    } else {
+    } else if (!form.country) {
       console.log('📞 No country selected, clearing results');
       clearResults();
       if (form.country_code) setForm((prev) => ({ ...prev, country_code: '', mobile_phone: '' }));
     }
-  }, [form.country, countries]);
+    // Deliberadamente NO incluimos 'countries' en las dependencias para evitar re-ejecuciones innecesarias
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.country]);
 
   // Filtrar países por búsqueda
   const filteredCountries = countries.filter(

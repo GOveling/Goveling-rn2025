@@ -4,6 +4,8 @@ import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { COLORS } from '~/constants/colors';
+
 interface TravelModeCardProps {
   travelModeEnabled: boolean;
   onToggleTravelMode: () => void;
@@ -46,7 +48,7 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
         </View>
 
         <TouchableOpacity onPress={onToggleTravelMode}>
-          <LinearGradient colors={['#10B981', '#059669']} style={styles.gradientButton}>
+          <LinearGradient colors={COLORS.gradients.green} style={styles.gradientButton}>
             <Text style={styles.gradientButtonText}>✈️ Acceder al Modo Travel</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -69,7 +71,7 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
             currentTrip && Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible')
           }
         >
-          <LinearGradient colors={['#3B82F6', '#1D4ED8']} style={styles.routeButton}>
+          <LinearGradient colors={COLORS.gradients.blueInfo} style={styles.routeButton}>
             <Text style={styles.gradientButtonText}>Ver Detalles de Ruta IA</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -88,10 +90,10 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
 const styles = StyleSheet.create({
   // Main Container
   container: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.background.primary,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: COLORS.utility.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text.darkGray,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -122,24 +124,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   inactiveBadge: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border.dark,
   },
   activeBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: COLORS.status.successLight,
   },
   statusText: {
     fontSize: 12,
   },
   inactiveText: {
-    color: '#6B7280',
+    color: COLORS.text.tertiary,
     fontWeight: '600',
   },
   activeText: {
-    color: '#059669',
+    color: COLORS.status.successDark,
     fontWeight: '600',
   },
   dimmedText: {
-    color: '#9CA3AF',
+    color: COLORS.text.lightGray,
     fontWeight: '400',
   },
 
@@ -154,9 +156,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background.tertiary,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border.dark,
     marginBottom: 12,
   },
   routeButton: {
@@ -167,12 +169,12 @@ const styles = StyleSheet.create({
 
   // Button Text
   gradientButtonText: {
-    color: 'white',
+    color: COLORS.text.white,
     fontSize: 16,
     fontWeight: '600',
   },
   detailsButtonText: {
-    color: '#374151',
+    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     fontWeight: '500',
   },

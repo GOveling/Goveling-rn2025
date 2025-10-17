@@ -55,6 +55,12 @@ export const useCitiesByCountry = (): UseCitiesByCountryReturn => {
         `✅ Successfully loaded ${sortedCities.length} cities from API for ${countryCode}`
       );
     } catch (err) {
+      // Ignorar AbortError - es esperado cuando se cancela una request anterior
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log(`🔄 City fetch aborted for ${countryCode} (normal behavior)`);
+        return;
+      }
+
       const errorMessage =
         err instanceof Error ? err.message : 'Error desconocido al cargar ciudades';
       console.error(`❌ Error loading cities for ${countryCode}:`, err);

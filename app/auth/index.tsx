@@ -22,6 +22,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { COLORS } from '~/constants/colors';
+
 import { supabase } from '../../src/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
@@ -404,7 +406,7 @@ const styles = StyleSheet.create({
     elevation: 16,
     marginHorizontal: 20,
     padding: 32,
-    shadowColor: '#000',
+    shadowColor: COLORS.utility.black,
     shadowOffset: {
       width: 0,
       height: 8,
@@ -422,8 +424,8 @@ const styles = StyleSheet.create({
     width: 20,
   },
   checkboxChecked: {
-    backgroundColor: '#6366F1',
-    borderColor: '#6366F1',
+    backgroundColor: COLORS.primary.blue,
+    borderColor: COLORS.border.indigo,
   },
   checkboxContainer: {
     alignItems: 'center',
@@ -488,7 +490,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   mainButtonText: {
-    color: '#fff',
+    color: COLORS.utility.white2,
     fontSize: 18,
     fontWeight: '700',
   },
@@ -530,46 +532,46 @@ const styles = StyleSheet.create({
 
   // Theme-specific input styles
   inputDark: {
-    borderColor: 'rgba(255,255,255,0.3)',
-    color: '#fff',
-    backgroundColor: 'transparent',
+    borderColor: COLORS.border.whiteOpacity.light,
+    color: COLORS.utility.white2,
+    backgroundColor: COLORS.background.transparent,
   },
   inputLight: {
-    borderColor: 'rgba(0,0,0,0.2)',
-    color: '#000',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderColor: COLORS.border.blackOpacity.light,
+    color: COLORS.utility.black,
+    backgroundColor: COLORS.background.whiteOpacity.strong,
   },
 
   // Theme-specific checkbox border
   checkboxDark: {
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: COLORS.border.whiteOpacity.medium,
   },
   checkboxLight: {
-    borderColor: 'rgba(0,0,0,0.3)',
+    borderColor: COLORS.border.blackOpacity.medium,
   },
 
   // Theme-specific text colors
   textDark: {
-    color: '#fff',
+    color: COLORS.utility.white2,
   },
   textLight: {
-    color: '#333',
+    color: COLORS.text.mediumGray,
   },
 
   // Theme-specific link color
   linkLight: {
-    color: '#6366F1',
+    color: COLORS.primary.blue,
   },
   linkDark: {
-    color: '#fff',
+    color: COLORS.utility.white2,
   },
 
   // Theme-specific switch text colors
   switchTextLight: {
-    color: '#666',
+    color: COLORS.text.grayish,
   },
   switchTextDark: {
-    color: '#fff',
+    color: COLORS.utility.white2,
   },
 
   // Loading button opacity
@@ -579,31 +581,31 @@ const styles = StyleSheet.create({
 
   // Theme toggle background
   themeToggleDark: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: COLORS.background.whiteOpacity.medium,
   },
   themeToggleLight: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: COLORS.background.blackOpacity.medium,
   },
 
   // Error container
   errorContainerDark: {
-    backgroundColor: 'rgba(220,38,38,0.2)',
+    backgroundColor: COLORS.background.errorOpacity.light,
   },
   errorContainerLight: {
-    backgroundColor: 'rgba(254,226,226,0.9)',
+    backgroundColor: COLORS.background.errorOpacity.medium,
   },
   errorTextDark: {
-    color: '#FCA5A5',
+    color: COLORS.status.errorLight,
   },
   errorTextLight: {
-    color: '#DC2626',
+    color: COLORS.status.errorDark,
   },
 
   // Card background
   cardDark: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: COLORS.background.whiteOpacity.light,
   },
   cardLight: {
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: COLORS.background.whiteOpacity.veryStrong,
   },
 });

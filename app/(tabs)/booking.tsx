@@ -12,6 +12,9 @@ import {
 
 import { useRouter } from 'expo-router';
 
+import { useTranslation } from 'react-i18next';
+
+import { COLORS } from '~/constants/colors';
 import { useTheme } from '~/lib/theme';
 
 interface BookingOption {
@@ -23,6 +26,7 @@ interface BookingOption {
 }
 
 export default function BookingTab() {
+  const { t } = useTranslation();
   const { colors: _colors, spacing: _spacing } = useTheme();
   const _router = useRouter();
 
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
   // Main Container
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: COLORS.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -151,12 +155,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#1A1A1A',
+    color: COLORS.text.primary,
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#666666',
+    color: COLORS.text.secondary,
     fontWeight: '500',
   },
 
@@ -171,19 +175,19 @@ const styles = StyleSheet.create({
   // Booking Card
   card: {
     width: '47%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background.primary,
     borderRadius: 24,
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 160,
-    shadowColor: '#000',
+    shadowColor: COLORS.utility.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: COLORS.border.opacity,
   },
 
   // Icon
@@ -201,20 +205,20 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 28,
-    color: '#FFFFFF',
+    color: COLORS.text.white,
   },
 
   // Card Text
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: COLORS.text.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
   cardDescription: {
     fontSize: 14,
-    color: '#666666',
+    color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
   },

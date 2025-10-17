@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 
 import { useTranslation } from 'react-i18next';
 
+import { COLORS } from '~/constants/colors';
 import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
 import { sendPush } from '~/lib/push_send';
 import { supabase } from '~/lib/supabase';
@@ -128,7 +129,7 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
 const styles = StyleSheet.create({
   // Main Container
   container: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: COLORS.background.amber.light,
     borderRadius: 16,
     padding: 20,
     elevation: 5,
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F59E0B',
+    backgroundColor: COLORS.secondary.amber,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -158,24 +159,24 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#92400E',
+    color: COLORS.secondary.amberDark,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#A16207',
+    color: COLORS.secondary.amberMedium,
   },
 
   // Toggle Button
   toggleButton: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: COLORS.secondary.amber,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
     alignItems: 'center',
   },
   toggleButtonText: {
-    color: 'white',
+    color: COLORS.text.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   },
   placesHeader: {
     fontSize: 14,
-    color: '#92400E',
+    color: COLORS.secondary.amberDark,
     marginBottom: 8,
   },
   placeItem: {
@@ -196,12 +197,12 @@ const styles = StyleSheet.create({
   },
   placeName: {
     fontSize: 14,
-    color: '#92400E',
+    color: COLORS.secondary.amberDark,
     flex: 1,
   },
   placeDistance: {
     fontSize: 12,
-    color: '#A16207',
+    color: COLORS.secondary.amberMedium,
   },
 });
 
