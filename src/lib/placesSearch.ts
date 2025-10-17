@@ -30,6 +30,13 @@ export interface EnhancedPlace {
   geocoded?: boolean;
   opening_hours_raw?: any;
   openingHours?: string[];
+  // Nuevos campos
+  primaryType?: string;
+  primaryTypeDisplayName?: string;
+  viewport?: any;
+  plusCode?: string;
+  shortFormattedAddress?: string;
+  accessibilityOptions?: any;
 }
 
 export interface PlacesSearchResponse {

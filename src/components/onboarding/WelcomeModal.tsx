@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { View, Text, Modal, Animated, Dimensions, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -231,7 +240,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
           >
             {/* Icon */}
             <View style={styles.iconContainer}>
-              <Ionicons name={currentStepData.icon} size={80} color="white" style={styles.icon} />
+              <Ionicons name={currentStepData.icon} size={80} color="white" />
             </View>
 
             {/* Title */}
@@ -269,7 +278,20 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  confettiContainer: ViewStyle;
+  confettiParticle: ViewStyle;
+  container: ViewStyle;
+  dot: ViewStyle;
+  dotsContainer: ViewStyle;
+  gradient: ViewStyle;
+  iconContainer: ViewStyle;
+  overlay: ViewStyle;
+  progressBackground: ViewStyle;
+  progressBar: ViewStyle;
+  progressContainer: ViewStyle;
+  title: TextStyle;
+}>({
   confettiContainer: {
     bottom: 0,
     left: 0,
@@ -288,8 +310,6 @@ const styles = StyleSheet.create({
   },
   container: {
     borderRadius: 24,
-    boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.3)',
-    elevation: 20,
     elevation: 20,
     height: height * 0.6,
     overflow: 'hidden',
@@ -312,9 +332,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 40,
-  },
-  icon: {
-    textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
   },
   iconContainer: {
     backgroundColor: COLORS.background.whiteOpacity.medium,
@@ -350,6 +367,5 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     marginBottom: 40,
     textAlign: 'center',
-    textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
   },
 });

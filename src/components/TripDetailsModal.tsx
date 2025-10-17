@@ -1130,14 +1130,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Team Tab styles
-  teamTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.text.darkGray,
-    marginBottom: 20,
-  },
-
   // Warning banner styles
   warningBanner: {
     backgroundColor: COLORS.background.amber.veryLight,
@@ -1207,16 +1199,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  memberInitials: {
-    color: COLORS.utility.white,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  memberRole: {
-    fontSize: 14,
-    color: COLORS.text.tertiary,
-  },
-
   // Action buttons container
   actionButtonsContainer: {
     gap: 12,

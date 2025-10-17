@@ -80,6 +80,14 @@ interface EnhancedPlace {
   confidence_score?: number;
   geocoded?: boolean;
   opening_hours_raw?: any;
+  // Nuevos campos
+  openingHours?: string[];
+  primaryType?: string;
+  primaryTypeDisplayName?: string;
+  viewport?: any;
+  plusCode?: string;
+  shortFormattedAddress?: string;
+  accessibilityOptions?: any;
 }
 
 // Distancia Haversine en km
@@ -157,6 +165,16 @@ async function textSearchGoogle(params: {
     'places.businessStatus',
     'places.currentOpeningHours',
     'places.photos',
+    // Nuevos campos (GRATIS)
+    'places.editorialSummary',
+    'places.websiteUri',
+    'places.regularOpeningHours.weekdayDescriptions',
+    'places.primaryType',
+    'places.primaryTypeDisplayName',
+    'places.viewport',
+    'places.plusCode',
+    'places.shortFormattedAddress',
+    'places.accessibilityOptions',
   ].join(',');
 
   console.log('[textSearchGoogle] Request body:', JSON.stringify(body, null, 2));
@@ -229,6 +247,16 @@ function normalizePlace(
       distance_km,
       photos,
       source: 'google',
+      // Nuevos campos
+      description: raw.editorialSummary?.text || undefined,
+      website: raw.websiteUri || undefined,
+      openingHours: raw.regularOpeningHours?.weekdayDescriptions || undefined,
+      primaryType: raw.primaryType || undefined,
+      primaryTypeDisplayName: raw.primaryTypeDisplayName?.text || undefined,
+      viewport: raw.viewport || undefined,
+      plusCode: raw.plusCode?.globalCode || raw.plusCode?.compoundCode || undefined,
+      shortFormattedAddress: raw.shortFormattedAddress || undefined,
+      accessibilityOptions: raw.accessibilityOptions || undefined,
     };
   } catch (e) {
     console.warn('normalizePlace error', e);

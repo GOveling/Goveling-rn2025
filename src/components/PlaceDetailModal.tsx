@@ -23,7 +23,6 @@ import LottieView from 'lottie-react-native';
 import AddToTripModal from './AddToTripModal';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
-import clockAnimation from '../../assets/animations/clock.json';
 import cycleAnimation from '../../assets/animations/cycle.json';
 import globeAnimation from '../../assets/animations/globe.json';
 import locationCircleAnimation from '../../assets/animations/location-circle.json';
@@ -77,11 +76,9 @@ export default function PlaceDetailModal({
   const [directionsLottieError, setDirectionsLottieError] = React.useState(false);
   const [locationLottieError, setLocationLottieError] = React.useState(false);
   const [websiteLottieError, setWebsiteLottieError] = React.useState(false);
-  const [callLottieError, setCallLottieError] = React.useState(false);
 
   // Referencias para controlar las animaciones Lottie
   const directionsLottieRef = React.useRef<LottieView>(null);
-  const callLottieRef = React.useRef<LottieView>(null);
   const websiteLottieRef = React.useRef<LottieView>(null);
   const scheduleLottieRef = React.useRef<LottieView>(null);
 
@@ -102,7 +99,6 @@ export default function PlaceDetailModal({
       setDirectionsLottieError(false);
       setLocationLottieError(false);
       setWebsiteLottieError(false);
-      setCallLottieError(false);
 
       // Resetear estados de modales
       setShowMiniMap(false);
@@ -111,7 +107,6 @@ export default function PlaceDetailModal({
       // Pequeño delay para asegurar que los componentes estén montados
       setTimeout(() => {
         directionsLottieRef.current?.play();
-        callLottieRef.current?.play();
         websiteLottieRef.current?.play();
         scheduleLottieRef.current?.play();
       }, 300);
@@ -120,21 +115,9 @@ export default function PlaceDetailModal({
 
   if (!place) return null;
 
-  const handleCall = () => {
-    // Reproducir animación al hacer clic
-    callLottieRef.current?.play();
-
-    if (place.phone) {
-      const phoneNumber = place.phone.replace(/[^\d+]/g, '');
-      Linking.openURL(`tel:${phoneNumber}`);
-    } else {
-      Alert.alert('Teléfono no disponible', 'No hay información de contacto para este lugar');
-    }
-  };
-
   const handleLocation = () => {
     // Reproducir animación al hacer clic
-    callLottieRef.current?.play();
+    directionsLottieRef.current?.play();
 
     console.log('Opening location modal for place:', {
       name: place.name,
@@ -179,53 +162,6 @@ export default function PlaceDetailModal({
       Linking.openURL(url);
     } else {
       Alert.alert('Sitio web no disponible', 'No hay sitio web para este lugar');
-    }
-  };
-
-  const handleSchedule = () => {
-    // Reproducir animación al hacer clic
-    scheduleLottieRef.current?.play();
-
-    console.log('Schedule data:', {
-      openingHours: place.openingHours,
-      opening_hours_raw: place.opening_hours_raw,
-      openNow: place.openNow,
-      hasOpeningHours: !!place.openingHours,
-      hasOpeningHoursRaw: !!place.opening_hours_raw,
-      openingHoursType: typeof place.openingHours,
-      openingHoursRawType: typeof place.opening_hours_raw,
-      placeKeys: Object.keys(place),
-      place: place,
-    });
-
-    let scheduleText = '';
-
-    // Intentar obtener horarios de diferentes fuentes
-    if (place.openingHours && Array.isArray(place.openingHours) && place.openingHours.length > 0) {
-      scheduleText = place.openingHours.join('\n');
-    } else if (place.opening_hours_raw) {
-      if (typeof place.opening_hours_raw === 'string') {
-        scheduleText = place.opening_hours_raw;
-      } else if (
-        place.opening_hours_raw.weekday_text &&
-        Array.isArray(place.opening_hours_raw.weekday_text)
-      ) {
-        scheduleText = place.opening_hours_raw.weekday_text.join('\n');
-      } else if (place.opening_hours_raw.periods) {
-        scheduleText = 'Horarios disponibles (ver detalles en el lugar)';
-      } else {
-        scheduleText = JSON.stringify(place.opening_hours_raw, null, 2);
-      }
-    } else if (place.openNow !== undefined) {
-      scheduleText = `Estado actual: ${place.openNow ? 'Abierto' : 'Cerrado'}`;
-    }
-
-    if (scheduleText.trim()) {
-      Alert.alert('Horarios de funcionamiento', scheduleText, [
-        { text: 'Cerrar', style: 'default' },
-      ]);
-    } else {
-      Alert.alert('Horarios no disponibles', 'No hay información de horarios para este lugar');
     }
   };
 
@@ -472,13 +408,110 @@ export default function PlaceDetailModal({
               </View>
             )}
 
-            {/* Descripción */}
+            {/* About - Editorial Summary */}
             {place.description && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Descripción</Text>
-                <Text style={styles.description}>{place.description}</Text>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionIcon}>ℹ️</Text>
+                  <Text style={styles.sectionTitle}>About</Text>
+                </View>
+                <Text style={styles.aboutText}>{place.description}</Text>
               </View>
             )}
+
+            {/* Horarios de Apertura */}
+            {place.openingHours && place.openingHours.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionIcon}>🕐</Text>
+                  <Text style={styles.sectionTitle}>Horarios</Text>
+                </View>
+                <View style={styles.hoursContainer}>
+                  {place.openingHours.map((hour, index) => {
+                    const [day, time] = hour.split(': ');
+                    return (
+                      <View key={index} style={styles.hourRow}>
+                        <Text style={styles.hourDay}>{day}</Text>
+                        <Text style={styles.hourTime}>{time || 'Cerrado'}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Tipo de Lugar - OCULTO */}
+            {false && place.primaryTypeDisplayName && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionIcon}>🏷️</Text>
+                  <Text style={styles.sectionTitle}>Tipo de Lugar</Text>
+                </View>
+                <View style={styles.typeTag}>
+                  <Text style={styles.typeTagText}>{place.primaryTypeDisplayName}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Información Adicional - OCULTO */}
+            {false && (place.shortFormattedAddress || place.plusCode) && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionIcon}>📋</Text>
+                  <Text style={styles.sectionTitle}>Información Adicional</Text>
+                </View>
+                {place.shortFormattedAddress && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Dirección corta:</Text>
+                    <Text style={styles.infoValue}>{place.shortFormattedAddress}</Text>
+                  </View>
+                )}
+                {place.plusCode && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Plus Code:</Text>
+                    <Text style={styles.infoValueMono}>{place.plusCode}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Accesibilidad */}
+            {place.accessibilityOptions && Object.keys(place.accessibilityOptions).length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionIcon}>♿</Text>
+                  <Text style={styles.sectionTitle}>Accesibilidad</Text>
+                </View>
+                <View style={styles.accessibilityContainer}>
+                  {place.accessibilityOptions.wheelchairAccessibleEntrance && (
+                    <View style={styles.accessibilityItem}>
+                      <Text style={styles.accessibilityIcon}>✓</Text>
+                      <Text style={styles.accessibilityText}>Entrada accesible</Text>
+                    </View>
+                  )}
+                  {place.accessibilityOptions.wheelchairAccessibleParking && (
+                    <View style={styles.accessibilityItem}>
+                      <Text style={styles.accessibilityIcon}>✓</Text>
+                      <Text style={styles.accessibilityText}>Estacionamiento accesible</Text>
+                    </View>
+                  )}
+                  {place.accessibilityOptions.wheelchairAccessibleRestroom && (
+                    <View style={styles.accessibilityItem}>
+                      <Text style={styles.accessibilityIcon}>✓</Text>
+                      <Text style={styles.accessibilityText}>Baños accesibles</Text>
+                    </View>
+                  )}
+                  {place.accessibilityOptions.wheelchairAccessibleSeating && (
+                    <View style={styles.accessibilityItem}>
+                      <Text style={styles.accessibilityIcon}>✓</Text>
+                      <Text style={styles.accessibilityText}>Asientos accesibles</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {/* Descripción OLD - removida ya que usamos About arriba */}
 
             {/* Información adicional */}
             {(place.category || place.types) && (
@@ -517,7 +550,7 @@ export default function PlaceDetailModal({
                   disabled={!place.coordinates}
                 >
                   {renderActionIcon(
-                    callLottieRef,
+                    directionsLottieRef,
                     locationCircleAnimation,
                     '📍', // Emoji de fallback para ubicación
                     locationLottieError,
@@ -549,23 +582,7 @@ export default function PlaceDetailModal({
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={handleCall}
-                  disabled={!place.phone}
-                >
-                  {renderActionIcon(
-                    scheduleLottieRef,
-                    clockAnimation,
-                    '📞', // Emoji de fallback para llamar
-                    callLottieError,
-                    setCallLottieError,
-                    !place.phone
-                  )}
-                  <Text style={[styles.actionText, !place.phone && styles.actionTextDisabled]}>
-                    Llamar
-                  </Text>
-                </TouchableOpacity>
+                {/* Botón Llamar - ELIMINADO */}
               </View>
             </View>
 
@@ -826,11 +843,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
   },
-  description: {
-    color: COLORS.text.slateGray,
-    fontSize: 16,
-    lineHeight: 24,
-  },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -952,5 +964,99 @@ const styles = StyleSheet.create({
     color: COLORS.text.white,
     fontSize: 12,
     fontWeight: '600',
+  },
+  // About Section
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  sectionIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  aboutText: {
+    color: COLORS.text.slateGray,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  // Hours Section
+  hoursContainer: {
+    backgroundColor: COLORS.background.tertiary,
+    borderRadius: 12,
+    padding: 12,
+  },
+  hourRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  hourDay: {
+    color: COLORS.text.darkGray,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  hourTime: {
+    color: COLORS.text.tertiary,
+    fontSize: 15,
+  },
+  // Type Tag
+  typeTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.background.purple.ultraLight,
+    borderColor: COLORS.border.purpleLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  typeTagText: {
+    color: COLORS.primary.deepIndigo,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  // Info Rows
+  infoRow: {
+    marginBottom: 12,
+  },
+  infoLabel: {
+    color: COLORS.text.tertiary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  infoValue: {
+    color: COLORS.text.darkGray,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  infoValueMono: {
+    color: COLORS.text.darkGray,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  // Accessibility
+  accessibilityContainer: {
+    backgroundColor: COLORS.background.tertiary,
+    borderRadius: 12,
+    padding: 12,
+  },
+  accessibilityItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingVertical: 8,
+  },
+  accessibilityIcon: {
+    color: COLORS.status.success,
+    fontSize: 18,
+    marginRight: 12,
+  },
+  accessibilityText: {
+    color: COLORS.text.darkGray,
+    flex: 1,
+    fontSize: 15,
   },
 });
