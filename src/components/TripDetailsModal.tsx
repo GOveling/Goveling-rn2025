@@ -12,6 +12,7 @@ import {
   Switch,
   Pressable,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -367,43 +368,22 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const TabButton = ({ tab, title }: { tab: TabType; title: string }) => (
     <TouchableOpacity
       onPress={() => setActiveTab(tab)}
-      style={{
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: 'center',
-        borderBottomWidth: activeTab === tab ? 2 : 0,
-        borderBottomColor: '#3B82F6',
-      }}
+      style={[styles.tab, activeTab === tab && styles.tabActive]}
     >
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: activeTab === tab ? '600' : '400',
-          color: activeTab === tab ? '#3B82F6' : '#6B7280',
-        }}
-      >
+      <Text style={[styles.tabText, activeTab === tab ? styles.tabTextActive : styles.tabTextInactive]}>
         {title}
       </Text>
     </TouchableOpacity>
   );
 
   const OverviewTab = () => (
-    <ScrollView style={{ flex: 1, padding: 20 }}>
+    <ScrollView style={styles.scrollViewContainer}>
       {/* Header con badges: estado del viaje + rol del usuario */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 20,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>
-            {editableTrip.title}
-          </Text>
+      <View style={styles.overviewHeaderRow}>
+        <View style={styles.overviewTitleContainer}>
+          <Text style={styles.overviewTitle}>{editableTrip.title}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={styles.overviewButtonsRow}>
           <View
             style={{
               backgroundColor: getStatusConfig().bgColor,
@@ -444,14 +424,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       </View>
 
       {/* Fechas */}
-      <View style={{ marginBottom: 20 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
           <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-          <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginLeft: 8 }}>
-            Dates
-          </Text>
+          <Text style={styles.sectionTitle}>Dates</Text>
         </View>
-        <Text style={{ fontSize: 16, color: '#6B7280' }}>
+        <Text style={styles.sectionContent}>
           {editableTrip.start_date && editableTrip.end_date
             ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
             : 'No dates set'}
@@ -899,23 +877,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <View style={styles.container}>
         {/* Header */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 20,
-            paddingTop: 16,
-            paddingBottom: 8,
-            borderBottomWidth: 1,
-            borderBottomColor: '#E5E7EB',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 24, marginRight: 8 }}>🌍</Text>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937' }}>{trip.title}</Text>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerIcon}>🌍</Text>
+            <Text style={styles.headerTitle}>{trip.title}</Text>
           </View>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color="#6B7280" />
@@ -923,19 +890,19 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </View>
 
         {/* Sub-header con información básica */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#F9FAFB' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={styles.subHeader}>
+          <View style={styles.subHeaderRow}>
+            <View style={styles.subHeaderItem}>
               <Ionicons name="calendar-outline" size={16} color="#6B7280" />
-              <Text style={{ fontSize: 14, color: '#6B7280', marginLeft: 4 }}>
+              <Text style={styles.subHeaderText}>
                 {editableTrip.start_date && editableTrip.end_date
                   ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
                   : 'No dates set'}
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.subHeaderItem}>
               <Ionicons name="people-outline" size={16} color="#6B7280" />
-              <Text style={{ fontSize: 14, color: '#6B7280', marginLeft: 4 }}>
+              <Text style={styles.subHeaderText}>
                 {tripData.collaboratorsCount} traveler{tripData.collaboratorsCount !== 1 ? 's' : ''}
               </Text>
             </View>
@@ -943,14 +910,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </View>
 
         {/* Tabs */}
-        <View
-          style={{
-            flexDirection: 'row',
-            backgroundColor: 'white',
-            borderBottomWidth: 1,
-            borderBottomColor: '#E5E7EB',
-          }}
-        >
+        <View style={styles.tabContainer}>
           <TabButton tab="overview" title="Overview" />
           <TabButton tab="itinerary" title="Itinerary" />
           <TabButton tab="team" title="Team" />
@@ -983,5 +943,326 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  // Container styles
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  scrollViewContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  
+  // Header styles
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  
+  // Sub-header styles
+  subHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  subHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  subHeaderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  subHeaderText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+  
+  // Tab styles
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tabActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#3B82F6',
+  },
+  tabText: {
+    fontSize: 16,
+  },
+  tabTextActive: {
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  tabTextInactive: {
+    fontWeight: '400',
+    color: '#6B7280',
+  },
+  
+  // Overview section styles
+  overviewHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  overviewTitleContainer: {
+    flex: 1,
+  },
+  overviewTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  overviewButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  overviewButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  overviewButtonText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  editButton: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Section styles
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginLeft: 8,
+  },
+  sectionContent: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  sectionContentMultiline: {
+    fontSize: 16,
+    color: '#6B7280',
+    lineHeight: 24,
+  },
+  
+  // Tag/Badge styles
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+  },
+  tagIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  tagText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  
+  // Button styles
+  actionButton: {
+    marginTop: 20,
+  },
+  gradientButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  
+  // Team section styles
+  teamTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 20,
+  },
+  teamWarning: {
+    flexDirection: 'row',
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  teamWarningIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  teamWarningContent: {
+    flex: 1,
+  },
+  teamWarningTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#9A3412',
+    marginBottom: 4,
+  },
+  teamWarningText: {
+    fontSize: 13,
+    color: '#9A3412',
+    lineHeight: 18,
+  },
+  
+  // Team member styles
+  memberCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  memberInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  memberAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  memberInitials: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    marginRight: 12,
+  },
+  memberInitialsText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  memberDetails: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  memberEmail: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  memberRole: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: '#3B82F6',
+  },
+  memberRoleText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Empty state styles
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  
+  // Action buttons at bottom
+  bottomActions: {
+    gap: 12,
+    marginTop: 20,
+  },
+});
 
 export default TripDetailsModal;
