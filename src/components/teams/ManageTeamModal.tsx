@@ -659,15 +659,13 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
               t('trips.history', 'History'),
             ]}
             selectedIndex={activeIndex}
-            onChange={(e) => setActiveIndex((e.nativeEvent as any).selectedSegmentIndex)}
-            backgroundColor="#F3F4F6"
-            tintColor="#3B82F6"
-            fontStyle={{ color: '#374151', fontWeight: '600' }}
-            activeFontStyle={{ color: '#111827', fontWeight: '700' }}
-          />
-        </View>
-
-        {/* Content with keyboard handling */}
+          onChange={(e) => setActiveIndex((e.nativeEvent as any).selectedSegmentIndex)}
+          backgroundColor="#F3F4F6"
+          tintColor="#3B82F6"
+          fontStyle={styles.segmentedControlFont}
+          activeFontStyle={styles.segmentedControlActiveFont}
+        />
+      </View>        {/* Content with keyboard handling */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
@@ -1006,6 +1004,15 @@ const styles = StyleSheet.create({
   historyDateText: {
     fontSize: 12,
     color: '#9CA3AF',
+  },
+  // Segmented Control styles
+  segmentedControlFont: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  segmentedControlActiveFont: {
+    color: '#111827',
+    fontWeight: '700',
   },
 });
 
