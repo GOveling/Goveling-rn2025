@@ -1,8 +1,4 @@
-import { useTranslation } from 'react-i18next';
-
-export const options = { headerShown: false };
 import React from 'react';
-
 import {
   View,
   Text,
@@ -17,8 +13,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
-
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import LocationWidget from '~/components/home/LocationWidget';
@@ -46,6 +42,8 @@ import { logger } from '~/utils/logger';
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 import { useAppSelector } from '../../src/store/hooks';
 import { selectBreakdown } from '../../src/store/slices/tripsSlice';
+
+export const options = { headerShown: false };
 
 export default function HomeTab() {
   const { t } = useTranslation();

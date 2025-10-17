@@ -1,13 +1,10 @@
-import { useTranslation } from 'react-i18next';
-
-export const options = { headerShown: false };
 import React from 'react';
-
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
@@ -17,6 +14,8 @@ import { useSettingsStore } from '~/lib/settingsStore';
 import { useTheme } from '~/lib/theme';
 import { useTravel } from '~/lib/travelStore';
 import { getWeather } from '~/lib/weather';
+
+export const options = { headerShown: false };
 
 export default function Home() {
   const { t } = useTranslation();
