@@ -563,7 +563,10 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 }
               }}
               disabled={inviteDisabled}
-              style={[styles.inviteSubmitButton, inviteDisabled && styles.inviteSubmitButtonDisabled]}
+              style={[
+                styles.inviteSubmitButton,
+                inviteDisabled && styles.inviteSubmitButtonDisabled,
+              ]}
             >
               {inviting ? (
                 <ActivityIndicator color="#fff" />
@@ -649,7 +652,6 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
             <Ionicons name="close" size={24} color="#6B7280" />
           </TouchableOpacity>
         </View>
-
         {/* Tabs */}
         <View style={styles.tabsContainer}>
           <SegmentedControl
@@ -659,13 +661,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
               t('trips.history', 'History'),
             ]}
             selectedIndex={activeIndex}
-          onChange={(e) => setActiveIndex((e.nativeEvent as any).selectedSegmentIndex)}
-          backgroundColor="#F3F4F6"
-          tintColor="#3B82F6"
-          fontStyle={styles.segmentedControlFont}
-          activeFontStyle={styles.segmentedControlActiveFont}
-        />
-      </View>        {/* Content with keyboard handling */}
+            onChange={(e) => setActiveIndex((e.nativeEvent as any).selectedSegmentIndex)}
+            backgroundColor="#F3F4F6"
+            tintColor="#3B82F6"
+            fontStyle={styles.segmentedControlFont}
+            activeFontStyle={styles.segmentedControlActiveFont}
+          />
+        </View>{' '}
+        {/* Content with keyboard handling */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
@@ -697,7 +700,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
   },
-  
+
   // Header styles
   header: {
     backgroundColor: '#F3F4F6',
@@ -720,12 +723,12 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 8,
   },
-  
+
   // Tabs styles
   tabsContainer: {
     padding: 12,
   },
-  
+
   // Content styles
   keyboardAvoidView: {
     flex: 1,
@@ -744,7 +747,7 @@ const styles = StyleSheet.create({
   flatListPadding: {
     paddingBottom: 160,
   },
-  
+
   // Loading state
   loadingContainer: {
     flex: 1,
@@ -755,7 +758,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#6B7280',
   },
-  
+
   // Owner card styles
   ownerCard: {
     backgroundColor: '#FFFBEB',
@@ -810,7 +813,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  
+
   // Member card styles
   memberCard: {
     backgroundColor: '#F9FAFB',
@@ -869,7 +872,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 4,
   },
-  
+
   // Invitation card styles
   invitationCard: {
     backgroundColor: '#F9FAFB',
@@ -907,7 +910,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
-  
+
   // Invite form styles
   inviteFormContainer: {
     borderTopWidth: 1,
@@ -964,7 +967,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '700',
   },
-  
+
   // Empty state styles
   emptyContainer: {
     alignItems: 'center',
@@ -974,7 +977,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 6,
   },
-  
+
   // History tab styles
   historyCard: {
     backgroundColor: '#F9FAFB',
@@ -1017,4 +1020,3 @@ const styles = StyleSheet.create({
 });
 
 export default ManageTeamModal;
-
