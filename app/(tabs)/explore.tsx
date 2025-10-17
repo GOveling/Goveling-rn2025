@@ -513,19 +513,17 @@ export default function ExploreTab() {
 
           {/* Ubicación actual */}
           <View style={styles.searchInputContainer}>
-            <View style={styles.searchInputRow}>
-              <Switch
-                value={nearCurrentLocation}
-                onValueChange={setNearCurrentLocation}
-                trackColor={{ false: '#CBD5E1', true: '#3B82F6' }}
-                thumbColor={nearCurrentLocation ? '#FFFFFF' : '#FFFFFF'}
-                ios_backgroundColor="#CBD5E1"
-                style={styles.searchInputIcon}
-              />
+            <Switch
+              value={nearCurrentLocation}
+              onValueChange={setNearCurrentLocation}
+              trackColor={{ false: '#CBD5E1', true: '#3B82F6' }}
+              thumbColor={nearCurrentLocation ? '#FFFFFF' : '#FFFFFF'}
+              ios_backgroundColor="#CBD5E1"
+              style={styles.searchInputIcon}
+            />
 
-              <View style={styles.searchInputField}>
-                <Text style={styles.searchInputText}>Cerca de mi ubicación actual</Text>
-              </View>
+            <View style={styles.searchInputField}>
+              <Text style={styles.searchInputText}>Cerca de mi ubicación actual</Text>
             </View>
 
             <TouchableOpacity
