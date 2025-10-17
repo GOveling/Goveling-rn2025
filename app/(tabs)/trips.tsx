@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  StyleSheet,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -372,13 +373,10 @@ export default function TripsTab() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+    <View style={styles.container}>
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          padding: 16,
-          paddingTop: Platform.OS === 'ios' ? 60 : 20,
-        }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -392,25 +390,12 @@ export default function TripsTab() {
         }
       >
         {/* Header */}
-        <View style={{ marginBottom: 24 }}>
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: '900',
-              color: '#1A1A1A',
-              marginBottom: 8,
-            }}
-          >
-            Mis Viajes
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            {t('trips.title')}
           </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              color: '#666666',
-              fontWeight: '500',
-            }}
-          >
-            Planea y gestiona tus aventuras
+          <Text style={styles.subtitle}>
+            {t('trips.subtitle')}
           </Text>
         </View>
 
@@ -419,40 +404,12 @@ export default function TripsTab() {
           onPress={() =>
             Alert.alert('Mapa', 'Funcionalidad de mapa de trips próximamente disponible')
           }
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            borderWidth: 2,
-            borderColor: '#007AFF',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
-          }}
+          style={styles.mapButton}
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: '600',
-              color: '#007AFF',
-              marginRight: 8,
-            }}
-          >
+          <Text style={styles.mapButtonIcon}>
             🗺️
           </Text>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: '600',
-              color: '#007AFF',
-            }}
-          >
+          <Text style={styles.mapButtonText}>
             Vista de Mapa
           </Text>
         </TouchableOpacity>
@@ -460,153 +417,45 @@ export default function TripsTab() {
         {/* Nuevo Viaje Button */}
         <TouchableOpacity
           onPress={() => setShowNewTripModal(true)}
-          style={{
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 24,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 5,
-          }}
+          style={styles.newTripContainer}
         >
           <LinearGradient
             colors={['#8B5CF6', '#EC4899']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={{
-              borderRadius: 16,
-              padding: 18,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={styles.newTripGradient}
           >
-            <Text
-              style={{
-                color: '#FFFFFF',
-                fontWeight: '700',
-                fontSize: 18,
-              }}
-            >
+            <Text style={styles.newTripText}>
               + Nuevo Viaje
             </Text>
           </LinearGradient>
         </TouchableOpacity>
 
         {/* Stats Cards */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 24,
-            gap: 12,
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 16,
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 32,
-                fontWeight: '900',
-                color: '#007AFF',
-                marginBottom: 4,
-              }}
-            >
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValueBlue}>
               {stats.totalTrips}
             </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: '#666666',
-                textAlign: 'center',
-              }}
-            >
+            <Text style={styles.statLabel}>
               Total de Viajes
             </Text>
           </View>
 
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 16,
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 32,
-                fontWeight: '900',
-                color: '#34C759',
-                marginBottom: 4,
-              }}
-            >
+          <View style={styles.statCard}>
+            <Text style={styles.statValueGreen}>
               {stats.upcomingTrips}
             </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: '#666666',
-                textAlign: 'center',
-              }}
-            >
+            <Text style={styles.statLabel}>
               Próximos
             </Text>
           </View>
 
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 16,
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 32,
-                fontWeight: '900',
-                color: '#FF9500',
-                marginBottom: 4,
-              }}
-            >
+          <View style={styles.statCard}>
+            <Text style={styles.statValueOrange}>
               {stats.groupTrips}
             </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: '#666666',
-                textAlign: 'center',
-              }}
-            >
+            <Text style={styles.statLabel}>
               Viajes Grupales
             </Text>
           </View>
@@ -614,93 +463,32 @@ export default function TripsTab() {
 
         {/* Lista de Trips */}
         {loading ? (
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 32,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 24,
-            }}
-          >
+          <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#8B5CF6" />
-            <Text
-              style={{
-                fontSize: 16,
-                color: '#666666',
-                marginTop: 16,
-                textAlign: 'center',
-              }}
-            >
+            <Text style={styles.loadingText}>
               Cargando tus viajes...
             </Text>
           </View>
         ) : trips.length === 0 ? (
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 16,
-              padding: 32,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 24,
-            }}
-          >
-            <Text style={{ fontSize: 48, marginBottom: 16 }}>�️</Text>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: '#1A1A1A',
-                marginBottom: 8,
-                textAlign: 'center',
-              }}
-            >
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyEmoji}>🗺️</Text>
+            <Text style={styles.emptyTitle}>
               ¡Aún no tienes viajes!
             </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                color: '#666666',
-                marginBottom: 24,
-                textAlign: 'center',
-              }}
-            >
+            <Text style={styles.emptyMessage}>
               Crea tu primer viaje y comienza a planificar tu aventura
             </Text>
             <TouchableOpacity
               onPress={() => setShowNewTripModal(true)}
-              style={{
-                borderRadius: 16,
-                paddingHorizontal: 24,
-                paddingVertical: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 6,
-                elevation: 3,
-              }}
+              style={styles.emptyCreateButtonContainer}
             >
               <LinearGradient
                 colors={['#8B5CF6', '#EC4899']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={{
-                  borderRadius: 16,
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                style={styles.emptyCreateButtonGradient}
               >
-                <Text
-                  style={{
-                    color: '#FFFFFF',
-                    fontWeight: '700',
-                    fontSize: 16,
-                  }}
-                >
+                <Text style={styles.emptyCreateButtonText}>
                   + Crear Mi Primer Viaje
                 </Text>
               </LinearGradient>
@@ -729,7 +517,7 @@ export default function TripsTab() {
         )}
 
         {/* Bottom padding */}
-        <View style={{ height: 100 }} />
+        <View style={styles.bottomPadding} />
       </ScrollView>
 
       {/* Modal de Nuevo Viaje */}
@@ -749,3 +537,192 @@ export default function TripsTab() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  // Container
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+  },
+
+  // Header
+  header: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666666',
+    fontWeight: '500',
+  },
+
+  // Map Button
+  mapButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  mapButtonIcon: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginRight: 8,
+  },
+  mapButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+
+  // New Trip Button
+  newTripContainer: {
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  newTripGradient: {
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newTripText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 18,
+  },
+
+  // Stats
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statValueBlue: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#007AFF',
+    marginBottom: 4,
+  },
+  statValueGreen: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#34C759',
+    marginBottom: 4,
+  },
+  statValueOrange: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FF9500',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666666',
+    textAlign: 'center',
+  },
+
+  // Loading/Empty State
+  centerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666666',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+
+  // Empty Create Button
+  emptyCreateButtonContainer: {
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  emptyCreateButtonGradient: {
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCreateButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
+  // Bottom Padding
+  bottomPadding: {
+    height: 100,
+  },
+});
