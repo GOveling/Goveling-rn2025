@@ -352,19 +352,13 @@ export default function ExploreTab() {
                 style={styles.sectionRow}
                 activeOpacity={0.85}
               >
-                <Text style={styles.categoryIcon}>
-                  🧪{/* Icono funnel placeholder */}
-                </Text>
-                <Text style={styles.categoryTitle}>
-                  Buscar Categorías
-                </Text>
+                <Text style={styles.categoryIcon}>🧪{/* Icono funnel placeholder */}</Text>
+                <Text style={styles.categoryTitle}>Buscar Categorías</Text>
               </TouchableOpacity>
 
               {selectedCategories.length > 0 && (
                 <View style={styles.categoryExpandButton}>
-                  <Text style={styles.categoryExpandText}>
-                    {selectedCategories.length}
-                  </Text>
+                  <Text style={styles.categoryExpandText}>{selectedCategories.length}</Text>
                 </View>
               )}
 
@@ -393,16 +387,9 @@ export default function ExploreTab() {
                     (c) => c.name === cat
                   );
                   return (
-                    <View
-                      key={cat}
-                      style={[styles.categoryChip, styles.categoryChipSelected]}
-                    >
-                      <Text style={styles.categoryChipIcon}>
-                        {data?.icon}
-                      </Text>
-                      <Text style={styles.categoryChipText}>
-                        {cat}
-                      </Text>
+                    <View key={cat} style={[styles.categoryChip, styles.categoryChipSelected]}>
+                      <Text style={styles.categoryChipIcon}>{data?.icon}</Text>
+                      <Text style={styles.categoryChipText}>{cat}</Text>
                       <TouchableOpacity
                         onPress={() => toggleCategory(cat)}
                         style={styles.categoryChipRemove}
@@ -432,18 +419,11 @@ export default function ExploreTab() {
                   {/* Scroll interno solo para las categorías, manteniendo el header arriba fijo */}
                   <ScrollView
                     style={styles.resultsContainer}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
+                    contentContainerStyle={styles.categoryPanelContent}
                     showsVerticalScrollIndicator={false}
                   >
                     {/* Sección General */}
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: 10,
-                      }}
-                    >
+                    <Text style={styles.categorySectionTitle}>
                       General
                     </Text>
                     {[...generalCategories].map((cat) => {
@@ -453,37 +433,24 @@ export default function ExploreTab() {
                           key={cat.name}
                           activeOpacity={0.9}
                           onPress={() => toggleCategory(cat.name)}
-                          style={{
-                            marginBottom: 10,
-                            borderRadius: 10,
-                            overflow: 'hidden',
-                          }}
+                          style={styles.categoryItemButton}
                         >
                           {isSelected ? (
                             <LinearGradient
                               colors={['#8B5CF6', '#C151E6', '#EC6A3C']}
                               start={{ x: 0, y: 0 }}
                               end={{ x: 1, y: 0 }}
-                              style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}
+                              style={styles.categoryItemSelected}
                             >
-                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
-                              <Text style={{ fontSize: 15, fontWeight: '600', color: 'white' }}>
+                              <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
+                              <Text style={styles.categoryItemTextSelected}>
                                 {cat.name}
                               </Text>
                             </LinearGradient>
                           ) : (
-                            <View
-                              style={{
-                                backgroundColor: 'white',
-                                borderWidth: 1,
-                                borderColor: '#E5E7EB',
-                                padding: 16,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
-                              <Text style={{ fontSize: 15, fontWeight: '500', color: '#111827' }}>
+                            <View style={styles.categoryItemUnselected}>
+                              <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
+                              <Text style={styles.categoryItemTextUnselected}>
                                 {cat.name}
                               </Text>
                             </View>
@@ -493,15 +460,7 @@ export default function ExploreTab() {
                     })}
 
                     {/* Sección Lugares Específicos */}
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginTop: 4,
-                        marginBottom: 10,
-                      }}
-                    >
+                    <Text style={styles.categorySectionTitle}>
                       Lugares Específicos
                     </Text>
                     {[...specificCategories].map((cat) => {
@@ -511,39 +470,22 @@ export default function ExploreTab() {
                           key={cat.name}
                           activeOpacity={0.9}
                           onPress={() => toggleCategory(cat.name)}
-                          style={{
-                            marginBottom: 10,
-                            borderRadius: 10,
-                            overflow: 'hidden',
-                          }}
+                          style={styles.categoryItemButton}
                         >
                           {isSelected ? (
                             <LinearGradient
                               colors={['#8B5CF6', '#C151E6', '#EC6A3C']}
                               start={{ x: 0, y: 0 }}
                               end={{ x: 1, y: 0 }}
-                              style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}
+                              style={styles.categoryItemSelected}
                             >
-                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
-                              <Text style={{ fontSize: 15, fontWeight: '600', color: 'white' }}>
-                                {cat.name}
-                              </Text>
+                              <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
+                              <Text style={styles.categoryItemTextSelected}>{cat.name}</Text>
                             </LinearGradient>
                           ) : (
-                            <View
-                              style={{
-                                backgroundColor: 'white',
-                                borderWidth: 1,
-                                borderColor: '#E5E7EB',
-                                padding: 16,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Text style={{ fontSize: 16, marginRight: 12 }}>{cat.icon}</Text>
-                              <Text style={{ fontSize: 15, fontWeight: '500', color: '#111827' }}>
-                                {cat.name}
-                              </Text>
+                            <View style={styles.categoryItemUnselected}>
+                              <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
+                              <Text style={styles.categoryItemTextUnselected}>{cat.name}</Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -555,39 +497,22 @@ export default function ExploreTab() {
                       <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        style={{ marginTop: 4, marginBottom: 4 }}
-                        contentContainerStyle={{ paddingRight: 4 }}
+                        style={styles.categoryItemsScrollView}
+                        contentContainerStyle={styles.categoryItemsScrollViewContent}
                       >
                         {selectedCategories.map((cat) => {
                           const data = [...generalCategories, ...specificCategories].find(
                             (c) => c.name === cat
                           );
                           return (
-                            <View
-                              key={cat}
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                backgroundColor: '#EFE4FF',
-                                borderColor: '#C6B4F5',
-                                borderWidth: 1,
-                                paddingHorizontal: 14,
-                                height: 38,
-                                borderRadius: 22,
-                                marginRight: 8,
-                              }}
-                            >
-                              <Text style={{ fontSize: 14, color: '#4B0082', marginRight: 6 }}>
-                                {data?.icon}
-                              </Text>
-                              <Text style={{ fontSize: 14, color: '#4B0082', fontWeight: '500' }}>
-                                {cat}
-                              </Text>
+                            <View key={cat} style={styles.categoryChipSelected}>
+                              <Text style={styles.categoryChipIcon}>{data?.icon}</Text>
+                              <Text style={styles.categoryChipText}>{cat}</Text>
                               <TouchableOpacity
                                 onPress={() => toggleCategory(cat)}
-                                style={{ marginLeft: 8 }}
+                                style={styles.categoryChipRemove}
                               >
-                                <Text style={{ fontSize: 16, color: '#4B0082' }}>×</Text>
+                                <Text style={styles.categoryChipRemoveText}>×</Text>
                               </TouchableOpacity>
                             </View>
                           );
@@ -601,118 +526,59 @@ export default function ExploreTab() {
           </View>
 
           {/* Ubicación actual */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'white',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 12,
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <View style={styles.searchInputContainer}>
+            <View style={styles.searchInputRow}>
               <Switch
                 value={nearCurrentLocation}
                 onValueChange={setNearCurrentLocation}
                 trackColor={{ false: '#CBD5E1', true: '#3B82F6' }}
                 thumbColor={nearCurrentLocation ? '#FFFFFF' : '#FFFFFF'}
                 ios_backgroundColor="#CBD5E1"
-                style={{ marginRight: 12 }}
+                style={styles.searchInputIcon}
               />
 
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: '#1F2937' }}>
-                  Cerca de mi ubicación actual
-                </Text>
+              <View style={styles.searchInputField}>
+                <Text style={styles.searchInputText}>Cerca de mi ubicación actual</Text>
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.searchButtonsRow}>
               <TouchableOpacity
                 onPress={() => setShowMap(true)}
-                style={{
-                  backgroundColor: '#3B82F6',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
+                style={styles.searchLocationButton}
               >
-                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', marginRight: 4 }}>
-                  🗺️ Ver Mapa
-                </Text>
+                <Text style={styles.searchLocationText}>🗺️ Ver Mapa</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Barra de búsqueda */}
-          <View
-            style={{
-              flexDirection: 'row',
-              backgroundColor: 'white',
-              borderRadius: 12,
-              marginBottom: 16,
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-              overflow: 'hidden',
-            }}
-          >
+          <View style={styles.searchButtonContainer}>
             <TextInput
               placeholder="Busca tu próximo destino..."
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={performSearch}
-              style={{
-                flex: 1,
-                padding: 16,
-                fontSize: 16,
-                color: '#1F2937',
-              }}
+              style={styles.searchButton}
               placeholderTextColor="#9CA3AF"
             />
             <TouchableOpacity onPress={performSearch} disabled={loading}>
               <LinearGradient
                 colors={['#8B5CF6', '#EC4899']}
-                style={{
-                  paddingVertical: 16,
-                  paddingHorizontal: 20,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: loading ? 0.6 : 1,
-                }}
+                style={styles.searchGradient}
               >
-                <Text style={{ fontSize: 16 }}>{loading ? '…' : '🔍'}</Text>
+                <Text style={styles.searchButtonText}>{loading ? '…' : '🔍'}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
 
           {/* Resultados */}
           {hasSearched && (
-            <View style={{ marginBottom: 16 }}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 16,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: '#10B981',
-                      marginRight: 8,
-                    }}
-                  />
-                  <Text style={{ fontSize: 16, color: '#1F2937', fontWeight: '500' }}>
+            <View style={styles.resultsSection}>
+              <View style={styles.resultsHeader}>
+                <View style={styles.resultsHeaderContent}>
+                  <View style={styles.resultsHeaderIcon} />
+                  <Text style={styles.resultsHeaderTitle}>
                     {searchResults.length} resultados encontrados
                   </Text>
                 </View>
@@ -721,20 +587,9 @@ export default function ExploreTab() {
               {searchResults.map((item) => renderSearchResult(item))}
 
               {searchResults.length === 0 && (
-                <View
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: 16,
-                    padding: 32,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text
-                    style={{ fontSize: 18, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}
-                  >
-                    No se encontraron resultados
-                  </Text>
-                  <Text style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center' }}>
+                <View style={styles.resultsEmptyContainer}>
+                  <Text style={styles.resultsEmptyTitle}>No se encontraron resultados</Text>
+                  <Text style={styles.resultsEmptyText}>
                     Intenta con otros términos de búsqueda o ajusta los filtros
                   </Text>
                 </View>
@@ -742,13 +597,13 @@ export default function ExploreTab() {
             </View>
           )}
           {hasSearched && searchResults.length === 0 && !loading && (
-            <View style={{ alignItems: 'center', marginTop: 40 }}>
-              <Text style={{ fontSize: 16, color: '#6B7280' }}>Sin resultados</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Sin resultados</Text>
             </View>
           )}
           {loading && (
-            <View style={{ alignItems: 'center', marginTop: 40 }}>
-              <Text style={{ fontSize: 16, color: '#6B7280' }}>Buscando…</Text>
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Buscando…</Text>
             </View>
           )}
         </ScrollView>
@@ -774,26 +629,13 @@ export default function ExploreTab() {
           presentationStyle="pageSheet"
           transparent={false}
         >
-          <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: 16,
-                paddingTop: 50,
-                paddingBottom: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: '#e5e5e5',
-              }}
-            >
-              <TouchableOpacity onPress={() => setShowMap(false)} style={{ padding: 8 }}>
+          <View style={styles.mapModalContainer}>
+            <View style={styles.mapHeader}>
+              <TouchableOpacity onPress={() => setShowMap(false)} style={styles.mapHeaderButton}>
                 <Ionicons name="arrow-back" size={24} color="#333" />
               </TouchableOpacity>
-              <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>
-                Mapa de Lugares
-              </Text>
-              <View style={{ width: 40 }} />
+              <Text style={styles.mapHeaderTitle}>Mapa de Lugares</Text>
+              <View style={styles.mapHeaderSpacer} />
             </View>
             <AppMap
               center={
@@ -835,22 +677,12 @@ export default function ExploreTab() {
                   }
                 }
               }}
-              style={{ flex: 1 }}
+              style={styles.mapContainer}
             />
 
             {/* Modal de detalles del lugar - Overlay encima del mapa */}
             {modalVisible && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 9999,
-                  elevation: 9999, // Para Android
-                }}
-              >
+              <View style={styles.placeModalOverlay}>
                 <PlaceDetailModal
                   visible={modalVisible}
                   place={selectedPlace}
@@ -874,7 +706,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  
+
   // Header styles
   header: {
     backgroundColor: '#F3F4F6',
@@ -914,7 +746,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
   },
-  
+
   // Toggle switch styles
   toggleContainer: {
     width: 80,
@@ -940,7 +772,7 @@ const styles = StyleSheet.create({
     right: 15,
     bottom: 8,
   },
-  
+
   // Content styles
   scrollView: {
     flex: 1,
@@ -948,7 +780,7 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     padding: 16,
   },
-  
+
   // Section styles
   section: {
     marginBottom: 16,
@@ -958,7 +790,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   // Category styles
   categoryIcon: {
     fontSize: 18,
@@ -990,8 +822,8 @@ const styles = StyleSheet.create({
   categoryScrollViewContent: {
     paddingRight: 4,
   },
-  
-  // Category chip styles  
+
+  // Category chip styles
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1026,7 +858,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4B0082',
   },
-  
+
   // Category panel styles
   categoryPanel: {
     backgroundColor: 'white',
@@ -1086,7 +918,7 @@ const styles = StyleSheet.create({
   categoryItemsScrollViewContent: {
     paddingRight: 4,
   },
-  
+
   // Search input styles
   searchInputContainer: {
     borderRadius: 12,
@@ -1140,7 +972,7 @@ const styles = StyleSheet.create({
   searchLocationText: {
     fontSize: 16,
   },
-  
+
   // Results section styles
   resultsSection: {
     marginBottom: 16,
@@ -1193,7 +1025,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
   },
-  
+
   // Search button styles
   searchButtonContainer: {
     marginTop: 12,
@@ -1211,7 +1043,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  
+
   // Results styles
   resultsContainer: {
     maxHeight: 420,
@@ -1219,7 +1051,7 @@ const styles = StyleSheet.create({
   resultCard: {
     marginBottom: 12,
   },
-  
+
   // Loading/Empty states
   loadingContainer: {
     padding: 40,
@@ -1249,7 +1081,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
   },
-  
+
   // Map modal styles
   mapModalContainer: {
     flex: 1,
@@ -1279,7 +1111,7 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
   },
-  
+
   // Place modal overlay
   placeModalOverlay: {
     position: 'absolute',
