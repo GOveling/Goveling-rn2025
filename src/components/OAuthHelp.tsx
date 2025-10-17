@@ -47,7 +47,7 @@ export default function OAuthHelp({ isDark = false, visible = true }: OAuthHelpP
       </View>
 
       <Text style={[styles.subtitle, { color: textColor, opacity: 0.8 }]}>
-        Si ves errores de "navegador no seguro", toca el ícono de ayuda
+        Si ves errores de &quot;navegador no seguro&quot;, toca el ícono de ayuda
       </Text>
 
       <TouchableOpacity style={styles.expandButton} onPress={() => setExpanded(!expanded)}>

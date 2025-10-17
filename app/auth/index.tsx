@@ -405,7 +405,7 @@ export default function AuthScreen() {
               {/* Switch Mode */}
               <View style={styles.switchContainer}>
                 <Text style={[styles.switchText, { color: isDark ? '#fff' : '#666' }]}>
-                  {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
+                  {mode === 'signup' ? 'Already have an account? ' : "Don&apos;t have an account? "}
                 </Text>
                 <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
                   <Text style={[styles.switchLink, { color: isDark ? '#fff' : '#6366F1' }]}>
