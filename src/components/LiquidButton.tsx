@@ -5,6 +5,8 @@ import { TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { COLORS } from '~/constants/colors';
+
 interface LiquidButtonProps {
   title: string;
   icon?: string;
@@ -79,7 +81,7 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
         letterSpacing: 0.3,
         // textShadow is not deprecated for Text components
         textShadowColor:
-          variant === 'secondary' || variant === 'glass' ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.25)',
+          variant === 'secondary' || variant === 'glass' ? COLORS.utility.shadow.light : COLORS.utility.shadow.gray,
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
       }}
@@ -123,7 +125,7 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
         <BlurView
           intensity={20}
           tint="light"
-          style={[innerStyle, { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+          style={[innerStyle, { backgroundColor: COLORS.background.whiteOpacity.light }]}
         >
           <ButtonContent />
         </BlurView>
@@ -152,7 +154,7 @@ const LiquidButton: React.FC<LiquidButtonProps> = ({
           colors={config.gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={[innerStyle, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
+          style={[innerStyle, { backgroundColor: COLORS.background.whiteOpacity.strong }]}
         >
           <ButtonContent />
         </LinearGradient>
