@@ -412,7 +412,7 @@ export const apiService = {
         console.log(`🔄 City fetch aborted for ${countryCode} (normal behavior)`);
         throw error; // Re-lanzar pero sin loguear como error
       }
-      
+
       console.error(`❌ Failed to fetch cities for ${countryCode}:`, error);
       throw error;
     }
