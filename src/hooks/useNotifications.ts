@@ -175,54 +175,66 @@ export function useNotifications() {
         .in('status', ['pending', 'accepted', 'declined']);
       if (!error && data) {
         const baseInv = data as Invitation[];
-        // 1) Try to get trip_name and inviter_name from existing notifications (type=invite_sent)
-        const notifTripName = new Map<string, string | null>();
-        const notifInviterName = new Map<string, string | null>();
-        for (const n of notifications) {
-          const d =
-            typeof (n as any).data === 'string'
-              ? safeParse((n as any).data)
-              : (n as any).data || {};
-          if (d?.type === 'invite_sent' && d?.trip_id) {
-            if (d.trip_name && !notifTripName.has(d.trip_id))
-              notifTripName.set(d.trip_id, d.trip_name);
-            if (d.inviter_name && !notifInviterName.has(d.trip_id))
-              notifInviterName.set(d.trip_id, d.inviter_name);
+        console.log('[useNotifications] Base invitations from DB:', baseInv);
+
+        // 1) Get trip titles directly from trips table
+        const tripIds = Array.from(new Set(baseInv.map((i) => i.trip_id)));
+        let tripTitleMap = new Map<string, string>();
+        if (tripIds.length > 0) {
+          console.log('[useNotifications] Fetching trip titles for IDs:', tripIds);
+          const { data: tripsRes, error: tripsError } = await supabase
+            .from('trips')
+            .select('id, title')
+            .in('id', tripIds);
+          console.log('[useNotifications] Trips query result:', { tripsRes, tripsError });
+          if (Array.isArray(tripsRes)) {
+            tripTitleMap = new Map((tripsRes as any[]).map((row) => [row.id, row.title || null]));
+            console.log('[useNotifications] Trip title map:', Object.fromEntries(tripTitleMap));
           }
         }
 
-        // 2) Fallback for inviter_name using profiles by inviter_id (owner_id no longer reliable)
+        // 2) Get inviter names from profiles using inviter_id
         const inviterIds = Array.from(
           new Set(baseInv.map((i) => i.inviter_id).filter(Boolean))
         ) as string[];
         let inviterMap = new Map<string, string>();
         if (inviterIds.length > 0) {
-          const { data: ownersRes } = await supabase
+          console.log('[useNotifications] Fetching inviter profiles for IDs:', inviterIds);
+          const { data: ownersRes, error: ownersError } = await supabase
             .from('profiles')
-            .select('id,display_name,email')
+            .select('id,full_name,email')
             .in('id', inviterIds);
+          console.log('[useNotifications] Profiles query result:', { ownersRes, ownersError });
           if (Array.isArray(ownersRes)) {
             inviterMap = new Map(
-              (ownersRes as any[]).map((row) => [row.id, row.display_name || row.email || null])
+              (ownersRes as any[]).map((row) => [row.id, row.full_name || row.email || null])
             );
+            console.log('[useNotifications] Inviter name map:', Object.fromEntries(inviterMap));
           }
         }
 
         const enriched = baseInv.map((i) => {
-          const titleFromNotif = notifTripName.get(i.trip_id) || null;
-          const inviterFromNotif = notifInviterName.get(i.trip_id) || null;
-          const inviterFromProfile = i.inviter_id ? inviterMap.get(i.inviter_id) || null : null;
+          const tripTitle = tripTitleMap.get(i.trip_id) || null;
+          const inviterName = i.inviter_id ? inviterMap.get(i.inviter_id) || null : null;
+          console.log('[useNotifications] Enriched invitation:', {
+            id: i.id,
+            trip_id: i.trip_id,
+            trip_title: tripTitle,
+            inviter_id: i.inviter_id,
+            inviter_name: inviterName,
+          });
           return {
             ...i,
-            trip_title: titleFromNotif,
-            inviter_name: inviterFromNotif || inviterFromProfile,
+            trip_title: tripTitle,
+            inviter_name: inviterName,
           };
         });
 
+        console.log('[useNotifications] Setting invitations:', enriched);
         setInvitations(enriched);
       }
     },
-    [userEmail, notifications]
+    [userEmail]
   );
 
   const refresh = useCallback(async () => {

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 
 import {
   Modal,
@@ -69,15 +69,71 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
   const scrollRef = useRef<ScrollView | null>(null);
   const router = useRouter();
   const [batchSignal, setBatchSignal] = useState(0);
+  const [enrichedInvitations, setEnrichedInvitations] = useState<any[]>([]);
 
-  const pendingInv = useMemo(
-    () => invitations.filter((i) => (i.status || 'pending') === 'pending'),
-    [invitations]
-  );
+  // Enrich invitations with trip titles and inviter names
+  useEffect(() => {
+    const enrichInvitations = async () => {
+      if (invitations.length === 0) {
+        console.log('🔔 [NotificationBell] No invitations to enrich');
+        setEnrichedInvitations([]);
+        return;
+      }
+
+      console.log('🔔 [NotificationBell] Starting to enrich invitations...', invitations);
+
+      // Collect unique IDs
+      const tripIds = Array.from(new Set(invitations.map((i) => i.trip_id)));
+      const inviterIds = Array.from(new Set(invitations.map((i) => i.inviter_id).filter(Boolean)));
+
+      console.log('🔔 [NotificationBell] Trip IDs:', tripIds, 'Inviter IDs:', inviterIds);
+
+      // Call RPC function to get enrichment data (bypasses RLS with SECURITY DEFINER)
+      const { data: rpcResult, error: rpcError } = await supabase.rpc('get_invitation_enrichment', {
+        p_trip_ids: tripIds,
+        p_inviter_ids: inviterIds,
+      });
+
+      console.log('🔔 [NotificationBell] RPC result:', rpcResult, 'Error:', rpcError);
+
+      if (rpcError) {
+        console.error('🔔 [NotificationBell] RPC error:', rpcError);
+        setEnrichedInvitations(invitations);
+        return;
+      }
+
+      // Parse the RPC result
+      const tripMap = new Map(Object.entries(rpcResult?.trips || {}));
+      const inviterMap = new Map(Object.entries(rpcResult?.inviters || {}));
+
+      console.log('🔔 [NotificationBell] Trip map:', Object.fromEntries(tripMap));
+      console.log('🔔 [NotificationBell] Inviter map:', Object.fromEntries(inviterMap));
+
+      // Enrich invitations
+      const enriched = invitations.map((inv) => ({
+        ...inv,
+        trip_title: tripMap.get(inv.trip_id) || null,
+        inviter_name: inv.inviter_id ? inviterMap.get(inv.inviter_id) || null : null,
+      }));
+
+      console.log('🔔 [NotificationBell] Enriched invitations:', enriched);
+      setEnrichedInvitations(enriched);
+    };
+
+    enrichInvitations();
+  }, [invitations]);
+
+  const pendingInv = useMemo(() => {
+    const pending = enrichedInvitations.filter((i) => (i.status || 'pending') === 'pending');
+    console.log('🔔 [NotificationBell] Pending invitations:', pending);
+    return pending;
+  }, [enrichedInvitations]);
   const historyInv = useMemo(
     () =>
-      invitations.filter((i) => (i.status || '') === 'accepted' || (i.status || '') === 'declined'),
-    [invitations]
+      enrichedInvitations.filter(
+        (i) => (i.status || '') === 'accepted' || (i.status || '') === 'declined'
+      ),
+    [enrichedInvitations]
   );
   // Badge color based on types present
   const badgeColor = useMemo(() => {
@@ -115,6 +171,9 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
   }, [notifications, pendingInv]);
 
   const onOpen = () => {
+    console.log('🔔🔔🔔 [NotificationBell] OPENING BELL - VERSION WITH LOGS');
+    console.log('🔔 [NotificationBell] Invitations:', invitations);
+    console.log('🔔 [NotificationBell] Pending invitations:', pendingInv);
     setOpen(true);
     if (totalCount > 0) markNotificationsAsViewed();
   };

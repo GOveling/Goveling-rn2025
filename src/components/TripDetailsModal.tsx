@@ -108,7 +108,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   onTripUpdate,
   initialTab = 'overview',
   openManageTeam = false,
-  manageTeamTab = 'invitations',
+  manageTeamTab = 'members',
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [tripData, setTripData] = useState<TripStats>({
