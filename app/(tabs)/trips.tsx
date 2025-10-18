@@ -65,7 +65,7 @@ export default function TripsTab() {
   }, [openModal]);
 
   // Load trip statistics and trips from database
-  const loadTripStats = async () => {
+  const loadTripStats = useCallback(async () => {
     try {
       setLoading(true);
       const { data: user } = await supabase.auth.getUser();
@@ -248,7 +248,7 @@ export default function TripsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [breakdown]);
 
   const onRefresh = React.useCallback(async () => {
     logger.debug('🔄 TripsTab: Pull-to-refresh triggered');
@@ -259,23 +259,29 @@ export default function TripsTab() {
       await refetchTrips();
       // Then reload trip stats with team data
       await loadTripStats();
+      await loadTripStats();
       logger.debug('✅ TripsTab: Pull-to-refresh completed successfully');
     } catch (error) {
       logger.error('❌ TripsTab: Pull-to-refresh error:', error);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchTrips]);
+  }, [refetchTrips, loadTripStats]);
 
+  // Solo cargar trips cuando breakdown esté disponible
   useEffect(() => {
-    loadTripStats();
-  }, []);
+    if (breakdown) {
+      loadTripStats();
+    }
+  }, [breakdown, loadTripStats]);
 
   // Refrescar cada vez que la pestaña gana foco
   useFocusEffect(
     useCallback(() => {
-      loadTripStats();
-    }, [])
+      if (breakdown) {
+        loadTripStats();
+      }
+    }, [breakdown, loadTripStats])
   );
 
   // Suscripción en tiempo real a cambios en trips y trip_collaborators para refrescar owner y colaboradores.

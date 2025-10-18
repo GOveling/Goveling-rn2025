@@ -220,6 +220,24 @@
     "added_to_trip_title": "You were added to a trip",
     "added_to_trip_role": "You were added as {{role}}",
     "trip_unavailable_title": "Trip not available",
-    "trip_unavailable_message": "This trip has been deleted and is no longer available."
+    "trip_unavailable_message": "This trip has been deleted and is no longer available.",
+    "history_title": "Notification History"
+  },
+  "invitations": {
+    "invalid_link": "Invalid invitation link",
+    "login_required": "Login Required",
+    "login_to_accept": "Please login to accept this invitation",
+    "processing": "Processing invitation...",
+    "accepted": "Invitation Accepted!",
+    "redirecting": "Redirecting to your trip...",
+    "error_title": "Unable to Accept",
+    "accept_failed": "Could not accept invitation",
+    "return_home": "Return to Home",
+    "expired": "This invitation has expired",
+    "already_accepted": "This invitation has already been accepted",
+    "already_declined": "This invitation has already been declined",
+    "email_mismatch": "This invitation was sent to a different email address",
+    "already_member": "You are already a member of this trip",
+    "declined_detail": "You have declined the invitation to collaborate on the trip \"{{trip}}\" sent by \"{{inviter}}\"."
   }
 }

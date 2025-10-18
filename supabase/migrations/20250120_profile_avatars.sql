@@ -10,8 +10,8 @@ BEGIN
     END IF;
 END $$;
 
--- Política para permitir a usuarios autenticados subir sus propios avatars
-CREATE POLICY IF NOT EXISTS "Users can upload their own avatar" 
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
+CREATE POLICY "Users can upload their own avatar" 
 ON storage.objects 
 FOR INSERT 
 WITH CHECK (
@@ -20,7 +20,8 @@ WITH CHECK (
 );
 
 -- Política para permitir a usuarios autenticados actualizar sus propios avatars
-CREATE POLICY IF NOT EXISTS "Users can update their own avatar" 
+DROP POLICY IF EXISTS "Users can update their own avatar" ON storage.objects;
+CREATE POLICY "Users can update their own avatar" 
 ON storage.objects 
 FOR UPDATE 
 USING (
@@ -29,13 +30,15 @@ USING (
 );
 
 -- Política para permitir acceso público de lectura a los avatars
-CREATE POLICY IF NOT EXISTS "Public read access for avatars" 
+DROP POLICY IF EXISTS "Public read access for avatars" ON storage.objects;
+CREATE POLICY "Public read access for avatars" 
 ON storage.objects 
 FOR SELECT 
 USING (bucket_id = 'avatars');
 
 -- Política para permitir a usuarios eliminar sus propios avatars
-CREATE POLICY IF NOT EXISTS "Users can delete their own avatar" 
+DROP POLICY IF EXISTS "Users can delete their own avatar" ON storage.objects;
+CREATE POLICY "Users can delete their own avatar" 
 ON storage.objects 
 FOR DELETE 
 USING (

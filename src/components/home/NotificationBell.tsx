@@ -263,10 +263,14 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             setActionLoading(invitation.id);
             try {
               await rejectInvitation(invitation.id);
-              Alert.alert(
-                t('trips.invitation_rejected', 'Invitation rejected'),
-                t('trips.invitation_rejected_desc', 'The invitation has been declined')
+              const invTrip = invitation.trip_title || invitation.tripName || invitation.trip || '';
+              const invInviter = invitation.inviter_name || invitation.inviterName || '';
+              const detail = t(
+                'invitations.declined_detail',
+                'You have declined the invitation to collaborate on the trip "{{trip}}" sent by "{{inviter}}".',
+                { trip: invTrip, inviter: invInviter }
               );
+              Alert.alert(t('trips.invitation_rejected', 'Invitation rejected'), detail);
             } catch (error: any) {
               Alert.alert(
                 t('common.error', 'Error'),
@@ -785,7 +789,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                 {historyInv.length > 0 && (
                   <View style={styles.historySection}>
                     <Text style={styles.historyTitle}>
-                      {t('auto.Invitation history', 'Invitation history')}
+                      {t('notifications.history_title', 'Notification History')}
                     </Text>
                     {historyInv.map((inv) => (
                       <View

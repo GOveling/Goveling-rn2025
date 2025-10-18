@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { supabase } from '~/lib/supabase';
@@ -9,9 +10,9 @@ export interface InboxNotification {
   body?: string | null;
   data?: any;
   created_at: string;
-  viewed_at?: string | null; // optional column, see migration suggestion
-  is_read?: boolean | null; // optional column, see migration suggestion
-  read_at?: string | null; // legacy/read marker
+  viewed_at?: string | null;
+  is_read?: boolean | null;
+  read_at?: string | null;
 }
 
 export interface Invitation {
@@ -23,7 +24,7 @@ export interface Invitation {
   created_at?: string | null;
   expires_at?: string | null;
   owner_id?: string | null;
-  // Enriched (client-side)
+  inviter_id?: string | null;
   trip_title?: string | null;
   inviter_name?: string | null;
 }
@@ -36,6 +37,7 @@ export function useNotifications() {
       return {};
     }
   };
+
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<InboxNotification[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -64,7 +66,6 @@ export function useNotifications() {
         .limit(20);
       if (!error && data) {
         const rows = data as InboxNotification[];
-        // Collect trip_ids missing trip_name in data and inviter ids missing inviter_name
         const needTrip: string[] = [];
         const needInviter: string[] = [];
         const parsedData: any[] = [];
@@ -90,7 +91,6 @@ export function useNotifications() {
           if (Array.isArray(tripsRes)) {
             for (const t of tripsRes as any[]) {
               tripMap.set(t.id, t.title || null);
-              // Track cancelled trips to filter them out
               if (t.status === 'cancelled') {
                 cancelledTripIds.add(t.id);
               }
@@ -112,7 +112,6 @@ export function useNotifications() {
           }
         }
 
-        // Collect IDs of notifications to delete (orphaned/invalid)
         const notificationsToDelete: number[] = [];
 
         const enriched = rows
@@ -128,33 +127,23 @@ export function useNotifications() {
             }
             return { ...n, data: newData } as InboxNotification;
           })
-          // Filter out invalid notifications
           .filter((n) => {
             const d = n.data;
             const tripId = d?.trip_id || d?.tripId;
-
-            // If notification has a trip_id, validate it exists
             if (tripId) {
-              // Remove if trip was cancelled
               if (cancelledTripIds.has(tripId)) {
                 notificationsToDelete.push(n.id);
                 return false;
               }
-
-              // Remove if trip doesn't exist in database (orphaned notification)
-              // This happens when the trip was in needTrip array but not found in DB
               if (needTrip.includes(tripId) && !tripMap.has(tripId)) {
                 notificationsToDelete.push(n.id);
                 return false;
               }
             }
-
             return true;
           });
 
-        // Delete orphaned notifications from database
         if (notificationsToDelete.length > 0) {
-          // Fire and forget - don't await to avoid blocking UI
           supabase
             .from('notifications_inbox')
             .delete()
@@ -164,10 +153,6 @@ export function useNotifications() {
                 console.error(
                   '[useNotifications] Error deleting orphaned notifications:',
                   deleteError
-                );
-              } else {
-                console.log(
-                  `[useNotifications] Cleaned up ${notificationsToDelete.length} orphaned notifications`
                 );
               }
             });
@@ -185,48 +170,59 @@ export function useNotifications() {
       const target = (email || userEmail!) as string;
       const { data, error } = await supabase
         .from('trip_invitations')
-        .select('id, trip_id, email, role, status, created_at, expires_at, owner_id')
+        .select('id, trip_id, email, role, status, created_at, expires_at, owner_id, inviter_id')
         .eq('email', target)
         .in('status', ['pending', 'accepted', 'declined']);
       if (!error && data) {
         const baseInv = data as Invitation[];
-        // Enrich with trip title and inviter name (owner profile)
-        const tripIds = Array.from(new Set(baseInv.map((i) => i.trip_id).filter(Boolean)));
-        const ownerIds = Array.from(
-          new Set(baseInv.map((i) => i.owner_id).filter(Boolean))
+        // 1) Try to get trip_name and inviter_name from existing notifications (type=invite_sent)
+        const notifTripName = new Map<string, string | null>();
+        const notifInviterName = new Map<string, string | null>();
+        for (const n of notifications) {
+          const d =
+            typeof (n as any).data === 'string'
+              ? safeParse((n as any).data)
+              : (n as any).data || {};
+          if (d?.type === 'invite_sent' && d?.trip_id) {
+            if (d.trip_name && !notifTripName.has(d.trip_id))
+              notifTripName.set(d.trip_id, d.trip_name);
+            if (d.inviter_name && !notifInviterName.has(d.trip_id))
+              notifInviterName.set(d.trip_id, d.inviter_name);
+          }
+        }
+
+        // 2) Fallback for inviter_name using profiles by inviter_id (owner_id no longer reliable)
+        const inviterIds = Array.from(
+          new Set(baseInv.map((i) => i.inviter_id).filter(Boolean))
         ) as string[];
-
-        const [tripsRes, ownersRes] = await Promise.all([
-          tripIds.length > 0
-            ? supabase.from('trips').select('id,title').in('id', tripIds)
-            : Promise.resolve({ data: [], error: null } as any),
-          ownerIds.length > 0
-            ? supabase.from('profiles').select('id,display_name,email').in('id', ownerIds)
-            : Promise.resolve({ data: [], error: null } as any),
-        ]);
-
-        const tripMap = new Map<string, string>();
-        if (!tripsRes.error && Array.isArray(tripsRes.data)) {
-          for (const row of tripsRes.data as any[]) {
-            if (row?.id) tripMap.set(row.id, row.title || null);
-          }
-        }
-        const ownerMap = new Map<string, { name: string | null }>();
-        if (!ownersRes.error && Array.isArray(ownersRes.data)) {
-          for (const row of ownersRes.data as any[]) {
-            if (row?.id) ownerMap.set(row.id, { name: row.display_name || row.email || null });
+        let inviterMap = new Map<string, string>();
+        if (inviterIds.length > 0) {
+          const { data: ownersRes } = await supabase
+            .from('profiles')
+            .select('id,display_name,email')
+            .in('id', inviterIds);
+          if (Array.isArray(ownersRes)) {
+            inviterMap = new Map(
+              (ownersRes as any[]).map((row) => [row.id, row.display_name || row.email || null])
+            );
           }
         }
 
-        const enriched = baseInv.map((i) => ({
-          ...i,
-          trip_title: tripMap.get(i.trip_id) || null,
-          inviter_name: i.owner_id ? ownerMap.get(i.owner_id)?.name || null : null,
-        }));
+        const enriched = baseInv.map((i) => {
+          const titleFromNotif = notifTripName.get(i.trip_id) || null;
+          const inviterFromNotif = notifInviterName.get(i.trip_id) || null;
+          const inviterFromProfile = i.inviter_id ? inviterMap.get(i.inviter_id) || null : null;
+          return {
+            ...i,
+            trip_title: titleFromNotif,
+            inviter_name: inviterFromNotif || inviterFromProfile,
+          };
+        });
+
         setInvitations(enriched);
       }
     },
-    [userEmail]
+    [userEmail, notifications]
   );
 
   const refresh = useCallback(async () => {
@@ -243,7 +239,6 @@ export function useNotifications() {
     refresh();
   }, [refresh]);
 
-  // Realtime
   useEffect(() => {
     if (!userId) return;
     const ch = supabase
@@ -256,8 +251,8 @@ export function useNotifications() {
           table: 'notifications_inbox',
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
-          setNotifications((prev) => [payload.new as InboxNotification, ...prev].slice(0, 20));
+        async () => {
+          await fetchNotifications();
         }
       )
       .on(
@@ -271,7 +266,7 @@ export function useNotifications() {
         (payload) => {
           setNotifications((prev) =>
             prev.map((n) =>
-              n.id === (payload.new as any).id ? (payload.new as InboxNotification) : n
+              n.id === (payload.new as { id: number }).id ? (payload.new as InboxNotification) : n
             )
           );
         }
@@ -282,10 +277,10 @@ export function useNotifications() {
       try {
         if (ch) supabase.removeChannel(ch);
       } catch {
-        // Ignore cleanup errors
+        // ignore
       }
     };
-  }, [userId]);
+  }, [userId, fetchNotifications]);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -308,12 +303,11 @@ export function useNotifications() {
       try {
         if (ch) supabase.removeChannel(ch);
       } catch {
-        // Ignore cleanup errors
+        // ignore
       }
     };
   }, [userEmail, fetchInvitations]);
 
-  // Badge count: pending invitations + unviewed general notifications
   const totalCount = useMemo(() => {
     const pendingInv = invitations.filter((i) => (i.status || 'pending') === 'pending').length;
     const unviewed = notifications.filter((n) => n.viewed_at == null).length;
@@ -323,14 +317,12 @@ export function useNotifications() {
   const markNotificationsAsViewed = useCallback(async () => {
     if (!userId) return;
     const now = new Date().toISOString();
-    // First try viewed_at; if it fails (no column), fallback to read_at
     const { error } = await supabase
       .from('notifications_inbox')
       .update({ viewed_at: now })
       .eq('user_id', userId)
       .is('viewed_at', null);
     if (error) {
-      // Fallback: mark read_at to now, if viewed_at doesn't exist
       await supabase
         .from('notifications_inbox')
         .update({ read_at: now })
@@ -369,13 +361,12 @@ export function useNotifications() {
       try {
         const { error } = await supabase.rpc('accept_invitation', { invitation_id: invitationId });
         if (error) throw error;
-        await fetchInvitations(); // Refresh invitations
+        await fetchInvitations();
       } catch (error) {
         console.error('RPC accept_invitation failed, falling back to client logic:', error);
-        // Fallback to client-side logic
         try {
           const { acceptInvitation: acceptClient } = await import('~/lib/team');
-          await acceptClient(invitationId as any);
+          await acceptClient(invitationId as unknown as number);
           await fetchInvitations();
         } catch (inner) {
           console.error('Client-side accept failed:', inner);
@@ -391,12 +382,12 @@ export function useNotifications() {
       try {
         const { error } = await supabase.rpc('reject_invitation', { invitation_id: invitationId });
         if (error) throw error;
-        await fetchInvitations(); // Refresh invitations
+        await fetchInvitations();
       } catch (error) {
         console.error('RPC reject_invitation failed, falling back to client logic:', error);
         try {
           const { rejectInvitation: rejectClient } = await import('~/lib/team');
-          await rejectClient(invitationId as any);
+          await rejectClient(invitationId as unknown as number);
           await fetchInvitations();
         } catch (inner) {
           console.error('Client-side reject failed:', inner);

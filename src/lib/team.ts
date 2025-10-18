@@ -1,34 +1,90 @@
 import { sendPush } from '~/lib/push_send';
 import { supabase } from '~/lib/supabase';
 
-/** Invite a user by email. If the user exists, send push; always send email separately (Resend path). */
-export async function inviteToTrip(trip_id: string, email: string, role: 'viewer' | 'editor') {
-  // Insert invitation
-  const { data: inv, error } = await supabase
-    .from('trip_invitations')
-    .insert({ trip_id, email, role })
-    .select('id, trip_id, email, role')
-    .single();
-  if (error) throw error;
+/**
+ * Invite a user by email with secure token generation.
+ * - Generates cryptographically secure token
+ * - Uses RPC function for database validation
+ * - Sends push notification if user exists
+ * - Sends email with deep link
+ */
+/**
+ * Invite a user to a trip (using secure server-side RPC)
+ * All critical validations happen on the server
+ */
+export async function inviteToTrip(
+  trip_id: string,
+  email: string,
+  role: 'viewer' | 'editor'
+): Promise<{
+  id: string;
+  trip_id: string;
+  email: string;
+  role: string;
+  token: string;
+}> {
+  // ================================================================
+  // CLIENT-SIDE VALIDATION (UX only - server validates security)
+  // ================================================================
+  if (!trip_id || !email || !role) {
+    throw new Error('Missing required parameters');
+  }
 
-  // Resolve inviter name and trip title for richer notifications/emails
-  const { data: me } = await supabase.auth.getUser();
-  const inviterName = me?.user?.user_metadata?.full_name || me?.user?.email || 'Goveling user';
-  const { data: tripRow } = await supabase
-    .from('trips')
-    .select('title')
-    .eq('id', trip_id)
-    .maybeSingle();
-  const tripName = (tripRow as any)?.title as string | undefined;
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error('Invalid email format');
+  }
 
-  // Try to find an existing user by email to push
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // ================================================================
+  // CALL SECURE RPC - All critical logic happens on server
+  // ================================================================
+  const { data, error } = await supabase.rpc('invite_to_trip_rpc', {
+    p_trip_id: trip_id,
+    p_email: normalizedEmail,
+    p_role: role,
+  });
+
+  if (error) {
+    console.error('RPC invite_to_trip_rpc error:', error);
+
+    // Parse server errors into user-friendly messages
+    const errorMessage = error.message || '';
+    if (errorMessage.includes('already a collaborator')) {
+      throw new Error('This user is already a collaborator on this trip');
+    } else if (errorMessage.includes('Only trip owners')) {
+      throw new Error('Only trip owners can send invitations');
+    } else if (errorMessage.includes('Trip not found')) {
+      throw new Error('Trip not found');
+    } else if (errorMessage.includes('Authentication required')) {
+      throw new Error('You must be logged in to send invitations');
+    } else {
+      throw new Error('Could not send invitation. Please try again.');
+    }
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('No invitation data returned from server');
+  }
+
+  const invitationData = data[0];
+  const invitationId = invitationData.invitation_id;
+  const token = invitationData.token;
+  const tripName = invitationData.trip_title;
+  const inviterName = invitationData.inviter_name;
+
+  // ================================================================
+  // STEP 4: Send push notification (if user exists in profiles)
+  // ================================================================
   const { data: userProfile } = await supabase
     .from('profiles')
     .select('id, display_name')
-    .ilike('email', email)
+    .ilike('email', normalizedEmail)
     .maybeSingle();
+
   if (userProfile?.id) {
-    // Notify user with richer payload including inviter and trip
     await sendPush(
       [userProfile.id],
       'Invitation to collaborate',
@@ -37,55 +93,104 @@ export async function inviteToTrip(trip_id: string, email: string, role: 'viewer
         : tripName
           ? `You have been invited to "${tripName}"`
           : 'You have been invited to a trip',
-      { type: 'trip_invite', trip_id, role, trip_name: tripName, inviter_name: inviterName }
+      {
+        type: 'trip_invite',
+        trip_id,
+        role,
+        trip_name: tripName,
+        inviter_name: inviterName,
+        token, // Include token for deep linking
+      }
     );
   }
 
-  // Send email via Edge Function (Resend) with SQL RPC fallback
+  // STEP 6: Send email with deep link containing token
   try {
-    // Deep link to the trip inside the app (scheme defined in app.json)
-    const inviteLink = `goveling://trips/${trip_id}`;
+    // Deep link with token for secure acceptance
+    const inviteLink = `goveling://accept-invitation?token=${token}`;
+
     const edgeRes = await supabase.functions.invoke('send-invite-email', {
-      body: { email, role, inviterName, tripName, inviteLink },
-    });
-    if ((edgeRes as any)?.error) throw (edgeRes as any).error;
-  } catch (e) {
-    console.log('Edge function send-invite-email failed, trying SQL RPC fallback:', e);
-    try {
-      await supabase.rpc('send_invite_email', {
-        email,
+      body: {
+        email: normalizedEmail,
         role,
-        inviter_name: undefined, // Use server-side default if not provided
-        trip_name: undefined,
-        invite_link: undefined,
-      });
-    } catch (rpcErr) {
-      // Do not block the UX on email failure
-      console.log('send_invite_email RPC failed (non-blocking):', rpcErr);
+        inviterName,
+        tripName,
+        inviteLink,
+      },
+    });
+
+    if ((edgeRes as any)?.error) {
+      console.warn('Edge function send-invite-email failed:', (edgeRes as any).error);
     }
+  } catch (e) {
+    console.log('Email send failed (non-blocking):', e);
   }
-  return inv;
+
+  // STEP 7: Return invitation details
+  return {
+    id: invitationId,
+    trip_id,
+    email: normalizedEmail,
+    role,
+    token,
+  };
 }
 
-export async function acceptInvitation(invitation_id: number) {
-  // Move invitation → collaborators
-  const { data: inv } = await supabase
-    .from('trip_invitations')
-    .select('trip_id, email, role, owner_id')
-    .eq('id', invitation_id)
-    .single();
-  if (!inv) throw new Error('Invitation not found');
-
+/**
+ * Accept invitation by ID (legacy) or by token (new secure method)
+ * @param invitation_id - The invitation ID
+ * @param token - Optional token for token-based acceptance
+ */
+export async function acceptInvitation(invitation_id: number, token?: string) {
   const { data: u } = await supabase.auth.getUser();
-  const uid = u?.user?.id!;
+  const uid = u?.user?.id;
+  if (!uid) throw new Error('User not authenticated');
 
-  // Ensure the accepting user has a profile row so UI can render name/avatar
+  // Fetch invitation (by ID or token)
+  let invQuery = supabase
+    .from('trip_invitations')
+    .select('id, trip_id, email, role, inviter_id, status, expires_at');
+
+  if (token) {
+    invQuery = invQuery.eq('token', token);
+  } else {
+    invQuery = invQuery.eq('id', invitation_id);
+  }
+
+  const { data: inv, error: invError } = await invQuery.single();
+
+  if (invError || !inv) {
+    throw new Error('Invitation not found');
+  }
+
+  // Validate invitation status
+  if (inv.status !== 'pending') {
+    throw new Error(`This invitation has already been ${inv.status}`);
+  }
+
+  // Validate expiration
+  if (new Date(inv.expires_at) < new Date()) {
+    // Update status to cancelled
+    await supabase
+      .from('trip_invitations')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', inv.id);
+    throw new Error('This invitation has expired');
+  }
+
+  // Validate email matches (optional but recommended for security)
+  if (u?.user?.email && inv.email.toLowerCase() !== u.user.email.toLowerCase()) {
+    throw new Error('This invitation was sent to a different email address');
+  }
+
+  // Ensure the accepting user has a profile row
   try {
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', uid)
       .maybeSingle();
+
     if (!existingProfile) {
       const full_name =
         (u?.user as any)?.user_metadata?.full_name || (u?.user?.email?.split('@')[0] ?? null);
@@ -107,37 +212,89 @@ export async function acceptInvitation(invitation_id: number) {
     console.log('ensure profile for accepting user failed (non-blocking):', profileErr);
   }
 
-  await supabase
+  // Add user as collaborator
+  const { error: collabError } = await supabase
     .from('trip_collaborators')
     .insert({ trip_id: inv.trip_id, user_id: uid, role: inv.role });
-  await supabase.from('trip_invitations').delete().eq('id', invitation_id);
 
-  // Notify owner
-  if (inv.owner_id) {
-    // Fetch trip title for richer payload
+  if (collabError) {
+    // Check if already a collaborator
+    if (collabError.code === '23505') {
+      // Unique violation - user is already a collaborator
+      throw new Error('You are already a collaborator on this trip');
+    }
+    throw collabError;
+  }
+
+  // Update invitation status to accepted
+  await supabase
+    .from('trip_invitations')
+    .update({
+      status: 'accepted',
+      accepted_at: new Date().toISOString(),
+      accepted_by: uid,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', inv.id);
+
+  // Notify inviter
+  if (inv.inviter_id) {
     const { data: tripRow } = await supabase
       .from('trips')
       .select('title')
       .eq('id', inv.trip_id)
       .maybeSingle();
     const tripName = (tripRow as any)?.title as string | undefined;
+
     await sendPush(
-      [inv.owner_id],
+      [inv.inviter_id],
       'Invitation accepted',
       tripName ? `Accepted for "${tripName}"` : 'A collaborator accepted your invitation',
       { type: 'invite_accepted', trip_id: inv.trip_id, trip_name: tripName }
     );
   }
+
+  // Return trip_id for navigation
+  return { trip_id: inv.trip_id };
 }
 
-export async function rejectInvitation(invitation_id: number) {
-  const { data: inv } = await supabase
+/**
+ * Reject/decline invitation by ID or token
+ * @param invitation_id - The invitation ID
+ * @param token - Optional token for token-based rejection
+ */
+export async function rejectInvitation(invitation_id: number, token?: string) {
+  // Fetch invitation (by ID or token)
+  let invQuery = supabase.from('trip_invitations').select('id, trip_id, inviter_id, status');
+
+  if (token) {
+    invQuery = invQuery.eq('token', token);
+  } else {
+    invQuery = invQuery.eq('id', invitation_id);
+  }
+
+  const { data: inv, error: invError } = await invQuery.single();
+
+  if (invError || !inv) {
+    throw new Error('Invitation not found');
+  }
+
+  // Validate invitation status
+  if (inv.status !== 'pending') {
+    throw new Error(`This invitation has already been ${inv.status}`);
+  }
+
+  // Update status to declined (don't delete, keep for history)
+  await supabase
     .from('trip_invitations')
-    .select('trip_id, owner_id')
-    .eq('id', invitation_id)
-    .single();
-  await supabase.from('trip_invitations').delete().eq('id', invitation_id);
-  if (inv?.owner_id) {
+    .update({
+      status: 'declined',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', inv.id);
+
+  // Notify inviter
+  if (inv.inviter_id) {
     const { data: tripRow } = await supabase
       .from('trips')
       .select('title')
@@ -145,7 +302,7 @@ export async function rejectInvitation(invitation_id: number) {
       .maybeSingle();
     const tripName = (tripRow as any)?.title as string | undefined;
     await sendPush(
-      [inv.owner_id],
+      [inv.inviter_id],
       'Invitation declined',
       tripName ? `Declined for "${tripName}"` : 'A collaborator declined your invitation',
       { type: 'invite_declined', trip_id: inv.trip_id, trip_name: tripName }

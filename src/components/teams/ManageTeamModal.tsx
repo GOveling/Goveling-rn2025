@@ -267,6 +267,11 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
     }
     setInviting(true);
     try {
+      console.log('🔍 DEBUG: tripId before inviteToTrip:', {
+        tripId,
+        type: typeof tripId,
+        length: tripId?.length,
+      });
       await inviteToTrip(tripId, email, inviteRole);
       setInviteEmail('');
       setInviteRole('viewer');
