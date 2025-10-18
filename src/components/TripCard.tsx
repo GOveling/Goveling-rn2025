@@ -229,7 +229,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         .from('profiles')
         .select('id, full_name, avatar_url, email')
         .eq('id', ownerId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading owner profile:', error);
@@ -245,6 +245,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           email: profile.email,
         });
         setOwnerProfile(profile);
+      } else {
+        // Owner profile not found (owner may not have a profile row yet)
+        console.warn('TripCard: Owner profile not found for owner_id', ownerId);
       }
     } catch (error) {
       console.error('Error loading owner profile:', error);

@@ -198,6 +198,11 @@
 			"label": "ESLint Check",
 			"type": "shell",
 			"command": "npx eslint ."
+		},
+		{
+			"label": "ESLint Fix",
+			"type": "shell",
+			"command": "npx eslint . --fix"
 		}
 	]
 }

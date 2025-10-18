@@ -300,6 +300,11 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
 
       // Invalidar el caché de RTK Query para que recargue los trips
       store.dispatch(tripsApi.util.invalidateTags(['TripBreakdown', 'Trips']));
+      // Forzar refetch inmediato de los endpoints relevantes
+      store.dispatch(
+        tripsApi.endpoints.getTripsBreakdown.initiate(undefined, { forceRefetch: true })
+      );
+      store.dispatch(tripsApi.endpoints.getActiveTrip.initiate(undefined, { forceRefetch: true }));
 
       Alert.alert(
         t('trips.invitation_accepted', 'Invitation accepted'),
@@ -331,6 +336,13 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
 
               // Invalidar el caché de RTK Query para actualizar el estado de las invitaciones
               store.dispatch(tripsApi.util.invalidateTags(['TripBreakdown', 'Trips']));
+              // Forzar refetch inmediato también al rechazar
+              store.dispatch(
+                tripsApi.endpoints.getTripsBreakdown.initiate(undefined, { forceRefetch: true })
+              );
+              store.dispatch(
+                tripsApi.endpoints.getActiveTrip.initiate(undefined, { forceRefetch: true })
+              );
 
               const invTrip = invitation.trip_title || invitation.tripName || invitation.trip || '';
               const invInviter = invitation.inviter_name || invitation.inviterName || '';

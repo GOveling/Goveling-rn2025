@@ -107,7 +107,8 @@ export default function TripsTab() {
         const { data: collabOnlyTrips, error: collabTripsError } = await supabase
           .from('trips')
           .select('id, title, owner_id, start_date, end_date, created_at, status')
-          .in('id', collabOnlyIds);
+          .in('id', collabOnlyIds)
+          .neq('status', 'cancelled');
 
         if (collabTripsError) {
           logger.error('Error loading collab-only trips:', collabTripsError);
@@ -122,7 +123,8 @@ export default function TripsTab() {
       const unifiedTrips = Array.from(baseTripsMap.values());
 
       // Obtener team data para cada trip (owner, collaborators, count) en paralelo
-      const useRPC = true; // toggle to false if RPC not deployed yet
+      // Disable RPC temporarily due to a return type mismatch (42804) to avoid noisy fallbacks
+      const useRPC = false; // toggle to true after get_trip_with_team RPC is fixed server-side
       const tripsWithTeam = await Promise.all(
         unifiedTrips.map(async (t) => {
           const team = useRPC ? await getTripWithTeamRPC(t.id) : await getTripWithTeam(t.id);
