@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 
 import { supabase } from '~/lib/supabase';
 import { acceptInvitation } from '~/lib/team';
+import { store } from '~/store';
+import { tripsApi } from '~/store/api/tripsApi';
 
 /**
  * Screen to handle invitation acceptance via deep link
@@ -71,6 +73,9 @@ export default function AcceptInvitationScreen() {
 
       // Accept invitation using token
       const result = await acceptInvitation(0, token); // ID is ignored when token is provided
+
+      // Invalidar el caché de RTK Query para que recargue los trips
+      store.dispatch(tripsApi.util.invalidateTags(['TripBreakdown', 'Trips']));
 
       setSuccess(true);
       setLoading(false);

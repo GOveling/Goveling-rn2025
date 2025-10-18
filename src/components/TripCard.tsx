@@ -64,6 +64,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   console.log('🎨🎨🎨 TripCard UPDATED VERSION: Rendering for trip:', {
     id: trip.id,
     title: trip.title,
+    has_title: !!trip.title,
+    owner_id: trip.owner_id,
+    user_id: trip.user_id,
   });
 
   const router = useRouter();
@@ -108,7 +111,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       const { data, error } = await supabase
         .from('trip_invitations')
         .select('id')
-        .eq('trip_id', trip.id);
+        .eq('trip_id', trip.id)
+        .eq('status', 'pending'); // Solo contar invitaciones pendientes
       if (error) throw error;
       setPendingInvites(data?.length || 0);
     } catch (e) {
@@ -694,7 +698,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 marginBottom: 4,
               }}
             >
-              {currentTrip.title}
+              {currentTrip.title || 'Sin título'}
             </Text>
 
             <View
@@ -897,54 +901,72 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           {/* Dueño del trip (primera posición) */}
           <View style={{ marginRight: 4 }}>{renderOwnerAvatar()}</View>
 
-          {/* Colaboradores */}
-          {tripData.collaborators.slice(0, 2).map((collaborator, index) => (
-            <View key={collaborator.id} style={{ marginRight: 4 }}>
-              {collaborator.avatar_url ? (
-                <Image
-                  source={{ uri: collaborator.avatar_url }}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                  }}
-                />
-              ) : (
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: '#10B981',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text
+          {/* Colaboradores (excluyendo al owner para evitar duplicados) */}
+          {tripData.collaborators
+            .filter((collaborator) => {
+              const ownerId = currentTrip.owner_id || currentTrip.user_id;
+              return collaborator.id !== ownerId;
+            })
+            .slice(0, 2)
+            .map((collaborator, index) => (
+              <View key={collaborator.id} style={{ marginRight: 4 }}>
+                {collaborator.avatar_url ? (
+                  <Image
+                    source={{ uri: collaborator.avatar_url }}
                     style={{
-                      color: '#FFFFFF',
-                      fontWeight: '700',
-                      fontSize: 11,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                    }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: '#10B981',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {getUserInitials(collaborator.full_name, collaborator.email)}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ))}
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontWeight: '700',
+                        fontSize: 11,
+                      }}
+                    >
+                      {getUserInitials(collaborator.full_name, collaborator.email)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
 
-          {tripData.collaboratorsCount > 3 && (
-            <Text
-              style={{
-                fontSize: 14,
-                color: '#666666',
-                marginLeft: 4,
-              }}
-            >
-              +{tripData.collaboratorsCount - 3} más
-            </Text>
-          )}
+          {(() => {
+            // Calcular colaboradores únicos (excluyendo owner)
+            const ownerId = currentTrip.owner_id || currentTrip.user_id;
+            const uniqueCollaborators = tripData.collaborators.filter(
+              (c) => c.id !== ownerId
+            ).length;
+            // Mostrar "+X más" si hay más de 2 colaboradores únicos (además del owner)
+            const remaining = uniqueCollaborators - 2;
+
+            return (
+              remaining > 0 && (
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: '#666666',
+                    marginLeft: 4,
+                  }}
+                >
+                  +{remaining} más
+                </Text>
+              )
+            );
+          })()}
         </View>
 
         {/* Botones de Acción */}

@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next';
 
 import { useNotifications } from '~/hooks/useNotifications';
 import { supabase } from '~/lib/supabase';
+import { store } from '~/store';
+import { tripsApi } from '~/store/api/tripsApi';
 
 interface Props {
   iconColor?: string;
@@ -236,6 +238,10 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
     setActionLoading(invitation.id);
     try {
       await acceptInvitation(invitation.id);
+
+      // Invalidar el caché de RTK Query para que recargue los trips
+      store.dispatch(tripsApi.util.invalidateTags(['TripBreakdown', 'Trips']));
+
       Alert.alert(
         t('trips.invitation_accepted', 'Invitation accepted'),
         t('trips.invitation_accepted_desc', 'You are now a collaborator on this trip')
@@ -263,6 +269,10 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             setActionLoading(invitation.id);
             try {
               await rejectInvitation(invitation.id);
+
+              // Invalidar el caché de RTK Query para actualizar el estado de las invitaciones
+              store.dispatch(tripsApi.util.invalidateTags(['TripBreakdown', 'Trips']));
+
               const invTrip = invitation.trip_title || invitation.tripName || invitation.trip || '';
               const invInviter = invitation.inviter_name || invitation.inviterName || '';
               const detail = t(

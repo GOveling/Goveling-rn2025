@@ -143,7 +143,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       const { data, error } = await supabase
         .from('trip_invitations')
         .select('id')
-        .eq('trip_id', trip.id);
+        .eq('trip_id', trip.id)
+        .eq('status', 'pending'); // Solo contar invitaciones pendientes
       if (error) throw error;
       setPendingInvites(data?.length || 0);
     } catch (e) {

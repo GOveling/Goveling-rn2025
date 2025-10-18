@@ -101,10 +101,22 @@ export default function TripsTab() {
         })
       );
 
-      // Add placeholder for collab-only trips not in breakdown
-      collabSet.forEach((id) => {
-        if (!baseTripsMap.has(id)) baseTripsMap.set(id, { id, owner_id: null });
-      });
+      // For collab-only trips not in breakdown, fetch their data from DB
+      const collabOnlyIds = Array.from(collabSet).filter((id) => !baseTripsMap.has(id));
+      if (collabOnlyIds.length > 0) {
+        const { data: collabOnlyTrips, error: collabTripsError } = await supabase
+          .from('trips')
+          .select('id, title, owner_id, start_date, end_date, created_at, status')
+          .in('id', collabOnlyIds);
+
+        if (collabTripsError) {
+          logger.error('Error loading collab-only trips:', collabTripsError);
+        } else if (collabOnlyTrips) {
+          collabOnlyTrips.forEach((trip) => {
+            baseTripsMap.set(trip.id, trip);
+          });
+        }
+      }
 
       logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
       const unifiedTrips = Array.from(baseTripsMap.values());
