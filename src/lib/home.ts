@@ -588,6 +588,8 @@ export async function getSavedPlaces() {
     .select('id')
     .eq('owner_id', uid)
     .neq('status', 'cancelled');
+
+  // Get collaborator trip IDs
   const { data: collabTrips, error: collabTripsError } = await supabase
     .from('trip_collaborators')
     .select('trip_id')
@@ -604,7 +606,7 @@ export async function getSavedPlaces() {
     ownTripsError2 ? `(Error: ${ownTripsError2.message})` : ''
   );
   logger.debug(
-    '🏠 getSavedPlaces: Collaborative trips:',
+    '🏠 getSavedPlaces: Collaborative trips (raw):',
     collabTrips?.length || 0,
     collabTripsError ? `(Error: ${collabTripsError.message})` : ''
   );
@@ -618,7 +620,39 @@ export async function getSavedPlaces() {
   // Remove duplicates
   const uniqueTripIds = [...new Set(tripIds)];
 
-  logger.debug('🏠 getSavedPlaces: Total unique trip IDs:', uniqueTripIds.length);
+  logger.debug(
+    '🏠 getSavedPlaces: Total unique trip IDs (before filtering):',
+    uniqueTripIds.length
+  );
+
+  // ✅ NUEVO: Verificar que los trips existan y no estén cancelados
+  if (uniqueTripIds.length > 0) {
+    const { data: validTrips, error: validTripsError } = await supabase
+      .from('trips')
+      .select('id')
+      .in('id', uniqueTripIds)
+      .neq('status', 'cancelled');
+
+    if (validTripsError) {
+      logger.error('🏠 getSavedPlaces: Error validating trips:', validTripsError);
+    } else {
+      const validTripIds = (validTrips || []).map((t) => t.id);
+      const removedCount = uniqueTripIds.length - validTripIds.length;
+
+      if (removedCount > 0) {
+        logger.debug(
+          `🏠 getSavedPlaces: Filtered out ${removedCount} cancelled/deleted trips`,
+          uniqueTripIds.filter((id) => !validTripIds.includes(id))
+        );
+      }
+
+      // Actualizar con solo los trips válidos
+      uniqueTripIds.length = 0;
+      uniqueTripIds.push(...validTripIds);
+    }
+  }
+
+  logger.debug('🏠 getSavedPlaces: Total unique trip IDs (after filtering):', uniqueTripIds.length);
   logger.debug('🏠 getSavedPlaces: Trip IDs:', uniqueTripIds);
 
   if (uniqueTripIds.length === 0) {
