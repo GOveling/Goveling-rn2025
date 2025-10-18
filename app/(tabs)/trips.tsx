@@ -122,12 +122,17 @@ export default function TripsTab() {
       logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
       const unifiedTrips = Array.from(baseTripsMap.values());
 
-      // Obtener team data para cada trip (owner, collaborators, count) en paralelo
-      // Disable RPC temporarily due to a return type mismatch (42804) to avoid noisy fallbacks
-      const useRPC = false; // toggle to true after get_trip_with_team RPC is fixed server-side
+      // Obtener team data para cada trip (owner, colaboradores, count) en paralelo.
+      // Intentar RPC (tipado, rápido); si falla por cualquier motivo, hacer fallback al método estándar.
       const tripsWithTeam = await Promise.all(
         unifiedTrips.map(async (t) => {
-          const team = useRPC ? await getTripWithTeamRPC(t.id) : await getTripWithTeam(t.id);
+          let team;
+          try {
+            team = await getTripWithTeamRPC(t.id);
+          } catch (e) {
+            logger.warn('getTripWithTeamRPC failed for', t.id, e);
+            team = await getTripWithTeam(t.id);
+          }
           if (!team.trip) {
             logger.warn('🧪 TripsTab Debug: team.trip is null for id', t.id, 'team data:', team);
           }
