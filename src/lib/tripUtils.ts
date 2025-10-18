@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { getTripCollaborators, getTripOwner } from './userUtils';
+import { getTripWithTeamRPC } from './teamHelpers';
+import { getTripCollaborators } from './userUtils';
 
 export interface TripStats {
   collaboratorsCount: number;
@@ -102,10 +103,31 @@ export const getTripStats = async (tripId: string): Promise<TripStats> => {
   try {
     console.log('🔍 getTripStats: Starting for trip ID:', tripId);
 
-    // Obtener colaboradores (usando la misma lógica consolidada que en userUtils para evitar problemas de relaciones)
-    console.log('👥 getTripStats: Fetching collaborators via getTripCollaborators utility...');
-    const collaboratorsSafe = await getTripCollaborators(tripId);
-    console.log('👥 getTripStats: Collaborators (safe fetch) count:', collaboratorsSafe.length);
+    // Obtener colaboradores: preferir RPC (bypass RLS para owners), con fallback a client-side
+    console.log('👥 getTripStats: Fetching collaborators via RPC getTripWithTeamRPC...');
+    let collaboratorsSafe = [] as Array<{
+      id: string;
+      full_name?: string;
+      avatar_url?: string;
+      email?: string;
+    }>;
+    try {
+      const team = await getTripWithTeamRPC(tripId);
+      collaboratorsSafe = (team.collaborators || []).map((c) => ({
+        id: c.id,
+        full_name: c.full_name,
+        avatar_url: c.avatar_url,
+        email: c.email,
+      }));
+      console.log('👥 getTripStats: Collaborators via RPC count:', collaboratorsSafe.length);
+    } catch (e) {
+      console.warn(
+        'getTripStats: RPC getTripWithTeamRPC failed, falling back to getTripCollaborators',
+        e
+      );
+      collaboratorsSafe = await getTripCollaborators(tripId);
+      console.log('👥 getTripStats: Collaborators via fallback count:', collaboratorsSafe.length);
+    }
 
     // Obtener lugares del trip
     const { data: places, error: placesError } = await supabase
