@@ -1058,6 +1058,7 @@ const styles = StyleSheet.create({
   memberInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   memberAvatar: {
     width: 50,
