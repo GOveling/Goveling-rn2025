@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { useSupabaseTripExpenses } from '~/hooks/useSupabaseTripExpenses';
+import { useSupabaseTripPayments } from '~/hooks/useSupabaseTripPayments';
 import {
   calculateGlobalSettlements,
   calculatePersonBalance,
@@ -20,6 +21,7 @@ import {
   type TripExpenseForCalc,
   type Settlement,
   type PaymentRecord,
+  calculatePerExpenseSettlements,
   remainingForSettlement,
   getPaymentsTotal,
   round2,
@@ -45,8 +47,12 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
     paid_by: [] as string[], // IDs
     split_between: participants.map((p) => p.id), // IDs
   });
-  // local-only payments history: key "DebtorName→CreditorName"
-  const [paymentHistory, setPaymentHistory] = useState<Record<string, PaymentRecord[]>>({});
+  // Persisted payments (shared across the team)
+  const { payments, addPayment } = useSupabaseTripPayments(tripId);
+  // which expense has the popover open
+  const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
+
+  // Build id<->name maps
 
   const AddPaymentRow: React.FC<{ onAdd: (amount: number) => void }> = ({ onAdd }) => {
     const [value, setValue] = useState('');
@@ -102,6 +108,25 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
       style: 'currency',
       currency: 'CLP',
     }).format(amount);
+  };
+
+  // Format date and time (device locale friendly) with robust fallback
+  const formatDateTime = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      const date = d.toLocaleDateString('es-CL', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+      const time = d.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `${date} ${time}`;
+    } catch {
+      return iso;
+    }
   };
 
   // Handle create expense
@@ -178,6 +203,30 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
     return map;
   }, [participants]);
 
+  const nameToId = useMemo(() => {
+    const map: Record<string, string> = {};
+    participants.forEach((p) => (map[p.name] = p.id));
+    return map;
+  }, [participants]);
+
+  // DB payments flattened by pair (name→name)
+  const combinedPaymentsByPair: Record<string, PaymentRecord[]> = useMemo(() => {
+    const map: Record<string, PaymentRecord[]> = {};
+    (payments || []).forEach((p) => {
+      const fromName = idToName[p.from_user_id];
+      const toName = idToName[p.to_user_id];
+      if (!fromName || !toName) return;
+      const key = `${fromName}→${toName}`;
+      const rec: PaymentRecord = {
+        amount: p.amount,
+        date: p.created_at,
+        timestamp: new Date(p.created_at).getTime(),
+      };
+      map[key] = [...(map[key] || []), rec];
+    });
+    return map;
+  }, [payments, idToName]);
+
   const expensesForCalc: TripExpenseForCalc[] = useMemo(() => {
     return (expenses || []).map((e) => ({
       id: e.id,
@@ -192,6 +241,12 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
     }));
   }, [expenses, idToName]);
 
+  const expenseCalcById = useMemo(() => {
+    const map: Record<string, TripExpenseForCalc> = {};
+    expensesForCalc.forEach((ex) => (map[ex.id] = ex));
+    return map;
+  }, [expensesForCalc]);
+
   const perPersonBalances: Record<string, number> = useMemo(() => {
     const result: Record<string, number> = {};
     calcParticipants.forEach((p) => {
@@ -199,12 +254,12 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
         p.name,
         expensesForCalc,
         calcParticipants,
-        paymentHistory
+        combinedPaymentsByPair
       );
       result[p.name] = round2(adjusted);
     });
     return result;
-  }, [calcParticipants, expensesForCalc, paymentHistory]);
+  }, [calcParticipants, expensesForCalc, combinedPaymentsByPair]);
 
   const settlements: Settlement[] = useMemo(
     () => calculateGlobalSettlements(expensesForCalc, calcParticipants),
@@ -301,8 +356,8 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
             >
               {settlements.map((s, idx) => {
                 const key = `${s.from}→${s.to}`;
-                const totalPaid = getPaymentsTotal(paymentHistory[key] || []);
-                const remaining = remainingForSettlement(s, paymentHistory);
+                const totalPaid = getPaymentsTotal(combinedPaymentsByPair[key] || []);
+                const remaining = remainingForSettlement(s, combinedPaymentsByPair);
                 return (
                   <View
                     key={`${s.from}-${s.to}-${idx}`}
@@ -315,11 +370,16 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                     <Text style={{ fontSize: 13, color: '#111827' }}>
                       <Text style={{ fontWeight: '700' }}>{s.from}</Text> →{' '}
                       <Text style={{ fontWeight: '700' }}>{s.to}</Text> por{' '}
-                      <Text style={{ fontWeight: '700' }}>{formatCurrency(s.amount)}</Text>
+                      <Text style={{ fontWeight: totalPaid > 0 ? '400' : '700' }}>
+                        {formatCurrency(s.amount)}
+                      </Text>
                     </Text>
                     {totalPaid > 0 && (
                       <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
-                        Pagado: {formatCurrency(totalPaid)} · Restante: {formatCurrency(remaining)}
+                        Pagado: {formatCurrency(totalPaid)} · Restante:{' '}
+                        <Text style={{ fontWeight: '700', color: '#2563EB' }}>
+                          {formatCurrency(remaining)}
+                        </Text>
                       </Text>
                     )}
                     {/* Add payment input */}
@@ -331,15 +391,18 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                             Alert.alert('Monto inválido', 'No puede exceder el restante');
                             return;
                           }
-                          const rec: PaymentRecord = {
+                          const fromId = nameToId[s.from];
+                          const toId = nameToId[s.to];
+                          if (!fromId || !toId) {
+                            Alert.alert('Error', 'No se pudo resolver el usuario');
+                            return;
+                          }
+                          addPayment({
+                            trip_id: tripId,
+                            expense_id: null,
+                            from_user_id: fromId,
+                            to_user_id: toId,
                             amount: round2(amount),
-                            date: new Date().toISOString().slice(0, 10),
-                            timestamp: Date.now(),
-                          };
-                          setPaymentHistory((prev) => {
-                            const next = { ...prev };
-                            next[key] = [...(next[key] || []), rec];
-                            return next;
                           });
                         }}
                       />
@@ -574,10 +637,199 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                         {(expense.paid_by || []).map((id) => getParticipantName(id)).join(', ')}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#3B82F6' }}>
-                      {formatCurrency(expense.amount)}
-                    </Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        setOpenExpenseId((prev) => (prev === expense.id ? null : expense.id))
+                      }
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 6,
+                        backgroundColor: '#DBEAFE',
+                        borderColor: '#60A5FA',
+                        borderWidth: 1,
+                        borderRadius: 999,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Ver liquidación sugerida de este gasto"
+                      accessibilityHint="Toca para desplegar los detalles y registrar pagos"
+                    >
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E40AF' }}>
+                        {formatCurrency(expense.amount)}
+                      </Text>
+                      <Ionicons
+                        name={openExpenseId === expense.id ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color="#1E40AF"
+                      />
+                    </TouchableOpacity>
                   </View>
+
+                  {/* Per-expense suggested settlements popover */}
+                  {openExpenseId === expense.id && (
+                    <View
+                      style={{
+                        backgroundColor: '#F3F4F6',
+                        borderRadius: 10,
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: '#E5E7EB',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#1F2937' }}>
+                          Liquidación sugerida (este gasto)
+                        </Text>
+                        <TouchableOpacity onPress={() => setOpenExpenseId(null)}>
+                          <Ionicons name="close" size={16} color="#6B7280" />
+                        </TouchableOpacity>
+                      </View>
+                      {(() => {
+                        const exCalc = expenseCalcById[expense.id];
+                        if (!exCalc) return null;
+                        const perSettlements = calculatePerExpenseSettlements(exCalc);
+                        if (perSettlements.length === 0)
+                          return (
+                            <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 8 }}>
+                              No hay liquidaciones necesarias para este gasto.
+                            </Text>
+                          );
+
+                        return (
+                          <View style={{ marginTop: 8 }}>
+                            {perSettlements.map((s, idx) => {
+                              const key = `${s.from}→${s.to}`;
+                              // Sum DB payments only for this expense and pair
+                              const paymentsForPair = (payments || [])
+                                .filter(
+                                  (p) =>
+                                    p.expense_id === expense.id &&
+                                    idToName[p.from_user_id] === s.from &&
+                                    idToName[p.to_user_id] === s.to
+                                )
+                                .sort(
+                                  (a, b) =>
+                                    new Date(b.created_at).getTime() -
+                                    new Date(a.created_at).getTime()
+                                );
+                              const paidHere = getPaymentsTotal(
+                                paymentsForPair.map((p) => ({
+                                  amount: p.amount,
+                                  date: p.created_at,
+                                  timestamp: new Date(p.created_at).getTime(),
+                                }))
+                              );
+                              const remainingHere = Math.max(0, round2(s.amount - paidHere));
+                              return (
+                                <View
+                                  key={`${s.from}-${s.to}-${idx}`}
+                                  style={{
+                                    paddingVertical: 8,
+                                    borderBottomWidth: idx < perSettlements.length - 1 ? 1 : 0,
+                                    borderBottomColor: '#E5E7EB',
+                                  }}
+                                >
+                                  <Text style={{ fontSize: 13, color: '#111827' }}>
+                                    <Text style={{ fontWeight: '700' }}>{s.from}</Text> →{' '}
+                                    <Text style={{ fontWeight: '700' }}>{s.to}</Text> por{' '}
+                                    <Text style={{ fontWeight: paidHere > 0 ? '400' : '700' }}>
+                                      {formatCurrency(s.amount)}
+                                    </Text>
+                                  </Text>
+                                  {paidHere > 0 && (
+                                    <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+                                      Pagado en este gasto: {formatCurrency(paidHere)} · Restante:{' '}
+                                      <Text style={{ fontWeight: '700', color: '#2563EB' }}>
+                                        {formatCurrency(remainingHere)}
+                                      </Text>
+                                    </Text>
+                                  )}
+                                  {/* Payments timeline for this pair and expense */}
+                                  {paymentsForPair.length > 0 && (
+                                    <View style={{ marginTop: 6 }}>
+                                      <Text
+                                        style={{
+                                          fontSize: 11,
+                                          color: '#6B7280',
+                                          fontWeight: '600',
+                                          marginBottom: 4,
+                                        }}
+                                      >
+                                        Pagos registrados
+                                      </Text>
+                                      {paymentsForPair.map((p) => (
+                                        <View
+                                          key={p.id}
+                                          style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            paddingVertical: 2,
+                                          }}
+                                          accessibilityRole="text"
+                                          accessibilityLabel={`Pago de ${formatCurrency(
+                                            p.amount
+                                          )} realizado el ${formatDateTime(p.created_at)}`}
+                                        >
+                                          <Ionicons name="time-outline" size={12} color="#9CA3AF" />
+                                          <Text style={{ fontSize: 12, color: '#374151' }}>
+                                            <Text style={{ fontWeight: '600' }}>
+                                              {formatCurrency(p.amount)}
+                                            </Text>{' '}
+                                            — {formatDateTime(p.created_at)}
+                                          </Text>
+                                        </View>
+                                      ))}
+                                    </View>
+                                  )}
+                                  {remainingHere > 0 && (
+                                    <AddPaymentRow
+                                      onAdd={(amount) => {
+                                        if (amount <= 0) return;
+                                        if (amount > remainingHere) {
+                                          Alert.alert(
+                                            'Monto inválido',
+                                            'No puede exceder el restante de este gasto'
+                                          );
+                                          return;
+                                        }
+                                        const fromId = nameToId[s.from];
+                                        const toId = nameToId[s.to];
+                                        if (!fromId || !toId) {
+                                          Alert.alert('Error', 'No se pudo resolver el usuario');
+                                          return;
+                                        }
+                                        addPayment({
+                                          trip_id: tripId,
+                                          expense_id: expense.id,
+                                          from_user_id: fromId,
+                                          to_user_id: toId,
+                                          amount: round2(amount),
+                                        });
+                                      }}
+                                    />
+                                  )}
+                                </View>
+                              );
+                            })}
+                            <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 8 }}>
+                              Nota: estos pagos por gasto se suman al resumen global
+                              automáticamente.
+                            </Text>
+                          </View>
+                        );
+                      })()}
+                    </View>
+                  )}
 
                   {/* Split info */}
                   <View

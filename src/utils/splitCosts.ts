@@ -115,6 +115,61 @@ export const calculateSettlements = (
   return global.filter((s) => s.from === personName || s.to === personName);
 };
 
+/**
+ * Calculate suggested settlements for a single expense only.
+ * It works by computing each participant's net position within the expense (paid share - owed share),
+ * then greedily matching debtors to creditors until all nets are ~0.
+ */
+export const calculatePerExpenseSettlements = (expense: TripExpenseForCalc): Settlement[] => {
+  // Consider only participants involved in this expense
+  const involvedNames = new Set<string>([...expense.paid_by, ...expense.split_between]);
+
+  type Entry = { name: string; balance: number };
+  const creditors: Entry[] = [];
+  const debtors: Entry[] = [];
+
+  const numPayers = Math.max(1, expense.paid_by.length);
+  const numSplitters = Math.max(1, expense.split_between.length);
+
+  // Compute net for each involved person
+  involvedNames.forEach((name) => {
+    const paidShare = expense.paid_by.includes(name) ? expense.amount / numPayers : 0;
+    const owedShare = expense.split_between.includes(name) ? expense.amount / numSplitters : 0;
+    const net = paidShare - owedShare; // >0 creditor, <0 debtor
+    if (net > 0.01) creditors.push({ name, balance: net });
+    else if (net < -0.01) debtors.push({ name, balance: Math.abs(net) });
+  });
+
+  const settlements: Settlement[] = [];
+
+  // Greedy matching for this expense only
+  while (creditors.length > 0 && debtors.length > 0) {
+    creditors.sort((a, b) => b.balance - a.balance);
+    debtors.sort((a, b) => b.balance - a.balance);
+
+    const creditor = creditors[0];
+    const debtor = debtors[0];
+
+    const amount = Math.min(creditor.balance, debtor.balance);
+    if (amount > 0.01) {
+      settlements.push({
+        from: debtor.name,
+        to: creditor.name,
+        amount: round2(amount),
+        payments: [],
+      });
+    }
+
+    creditor.balance -= amount;
+    debtor.balance -= amount;
+
+    if (creditor.balance <= 0.01) creditors.shift();
+    if (debtor.balance <= 0.01) debtors.shift();
+  }
+
+  return settlements;
+};
+
 export const getAdjustedBalance = (
   personName: string,
   expenses: TripExpenseForCalc[],
