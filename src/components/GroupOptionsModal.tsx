@@ -101,11 +101,14 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
       >
         <View
           style={{
+            flex: 1,
             backgroundColor: '#FFFFFF',
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
-            maxHeight: '90%',
             paddingTop: 16,
+            maxHeight: '98%',
+            minHeight: '50%',
+            flexDirection: 'column',
           }}
         >
           {/* Header */}
@@ -118,6 +121,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
+              paddingTop: 8,
             }}
           >
             <View>
@@ -201,14 +205,16 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
-          {activeTab === 'expenses' && (
-            <ExpensesTab tripId={trip.id || ''} participants={allParticipants} />
-          )}
+          {/* Content Container */}
+          <View style={{ flex: 1 }}>
+            {activeTab === 'expenses' && (
+              <ExpensesTab tripId={trip.id || ''} participants={allParticipants} />
+            )}
 
-          {activeTab === 'decisions' && (
-            <DecisionsTab tripId={trip.id || ''} participants={allParticipants} />
-          )}
+            {activeTab === 'decisions' && (
+              <DecisionsTab tripId={trip.id || ''} participants={allParticipants} />
+            )}
+          </View>
         </View>
       </View>
     </Modal>
