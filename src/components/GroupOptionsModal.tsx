@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { supabase } from '~/lib/supabase';
+import { getTripWithTeamRPC } from '~/lib/teamHelpers';
 
 import { DecisionsTab } from './DecisionsTab';
 import { ExpensesTab } from './ExpensesTab';
@@ -25,21 +26,31 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
   const [activeTab, setActiveTab] = useState<'expenses' | 'decisions'>('expenses');
   const [allParticipants, setAllParticipants] = useState<Collaborator[]>([]);
 
-  // Load owner profile and build participants list
+  // Load owner + collaborators using helper (owner, editor, viewer)
   useEffect(() => {
     const loadParticipants = async () => {
       try {
-        // Get owner profile
-        const ownerId = trip?.owner_id || trip?.user_id;
+        if (!trip?.id) return;
+        const team = await getTripWithTeamRPC(trip.id as string);
         const participantsList: Collaborator[] = [];
 
-        if (ownerId) {
+        // Owner first if resolved
+        if (team.owner) {
+          participantsList.push({
+            id: team.owner.id,
+            name: team.owner.full_name || team.owner.email?.split('@')[0] || 'Unknown',
+            email: team.owner.email || '',
+            avatar: team.owner.avatar_url || '',
+            role: 'owner',
+          });
+        } else if (trip?.owner_id || trip?.user_id) {
+          // Fallback: fetch owner profile if RPC did not resolve
+          const ownerId = (trip.owner_id || trip.user_id) as string;
           const { data: ownerData } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url, email')
             .eq('id', ownerId)
-            .single();
-
+            .maybeSingle();
           if (ownerData) {
             participantsList.push({
               id: ownerData.id,
@@ -51,41 +62,27 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
           }
         }
 
-        // Get collaborators
-        const { data: collaborators } = await supabase
-          .from('trip_collaborators')
-          .select('user_id, role')
-          .eq('trip_id', trip?.id);
-
-        if (collaborators) {
-          for (const collab of collaborators) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('id, full_name, avatar_url, email')
-              .eq('id', collab.user_id)
-              .single();
-
-            if (profile) {
-              participantsList.push({
-                id: profile.id,
-                name: profile.full_name || 'Unknown',
-                email: profile.email || '',
-                avatar: profile.avatar_url || '',
-                role: collab.role as 'editor' | 'viewer',
-              });
-            }
+        // Collaborators
+        (team.collaborators || []).forEach((c) => {
+          // Avoid duplicates with owner
+          if (!participantsList.find((p) => p.id === c.id)) {
+            participantsList.push({
+              id: c.id,
+              name: c.full_name || c.email?.split('@')[0] || 'Unknown',
+              email: c.email || '',
+              avatar: c.avatar_url || '',
+              role: (c.role as 'editor' | 'viewer') || 'viewer',
+            });
           }
-        }
+        });
 
         setAllParticipants(participantsList);
       } catch (error) {
-        console.error('Error loading participants:', error);
+        console.error('Error loading participants (team helper):', error);
       }
     };
 
-    if (trip?.id) {
-      loadParticipants();
-    }
+    loadParticipants();
   }, [trip?.id, trip?.owner_id, trip?.user_id]);
 
   if (!visible) return null;

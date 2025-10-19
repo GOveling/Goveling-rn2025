@@ -1,10 +1,30 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { useSupabaseTripExpenses, type TripExpense } from '~/hooks/useSupabaseTripExpenses';
+import { useSupabaseTripExpenses } from '~/hooks/useSupabaseTripExpenses';
+import {
+  calculateGlobalSettlements,
+  calculatePersonBalance,
+  type CollaboratorForCalc,
+  type TripExpenseForCalc,
+  type Settlement,
+  type PaymentRecord,
+  remainingForSettlement,
+  getPaymentsTotal,
+  round2,
+  getAdjustedBalance,
+} from '~/utils/splitCosts';
 
 interface ExpensesTabProps {
   tripId: string;
@@ -22,14 +42,59 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    paid_by: [] as string[],
-    split_between: participants.map((p) => p.id),
+    paid_by: [] as string[], // IDs
+    split_between: participants.map((p) => p.id), // IDs
   });
+  // local-only payments history: key "DebtorName→CreditorName"
+  const [paymentHistory, setPaymentHistory] = useState<Record<string, PaymentRecord[]>>({});
+
+  const AddPaymentRow: React.FC<{ onAdd: (amount: number) => void }> = ({ onAdd }) => {
+    const [value, setValue] = useState('');
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 }}>
+        <TextInput
+          placeholder="Monto"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          value={value}
+          onChangeText={(t) => setValue(t.replace(/[^0-9.]/g, ''))}
+          style={{
+            flex: 1,
+            backgroundColor: 'white',
+            borderRadius: 8,
+            padding: 10,
+            borderWidth: 1,
+            borderColor: '#E5E7EB',
+            color: '#111827',
+          }}
+        />
+        <TouchableOpacity
+          onPress={() => {
+            const n = parseFloat(value || '0');
+            if (!isNaN(n) && n > 0) {
+              onAdd(n);
+              setValue('');
+            }
+          }}
+          style={{
+            backgroundColor: '#111827',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>Registrar pago</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   // Get participant name by ID
   const getParticipantName = (id: string) => {
     return participants.find((p) => p.id === id)?.name || 'Unknown';
   };
+  // const _getParticipantById = (id: string) => participants.find((p) => p.id === id);
+  // const _allNames = participants.map((p) => p.name);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -94,36 +159,57 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
     ]);
   };
 
-  // Calculate who paid what
-  const calculateBalance = () => {
-    const balance: Record<string, number> = {};
+  // Transform DB expenses (IDs) to calc model (names)
+  const calcParticipants: CollaboratorForCalc[] = useMemo(
+    () =>
+      participants.map((p) => ({
+        id: p.id,
+        name: p.name,
+        email: p.email,
+        avatar: p.avatar,
+        role: 'member',
+      })),
+    [participants]
+  );
 
-    participants.forEach((p) => {
-      balance[p.id] = 0;
+  const idToName = useMemo(() => {
+    const map: Record<string, string> = {};
+    participants.forEach((p) => (map[p.id] = p.name));
+    return map;
+  }, [participants]);
+
+  const expensesForCalc: TripExpenseForCalc[] = useMemo(() => {
+    return (expenses || []).map((e) => ({
+      id: e.id,
+      trip_id: e.trip_id,
+      description: e.description,
+      amount: e.amount,
+      paid_by: (e.paid_by || []).map((id) => idToName[id] || 'Unknown'),
+      split_between: (e.split_between || []).map((id) => idToName[id] || 'Unknown'),
+      created_at: e.created_at,
+      updated_at: e.updated_at,
+      created_by: e.created_by,
+    }));
+  }, [expenses, idToName]);
+
+  const perPersonBalances: Record<string, number> = useMemo(() => {
+    const result: Record<string, number> = {};
+    calcParticipants.forEach((p) => {
+      const adjusted = getAdjustedBalance(
+        p.name,
+        expensesForCalc,
+        calcParticipants,
+        paymentHistory
+      );
+      result[p.name] = round2(adjusted);
     });
+    return result;
+  }, [calcParticipants, expensesForCalc, paymentHistory]);
 
-    if (!expenses || expenses.length === 0) return balance;
-
-    expenses.forEach((expense) => {
-      const paidByLength = expense.paid_by?.length || 1;
-      const splitBetween = expense.split_between?.length || participants.length;
-
-      // Add to those who paid
-      expense.paid_by?.forEach((payerId) => {
-        balance[payerId] = (balance[payerId] || 0) + expense.amount;
-      });
-
-      // Subtract from those who should split
-      expense.split_between?.forEach((personId) => {
-        const perPerson = expense.amount / splitBetween;
-        balance[personId] = (balance[personId] || 0) - perPerson;
-      });
-    });
-
-    return balance;
-  };
-
-  const balance = calculateBalance();
+  const settlements: Settlement[] = useMemo(
+    () => calculateGlobalSettlements(expensesForCalc, calcParticipants),
+    [expensesForCalc, calcParticipants]
+  );
 
   if (loading) {
     return (
@@ -163,7 +249,7 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
               }}
             >
               {participants.map((participant) => {
-                const userBalance = balance[participant.id] || 0;
+                const userBalance = perPersonBalances[participant.name] || 0;
                 const isDebt = userBalance < 0;
 
                 return (
@@ -191,6 +277,73 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                       {isDebt ? '−' : '+'}
                       {formatCurrency(Math.abs(userBalance))}
                     </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Global Settlements */}
+        {settlements.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A', marginBottom: 12 }}>
+              Liquidaciones sugeridas
+            </Text>
+            <View
+              style={{
+                backgroundColor: '#F9FAFB',
+                borderRadius: 12,
+                padding: 12,
+                borderWidth: 1,
+                borderColor: '#E5E7EB',
+              }}
+            >
+              {settlements.map((s, idx) => {
+                const key = `${s.from}→${s.to}`;
+                const totalPaid = getPaymentsTotal(paymentHistory[key] || []);
+                const remaining = remainingForSettlement(s, paymentHistory);
+                return (
+                  <View
+                    key={`${s.from}-${s.to}-${idx}`}
+                    style={{
+                      paddingVertical: 8,
+                      borderBottomWidth: 1,
+                      borderBottomColor: '#E5E7EB',
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, color: '#111827' }}>
+                      <Text style={{ fontWeight: '700' }}>{s.from}</Text> →{' '}
+                      <Text style={{ fontWeight: '700' }}>{s.to}</Text> por{' '}
+                      <Text style={{ fontWeight: '700' }}>{formatCurrency(s.amount)}</Text>
+                    </Text>
+                    {totalPaid > 0 && (
+                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+                        Pagado: {formatCurrency(totalPaid)} · Restante: {formatCurrency(remaining)}
+                      </Text>
+                    )}
+                    {/* Add payment input */}
+                    {remaining > 0 && (
+                      <AddPaymentRow
+                        onAdd={(amount) => {
+                          if (amount <= 0) return;
+                          if (amount > remaining) {
+                            Alert.alert('Monto inválido', 'No puede exceder el restante');
+                            return;
+                          }
+                          const rec: PaymentRecord = {
+                            amount: round2(amount),
+                            date: new Date().toISOString().slice(0, 10),
+                            timestamp: Date.now(),
+                          };
+                          setPaymentHistory((prev) => {
+                            const next = { ...prev };
+                            next[key] = [...(next[key] || []), rec];
+                            return next;
+                          });
+                        }}
+                      />
+                    )}
                   </View>
                 );
               })}
@@ -243,8 +396,11 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
               <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
                 Descripción
               </Text>
-              {/* Note: This is a simplified version. In a full app, you'd use TextInput */}
-              <View
+              <TextInput
+                placeholder="Ej: Supermercado, gasolina, entradas"
+                placeholderTextColor="#9CA3AF"
+                value={formData.description}
+                onChangeText={(t) => setFormData((f) => ({ ...f, description: t }))}
                 style={{
                   backgroundColor: 'white',
                   borderRadius: 8,
@@ -252,15 +408,21 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                   marginBottom: 12,
                   borderWidth: 1,
                   borderColor: '#E5E7EB',
+                  color: '#111827',
                 }}
-              >
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>(Implementar TextInput aquí)</Text>
-              </View>
+              />
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
                 Monto (CLP)
               </Text>
-              <View
+              <TextInput
+                placeholder="0"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="numeric"
+                value={formData.amount}
+                onChangeText={(t) =>
+                  setFormData((f) => ({ ...f, amount: t.replace(/[^0-9.]/g, '') }))
+                }
                 style={{
                   backgroundColor: 'white',
                   borderRadius: 8,
@@ -268,9 +430,96 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                   marginBottom: 12,
                   borderWidth: 1,
                   borderColor: '#E5E7EB',
+                  color: '#111827',
                 }}
-              >
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>(Implementar TextInput aquí)</Text>
+              />
+
+              {/* Who paid */}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
+                ¿Quién pagó?
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                {participants.map((p) => {
+                  const active = formData.paid_by.includes(p.id);
+                  return (
+                    <TouchableOpacity
+                      key={`payer-${p.id}`}
+                      onPress={() =>
+                        setFormData((f) => {
+                          const exists = f.paid_by.includes(p.id);
+                          return {
+                            ...f,
+                            paid_by: exists
+                              ? f.paid_by.filter((id) => id !== p.id)
+                              : [...f.paid_by, p.id],
+                          };
+                        })
+                      }
+                      style={{
+                        backgroundColor: active ? '#2563EB' : 'white',
+                        borderColor: active ? '#1D4ED8' : '#E5E7EB',
+                        borderWidth: 1,
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: active ? 'white' : '#111827',
+                          fontSize: 12,
+                          fontWeight: '600',
+                        }}
+                      >
+                        {p.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Split between */}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
+                ¿Entre quiénes se divide?
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {participants.map((p) => {
+                  const active = formData.split_between.includes(p.id);
+                  return (
+                    <TouchableOpacity
+                      key={`split-${p.id}`}
+                      onPress={() =>
+                        setFormData((f) => {
+                          const exists = f.split_between.includes(p.id);
+                          return {
+                            ...f,
+                            split_between: exists
+                              ? f.split_between.filter((id) => id !== p.id)
+                              : [...f.split_between, p.id],
+                          };
+                        })
+                      }
+                      style={{
+                        backgroundColor: active ? '#059669' : 'white',
+                        borderColor: active ? '#047857' : '#E5E7EB',
+                        borderWidth: 1,
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: active ? 'white' : '#111827',
+                          fontSize: 12,
+                          fontWeight: '600',
+                        }}
+                      >
+                        {p.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               <TouchableOpacity
@@ -321,7 +570,8 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                         {expense.description}
                       </Text>
                       <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                        Pagado por: {getParticipantName(expense.paid_by?.[0] || '')}
+                        Pagado por:{' '}
+                        {(expense.paid_by || []).map((id) => getParticipantName(id)).join(', ')}
                       </Text>
                     </View>
                     <Text style={{ fontSize: 16, fontWeight: '700', color: '#3B82F6' }}>
