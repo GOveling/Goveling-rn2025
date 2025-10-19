@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
+import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -10,20 +10,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 import {
-  getTripStats,
   getCountryFlagByName,
   getCountryFlag,
-  getCountryName,
   getCountryImage,
+  getCountryName,
+  getTripStats,
   TripStats,
 } from '~/lib/tripUtils';
 import {
   getCurrentUser,
-  resolveUserRoleForTrip,
   resolveCurrentUserRoleForTripId,
+  resolveUserRoleForTrip,
 } from '~/lib/userUtils';
 
 import { CountryImage } from './CountryImage';
+import GroupOptionsModal from './GroupOptionsModal';
 import LiquidButton from './LiquidButton';
 import TripDetailsModal from './TripDetailsModal';
 import { useGetProfileQuery } from '../store/api/userApi';
@@ -97,6 +98,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     firstPlaceImage: undefined,
   });
   const [showModal, setShowModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const [ownerProfile, setOwnerProfile] = useState<{
     id: string;
     full_name?: string;
@@ -762,15 +764,32 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               }}
             >
               <Text style={{ fontSize: 16, color: '#8B5CF6', marginRight: 8 }}>👥</Text>
-              <Text
+              <TouchableOpacity
+                onPress={() => {
+                  if (tripData.collaboratorsCount > 1) {
+                    setShowGroupModal(true);
+                  }
+                }}
                 style={{
-                  fontSize: 16,
-                  color: '#8B5CF6',
-                  fontWeight: '600',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  backgroundColor:
+                    tripData.collaboratorsCount > 1 ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                  borderRadius: 8,
+                  borderWidth: tripData.collaboratorsCount > 1 ? 1 : 0,
+                  borderColor: tripData.collaboratorsCount > 1 ? '#8B5CF6' : 'transparent',
                 }}
               >
-                {getTripType()}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: '#8B5CF6',
+                    fontWeight: '600',
+                  }}
+                >
+                  {getTripType()}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -1094,6 +1113,15 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           onTripUpdated?.(updatedTrip);
         }}
       />
+
+      {/* Modal de opciones del grupo */}
+      {tripData.collaboratorsCount > 1 && (
+        <GroupOptionsModal
+          visible={showGroupModal}
+          onClose={() => setShowGroupModal(false)}
+          trip={currentTrip}
+        />
+      )}
     </View>
   );
 };
