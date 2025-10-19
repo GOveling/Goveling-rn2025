@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { useAuth } from '~/contexts/AuthContext';
 import { useSupabaseTripDecisions } from '~/hooks/useSupabaseTripDecisions';
 
 interface DecisionsTabProps {
@@ -19,6 +28,7 @@ interface DecisionsTabProps {
 export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants }) => {
   const { decisions, loading, createDecision, deleteDecision, vote } =
     useSupabaseTripDecisions(tripId);
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -27,10 +37,28 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
     selectedParticipants: participants.map((p) => p.id),
   });
 
-  // Get participant name by ID
-  const getParticipantName = (id: string) => {
-    return participants.find((p) => p.id === id)?.name || 'Unknown';
+  // Helpers
+  const getParticipantName = (id?: string) => {
+    if (!id) return 'Desconocido';
+    const p = participants.find((pp) => pp.id === id);
+    return p?.name || p?.email || 'Desconocido';
   };
+
+  const formatDateTime = (iso?: string) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      return `${d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+      })} · ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+    } catch {
+      return iso;
+    }
+  };
+
+  // Helper reserved if we later show names in results (unused currently)
 
   // Handle create decision
   const handleCreateDecision = async () => {
@@ -73,6 +101,26 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
   // Handle vote
   const handleVote = async (decisionId: string, optionIndex: number) => {
     try {
+      const decision = decisions.find((d) => d.id === decisionId);
+      // Basic front-end validations: status, expiration, and eligibility
+      if (!decision) return;
+      if (decision.status !== 'active') {
+        Alert.alert('Votación cerrada', 'Esta decisión ya no acepta votos');
+        return;
+      }
+      if (decision.end_date && new Date(decision.end_date) < new Date()) {
+        Alert.alert('Votación expirada', 'Esta decisión ya alcanzó su fecha límite');
+        return;
+      }
+      if (
+        Array.isArray(decision.selected_participants) &&
+        decision.selected_participants.length > 0 &&
+        user?.id &&
+        !decision.selected_participants.includes(user.id)
+      ) {
+        Alert.alert('No elegible', 'No estás habilitado para votar en esta decisión');
+        return;
+      }
       await vote(decisionId, optionIndex);
       Alert.alert('Éxito', 'Tu voto ha sido registrado');
     } catch (error) {
@@ -172,7 +220,11 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
               <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
                 Título de la Votación
               </Text>
-              <View
+              <TextInput
+                placeholder="Ej: ¿Dónde cenamos?"
+                placeholderTextColor="#9CA3AF"
+                value={formData.title}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, title: text }))}
                 style={{
                   backgroundColor: 'white',
                   borderRadius: 8,
@@ -180,15 +232,20 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                   marginBottom: 12,
                   borderWidth: 1,
                   borderColor: '#E5E7EB',
+                  fontSize: 14,
+                  color: '#111827',
                 }}
-              >
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>(Implementar TextInput aquí)</Text>
-              </View>
+              />
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
                 Descripción
               </Text>
-              <View
+              <TextInput
+                placeholder="Describe brevemente la decisión"
+                placeholderTextColor="#9CA3AF"
+                value={formData.description}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, description: text }))}
+                multiline
                 style={{
                   backgroundColor: 'white',
                   borderRadius: 8,
@@ -196,9 +253,73 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                   marginBottom: 12,
                   borderWidth: 1,
                   borderColor: '#E5E7EB',
+                  fontSize: 14,
+                  color: '#111827',
+                  minHeight: 48,
                 }}
-              >
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>(Implementar TextInput aquí)</Text>
+              />
+
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
+                Opciones (mínimo 2)
+              </Text>
+              {formData.options.map((opt, idx) => (
+                <TextInput
+                  key={idx}
+                  placeholder={`Opción ${idx + 1}`}
+                  placeholderTextColor="#9CA3AF"
+                  value={opt}
+                  onChangeText={(text) =>
+                    setFormData((prev) => {
+                      const next = [...prev.options];
+                      next[idx] = text;
+                      return { ...prev, options: next };
+                    })
+                  }
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 8,
+                    padding: 12,
+                    marginBottom: 8,
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    fontSize: 14,
+                    color: '#111827',
+                  }}
+                />
+              ))}
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    setFormData((prev) => ({ ...prev, options: [...prev.options, ''] }))
+                  }
+                  style={{
+                    backgroundColor: '#E5E7EB',
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontWeight: '600', fontSize: 12 }}>
+                    + Opción
+                  </Text>
+                </TouchableOpacity>
+                {formData.options.length > 2 && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setFormData((prev) => ({ ...prev, options: prev.options.slice(0, -1) }))
+                    }
+                    style={{
+                      backgroundColor: '#FEE2E2',
+                      borderRadius: 8,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                    }}
+                  >
+                    <Text style={{ color: '#B91C1C', fontWeight: '600', fontSize: 12 }}>
+                      − Quitar última
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <TouchableOpacity
@@ -251,6 +372,11 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                       <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>
                         {decision.description}
                       </Text>
+                      {/* Creator and created_at info */}
+                      <Text style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>
+                        Creado por: {getParticipantName(decision.created_by)} ·{' '}
+                        {formatDateTime(decision.created_at)}
+                      </Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <View
                           style={{
@@ -274,6 +400,38 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                     </View>
                   </View>
 
+                  {/* Responded vs pending */}
+                  {(() => {
+                    const eligibleIds =
+                      Array.isArray(decision.selected_participants) &&
+                      decision.selected_participants.length > 0
+                        ? decision.selected_participants
+                        : participants.map((p) => p.id);
+                    const answeredIds = Array.from(
+                      new Set((decision.votes || []).map((v) => v.user_id))
+                    );
+                    const pendingIds = eligibleIds.filter((id) => !answeredIds.includes(id));
+                    const answeredNames = answeredIds.map((id) => getParticipantName(id));
+                    const pendingNames = pendingIds.map((id) => getParticipantName(id));
+                    return (
+                      <View style={{ marginBottom: 12 }}>
+                        <Text style={{ fontSize: 11, color: '#6B7280', marginBottom: 4 }}>
+                          Respuestas: {answeredIds.length}/{eligibleIds.length}
+                        </Text>
+                        {answeredIds.length > 0 && (
+                          <Text style={{ fontSize: 12, color: '#374151', marginBottom: 2 }}>
+                            Han respondido: {answeredNames.join(', ')}
+                          </Text>
+                        )}
+                        {pendingIds.length > 0 && (
+                          <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
+                            Faltan: {pendingNames.join(', ')}
+                          </Text>
+                        )}
+                      </View>
+                    );
+                  })()}
+
                   {/* Options - Voting UI */}
                   <View style={{ marginBottom: 12 }}>
                     <Text
@@ -283,12 +441,21 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                     </Text>
                     <View style={{ gap: 8 }}>
                       {decision.options?.map((option, index) => {
-                        const votes = decision.votes
-                          ? decision.votes.filter((v) => v.option_index === index).length
-                          : 0;
-                        const totalVoters = participants.length;
+                        // Aggregate votes by option
+                        const votesByOption = (decision.votes || []).reduce(
+                          (acc: Record<number, number>, v) => {
+                            acc[v.option_index] = (acc[v.option_index] || 0) + 1;
+                            return acc;
+                          },
+                          {}
+                        );
+                        const totalVotes = (decision.votes || []).length;
+                        const voteCount = votesByOption[index] || 0;
                         const percentage =
-                          totalVoters > 0 ? Math.round((votes / totalVoters) * 100) : 0;
+                          totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                        const hasVoted = (decision.votes || []).some(
+                          (v) => v.user_id === user?.id && v.option_index === index
+                        );
 
                         return (
                           <TouchableOpacity
@@ -336,7 +503,7 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                                   </Text>
                                 </View>
                                 <Text style={{ fontSize: 12, color: '#6B7280', minWidth: 20 }}>
-                                  {votes}
+                                  {voteCount}
                                 </Text>
                               </View>
                             </View>
@@ -353,7 +520,7 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                                 style={{
                                   height: '100%',
                                   width: `${percentage}%`,
-                                  backgroundColor: '#3B82F6',
+                                  backgroundColor: hasVoted ? '#10B981' : '#3B82F6',
                                 }}
                               />
                             </View>

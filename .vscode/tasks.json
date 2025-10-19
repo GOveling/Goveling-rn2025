@@ -288,6 +288,58 @@
 			"type": "shell",
 			"command": "npx tsc --noEmit",
 			"group": "build"
+		},
+		{
+			"label": "Apply SQL migration: trip_decision_votes_policies",
+			"type": "shell",
+			"command": "./apply-migrations-api.sh",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "TypeScript Check (on-demand)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check (on-demand)",
+			"type": "shell",
+			"command": "npx eslint .",
+			"problemMatcher": [
+				"$eslint - stylish"
+			]
+		},
+		{
+			"label": "TypeScript Check (post-edit)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check (post-edit)",
+			"type": "shell",
+			"command": "npx eslint .",
+			"problemMatcher": [
+				"$eslint - stylish"
+			]
 		}
 	]
 }

@@ -70,17 +70,31 @@ export const useSupabaseTripDecisions = (tripId: string): UseSupabaseTripDecisio
 
       if (decisionsError) throw decisionsError;
 
-      // Fetch votes for all decisions
-      const { data: votesData, error: votesError } = await supabase
-        .from('trip_decision_votes')
-        .select('*');
+      const normalized = (decisionsData || []).map((d) => ({
+        ...d,
+        options: Array.isArray(d.options) ? (d.options as string[]) : [],
+        selected_participants: Array.isArray(d.selected_participants)
+          ? (d.selected_participants as string[])
+          : [],
+        description: d.description || '',
+        end_date: d.end_date || '',
+      }));
 
-      if (votesError) throw votesError;
+      const decisionIds = normalized.map((d) => d.id);
+      let votesData: TripDecisionVote[] = [];
+      if (decisionIds.length > 0) {
+        const { data: votes, error: votesError } = await supabase
+          .from('trip_decision_votes')
+          .select('*')
+          .in('decision_id', decisionIds);
+        if (votesError) throw votesError;
+        votesData = (votes || []) as TripDecisionVote[];
+      }
 
       // Combine decisions with their votes
-      const decisionsWithVotes = (decisionsData || []).map((decision) => ({
+      const decisionsWithVotes = normalized.map((decision) => ({
         ...decision,
-        votes: (votesData || []).filter((vote) => vote.decision_id === decision.id),
+        votes: votesData.filter((vote) => vote.decision_id === decision.id),
       })) as TripDecision[];
 
       setDecisions(decisionsWithVotes);
