@@ -135,7 +135,11 @@ export default function AddToTripScreen() {
           {
             text: 'Continuar explorando',
             style: 'default',
-            onPress: () => router.push('/(tabs)/explore'),
+            onPress: () => {
+              // ✅ Navigate to explore without tripId to reset context
+              console.log('🔄 AddToTrip: Resetting context - navigating to explore without tripId');
+              router.replace('/(tabs)/explore');
+            },
           },
           {
             text: 'Ver lugares del viaje',

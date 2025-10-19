@@ -197,6 +197,11 @@ export default function ExploreTab() {
         {
           text: 'Continuar explorando',
           style: 'default',
+          onPress: () => {
+            // ✅ Navigate to explore without tripId to reset context
+            console.log('🔄 Explore: Resetting context - navigating to explore without tripId');
+            router.replace('/(tabs)/explore');
+          },
         },
         {
           text: 'Ver lugares del viaje',
