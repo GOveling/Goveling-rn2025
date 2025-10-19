@@ -660,8 +660,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 {collaborator.full_name || collaborator.email || 'Collaborator'}
                 {currentUser?.id === collaborator.id && ' (You)'}
               </Text>
-              <Text style={styles.memberRole}>
-                {(collaborator as any).role === 'editor' ? 'Editor' : 'Viewer'}
+              {collaborator.full_name && collaborator.email && (
+                <Text style={styles.memberEmail}>{collaborator.email}</Text>
+              )}
+            </View>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>
+                {(collaborator as unknown as { role?: 'viewer' | 'editor' }).role === 'editor'
+                  ? 'Editor'
+                  : 'Viewer'}
               </Text>
             </View>
           </View>
@@ -1185,6 +1192,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   ownerBadgeText: {
+    color: COLORS.utility.white,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  roleBadge: {
+    backgroundColor: COLORS.status.info,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  roleBadgeText: {
     color: COLORS.utility.white,
     fontSize: 12,
     fontWeight: '600',
