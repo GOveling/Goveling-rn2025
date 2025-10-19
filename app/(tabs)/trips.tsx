@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-color-literals */
 import React, { useState, useEffect, useCallback } from 'react';
 
 import {
@@ -6,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
-  Image,
   Alert,
   ActivityIndicator,
   RefreshControl,
@@ -17,34 +17,44 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useFocusEffect } from '@react-navigation/native';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 
 import type { Trip } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
-import { useTheme } from '~/lib/theme';
 import { logger } from '~/utils/logger';
 
 import NewTripModal from '../../src/components/NewTripModal';
 import TripCard from '../../src/components/TripCard';
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
+// Minimal shape for items rendered by Trips tab
+interface TripsListItem {
+  id: string;
+  title: string;
+  // Required by TripCard
+  user_id: string;
+  created_at: string;
+  owner_id?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  status?: string | null;
+  collaborators?: Array<{ user_id: string; role?: string }>;
+  collaboratorsCount?: number;
+}
+
 export default function TripsTab() {
   const { t } = useTranslation();
-  const { colors, spacing } = useTheme();
   const router = useRouter();
   const { openModal } = useLocalSearchParams();
 
   // RTK Query: Get cached trips breakdown (shared with HomeTab)
-  const {
-    data: breakdown,
-    isLoading: tripsLoading,
-    refetch: refetchTrips,
-  } = useGetTripsBreakdownQuery();
+  const { data: breakdown, refetch: refetchTrips } = useGetTripsBreakdownQuery();
 
   // Estados
   const [showNewTripModal, setShowNewTripModal] = useState(false);
-  const [trips, setTrips] = useState<any[]>([]); // TODO: Use proper TripData type
+  const [trips, setTrips] = useState<TripsListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -62,7 +72,7 @@ export default function TripsTab() {
       // Clear the parameter after opening modal to prevent reopening on re-renders
       router.replace('/trips');
     }
-  }, [openModal]);
+  }, [openModal, router]);
 
   // Load trip statistics and trips from database
   const loadTripStats = useCallback(async () => {
@@ -72,11 +82,8 @@ export default function TripsTab() {
       if (!user?.user?.id) return;
 
       // Use RTK Query breakdown as base (leverages cache from HomeTab)
-      const baseTrips = breakdown?.all || [];
+      const baseTrips: Trip[] = breakdown?.all || [];
       logger.debug('🧪 TripsTab: Using RTK Query cache, base trips count:', baseTrips.length);
-
-      // Get trip IDs from breakdown for team data enrichment
-      const tripIds = baseTrips.map((t) => t.id);
 
       // Also check for collaborator trips not in breakdown
       const { data: collabTripIds, error: collabError } = await supabase
@@ -92,21 +99,27 @@ export default function TripsTab() {
       logger.debug('🧪 TripsTab Debug: collab trip ids for user:', Array.from(collabSet));
 
       // Combine base trips with any missing collab trips
-      const baseTripsMap = new Map<string, any>();
-      baseTrips.forEach((t) =>
-        baseTripsMap.set(t.id, {
-          ...t,
-          title: t.name, // Map 'name' from breakdown to 'title' for TripsTab
+      const baseTripsMap = new Map<string, TripsListItem>();
+      baseTrips.forEach((t) => {
+        // Map Trip from breakdown (has minimal fields) into item for TripsTab
+        const mapped: TripsListItem = {
           id: t.id,
-        })
-      );
+          title: t.name ?? '',
+          start_date: t.start_date ?? null,
+          end_date: t.end_date ?? null,
+          // Fallbacks for required TripCard props when not available in breakdown
+          user_id: '',
+          created_at: new Date(0).toISOString(),
+        };
+        baseTripsMap.set(t.id, mapped);
+      });
 
       // For collab-only trips not in breakdown, fetch their data from DB
       const collabOnlyIds = Array.from(collabSet).filter((id) => !baseTripsMap.has(id));
       if (collabOnlyIds.length > 0) {
         const { data: collabOnlyTrips, error: collabTripsError } = await supabase
           .from('trips')
-          .select('id, title, owner_id, start_date, end_date, created_at, status')
+          .select('id, title, owner_id, user_id, start_date, end_date, created_at, status')
           .in('id', collabOnlyIds)
           .neq('status', 'cancelled');
 
@@ -114,13 +127,22 @@ export default function TripsTab() {
           logger.error('Error loading collab-only trips:', collabTripsError);
         } else if (collabOnlyTrips) {
           collabOnlyTrips.forEach((trip) => {
-            baseTripsMap.set(trip.id, trip);
+            baseTripsMap.set(trip.id, {
+              id: trip.id,
+              title: trip.title ?? '',
+              owner_id: trip.owner_id ?? null,
+              user_id: trip.user_id ?? '',
+              start_date: trip.start_date ?? null,
+              end_date: trip.end_date ?? null,
+              created_at: trip.created_at ?? new Date(0).toISOString(),
+              status: trip.status ?? null,
+            });
           });
         }
       }
 
       logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
-      const unifiedTrips = Array.from(baseTripsMap.values());
+      const unifiedTrips: TripsListItem[] = Array.from(baseTripsMap.values());
 
       // Obtener team data para cada trip (owner, colaboradores, count) en paralelo.
       // Intentar RPC (tipado, rápido); si falla por cualquier motivo, hacer fallback al método estándar.
@@ -138,6 +160,9 @@ export default function TripsTab() {
           }
           return {
             ...t,
+            // Ensure TripCard critical fields are present/consistent
+            owner_id: team.owner?.id ?? t.owner_id ?? null,
+            user_id: team.owner?.id ?? t.user_id,
             // Campos para compatibilidad con componentes actuales
             collaborators: team.collaborators.map((c) => ({ user_id: c.id, role: c.role })),
             collaboratorsCount: team.collaboratorsCount,
@@ -198,8 +223,6 @@ export default function TripsTab() {
       logger.debug('🔍🔍🔍 CRITICAL: About to setTrips with length:', sortedTrips.length);
       setTrips(sortedTrips);
       logger.debug('🔍🔍🔍 CRITICAL: After setTrips called');
-
-      const totalTrips = sortedTrips.length || 0;
 
       // Get upcoming trips (future trips + planning trips without dates)
       // Exclude: completed trips and currently traveling trips
@@ -278,7 +301,6 @@ export default function TripsTab() {
       await refetchTrips();
       // Then reload trip stats with team data
       await loadTripStats();
-      await loadTripStats();
       logger.debug('✅ TripsTab: Pull-to-refresh completed successfully');
     } catch (error) {
       logger.error('❌ TripsTab: Pull-to-refresh error:', error);
@@ -306,7 +328,7 @@ export default function TripsTab() {
   // Suscripción en tiempo real a cambios en trips y trip_collaborators para refrescar owner y colaboradores.
   useEffect(() => {
     let isActive = true;
-    let channel: any;
+    let channel: RealtimeChannel | null = null;
     let pendingReload = false;
     const safeReload = () => {
       if (pendingReload) return;
@@ -326,38 +348,70 @@ export default function TripsTab() {
       channel = supabase
         .channel('trips-tab-realtime')
         // Cambios directos en trips - ahora incluye INSERT, UPDATE, DELETE
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, (payload) => {
-          if (!isActive) return;
-          const newOwnerId = (payload as any)?.new?.owner_id;
-          const oldOwnerId = (payload as any)?.old?.owner_id;
-          logger.debug('🔄 TripsTab: Trip change detected:', payload.eventType, {
-            newOwnerId,
-            oldOwnerId,
-            userId,
-          });
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'trips' },
+          (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+            if (!isActive) return;
+            const newRow = (payload.new as { id?: string; owner_id?: string | null }) || null;
+            const oldRow = (payload.old as { id?: string; owner_id?: string | null }) || null;
+            const newOwnerId = newRow?.owner_id ?? null;
+            const oldOwnerId = oldRow?.owner_id ?? null;
+            const tripId = newRow?.id || oldRow?.id;
+            logger.debug('🌀 TripsTab: Trip change detected:', payload.eventType, {
+              newOwnerId,
+              oldOwnerId,
+              userId,
+              tripId,
+            });
 
-          // For INSERT events, check if new trip belongs to current user
-          if (payload.eventType === 'INSERT' && newOwnerId === userId) {
-            logger.debug('🔄 TripsTab: New trip created by user, refreshing...');
-            safeReload();
-            return;
-          }
+            // For INSERT events, check if new trip belongs to current user
+            if (payload.eventType === 'INSERT' && newOwnerId === userId) {
+              logger.debug('🌀 TripsTab: New trip created by user, refreshing...');
+              safeReload();
+              return;
+            }
 
-          // For UPDATE/DELETE events, check if trip belonged to current user
-          if (newOwnerId === userId || oldOwnerId === userId) {
-            logger.debug('🔄 TripsTab: Trip modified/deleted for user, refreshing...');
-            safeReload();
+            // For UPDATE/DELETE events, check if trip belonged to current user
+            if (newOwnerId === userId || oldOwnerId === userId) {
+              logger.debug('🌀 TripsTab: Trip modified/deleted for user, refreshing...');
+              safeReload();
+              return;
+            }
+
+            // También refrescar si el usuario es colaborador del trip al que se actualizó
+            if (tripId) {
+              (async () => {
+                try {
+                  const { data: collabRow, error: collabErr } = await supabase
+                    .from('trip_collaborators')
+                    .select('id')
+                    .eq('trip_id', tripId)
+                    .eq('user_id', userId)
+                    .maybeSingle();
+                  if (!isActive) return;
+                  if (!collabErr && collabRow) {
+                    logger.debug('🌀 TripsTab: Trip modified for collaborator, refreshing...');
+                    safeReload();
+                  }
+                } catch {
+                  // noop
+                }
+              })();
+            }
           }
-        })
+        )
         // Cambios en colaboradores: refrescar si afecta al usuario directamente o a un trip que es suyo
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'trip_collaborators' },
-          (payload) => {
+          (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
             if (!isActive) return;
-            const newUserId = (payload as any)?.new?.user_id;
-            const oldUserId = (payload as any)?.old?.user_id;
-            const tripId = (payload as any)?.new?.trip_id || (payload as any)?.old?.trip_id;
+            const newRow = (payload.new as { trip_id?: string; user_id?: string }) || null;
+            const oldRow = (payload.old as { trip_id?: string; user_id?: string }) || null;
+            const newUserId = newRow?.user_id;
+            const oldUserId = oldRow?.user_id;
+            const tripId = newRow?.trip_id || oldRow?.trip_id;
             if (newUserId === userId || oldUserId === userId) {
               safeReload();
               return;
@@ -372,7 +426,7 @@ export default function TripsTab() {
                     .eq('id', tripId)
                     .maybeSingle();
                   if (!isActive) return;
-                  if ((data as any)?.owner_id === userId) {
+                  if ((data as { owner_id: string | null } | null)?.owner_id === userId) {
                     safeReload();
                   }
                 } catch {
@@ -389,7 +443,7 @@ export default function TripsTab() {
       isActive = false;
       if (channel) supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadTripStats]);
 
   // DEBUG: Log render state
   console.log('🔍🔍🔍 TRIPSTAB RENDER:', {

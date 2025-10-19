@@ -152,6 +152,48 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     }
   };
 
+  // 🔄 Refresh fresh trip data from DB when modal opens
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (visible && trip.id) {
+      const refreshTripData = async () => {
+        try {
+          const { data: freshTrip, error } = await supabase
+            .from('trips')
+            .select('*')
+            .eq('id', trip.id)
+            .single();
+
+          if (error) {
+            console.warn('⚠️ TripDetailsModal: Failed to fetch fresh trip data', error);
+            return;
+          }
+
+          if (freshTrip) {
+            console.log('🔄 TripDetailsModal: Fetched fresh trip data from DB:', {
+              id: freshTrip.id,
+              title: freshTrip.title,
+              description: freshTrip.description,
+              start_date: freshTrip.start_date,
+              end_date: freshTrip.end_date,
+              budget: freshTrip.budget,
+              accommodation_preference: freshTrip.accommodation_preference,
+              transport_preference: freshTrip.transport_preference,
+              has_defined_dates: freshTrip.has_defined_dates,
+              updated_at: freshTrip.updated_at,
+            });
+            setEditableTrip(freshTrip as TripData);
+          }
+        } catch (e) {
+          console.error('❌ TripDetailsModal: Error refreshing trip data', e);
+        }
+      };
+
+      refreshTripData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
   useEffect(() => {
     if (visible && trip.id) {
       loadTripStats();
@@ -159,7 +201,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       fetchPendingInvites();
       setEditableTrip(trip);
 
-      // Suscripciones en tiempo real para colaboradores e invitaciones
+      // Suscripciones en tiempo real para colaboradores, invitaciones y cambios del viaje
       const channel = supabase
         .channel(`trip-details-team-${trip.id}`)
         .on(
@@ -189,12 +231,35 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             fetchPendingInvites();
           }
         )
+        // NEW: Listen to trips table updates for THIS trip
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'trips',
+            filter: `id=eq.${trip.id}`,
+          },
+          (payload) => {
+            console.log(
+              '🔄 TripDetailsModal: Trip updated via realtime, refreshing editableTrip...',
+              payload.new
+            );
+            const updatedTripRow = payload.new as TripData;
+            if (updatedTripRow) {
+              setEditableTrip(updatedTripRow);
+              // Also trigger stats reload to reflect any data changes
+              loadTripStats();
+            }
+          }
+        )
         .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, trip.id]);
 
   const loadTripStats = async () => {
@@ -320,9 +385,17 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   };
 
   const handleTripUpdate = (updatedTrip: TripData) => {
+    console.log('📝 TripDetailsModal.handleTripUpdate: Called with updated trip:', {
+      id: updatedTrip.id,
+      title: updatedTrip.title,
+      startDate: updatedTrip.start_date,
+      endDate: updatedTrip.end_date,
+      budget: updatedTrip.budget,
+    });
     setEditableTrip(updatedTrip);
     onTripUpdate?.(updatedTrip);
     // Recargar los datos del viaje
+    console.log('📝 TripDetailsModal.handleTripUpdate: Calling loadTripStats...');
     loadTripStats();
   };
 

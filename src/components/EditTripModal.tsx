@@ -14,7 +14,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
+// import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -76,7 +76,7 @@ interface EditableTripData {
   hasNoDates: boolean;
 }
 
-const { width, height } = Dimensions.get('window');
+// const { width, height } = Dimensions.get('window');
 
 const accommodationTypes = [
   { label: 'Hotel', value: 'hotel', icon: '🏨' },
@@ -155,6 +155,7 @@ export default function EditTripModal({
   };
 
   const handleSave = async () => {
+    console.log('🎯 EditTripModal.handleSave: FUNCTION CALLED - ENTRY POINT');
     if (!tripData.title.trim()) {
       Alert.alert('Error', 'El título del viaje es obligatorio');
       return;
@@ -200,29 +201,95 @@ export default function EditTripModal({
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('trips')
-        .update(updateData)
-        .eq('id', trip.id)
-        .select()
-        .single();
+      // 1) Try SECURITY DEFINER RPC to allow owners and editors under RLS
+      let data: unknown | null = null;
+      let rpcError: unknown | null = null;
 
-      if (error) {
-        console.error('Error updating trip:', error);
-        Alert.alert('Error', 'No se pudo actualizar el viaje. Inténtalo de nuevo.');
-        return;
+      console.log('📝 EditTripModal.handleSave: Preparing update data:', {
+        tripId: trip.id,
+        title: updateData.title,
+        startDate: updateData.start_date,
+        endDate: updateData.end_date,
+        budget: updateData.budget,
+      });
+
+      try {
+        console.log('🔄 EditTripModal.handleSave: Calling update_trip_details RPC...');
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('update_trip_details', {
+          p_trip_id: trip.id,
+          p_title: updateData.title,
+          p_description: updateData.description,
+          p_start_date: updateData.start_date,
+          p_end_date: updateData.end_date,
+          p_budget: updateData.budget,
+          p_accommodation: updateData.accommodation_preference,
+          p_transport: updateData.transport_preference,
+        });
+        rpcError = rpcErr;
+
+        if (rpcErr) {
+          console.error('❌ EditTripModal.handleSave: RPC error:', {
+            code: (rpcErr as unknown as { code?: string })?.code,
+            message: (rpcErr as unknown as { message?: string })?.message,
+            details: rpcErr,
+          });
+        }
+
+        if (!rpcErr && rpcData) {
+          console.log('✅ EditTripModal.handleSave: RPC succeeded, data:', rpcData);
+          data = rpcData;
+        } else {
+          console.warn('⚠️  EditTripModal.handleSave: RPC returned no data:', { rpcData, rpcErr });
+        }
+      } catch (e) {
+        console.error('❌ EditTripModal.handleSave: RPC exception:', e);
+        rpcError = e;
+      }
+
+      // 2) Fallback to direct update if RPC not available (older DBs)
+      if (!data) {
+        console.log('🔄 EditTripModal.handleSave: Falling back to direct update...');
+        const { data: directData, error: directError } = await supabase
+          .from('trips')
+          .update(updateData)
+          .eq('id', trip.id)
+          .select()
+          .single();
+
+        if (directError) {
+          console.error('❌ EditTripModal.handleSave: Direct update error:', {
+            rpcError: rpcError ? JSON.stringify(rpcError) : 'none',
+            directError: JSON.stringify(directError),
+          });
+          Alert.alert('Error', 'No se pudo actualizar el viaje. Inténtalo de nuevo.');
+          return;
+        }
+
+        console.log('✅ EditTripModal.handleSave: Direct update succeeded');
+        data = directData;
+      }
+
+      // 3) Call onTripUpdated immediately to sync parent component state
+      if (data) {
+        const tripData = data as TripData;
+        console.log('📤 EditTripModal.handleSave: Calling onTripUpdated with data:', {
+          id: tripData.id,
+          title: tripData.title,
+          start_date: tripData.start_date,
+          end_date: tripData.end_date,
+          budget: tripData.budget,
+        });
+        onTripUpdated(tripData);
+
+        // Trigger global trip refresh for CurrentTripCard
+        console.log('🔄 EditTripModal: Trip updated, triggering global refresh');
+        triggerGlobalTripRefresh();
       }
 
       Alert.alert('¡Éxito!', 'El viaje ha sido actualizado correctamente', [
         {
           text: 'OK',
           onPress: () => {
-            onTripUpdated(data);
-
-            // Trigger global trip refresh for CurrentTripCard
-            console.log('🔄 EditTripModal: Trip updated, triggering global refresh');
-            triggerGlobalTripRefresh();
-
             handleClose();
           },
         },

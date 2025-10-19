@@ -148,6 +148,34 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               loadTripData();
             }
           )
+          // Refresh this card when the trip row itself is updated (e.g., title, dates, budget)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'trips',
+              filter: `id=eq.${trip.id}`,
+            },
+            async () => {
+              try {
+                const { data: updated, error: updErr } = await supabase
+                  .from('trips')
+                  .select(
+                    'id, title, description, start_date, end_date, status, user_id, owner_id, budget, accommodation_preference, transport_preference, timezone, created_at, updated_at'
+                  )
+                  .eq('id', trip.id)
+                  .maybeSingle();
+                if (!updErr && updated) {
+                  setCurrentTrip(updated as any);
+                }
+                // Also refresh stats that may depend on dates
+                loadTripData();
+              } catch {
+                // non-blocking
+              }
+            }
+          )
           .on(
             'postgres_changes',
             {

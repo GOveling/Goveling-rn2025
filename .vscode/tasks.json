@@ -231,6 +231,63 @@
 			"label": "ESLint Check",
 			"type": "shell",
 			"command": "npx eslint ."
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Fix",
+			"type": "shell",
+			"command": "npx eslint . --fix",
+			"group": "build"
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Fix",
+			"type": "shell",
+			"command": "npx eslint . --fix"
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check",
+			"type": "shell",
+			"command": "npx eslint ."
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Fix",
+			"type": "shell",
+			"command": "npx eslint . --fix"
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
 		}
 	]
 }

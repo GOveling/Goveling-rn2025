@@ -224,6 +224,34 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               debouncedRefresh();
             }
           )
+          // Also refresh when a trip is updated where the user is a collaborator (not owner)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'trips',
+            },
+            async (payload) => {
+              try {
+                const tripId = (payload as any)?.new?.id || (payload as any)?.old?.id;
+                if (!tripId) return;
+                // Quick check: is current user a collaborator of this trip?
+                const { data: collabRow, error } = await supabase
+                  .from('trip_collaborators')
+                  .select('id')
+                  .eq('trip_id', tripId)
+                  .eq('user_id', userId!)
+                  .maybeSingle();
+                if (!error && collabRow) {
+                  console.log('🔄 CurrentTripCard: Trip update for collaborator trip, refreshing');
+                  debouncedRefresh();
+                }
+              } catch (e) {
+                // non-blocking
+              }
+            }
+          )
           .on(
             'postgres_changes',
             {
