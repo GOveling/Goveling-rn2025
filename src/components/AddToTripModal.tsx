@@ -302,6 +302,22 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         visible={showNewTripModal}
         onClose={() => setShowNewTripModal(false)}
         onTripCreated={handleCreateTrip}
+        addPlaceContext={{
+          placeId: place.id,
+          placeName: place.name,
+          address: place.address || '',
+          lat: place.coordinates?.lat || 0,
+          lng: place.coordinates?.lng || 0,
+          category: place.types?.[0] || place.category || 'establishment',
+          photoUrl: place.photos && place.photos.length > 0 ? place.photos[0] : null,
+          rating: place.rating || null,
+          reviewsCount: place.reviews_count || null,
+          priceLevel: place.priceLevel || null,
+          editorialSummary: place.editorialSummary || null,
+          openingHours: place.openingHours || null,
+          website: place.website || null,
+          phone: place.phone || null,
+        }}
       />
     </>
   );

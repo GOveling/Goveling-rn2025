@@ -42,6 +42,18 @@ interface NewTripModalProps {
   addPlaceContext?: {
     placeId: string;
     placeName: string;
+    address?: string;
+    lat?: number;
+    lng?: number;
+    category?: string;
+    photoUrl?: string | null;
+    rating?: number | null;
+    reviewsCount?: number | null;
+    priceLevel?: number | null;
+    editorialSummary?: string | null;
+    openingHours?: string[] | null;
+    website?: string | null;
+    phone?: string | null;
     onPlaceAdded?: () => void;
   };
 }
@@ -212,17 +224,43 @@ export default function NewTripModal({
       if (addPlaceContext) {
         console.log('📍 Añadiendo lugar al viaje recién creado...');
         try {
+          // Helper function to convert price level string to number
+          const convertPriceLevel = (priceLevel?: number | string | null): number | null => {
+            if (typeof priceLevel === 'number') return priceLevel;
+            if (!priceLevel) return null;
+
+            const priceLevelMap: { [key: string]: number } = {
+              PRICE_LEVEL_FREE: 0,
+              PRICE_LEVEL_INEXPENSIVE: 1,
+              PRICE_LEVEL_MODERATE: 2,
+              PRICE_LEVEL_EXPENSIVE: 3,
+              PRICE_LEVEL_VERY_EXPENSIVE: 4,
+            };
+
+            return priceLevelMap[priceLevel] ?? null;
+          };
+
           const { error: placeError } = await supabase.from('trip_places').insert({
             trip_id: data.id,
             place_id: addPlaceContext.placeId,
             name: addPlaceContext.placeName,
-            address: '',
-            lat: 0,
-            lng: 0,
-            category: 'establishment',
-            photo_url: null,
+            address: addPlaceContext.address || '',
+            lat: addPlaceContext.lat || 0,
+            lng: addPlaceContext.lng || 0,
+            category: addPlaceContext.category || 'establishment',
+            photo_url: addPlaceContext.photoUrl || null,
             added_by: user.id,
             added_at: new Date().toISOString(),
+            // Google Places API fields - NOW INCLUDED
+            google_rating: addPlaceContext.rating || null,
+            reviews_count: addPlaceContext.reviewsCount || null,
+            price_level: convertPriceLevel(addPlaceContext.priceLevel),
+            editorial_summary: addPlaceContext.editorialSummary || null,
+            opening_hours: addPlaceContext.openingHours
+              ? { weekdayDescriptions: addPlaceContext.openingHours }
+              : null,
+            website: addPlaceContext.website || null,
+            phone: addPlaceContext.phone || null,
           });
 
           if (placeError) {

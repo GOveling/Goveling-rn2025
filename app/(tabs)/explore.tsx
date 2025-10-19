@@ -173,7 +173,23 @@ export default function ExploreTab() {
         return;
       }
 
-      // Add place to trip
+      // Helper function to convert price level string to number
+      const convertPriceLevel = (priceLevel?: number | string | null): number | null => {
+        if (typeof priceLevel === 'number') return priceLevel;
+        if (!priceLevel) return null;
+
+        const priceLevelMap: { [key: string]: number } = {
+          PRICE_LEVEL_FREE: 0,
+          PRICE_LEVEL_INEXPENSIVE: 1,
+          PRICE_LEVEL_MODERATE: 2,
+          PRICE_LEVEL_EXPENSIVE: 3,
+          PRICE_LEVEL_VERY_EXPENSIVE: 4,
+        };
+
+        return priceLevelMap[priceLevel] ?? null;
+      };
+
+      // Add place to trip - with complete data structure
       const { error } = await supabase.from('trip_places').insert({
         trip_id: tripId,
         place_id: place.id,
@@ -185,6 +201,14 @@ export default function ExploreTab() {
         photo_url: place.photos && place.photos.length > 0 ? place.photos[0] : null,
         added_by: user.user.id,
         added_at: new Date().toISOString(),
+        // Google Places API fields - NOW INCLUDED
+        google_rating: place.rating || null,
+        reviews_count: place.reviews_count || null,
+        price_level: convertPriceLevel(place.priceLevel),
+        editorial_summary: place.editorialSummary || null,
+        opening_hours: place.openingHours ? { weekdayDescriptions: place.openingHours } : null,
+        website: place.website || null,
+        phone: place.phone || null,
       });
 
       if (error) {
