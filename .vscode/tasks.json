@@ -340,6 +340,15 @@
 			"problemMatcher": [
 				"$eslint - stylish"
 			]
+		},
+		{
+			"label": "TypeScript Check (finalize)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }

@@ -35,6 +35,7 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
     description: '',
     options: ['', ''],
     selectedParticipants: participants.map((p) => p.id),
+    endDate: '',
   });
 
   // Helpers
@@ -58,27 +59,51 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
     }
   };
 
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const formatForInput = (d: Date) =>
+    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(
+      d.getMinutes()
+    )}`;
+  const parseDateTimeInput = (s: string): string => {
+    if (!s) return '';
+    const normalized = s.trim().replace(' ', 'T');
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString();
+  };
+
   // Helper reserved if we later show names in results (unused currently)
 
   // Handle create decision
   const handleCreateDecision = async () => {
-    if (
-      !formData.title.trim() ||
-      !formData.description.trim() ||
-      formData.options.some((o) => !o.trim())
-    ) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+    if (!formData.title.trim() || formData.options.some((o) => !o.trim())) {
+      Alert.alert('Error', 'Por favor completa el título y al menos dos opciones');
       return;
+    }
+
+    // Optional end date validation
+    let endDateISO: string | undefined = undefined;
+    if (formData.endDate) {
+      const parsed = parseDateTimeInput(formData.endDate);
+      if (!parsed) {
+        Alert.alert('Fecha inválida', 'Usa el formato YYYY-MM-DD HH:mm');
+        return;
+      }
+      if (new Date(parsed).getTime() <= Date.now()) {
+        Alert.alert('Fecha inválida', 'La fecha límite debe ser en el futuro');
+        return;
+      }
+      endDateISO = parsed;
     }
 
     try {
       await createDecision({
         trip_id: tripId,
         title: formData.title.trim(),
-        description: formData.description.trim(),
+        description: formData.description.trim() || undefined,
         options: formData.options.map((o) => o.trim()),
         selected_participants: formData.selectedParticipants,
-        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        end_date: endDateISO,
         status: 'active',
       });
 
@@ -87,6 +112,7 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
         description: '',
         options: ['', ''],
         selectedParticipants: participants.map((p) => p.id),
+        endDate: '',
       });
       setShowForm(false);
       Alert.alert('Éxito', 'Votación creada correctamente');
@@ -238,7 +264,7 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
               />
 
               <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
-                Descripción
+                Descripción (opcional)
               </Text>
               <TextInput
                 placeholder="Describe brevemente la decisión"
@@ -322,6 +348,93 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                 )}
               </View>
 
+              {/* Deadline (optional) */}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 8 }}>
+                Fecha límite (opcional)
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: formatForInput(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+                    }))
+                  }
+                  style={{
+                    backgroundColor: '#E5E7EB',
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontWeight: '600', fontSize: 12 }}>+24h</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: formatForInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)),
+                    }))
+                  }
+                  style={{
+                    backgroundColor: '#E5E7EB',
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontWeight: '600', fontSize: 12 }}>3 días</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: formatForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+                    }))
+                  }
+                  style={{
+                    backgroundColor: '#E5E7EB',
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontWeight: '600', fontSize: 12 }}>7 días</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setFormData((prev) => ({ ...prev, endDate: '' }))}
+                  style={{
+                    backgroundColor: '#FEE2E2',
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ color: '#B91C1C', fontWeight: '600', fontSize: 12 }}>Limpiar</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                placeholder="YYYY-MM-DD HH:mm"
+                placeholderTextColor="#9CA3AF"
+                value={formData.endDate}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, endDate: text }))}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: '#E5E7EB',
+                  fontSize: 14,
+                  color: '#111827',
+                }}
+              />
+              {formData.endDate ? (
+                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>
+                  Seleccionada: {formatDateTime(parseDateTimeInput(formData.endDate))}
+                </Text>
+              ) : null}
+
               <TouchableOpacity
                 onPress={handleCreateDecision}
                 style={{
@@ -377,6 +490,11 @@ export const DecisionsTab: React.FC<DecisionsTabProps> = ({ tripId, participants
                         Creado por: {getParticipantName(decision.created_by)} ·{' '}
                         {formatDateTime(decision.created_at)}
                       </Text>
+                      {decision.end_date ? (
+                        <Text style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>
+                          Fecha límite: {formatDateTime(decision.end_date)}
+                        </Text>
+                      ) : null}
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <View
                           style={{
