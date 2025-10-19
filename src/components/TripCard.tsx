@@ -217,9 +217,31 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const loadOwnerProfile = async () => {
     try {
-      // Usar owner_id si está disponible, sino usar user_id como fallback
-      const ownerId = trip.owner_id || trip.user_id;
+      // 1) Intentar resolver vía RPC tipado (bypassa RLS y trae profile del owner)
+      try {
+        const team = await (await import('~/lib/teamHelpers')).getTripWithTeamRPC(trip.id);
+        if (team?.owner) {
+          setOwnerProfile({
+            id: team.owner.id,
+            full_name: team.owner.full_name,
+            avatar_url: team.owner.avatar_url,
+            email: team.owner.email,
+          });
+          // Si falta owner_id en el trip recibido, persistirlo localmente para filtros/igualdad
+          if (!trip.owner_id) {
+            setCurrentTrip((prev) => ({ ...prev, owner_id: team.owner!.id }));
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn(
+          'TripCard.loadOwnerProfile: RPC getTripWithTeamRPC failed, fallback to direct profile',
+          e
+        );
+      }
 
+      // 2) Fallback a consulta directa si no hay RPC o vino vacío
+      const ownerId = trip.owner_id || trip.user_id;
       if (!ownerId || ownerId === 'null') {
         console.warn('TripCard: No owner ID found for trip', trip.id);
         return;
@@ -237,7 +259,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       }
 
       if (profile) {
-        console.log('🔍 TripCard: Owner profile loaded:', {
+        console.log('🔍 TripCard: Owner profile loaded (fallback):', {
           id: profile.id,
           full_name: profile.full_name,
           has_avatar: !!profile.avatar_url,
@@ -246,7 +268,6 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         });
         setOwnerProfile(profile);
       } else {
-        // Owner profile not found (owner may not have a profile row yet)
         console.warn('TripCard: Owner profile not found for owner_id', ownerId);
       }
     } catch (error) {
@@ -369,7 +390,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   };
 
   const renderOwnerAvatar = () => {
-    const ownerId = trip.owner_id || trip.user_id;
+    // Usar siempre el estado local actualizado del trip
+    const ownerId = currentTrip.owner_id || currentTrip.user_id;
     const isCurrentUserOwner = user?.id === ownerId;
 
     console.log('�🔴🔴 AVATAR FIX v2:', {
