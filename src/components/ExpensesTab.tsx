@@ -15,14 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSupabaseTripExpenses } from '~/hooks/useSupabaseTripExpenses';
 import { useSupabaseTripPayments } from '~/hooks/useSupabaseTripPayments';
 import {
-  calculateGlobalSettlements,
-  calculatePersonBalance,
   type CollaboratorForCalc,
   type TripExpenseForCalc,
-  type Settlement,
   type PaymentRecord,
   calculatePerExpenseSettlements,
-  remainingForSettlement,
   getPaymentsTotal,
   round2,
   getAdjustedBalance,
@@ -261,10 +257,7 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
     return result;
   }, [calcParticipants, expensesForCalc, combinedPaymentsByPair]);
 
-  const settlements: Settlement[] = useMemo(
-    () => calculateGlobalSettlements(expensesForCalc, calcParticipants),
-    [expensesForCalc, calcParticipants]
-  );
+  // Global settlements removed (redundant with per-expense settlements)
 
   if (loading) {
     return (
@@ -339,80 +332,7 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
           </View>
         )}
 
-        {/* Global Settlements */}
-        {settlements.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A', marginBottom: 12 }}>
-              Liquidaciones sugeridas
-            </Text>
-            <View
-              style={{
-                backgroundColor: '#F9FAFB',
-                borderRadius: 12,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: '#E5E7EB',
-              }}
-            >
-              {settlements.map((s, idx) => {
-                const key = `${s.from}→${s.to}`;
-                const totalPaid = getPaymentsTotal(combinedPaymentsByPair[key] || []);
-                const remaining = remainingForSettlement(s, combinedPaymentsByPair);
-                return (
-                  <View
-                    key={`${s.from}-${s.to}-${idx}`}
-                    style={{
-                      paddingVertical: 8,
-                      borderBottomWidth: 1,
-                      borderBottomColor: '#E5E7EB',
-                    }}
-                  >
-                    <Text style={{ fontSize: 13, color: '#111827' }}>
-                      <Text style={{ fontWeight: '700' }}>{s.from}</Text> →{' '}
-                      <Text style={{ fontWeight: '700' }}>{s.to}</Text> por{' '}
-                      <Text style={{ fontWeight: totalPaid > 0 ? '400' : '700' }}>
-                        {formatCurrency(s.amount)}
-                      </Text>
-                    </Text>
-                    {totalPaid > 0 && (
-                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
-                        Pagado: {formatCurrency(totalPaid)} · Restante:{' '}
-                        <Text style={{ fontWeight: '700', color: '#2563EB' }}>
-                          {formatCurrency(remaining)}
-                        </Text>
-                      </Text>
-                    )}
-                    {/* Add payment input */}
-                    {remaining > 0 && (
-                      <AddPaymentRow
-                        onAdd={(amount) => {
-                          if (amount <= 0) return;
-                          if (amount > remaining) {
-                            Alert.alert('Monto inválido', 'No puede exceder el restante');
-                            return;
-                          }
-                          const fromId = nameToId[s.from];
-                          const toId = nameToId[s.to];
-                          if (!fromId || !toId) {
-                            Alert.alert('Error', 'No se pudo resolver el usuario');
-                            return;
-                          }
-                          addPayment({
-                            trip_id: tripId,
-                            expense_id: null,
-                            from_user_id: fromId,
-                            to_user_id: toId,
-                            amount: round2(amount),
-                          });
-                        }}
-                      />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        )}
+        {/* Global Settlements removed by request */}
 
         {/* Expenses List */}
         <View style={{ marginBottom: 16 }}>
@@ -636,6 +556,13 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                         Pagado por:{' '}
                         {(expense.paid_by || []).map((id) => getParticipantName(id)).join(', ')}
                       </Text>
+                      {/* Creator and timestamp */}
+                      {expense.created_at && (
+                        <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                          Agregado por: {getParticipantName(expense.created_by)} ·{' '}
+                          {formatDateTime(expense.created_at)}
+                        </Text>
+                      )}
                     </View>
                     <TouchableOpacity
                       onPress={() =>
@@ -707,7 +634,6 @@ export const ExpensesTab: React.FC<ExpensesTabProps> = ({ tripId, participants }
                         return (
                           <View style={{ marginTop: 8 }}>
                             {perSettlements.map((s, idx) => {
-                              const key = `${s.from}→${s.to}`;
                               // Sum DB payments only for this expense and pair
                               const paymentsForPair = (payments || [])
                                 .filter(
