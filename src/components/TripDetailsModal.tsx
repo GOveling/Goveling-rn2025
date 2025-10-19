@@ -211,7 +211,23 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       console.log('🔄 TripDetailsModal: Loading users (unified) for trip:', trip.id);
       const user = await getCurrentUser();
       const useRPC = true; // flag to enable RPC path if function deployed
-      const team = useRPC ? await getTripWithTeamRPC(trip.id) : await getTripWithTeam(trip.id);
+      let team = useRPC ? await getTripWithTeamRPC(trip.id) : await getTripWithTeam(trip.id);
+
+      // Fallback: if RPC didn't include owner profile, resolve via standard helper
+      if (!team.owner) {
+        console.warn('👤 TripDetailsModal: RPC owner missing, resolving owner via getTripOwner');
+        const fallbackOwner = await getTripOwner(trip.id);
+        team = { ...team, owner: fallbackOwner } as typeof team;
+      }
+
+      // Fallback: if RPC returned no collaborators, try standard method
+      if (!team.collaborators || team.collaborators.length === 0) {
+        console.warn(
+          '👥 TripDetailsModal: RPC collaborators empty, resolving collaborators via getTripWithTeam'
+        );
+        const fallbackTeam = await getTripWithTeam(trip.id);
+        team = { ...team, collaborators: fallbackTeam.collaborators } as typeof team;
+      }
 
       setCurrentUser(user);
       setTripOwner(team.owner);

@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { ensureMultipleUserProfiles } from '~/lib/profileUtils';
 import { supabase } from '~/lib/supabase';
 import { inviteToTrip, removeCollaborator } from '~/lib/team';
+import { getTripWithTeamRPC } from '~/lib/teamHelpers';
 import { getTripCollaborators, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 
 type Role = 'owner' | 'editor' | 'viewer';
@@ -111,19 +112,15 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       .maybeSingle();
     if (tripErr) throw tripErr;
 
-    const tOwnerId = (tripData as any)?.owner_id || (tripData as any)?.user_id || null;
+    const tOwnerId =
+      (tripData && 'owner_id' in tripData
+        ? (tripData as { owner_id?: string | null }).owner_id
+        : null) ||
+      (tripData && 'user_id' in tripData
+        ? (tripData as { user_id?: string | null }).user_id
+        : null) ||
+      null;
     setOwnerId(tOwnerId);
-
-    if (tOwnerId) {
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, email')
-        .eq('id', tOwnerId)
-        .maybeSingle();
-      setOwnerProfile((prof as any) || null);
-    } else {
-      setOwnerProfile(null);
-    }
 
     // Centralized role resolution
     const role = await resolveCurrentUserRoleForTripId(tripId);
@@ -131,35 +128,67 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   }, [tripId]);
 
   const fetchMembers = useCallback(async () => {
-    console.log(
-      '👥 ManageTeamModal.fetchMembers: Using getTripCollaborators utility for trip',
-      tripId
-    );
-    const collabs = await getTripCollaborators(tripId);
-    if (!collabs || collabs.length === 0) {
+    try {
+      console.log('👥 ManageTeamModal.fetchMembers: Trying RPC getTripWithTeamRPC for', tripId);
+      const team = await getTripWithTeamRPC(tripId);
+
+      // Set owner from RPC (bypasses profiles RLS)
+      if (team.owner) {
+        setOwnerProfile({
+          id: team.owner.id,
+          full_name: team.owner.full_name || null,
+          avatar_url: team.owner.avatar_url || null,
+          email: team.owner.email || null,
+        });
+      }
+
+      // Map collaborators
+      const rpcMembers: MemberItem[] = (team.collaborators || []).map((c) => ({
+        user_id: c.id,
+        role: (c.role as Exclude<Role, 'owner'>) || 'viewer',
+        profile: {
+          id: c.id,
+          full_name: c.full_name || null,
+          avatar_url: c.avatar_url || null,
+          email: c.email || null,
+        },
+      }));
+
+      if (rpcMembers.length > 0) {
+        // Ensure profiles exist (backfill), then set
+        await ensureMultipleUserProfiles(rpcMembers.map((m) => m.user_id));
+        setMembers(rpcMembers);
+        console.log(
+          '👥 ManageTeamModal.fetchMembers (RPC): members',
+          rpcMembers.map((m) => ({ id: m.user_id, name: m.profile?.full_name, role: m.role }))
+        );
+        return;
+      }
+
+      // Fallback: previous method under RLS
+      console.log('👥 ManageTeamModal.fetchMembers: RPC returned no members, falling back');
+      const collabs = await getTripCollaborators(tripId);
+      if (!collabs || collabs.length === 0) {
+        setMembers([]);
+        return;
+      }
+      const ids = collabs.map((c) => c.id);
+      await ensureMultipleUserProfiles(ids);
+      const mapped: MemberItem[] = collabs.map((c) => ({
+        user_id: c.id,
+        role: (c.role as Exclude<Role, 'owner'>) || 'viewer',
+        profile: {
+          id: c.id,
+          full_name: c.full_name || null,
+          avatar_url: c.avatar_url || null,
+          email: c.email || null,
+        },
+      }));
+      setMembers(mapped);
+    } catch (e: unknown) {
+      console.warn('👥 ManageTeamModal.fetchMembers: error, fallback to empty', e);
       setMembers([]);
-      return;
     }
-
-    // Asegurarnos de que los perfiles existan (por si la función devolvió algún perfil parcial)
-    const ids = collabs.map((c) => c.id);
-    await ensureMultipleUserProfiles(ids);
-
-    const mapped: MemberItem[] = collabs.map((c) => ({
-      user_id: c.id,
-      role: (c.role as Exclude<Role, 'owner'>) || 'viewer',
-      profile: {
-        id: c.id,
-        full_name: c.full_name || null,
-        avatar_url: c.avatar_url || null,
-        email: c.email || null,
-      },
-    }));
-    console.log(
-      '👥 ManageTeamModal.fetchMembers: Final mapped members',
-      mapped.map((m) => ({ id: m.user_id, name: m.profile?.full_name, role: m.role }))
-    );
-    setMembers(mapped);
   }, [tripId]);
 
   const fetchInvitations = useCallback(async () => {
@@ -281,11 +310,11 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         t('trips.invitation_sent', 'Invitation sent'),
         t('trips.invitation_sent_desc', 'The user will receive an invitation')
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Invite error', e);
       Alert.alert(
         t('common.error', 'Error'),
-        e?.message || t('trips.invite_failed', 'Could not send invitation')
+        (e as Error)?.message || t('trips.invite_failed', 'Could not send invitation')
       );
     } finally {
       setInviting(false);
@@ -297,10 +326,10 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       await supabase.from('trip_invitations').delete().eq('id', id);
       await fetchInvitations();
       onChanged?.();
-    } catch (e: any) {
+    } catch (e: unknown) {
       Alert.alert(
         t('common.error', 'Error'),
-        e?.message || t('trips.cancel_invite_failed', 'Could not cancel invitation')
+        (e as Error)?.message || t('trips.cancel_invite_failed', 'Could not cancel invitation')
       );
     }
   };
@@ -327,11 +356,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
               console.log('removeCollaborator successful, refreshing data...');
               await fetchMembers();
               onChanged?.();
-            } catch (e: any) {
+            } catch (e: unknown) {
               console.error('removeCollaborator failed:', e);
               Alert.alert(
                 t('common.error', 'Error'),
-                e?.message || t('trips.remove_collaborator_failed', 'Could not remove collaborator')
+                (e as Error)?.message ||
+                  t('trips.remove_collaborator_failed', 'Could not remove collaborator')
               );
             }
           },
@@ -351,33 +381,33 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       if (error) throw error;
       await fetchMembers();
       onChanged?.();
-    } catch (e: any) {
+    } catch (e: unknown) {
       Alert.alert(
         t('common.error', 'Error'),
-        e?.message || t('trips.change_role_failed', 'Could not change role')
+        (e as Error)?.message || t('trips.change_role_failed', 'Could not change role')
       );
     }
   };
 
   const renderOwner = () =>
-    ownerProfile ? (
+    ownerProfile || ownerId ? (
       <View style={styles.ownerCard}>
         <View style={styles.ownerCardRow}>
-          {ownerProfile.avatar_url ? (
+          {ownerProfile?.avatar_url ? (
             <Image source={{ uri: ownerProfile.avatar_url }} style={styles.ownerAvatar} />
           ) : (
             <View style={styles.ownerInitials}>
               <Text style={styles.ownerInitialsText}>
-                {getInitials(ownerProfile.full_name, ownerProfile.email)}
+                {getInitials(ownerProfile?.full_name, ownerProfile?.email)}
               </Text>
             </View>
           )}
           <View style={styles.ownerInfoContainer}>
             <Text style={styles.ownerName}>
-              {ownerProfile.full_name || t('trips.owner', 'Owner')}{' '}
+              {ownerProfile?.full_name || t('trips.owner', 'Owner')}{' '}
               {currentUserId === ownerId ? `(${t('trips.you', 'You')})` : ''}
             </Text>
-            {!!ownerProfile.email && <Text style={styles.ownerEmail}>{ownerProfile.email}</Text>}
+            {!!ownerProfile?.email && <Text style={styles.ownerEmail}>{ownerProfile.email}</Text>}
           </View>
           <View style={styles.ownerBadge}>
             <Text style={styles.ownerBadgeText}>{t('trips.owner', 'Owner')}</Text>
@@ -666,7 +696,15 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
               t('trips.history', 'History'),
             ]}
             selectedIndex={activeIndex}
-            onChange={(e) => setActiveIndex((e.nativeEvent as any).selectedSegmentIndex)}
+            onChange={(e: unknown) => {
+              const idx =
+                typeof (e as { nativeEvent?: { selectedSegmentIndex?: number } })?.nativeEvent
+                  ?.selectedSegmentIndex === 'number'
+                  ? (e as { nativeEvent: { selectedSegmentIndex: number } }).nativeEvent
+                      .selectedSegmentIndex
+                  : 0;
+              setActiveIndex(idx);
+            }}
             backgroundColor="#F3F4F6"
             tintColor="#3B82F6"
             fontStyle={styles.segmentedControlFont}

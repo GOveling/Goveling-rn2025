@@ -203,6 +203,34 @@
 			"label": "ESLint Fix",
 			"type": "shell",
 			"command": "npx eslint . --fix"
+		},
+		{
+			"label": "Run Debug Trip Team",
+			"type": "shell",
+			"command": "node scripts/debug-trip-team.js --title \"chile test\" --email \"araos.sebastian@gmail.com\"",
+			"group": "build"
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check",
+			"type": "shell",
+			"command": "npx eslint ."
+		},
+		{
+			"label": "TypeScript Check",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check",
+			"type": "shell",
+			"command": "npx eslint ."
 		}
 	]
 }
