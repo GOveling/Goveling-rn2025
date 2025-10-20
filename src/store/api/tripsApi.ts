@@ -56,9 +56,9 @@ export const tripsApi = createApi({
           return { error: { status: 'CUSTOM_ERROR', error: error.message } };
         }
       },
-      providesTags: ['TripBreakdown'],
-      // 2 minutes cache (same as tripsSlice)
-      keepUnusedDataFor: 120,
+      providesTags: ['TripBreakdown', 'Trips'],
+      // Reduced cache time for faster updates when trip data changes
+      keepUnusedDataFor: 30, // 30 seconds instead of 120
     }),
 
     // ===== GET ACTIVE TRIP =====
@@ -79,8 +79,11 @@ export const tripsApi = createApi({
         }
       },
       providesTags: (result) =>
-        result ? [{ type: 'TripDetails', id: result.id }, 'Trips'] : ['Trips'],
-      keepUnusedDataFor: 120,
+        result
+          ? [{ type: 'TripDetails', id: result.id }, 'Trips', 'TripBreakdown']
+          : ['Trips', 'TripBreakdown'],
+      // Reduced cache time for faster updates
+      keepUnusedDataFor: 30, // 30 seconds instead of 120
     }),
 
     // ===== GET SINGLE TRIP =====
@@ -132,11 +135,12 @@ export const tripsApi = createApi({
           return { error: { status: 'CUSTOM_ERROR', error: error.message } };
         }
       },
-      // Invalidate all trip-related caches after update
+      // Invalidate all trip-related caches after update to force immediate refresh
       invalidatesTags: (result, error, { id }) => [
         { type: 'TripDetails', id },
-        'TripBreakdown',
-        'Trips',
+        { type: 'TripDetails', id: 'LIST' }, // Invalidate all trip detail queries
+        'TripBreakdown', // This will force CurrentTripCard to refresh immediately
+        'Trips', // This will refresh all trip lists
       ],
       // Optimistic update
       async onQueryStarted({ id, ...patch }, { dispatch, queryFulfilled }) {
@@ -180,8 +184,9 @@ export const tripsApi = createApi({
       },
       invalidatesTags: (result, error, tripId) => [
         { type: 'TripDetails', id: tripId },
-        'TripBreakdown',
-        'Trips',
+        { type: 'TripDetails', id: 'LIST' }, // Invalidate all trip detail queries
+        'TripBreakdown', // Force CurrentTripCard refresh
+        'Trips', // Refresh all trip lists
       ],
     }),
   }),

@@ -22,6 +22,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
+import { tripsApi } from '~/store/api/tripsApi';
+import { useAppDispatch } from '~/store/hooks';
 
 // Helper function to format date as YYYY-MM-DD in local timezone
 const formatDateForStorage = (date: Date): string => {
@@ -107,6 +109,7 @@ export default function EditTripModal({
   trip,
   onTripUpdated,
 }: EditTripModalProps) {
+  const dispatch = useAppDispatch();
   const [tripData, setTripData] = useState<EditableTripData>({
     title: '',
     description: '',
@@ -284,6 +287,16 @@ export default function EditTripModal({
         // Trigger global trip refresh for CurrentTripCard
         console.log('🔄 EditTripModal: Trip updated, triggering global refresh');
         triggerGlobalTripRefresh();
+
+        // Also invalidate RTK Query cache for immediate updates
+        console.log('🔄 EditTripModal: Invalidating RTK Query cache');
+        dispatch(
+          tripsApi.util.invalidateTags([
+            'TripBreakdown',
+            'Trips',
+            { type: 'TripDetails', id: trip.id },
+          ])
+        );
       }
 
       Alert.alert('¡Éxito!', 'El viaje ha sido actualizado correctamente', [

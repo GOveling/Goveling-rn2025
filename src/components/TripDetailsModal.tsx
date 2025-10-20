@@ -32,6 +32,8 @@ import {
   resolveUserRoleForTrip,
   UserProfile,
 } from '~/lib/userUtils';
+import { tripsApi } from '~/store/api/tripsApi';
+import { useAppDispatch } from '~/store/hooks';
 
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
@@ -110,6 +112,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   openManageTeam = false,
   manageTeamTab = 'members',
 }) => {
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
@@ -394,6 +397,21 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     });
     setEditableTrip(updatedTrip);
     onTripUpdate?.(updatedTrip);
+
+    // Invalidate RTK Query cache for immediate updates across all components
+    console.log('🔄 TripDetailsModal.handleTripUpdate: Invalidating RTK Query cache');
+    dispatch(
+      tripsApi.util.invalidateTags([
+        'TripBreakdown',
+        'Trips',
+        { type: 'TripDetails', id: updatedTrip.id },
+      ])
+    );
+
+    // Trigger global trip refresh for CurrentTripCard
+    console.log('🔄 TripDetailsModal.handleTripUpdate: Triggering global refresh');
+    triggerGlobalTripRefresh();
+
     // Recargar los datos del viaje
     console.log('📝 TripDetailsModal.handleTripUpdate: Calling loadTripStats...');
     loadTripStats();

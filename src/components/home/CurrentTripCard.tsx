@@ -1,11 +1,11 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
-import { useFocusEffect } from '@react-navigation/native';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 
 import { Skeleton } from '~/components/ui/Skeleton';
@@ -65,12 +65,12 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
   const router = useRouter();
   const { registerRefreshFunction } = useTripRefresh();
   const [loading, setLoading] = React.useState(true);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [_refreshing, setRefreshing] = React.useState(false);
   const [trip, setTrip] = React.useState<Trip | null>(null);
   const [activeTrips, setActiveTrips] = React.useState<Trip[]>([]);
   const [selectedActiveTrip, setSelectedActiveTrip] = React.useState<Trip | null>(null);
   const [mode, setMode] = React.useState<'none' | 'future' | 'active'>('none');
-  const [countdown, setCountdown] = React.useState<number | null>(null);
+  const [_countdown, setCountdown] = React.useState<number | null>(null);
   const [planningTripsCount, setPlanningTripsCount] = React.useState<number>(0);
 
   // Use ref to store stable function reference
@@ -185,7 +185,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
 
   // Simplified real-time subscription with longer debounce
   React.useEffect(() => {
-    let channel: any;
+    let channel: RealtimeChannel | null = null;
     let userId: string | undefined;
     let debounceTimeout: NodeJS.Timeout | null = null;
 
@@ -202,15 +202,15 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             clearTimeout(debounceTimeout);
           }
           debounceTimeout = setTimeout(() => {
-            console.log('🔄 CurrentTripCard: Executing debounced refresh after 3 seconds');
+            console.log('🔄 CurrentTripCard: Executing debounced refresh after 1 second');
             loadTripData();
             debounceTimeout = null;
-          }, 3000); // 3 second debounce to prevent excessive refreshes
+          }, 1000); // 1 second debounce instead of 3 seconds for faster updates
         };
 
         channel = supabase
           .channel(`current-trip-card-${userId}`)
-          // Listen to trips table changes - both updates and deletes
+          // Listen to trips table changes for trips owned by user (owner_id)
           .on(
             'postgres_changes',
             {
@@ -219,12 +219,26 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               table: 'trips',
               filter: `owner_id=eq.${userId}`,
             },
-            (payload) => {
-              console.log('🔄 CurrentTripCard: Trip update detected for user trips');
+            (_payload) => {
+              console.log('🔄 CurrentTripCard: Trip update detected for owned trips');
               debouncedRefresh();
             }
           )
-          // Also refresh when a trip is updated where the user is a collaborator (not owner)
+          // Listen to trips table changes for trips created by user (user_id - legacy field)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'trips',
+              filter: `user_id=eq.${userId}`,
+            },
+            (_payload) => {
+              console.log('🔄 CurrentTripCard: Trip update detected for user trips (legacy)');
+              debouncedRefresh();
+            }
+          )
+          // Listen to ALL trip updates and check if user is collaborator (more comprehensive)
           .on(
             'postgres_changes',
             {
@@ -234,24 +248,28 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             },
             async (payload) => {
               try {
-                const tripId = (payload as any)?.new?.id || (payload as any)?.old?.id;
+                const tripId =
+                  (payload.new as { id?: string })?.id || (payload.old as { id?: string })?.id;
                 if (!tripId) return;
-                // Quick check: is current user a collaborator of this trip?
+
+                // Check if current user is a collaborator of this trip
                 const { data: collabRow, error } = await supabase
                   .from('trip_collaborators')
                   .select('id')
                   .eq('trip_id', tripId)
                   .eq('user_id', userId!)
                   .maybeSingle();
+
                 if (!error && collabRow) {
                   console.log('🔄 CurrentTripCard: Trip update for collaborator trip, refreshing');
                   debouncedRefresh();
                 }
               } catch (e) {
-                // non-blocking
+                console.warn('🔄 CurrentTripCard: Error checking collaboration status:', e);
               }
             }
           )
+          // Listen to trip deletions (both owner_id and user_id)
           .on(
             'postgres_changes',
             {
@@ -260,8 +278,35 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               table: 'trips',
               filter: `owner_id=eq.${userId}`,
             },
-            (payload) => {
-              console.log('🔄 CurrentTripCard: Trip deletion detected for user trips');
+            (_payload) => {
+              console.log('🔄 CurrentTripCard: Trip deletion detected for owned trips');
+              debouncedRefresh();
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'trips',
+              filter: `user_id=eq.${userId}`,
+            },
+            (_payload) => {
+              console.log('🔄 CurrentTripCard: Trip deletion detected for user trips (legacy)');
+              debouncedRefresh();
+            }
+          )
+          // Listen to trip creations (both owner_id and user_id)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'trips',
+              filter: `owner_id=eq.${userId}`,
+            },
+            (_payload) => {
+              console.log('🔄 CurrentTripCard: Trip creation detected for owned trips');
               debouncedRefresh();
             }
           )
@@ -271,10 +316,10 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               event: 'INSERT',
               schema: 'public',
               table: 'trips',
-              filter: `owner_id=eq.${userId}`,
+              filter: `user_id=eq.${userId}`,
             },
-            (payload) => {
-              console.log('🔄 CurrentTripCard: Trip creation detected for user trips');
+            (_payload) => {
+              console.log('🔄 CurrentTripCard: Trip creation detected for user trips (legacy)');
               debouncedRefresh();
             }
           )
@@ -287,7 +332,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               table: 'trip_collaborators',
               filter: `user_id=eq.${userId}`,
             },
-            (payload) => {
+            (_payload) => {
               console.log('🔄 CurrentTripCard: Trip collaboration change detected');
               debouncedRefresh();
             }
@@ -307,7 +352,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         supabase.removeChannel(channel);
       }
     };
-  }, []); // Empty dependency array for stability
+  }, [loadTripData]); // Include loadTripData dependency
 
   const formatDate = (dateStr: string) => {
     const date = parseLocalDate(dateStr);
