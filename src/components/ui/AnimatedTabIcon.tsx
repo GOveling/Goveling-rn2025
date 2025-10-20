@@ -1,12 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
-import LottieView from 'lottie-react-native';
+import LottieView, { type AnimationObject } from 'lottie-react-native';
+
+import { COLORS } from '~/constants/colors';
 
 interface AnimatedTabIconProps {
   focused: boolean;
-  source: any;
+  source: string | { uri: string } | AnimationObject;
   label: string;
   size?: number;
 }
@@ -56,12 +58,25 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
           resizeMode="contain"
         />
       </View>
-      <Text style={[styles.label, { color: focused ? '#4F46E5' : '#6B7280' }]}>{label}</Text>
+      <Text
+        style={[styles.label, focused ? styles.labelFocused : styles.labelUnfocused]}
+        numberOfLines={1}
+        ellipsizeMode="clip"
+      >
+        {label}
+      </Text>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  animation: ViewStyle;
+  animationContainer: ViewStyle;
+  container: ViewStyle;
+  label: TextStyle;
+  labelFocused: TextStyle;
+  labelUnfocused: TextStyle;
+}>({
   animation: {
     height: '100%',
     width: '100%',
@@ -79,6 +94,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     textAlign: 'center',
+    minWidth: 60,
+    // Force single line on all platforms
+    lineHeight: 12,
+    height: 12,
+  },
+  labelFocused: {
+    color: COLORS.border.indigo,
+  },
+  labelUnfocused: {
+    color: COLORS.text.tertiary,
   },
 });
 

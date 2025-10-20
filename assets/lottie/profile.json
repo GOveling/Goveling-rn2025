@@ -124,21 +124,9 @@
       "ks": {
         "o": { "a": 0, "k": 0, "ix": 11 },
         "r": { "a": 0, "k": 0, "ix": 10 },
-        "p": {
-          "a": 0,
-          "k": [292, 441, 0],
-          "ix": 2,
-          "l": 2,
-          "x": "var $bm_rt;\n$bm_rt = thisComp.layer('Control layer').effect('Position control')('Point');"
-        },
+        "p": { "a": 0, "k": [200, 200, 0], "ix": 2, "l": 2 },
         "a": { "a": 0, "k": [50, 50, 0], "ix": 1, "l": 2 },
-        "s": {
-          "a": 0,
-          "k": [57, 57, 100],
-          "ix": 6,
-          "l": 2,
-          "x": "var $bm_rt;\nvar temp;\ntemp = thisComp.layer('Control layer').effect('Scale')('Slider');\n$bm_rt = [\n    temp,\n    temp\n];"
-        }
+        "s": { "a": 0, "k": [100, 100, 100], "ix": 6, "l": 2 }
       },
       "ao": 0,
       "ip": 0,

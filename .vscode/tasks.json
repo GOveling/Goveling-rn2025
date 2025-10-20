@@ -354,6 +354,12 @@
 			"label": "ESLint Check (post-edit)",
 			"type": "shell",
 			"command": "npx eslint ."
+		},
+		{
+			"label": "TypeScript Check (post-edit)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
 		}
 	]
 }
