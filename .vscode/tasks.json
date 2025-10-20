@@ -349,6 +349,11 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "ESLint Check (post-edit)",
+			"type": "shell",
+			"command": "npx eslint ."
 		}
 	]
 }
