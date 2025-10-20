@@ -146,43 +146,6 @@ export async function acceptInvitation(invitation_id: number, token?: string) {
   const uid = u?.user?.id;
   if (!uid) throw new Error('User not authenticated');
 
-  // Fetch invitation (by ID or token)
-  let invQuery = supabase
-    .from('trip_invitations')
-    .select('id, trip_id, email, role, inviter_id, status, expires_at');
-
-  if (token) {
-    invQuery = invQuery.eq('token', token);
-  } else {
-    invQuery = invQuery.eq('id', invitation_id);
-  }
-
-  const { data: inv, error: invError } = await invQuery.single();
-
-  if (invError || !inv) {
-    throw new Error('Invitation not found');
-  }
-
-  // Validate invitation status
-  if (inv.status !== 'pending') {
-    throw new Error(`This invitation has already been ${inv.status}`);
-  }
-
-  // Validate expiration
-  if (new Date(inv.expires_at) < new Date()) {
-    // Update status to cancelled
-    await supabase
-      .from('trip_invitations')
-      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-      .eq('id', inv.id);
-    throw new Error('This invitation has expired');
-  }
-
-  // Validate email matches (optional but recommended for security)
-  if (u?.user?.email && inv.email.toLowerCase() !== u.user.email.toLowerCase()) {
-    throw new Error('This invitation was sent to a different email address');
-  }
-
   // Ensure the accepting user has a profile row
   try {
     const { data: existingProfile } = await supabase
@@ -212,50 +175,49 @@ export async function acceptInvitation(invitation_id: number, token?: string) {
     console.log('ensure profile for accepting user failed (non-blocking):', profileErr);
   }
 
-  // Add user as collaborator
-  const { error: collabError } = await supabase
-    .from('trip_collaborators')
-    .insert({ trip_id: inv.trip_id, user_id: uid, role: inv.role });
-
-  if (collabError) {
-    // Check if already a collaborator
-    if (collabError.code === '23505') {
-      // Unique violation - user is already a collaborator
-      throw new Error('You are already a collaborator on this trip');
-    }
-    throw collabError;
+  // Accept invitation via secure RPC to avoid client-side recursion issues
+  const { data: rpcData, error: rpcError } = await supabase.rpc('accept_invitation_rpc', {
+    p_invitation_id: token ? null : invitation_id,
+    p_token: token ?? null,
+  });
+  if (rpcError) {
+    throw new Error(rpcError.message || 'Could not accept invitation');
+  }
+  const trip_id = Array.isArray(rpcData) && rpcData[0]?.trip_id ? rpcData[0].trip_id : null;
+  if (!trip_id) {
+    throw new Error('No trip id returned after accepting invitation');
   }
 
-  // Update invitation status to accepted
-  await supabase
-    .from('trip_invitations')
-    .update({
-      status: 'accepted',
-      accepted_at: new Date().toISOString(),
-      accepted_by: uid,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', inv.id);
-
   // Notify inviter
-  if (inv.inviter_id) {
+  // Fetch inviter from invitation for notification if possible (best-effort)
+  let inviter_id: string | null = null;
+  try {
+    const { data: invFetch } = await supabase
+      .from('trip_invitations')
+      .select('inviter_id, trip_id')
+      .eq(token ? 'token' : 'id', token ? token : invitation_id)
+      .maybeSingle();
+    inviter_id = (invFetch as { inviter_id?: string | null } | null)?.inviter_id ?? null;
+  } catch {}
+
+  if (inviter_id) {
     const { data: tripRow } = await supabase
       .from('trips')
       .select('title')
-      .eq('id', inv.trip_id)
+      .eq('id', trip_id)
       .maybeSingle();
-    const tripName = (tripRow as any)?.title as string | undefined;
+    const tripName = (tripRow as { title?: string | null } | null)?.title ?? undefined;
 
     await sendPush(
-      [inv.inviter_id],
+      [inviter_id],
       'Invitation accepted',
       tripName ? `Accepted for "${tripName}"` : 'A collaborator accepted your invitation',
-      { type: 'invite_accepted', trip_id: inv.trip_id, trip_name: tripName }
+      { type: 'invite_accepted', trip_id, trip_name: tripName }
     );
   }
 
   // Return trip_id for navigation
-  return { trip_id: inv.trip_id };
+  return { trip_id };
 }
 
 /**

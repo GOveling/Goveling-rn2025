@@ -374,6 +374,36 @@
 			"label": "ESLint Check (post-guards)",
 			"type": "shell",
 			"command": "npx eslint ."
+		},
+		{
+			"label": "TypeScript Check (post-edit)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check (post-edit)",
+			"type": "shell",
+			"command": "npx eslint ."
+		},
+		{
+			"label": "TypeScript Check (finalize)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "TypeScript Check (on-demand)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check (on-demand)",
+			"type": "shell",
+			"command": "npx eslint ."
 		}
 	]
 }
