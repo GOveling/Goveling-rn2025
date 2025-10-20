@@ -360,6 +360,20 @@
 			"type": "shell",
 			"command": "npx tsc --noEmit",
 			"group": "build"
+		},
+		{
+			"label": "TypeScript Check (post-guards)",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "ESLint Check (post-guards)",
+			"type": "shell",
+			"command": "npx eslint ."
 		}
 	]
 }

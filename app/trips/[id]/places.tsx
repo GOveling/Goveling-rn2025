@@ -230,6 +230,13 @@ export default function TripPlacesScreen() {
 
   // Function to handle place removal from modal (via heart button)
   const handleRemovePlaceFromModal = async (place: Place) => {
+    if (!canDelete) {
+      Alert.alert(
+        'Sin permisos',
+        'No tienes permisos para eliminar lugares de este viaje. Solo el propietario y editores pueden eliminar lugares.'
+      );
+      return;
+    }
     Alert.alert(
       'Eliminar lugar',
       `¿Estás seguro de que quieres eliminar "${place.name}" de tu viaje?`,

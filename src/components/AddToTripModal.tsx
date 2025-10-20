@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '~/constants/colors';
 import { EnhancedPlace } from '~/lib/placesSearch';
 import { supabase } from '~/lib/supabase';
+import { resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 
 import NewTripModal from './NewTripModal';
 
@@ -90,6 +91,16 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) {
         Alert.alert('Error', 'Usuario no autenticado');
+        return;
+      }
+
+      // Permisos: solo propietario o editor pueden agregar lugares
+      const role = await resolveCurrentUserRoleForTripId(tripId);
+      if (!(role === 'owner' || role === 'editor')) {
+        Alert.alert(
+          'Sin permisos',
+          'No tienes permisos para agregar lugares a este viaje. Solo el propietario y editores pueden agregar.'
+        );
         return;
       }
 

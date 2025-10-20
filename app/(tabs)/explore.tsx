@@ -32,6 +32,7 @@ import {
 import { reverseGeocode } from '../../src/lib/geocoding';
 import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
 import { supabase } from '../../src/lib/supabase';
+import { resolveCurrentUserRoleForTripId } from '../../src/lib/userUtils';
 
 export default function ExploreTab() {
   const { t: _t, i18n } = useTranslation();
@@ -157,6 +158,22 @@ export default function ExploreTab() {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) {
         Alert.alert('Error', 'Usuario no autenticado');
+        return;
+      }
+
+      // Verificar permisos: solo owner/editor
+      try {
+        const role = await resolveCurrentUserRoleForTripId(tripId);
+        if (!(role === 'owner' || role === 'editor')) {
+          Alert.alert(
+            'Sin permisos',
+            'No tienes permisos para agregar lugares a este viaje. Solo el propietario y editores pueden agregar.'
+          );
+          return;
+        }
+      } catch (e) {
+        console.warn('[Explore] No se pudo resolver el rol del usuario, asumiendo sin permisos', e);
+        Alert.alert('Sin permisos', 'No fue posible verificar permisos para agregar al viaje');
         return;
       }
 

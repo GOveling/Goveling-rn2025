@@ -79,6 +79,7 @@ export default function PlaceDetailModal({
 
   // Referencias para controlar las animaciones Lottie
   const directionsLottieRef = React.useRef<LottieView>(null);
+  const locationLottieRef = React.useRef<LottieView>(null);
   const websiteLottieRef = React.useRef<LottieView>(null);
   const scheduleLottieRef = React.useRef<LottieView>(null);
 
@@ -107,6 +108,7 @@ export default function PlaceDetailModal({
       // Pequeño delay para asegurar que los componentes estén montados
       setTimeout(() => {
         directionsLottieRef.current?.play();
+        locationLottieRef.current?.play();
         websiteLottieRef.current?.play();
         scheduleLottieRef.current?.play();
       }, 300);
@@ -120,7 +122,7 @@ export default function PlaceDetailModal({
 
   const handleLocation = () => {
     // Reproducir animación al hacer clic
-    directionsLottieRef.current?.play();
+    locationLottieRef.current?.play();
 
     console.log('Opening location modal for place:', {
       name: place.name,
@@ -580,7 +582,7 @@ export default function PlaceDetailModal({
                   disabled={!place.coordinates}
                 >
                   {renderActionIcon(
-                    directionsLottieRef,
+                    locationLottieRef,
                     locationCircleAnimation,
                     '📍', // Emoji de fallback para ubicación
                     locationLottieError,
@@ -939,8 +941,8 @@ const styles = StyleSheet.create({
     color: COLORS.text.lightGray,
   },
   lottieIcon: {
-    width: 32, // Tamaño optimizado para que quepa bien centrado
-    height: 32,
+    width: 40, // Aumentado para mayor presencia visual
+    height: 40,
   },
   lottieIconDisabled: {
     opacity: 0.5,

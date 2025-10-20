@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { EnhancedPlace } from './placesSearch';
 import { supabase } from './supabase';
+import { resolveUserRoleForTrip } from './userUtils';
 
 interface FavoritePlace {
   id: string;
@@ -17,15 +18,24 @@ interface FavoritePlace {
   created_at: string;
 }
 
+type TripMinimal = { id: string; owner_id?: string | null; user_id?: string | null };
+
 // Helper functions
 const getUserTripIds = async (userId: string): Promise<string[]> => {
-  const { data: ownTrips } = await supabase.from('trips').select('id').eq('user_id', userId);
+  // Return trips where the user is owner or active collaborator (any role)
+  const { data: ownTrips } = await supabase
+    .from('trips')
+    .select('id, owner_id, user_id')
+    .or(`owner_id.eq.${userId},user_id.eq.${userId}`);
   const { data: collabTrips } = await supabase
     .from('trip_collaborators')
     .select('trip_id')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('status', 'accepted');
 
-  return [...(ownTrips || []).map((t) => t.id), ...(collabTrips || []).map((c) => c.trip_id)];
+  const ownIds = (ownTrips || []).map((t: TripMinimal) => t.id);
+  const collabIds = (collabTrips || []).map((c) => c.trip_id);
+  return [...ownIds, ...collabIds];
 };
 
 const getOrCreateFavoritesTrip = async (userId: string): Promise<string | null> => {
@@ -33,7 +43,7 @@ const getOrCreateFavoritesTrip = async (userId: string): Promise<string | null> 
   const { data: existingTrips } = await supabase
     .from('trips')
     .select('id')
-    .eq('user_id', userId)
+    .or(`owner_id.eq.${userId},user_id.eq.${userId}`)
     .ilike('name', '%favorite%')
     .limit(1);
 
@@ -45,7 +55,7 @@ const getOrCreateFavoritesTrip = async (userId: string): Promise<string | null> 
   const { data: recentTrips } = await supabase
     .from('trips')
     .select('id')
-    .eq('user_id', userId)
+    .or(`owner_id.eq.${userId},user_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(1);
 
@@ -58,7 +68,8 @@ const getOrCreateFavoritesTrip = async (userId: string): Promise<string | null> 
     .from('trips')
     .insert([
       {
-        user_id: userId,
+        owner_id: userId,
+        user_id: userId, // legacy
         name: 'My Favorites',
         description: 'Places I want to visit',
         start_date: new Date().toISOString().split('T')[0],
@@ -83,7 +94,7 @@ export function useFavorites() {
   // Cargar favoritos al inicializar
   useEffect(() => {
     loadFavorites();
-  }, []);
+  }, [loadFavorites]);
 
   const loadFavorites = useCallback(async () => {
     try {
@@ -149,12 +160,35 @@ export function useFavorites() {
         const isCurrentlyFavorite = isFavorite(place.id);
 
         if (isCurrentlyFavorite) {
-          // Remove from all trips where this place exists
+          // Remove only from trips where the user is owner or editor
+          const allTripIds = await getUserTripIds(user.id);
+          const permittedTripIds: string[] = [];
+          if (allTripIds.length > 0) {
+            // Fetch minimal trip rows to resolve roles
+            const { data: tripRows } = await supabase
+              .from('trips')
+              .select('id, owner_id, user_id')
+              .in('id', allTripIds);
+            for (const t of (tripRows as TripMinimal[] | null) || []) {
+              const role = await resolveUserRoleForTrip(user.id, {
+                id: t.id,
+                owner_id: t.owner_id,
+                user_id: t.user_id,
+              });
+              if (role === 'owner' || role === 'editor') permittedTripIds.push(t.id);
+            }
+          }
+
+          if (permittedTripIds.length === 0) {
+            console.warn('[useFavorites] No trips with edit permission to remove favorite');
+            return false;
+          }
+
           const { error } = await supabase
             .from('trip_places')
             .delete()
             .eq('place_id', place.id)
-            .in('trip_id', await getUserTripIds(user.id));
+            .in('trip_id', permittedTripIds);
 
           if (error) {
             console.error('Error removing favorite:', error);
