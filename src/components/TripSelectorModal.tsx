@@ -64,36 +64,125 @@ export default function TripSelectorModal({
 
   // Cargar trips del usuario cuando se abre el modal
   useEffect(() => {
+    console.log('🎯 TripSelectorModal useEffect triggered - visible:', visible);
     if (visible) {
+      console.log('🚀 TripSelectorModal: Modal is visible, loading trips...');
       loadUserTrips();
     }
   }, [visible]);
 
   const loadUserTrips = async () => {
+    console.log('🔥 TripSelectorModal: loadUserTrips STARTED');
     try {
       setLoading(true);
       const { data: user } = await supabase.auth.getUser();
 
+      console.log('🔥 TripSelectorModal: User auth check:', {
+        hasUser: !!user?.user?.id,
+        userId: user?.user?.id,
+      });
+
       if (!user?.user?.id) {
+        console.error('🔥 TripSelectorModal: No authenticated user found');
         Alert.alert('Error', 'Usuario no autenticado');
         return;
       }
 
-      // Obtener trips donde el usuario es owner
-      const { data: userTrips, error } = await supabase
+      console.log('🔍 TripSelectorModal: Loading trips for user', user.user.id);
+
+      // 1. Obtener trips donde el usuario es owner
+      const { data: ownedTrips, error: ownedError } = await supabase
         .from('trips')
         .select('*')
         .eq('owner_id', user.user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading trips:', error);
-        Alert.alert('Error', 'No se pudieron cargar los viajes');
-        return;
+      if (ownedError) {
+        console.error('Error loading owned trips:', ownedError);
       }
 
-      setTrips(userTrips || []);
+      // 2. Obtener IDs de trips donde el usuario es colaborador Editor
+      console.log('🔍 TripSelectorModal: Querying trip_collaborators for user:', user.user.id);
+      const { data: collaboratorData, error: collabError } = await supabase
+        .from('trip_collaborators')
+        .select('trip_id')
+        .eq('user_id', user.user.id)
+        .eq('role', 'editor');
+
+      console.log('🔍 TripSelectorModal: Collaborator query result:', {
+        data: collaboratorData,
+        error: collabError,
+        count: collaboratorData?.length || 0,
+      });
+
+      if (collabError) {
+        console.error('Error loading collaborator data:', collabError);
+      }
+
+      let collaborativeTrips: Trip[] = [];
+
+      // 3. Si hay viajes colaborativos, obtener los detalles de esos trips
+      if (collaboratorData && collaboratorData.length > 0) {
+        const tripIds = collaboratorData.map((c) => c.trip_id);
+        console.log('🤝 Found collaborative trip IDs:', tripIds);
+
+        const { data: collabTripsData, error: collabTripsError } = await supabase
+          .from('trips')
+          .select('*')
+          .in('id', tripIds)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (collabTripsError) {
+          console.error('Error loading collaborative trips details:', collabTripsError);
+        } else {
+          collaborativeTrips = collabTripsData || [];
+          console.log(
+            '🤝 Loaded collaborative trips:',
+            collaborativeTrips.map((t) => ({ id: t.id, title: t.title }))
+          );
+        }
+      }
+
+      // 4. Combinar los viajes y filtrar duplicados
+      const combinedTrips: Trip[] = [];
+
+      // Agregar trips propios
+      if (ownedTrips) {
+        combinedTrips.push(...ownedTrips);
+        console.log(
+          '👑 Added owned trips:',
+          ownedTrips.map((t) => ({ id: t.id, title: t.title }))
+        );
+      }
+
+      // Agregar trips colaborativos (verificar duplicados)
+      if (collaborativeTrips) {
+        for (const trip of collaborativeTrips) {
+          const isDuplicate = combinedTrips.some((existingTrip) => existingTrip.id === trip.id);
+          if (!isDuplicate) {
+            combinedTrips.push(trip);
+            console.log('✅ Added collaborative trip:', trip.title);
+          } else {
+            console.log('⚠️ Skipping duplicate trip:', trip.title);
+          }
+        }
+      }
+
+      // 5. Ordenar por fecha de creación
+      combinedTrips.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      console.log('🔍 TripSelectorModal Final Results:', {
+        ownedCount: ownedTrips?.length || 0,
+        collaborativeCount: collaborativeTrips?.length || 0,
+        totalCount: combinedTrips.length,
+        finalTrips: combinedTrips.map((t) => ({ id: t.id, title: t.title })),
+      });
+
+      setTrips(combinedTrips);
     } catch (error) {
       console.error('Error loading trips:', error);
       Alert.alert('Error', 'Ocurrió un error inesperado');

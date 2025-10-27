@@ -55,7 +55,9 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
+    console.log('🎯 AddToTripModal useEffect triggered - visible:', visible);
     if (visible) {
+      console.log('🚀 AddToTripModal: Modal is visible, loading trips...');
       loadTrips();
     }
   }, [visible]);
@@ -66,18 +68,101 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) return;
 
-      const { data, error } = await supabase
+      console.log('🔍 AddToTripModal: Loading trips for user', user.user.id);
+
+      // 1. Obtener trips donde el usuario es owner
+      const { data: ownedTrips, error: ownedError } = await supabase
         .from('trips')
-        .select('id, title, description, start_date, end_date')
+        .select('id, title, description, start_date, end_date, owner_id, created_at')
         .eq('owner_id', user.user.id)
         .neq('status', 'cancelled')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading trips', error);
-        return;
+      if (ownedError) {
+        console.error('Error loading owned trips:', ownedError);
       }
-      setTrips(data || []);
+
+      // 2. Obtener IDs de trips donde el usuario es colaborador Editor
+      console.log('🔍 AddToTripModal: Querying trip_collaborators for user:', user.user.id);
+      const { data: collaboratorData, error: collabError } = await supabase
+        .from('trip_collaborators')
+        .select('trip_id')
+        .eq('user_id', user.user.id)
+        .eq('role', 'editor');
+
+      console.log('🔍 AddToTripModal: Collaborator query result:', {
+        data: collaboratorData,
+        error: collabError,
+        count: collaboratorData?.length || 0,
+      });
+
+      if (collabError) {
+        console.error('Error loading collaborator data:', collabError);
+      }
+
+      let collaborativeTrips: any[] = [];
+
+      // 3. Si hay viajes colaborativos, obtener los detalles de esos trips
+      if (collaboratorData && collaboratorData.length > 0) {
+        const tripIds = collaboratorData.map((c) => c.trip_id);
+        console.log('🤝 Found collaborative trip IDs:', tripIds);
+
+        const { data: collabTripsData, error: collabTripsError } = await supabase
+          .from('trips')
+          .select('id, title, description, start_date, end_date, owner_id, created_at')
+          .in('id', tripIds)
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false });
+
+        if (collabTripsError) {
+          console.error('Error loading collaborative trips details:', collabTripsError);
+        } else {
+          collaborativeTrips = collabTripsData || [];
+          console.log(
+            '🤝 Loaded collaborative trips:',
+            collaborativeTrips.map((t) => ({ id: t.id, title: t.title }))
+          );
+        }
+      }
+
+      // 4. Combinar los viajes y filtrar duplicados
+      const combinedTrips: any[] = [];
+
+      // Agregar trips propios
+      if (ownedTrips) {
+        combinedTrips.push(...ownedTrips);
+        console.log(
+          '👑 Added owned trips:',
+          ownedTrips.map((t) => ({ id: t.id, title: t.title }))
+        );
+      }
+
+      // Agregar trips colaborativos (verificar duplicados)
+      if (collaborativeTrips) {
+        for (const trip of collaborativeTrips) {
+          const isDuplicate = combinedTrips.some((existingTrip) => existingTrip.id === trip.id);
+          if (!isDuplicate) {
+            combinedTrips.push(trip);
+            console.log('✅ Added collaborative trip:', trip.title);
+          } else {
+            console.log('⚠️ Skipping duplicate trip:', trip.title);
+          }
+        }
+      }
+
+      // 5. Ordenar por fecha de creación
+      combinedTrips.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      console.log('🔍 AddToTripModal Final Results:', {
+        ownedCount: ownedTrips?.length || 0,
+        collaborativeCount: collaborativeTrips?.length || 0,
+        totalCount: combinedTrips.length,
+        finalTrips: combinedTrips.map((t) => ({ id: t.id, title: t.title })),
+      });
+
+      setTrips(combinedTrips);
     } catch (e) {
       console.error('Error loading trips', e);
     } finally {
