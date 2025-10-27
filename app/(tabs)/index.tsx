@@ -20,7 +20,6 @@ import CurrentTripCard from '~/components/home/CurrentTripCard';
 import LocationWidget from '~/components/home/LocationWidget';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
 import StatCards from '~/components/home/StatCards';
-import TravelModeCard from '~/components/home/TravelModeCard';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
 import {
   getCurrentPosition,
@@ -33,7 +32,6 @@ import { registerDeviceToken } from '~/lib/push';
 import { useSettingsStore } from '~/lib/settingsStore';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
-import { useTravel } from '~/lib/travelStore';
 import { getWeatherCached } from '~/lib/weather';
 import { logger } from '~/utils/logger';
 
@@ -46,7 +44,6 @@ export default function HomeTab() {
   const { colors: _colors } = useTheme();
   const _router = useRouter();
   const { units, setUnits } = useSettingsStore();
-  const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
 
   // RTK Query for trips - automatic caching & refetching
   const {
@@ -56,7 +53,6 @@ export default function HomeTab() {
   } = useGetTripsBreakdownQuery();
 
   // Derive data from breakdown
-  const currentTrip = breakdown?.active || null;
   const upcomingTripsCount = breakdown?.counts.upcoming || 0;
 
   const [city, setCity] = React.useState<string>('—');
@@ -69,10 +65,6 @@ export default function HomeTab() {
   const toggleUnits = React.useCallback(() => {
     setUnits(units === 'c' ? 'f' : 'c');
   }, [units, setUnits]);
-
-  const toggleTravelMode = React.useCallback(() => {
-    setTravelModeEnabled(!travelModeEnabled);
-  }, [travelModeEnabled, setTravelModeEnabled]);
 
   const recomputeSavedPlaces = React.useCallback(async () => {
     logger.debug('🏠 HomeTab: recomputeSavedPlaces called');
@@ -406,13 +398,6 @@ export default function HomeTab() {
 
           {/* Viaje Activo */}
           <CurrentTripCard />
-
-          {/* Estado del Modo Travel - Memoized TravelModeCard */}
-          <TravelModeCard
-            travelModeEnabled={travelModeEnabled}
-            onToggleTravelMode={toggleTravelMode}
-            currentTrip={currentTrip}
-          />
 
           {/* Alertas Cercanas */}
           <NearbyAlerts />
