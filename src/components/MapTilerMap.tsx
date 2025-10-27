@@ -19,6 +19,7 @@ interface MapMarker {
   coordinate: MapLocation;
   title?: string;
   description?: string;
+  color?: string;
 }
 
 interface MapTilerMapProps {
@@ -330,10 +331,12 @@ const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({
 
           // Marcadores lugares
           markers.forEach((marker, idx) => {
+            const markerColor = marker.color || '#FF3B30'; // Color dinámico o rojo por defecto
+
             const el = document.createElement('div');
             el.style.width = '28px'; // Reducido de 40px a 28px
             el.style.height = '28px'; // Reducido de 40px a 28px
-            el.style.background = '#FF3B30';
+            el.style.background = markerColor;
             el.style.color = '#fff';
             el.style.fontSize = '14px'; // Reducido de 18px a 14px
             el.style.fontWeight = '700'; // Reducido de 800 a 700
@@ -342,7 +345,22 @@ const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({
             el.style.justifyContent = 'center';
             el.style.borderRadius = '50%';
             el.style.border = '3px solid #fff'; // Reducido de 4px a 3px
-            el.style.boxShadow = '0 2px 8px rgba(255, 59, 48, 0.3), 0 1px 3px rgba(0,0,0,0.2)'; // Sombra más sutil
+
+            // Crear RGB values para las sombras dinámicas
+            const hexToRgb = (hex: string) => {
+              const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+              return result
+                ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16),
+                  }
+                : { r: 255, g: 59, b: 48 }; // Fallback a rojo
+            };
+
+            const rgb = hexToRgb(markerColor);
+
+            el.style.boxShadow = `0 2px 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 1px 3px rgba(0,0,0,0.2)`; // Sombra con color dinámico
             el.style.cursor = 'pointer';
             el.style.position = 'relative';
             el.style.zIndex = '1000';
@@ -350,14 +368,14 @@ const WebDirectMapTiler: React.FC<MapTilerMapProps> = ({
             el.style.transformOrigin = 'center center'; // Asegurar transformaciones desde el centro
             el.innerText = String(idx + 1);
 
-            // Agregar efectos hover
+            // Agregar efectos hover con color dinámico
             el.onmouseenter = () => {
               el.style.transform = 'translate(-50%, -50%) scale(1.1)'; // Mantener el anclaje central
-              el.style.boxShadow = '0 4px 12px rgba(255, 59, 48, 0.4), 0 2px 6px rgba(0,0,0,0.3)';
+              el.style.boxShadow = `0 4px 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4), 0 2px 6px rgba(0,0,0,0.3)`;
             };
             el.onmouseleave = () => {
               el.style.transform = 'translate(-50%, -50%) scale(1)'; // Mantener el anclaje central
-              el.style.boxShadow = '0 2px 8px rgba(255, 59, 48, 0.3), 0 1px 3px rgba(0,0,0,0.2)';
+              el.style.boxShadow = `0 2px 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 1px 3px rgba(0,0,0,0.2)`;
             };
 
             // Manejar clic en marcador
@@ -441,6 +459,7 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({
         title: m.title || `Marcador ${i + 1}`,
         description: m.description || '',
         coord: m.coordinate,
+        color: m.color || '#FF3B30', // Agregar color dinámico
       })) || [],
     showUserLocation: !!showUserLocation,
     userLocation: userLocation,
@@ -632,7 +651,8 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({
                 'properties': {
                   'title': marker.title,
                   'description': marker.description || '',
-                  'number': String(marker.i + 1)
+                  'number': String(marker.i + 1),
+                  'color': marker.color || '#FF3B30'
                 }
               };
             })
@@ -650,7 +670,7 @@ const WebViewMapTiler: React.FC<MapTilerMapProps> = ({
             'source': 'places',
             'paint': {
               'circle-radius': 14, // Reducido de 20 a 14
-              'circle-color': '#FF3B30',
+              'circle-color': ['get', 'color'], // Usar color dinámico de cada marcador
               'circle-stroke-width': 3, // Reducido de 4 a 3
               'circle-stroke-color': '#fff'
             }

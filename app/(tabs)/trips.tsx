@@ -26,6 +26,7 @@ import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import { logger } from '~/utils/logger';
 
 import NewTripModal from '../../src/components/NewTripModal';
+import SavedPlacesMapModal from '../../src/components/SavedPlacesMapModal';
 import TripCard from '../../src/components/TripCard';
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 
@@ -54,6 +55,7 @@ export default function TripsTab() {
 
   // Estados
   const [showNewTripModal, setShowNewTripModal] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
   const [trips, setTrips] = useState<TripsListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -523,12 +525,7 @@ export default function TripsTab() {
         </View>
 
         {/* Vista de Mapa Button */}
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Mapa', 'Funcionalidad de mapa de trips próximamente disponible')
-          }
-          style={styles.mapButton}
-        >
+        <TouchableOpacity onPress={() => setShowMapModal(true)} style={styles.mapButton}>
           <Text style={styles.mapButtonIcon}>🗺️</Text>
           <Text style={styles.mapButtonText}>Vista de Mapa</Text>
         </TouchableOpacity>
@@ -630,6 +627,9 @@ export default function TripsTab() {
           Alert.alert('¡Éxito!', 'Tu viaje ha sido creado exitosamente');
         }}
       />
+
+      {/* Modal de Vista de Mapa */}
+      <SavedPlacesMapModal visible={showMapModal} onClose={() => setShowMapModal(false)} />
     </View>
   );
 }

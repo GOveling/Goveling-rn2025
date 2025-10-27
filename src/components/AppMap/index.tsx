@@ -14,6 +14,7 @@ export default function AppMap(props: AppMapProps) {
       },
       title: marker.title || `Marcador ${index + 1}`,
       description: `Marcador ${index + 1}`, // AppMap markers no tienen description
+      color: marker.color, // Pasar la información de color
     })) || [];
 
   const center = {
