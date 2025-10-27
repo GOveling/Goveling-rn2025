@@ -149,7 +149,8 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         return priceLevelMap[priceLevel] ?? null;
       };
 
-      const { error } = await supabase.from('trip_places').insert({
+      // Prepare place data for insertion
+      const placeData = {
         trip_id: tripId,
         place_id: place.id,
         name: place.name,
@@ -168,7 +169,11 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         opening_hours: place.openingHours ? { weekdayDescriptions: place.openingHours } : null,
         website: place.website || null,
         phone: place.phone || null,
-      });
+      };
+
+      // Use notification function to add place with notifications to collaborators
+      const { addPlaceToTripWithNotification } = await import('~/lib/placesNotifications');
+      const { error } = await addPlaceToTripWithNotification(tripId, placeData, user.user.id);
 
       if (error) {
         console.error('Insert error', error);

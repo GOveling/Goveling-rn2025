@@ -180,7 +180,44 @@ export default function TripPlacesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { error } = await supabase.from('trip_places').delete().eq('id', placeId);
+              // Find the place to get necessary data for notification
+              const placeToDelete = places.find((p) => p.id === placeId);
+              if (!placeToDelete) {
+                Alert.alert('Error', 'No se encontró el lugar');
+                return;
+              }
+
+              console.log('🗑️📱 PLACES.TSX: About to call removePlaceFromTripWithNotification', {
+                placeId,
+                tripId: id,
+                placeName: placeToDelete.name,
+                userId: user.id,
+                timestamp: new Date().toISOString(),
+              });
+
+              // Use notification function to remove place with notifications to collaborators
+              const { removePlaceFromTripWithNotification } = await import(
+                '~/lib/placesNotifications'
+              );
+
+              console.log('🗑️📱 PLACES.TSX: Function imported, calling with params:', {
+                placeId,
+                tripId: id,
+                placeName: placeToDelete.name,
+                removedBy: user.id,
+              });
+
+              const { error } = await removePlaceFromTripWithNotification(
+                placeId,
+                id,
+                placeToDelete.name,
+                user.id
+              );
+
+              console.log('🗑️📱 PLACES.TSX: Function completed with result:', {
+                error,
+                success: !error,
+              });
 
               if (error) {
                 console.error('Error deleting place:', error);
@@ -250,7 +287,37 @@ export default function TripPlacesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { error } = await supabase.from('trip_places').delete().eq('id', place.id);
+              console.log('🗑️📱 MODAL: About to call removePlaceFromTripWithNotification', {
+                placeId: place.id,
+                tripId: id,
+                placeName: place.name,
+                userId: user.id,
+                timestamp: new Date().toISOString(),
+              });
+
+              // Use notification function to remove place with notifications to collaborators
+              const { removePlaceFromTripWithNotification } = await import(
+                '~/lib/placesNotifications'
+              );
+
+              console.log('🗑️📱 MODAL: Function imported, calling with params:', {
+                placeId: place.id,
+                tripId: id,
+                placeName: place.name,
+                removedBy: user.id,
+              });
+
+              const { error } = await removePlaceFromTripWithNotification(
+                place.id,
+                id,
+                place.name,
+                user.id
+              );
+
+              console.log('🗑️📱 MODAL: Function completed with result:', {
+                error,
+                success: !error,
+              });
 
               if (error) {
                 console.error('Error deleting place:', error);

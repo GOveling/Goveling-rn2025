@@ -259,6 +259,13 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
           return;
         }
 
+        // For place management notifications - redirect to trip places
+        if (type === 'place_added' || type === 'place_removed') {
+          // Navigate directly to the places screen of the trip
+          router.push(`/trips/${tripId}/places`);
+          return;
+        }
+
         // For trip acceptance/member added notifications - redirect directly to trip
         if (
           type === 'invite_accepted' ||
@@ -462,6 +469,40 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
             body: t('notifications.added_to_trip_role', 'Fuiste agregado como {{role}}', {
               role: roleLabel,
             }),
+          };
+        }
+        case 'place_added': {
+          const addedByName = data?.added_by_name || 'Someone';
+          const placeName = data?.place_name || 'a place';
+          return {
+            title: t('notifications.place_added_title', 'New place added'),
+            body: tripName
+              ? t('notifications.place_added_body_named', '{{user}} added {{place}} to {{trip}}', {
+                  user: addedByName,
+                  place: placeName,
+                  trip: tripName,
+                })
+              : t('notifications.place_added_body', '{{user}} added {{place}} to the trip', {
+                  user: addedByName,
+                  place: placeName,
+                }),
+          };
+        }
+        case 'place_removed': {
+          const removedByName = data?.removed_by_name || 'Someone';
+          const placeName = data?.place_name || 'a place';
+          return {
+            title: t('notifications.place_removed_title', 'Place removed'),
+            body: tripName
+              ? t(
+                  'notifications.place_removed_body_named',
+                  '{{user}} removed {{place}} from {{trip}}',
+                  { user: removedByName, place: placeName, trip: tripName }
+                )
+              : t('notifications.place_removed_body', '{{user}} removed {{place}} from the trip', {
+                  user: removedByName,
+                  place: placeName,
+                }),
           };
         }
         default:

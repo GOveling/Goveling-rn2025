@@ -108,7 +108,13 @@
     "a_trip": "un viaje",
     "trip_unavailable_title": "Viaje no disponible",
     "trip_unavailable_message": "Este viaje ha sido eliminado y ya no está disponible.",
-    "history_title": "Historial de Notificaciones"
+    "history_title": "Historial de Notificaciones",
+    "place_added_title": "Nuevo lugar agregado",
+    "place_added_body": "{{user}} agregó {{place}} al viaje",
+    "place_added_body_named": "{{user}} agregó {{place}} a {{trip}}",
+    "place_removed_title": "Lugar eliminado",
+    "place_removed_body": "{{user}} eliminó {{place}} del viaje",
+    "place_removed_body_named": "{{user}} eliminó {{place}} de {{trip}}"
   },
   "invitations": {
     "invalid_link": "Enlace de invitación inválido",

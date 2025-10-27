@@ -98,14 +98,39 @@ export const getTripCollaborators = async (tripId: string): Promise<UserProfile[
       JSON.stringify(profiles, null, 2)
     );
 
+    // CAMBIO: No retornar array vacío si no hay perfiles
+    // En su lugar, crear colaboradores con IDs aunque no tengan perfil completo
     if (!profiles || profiles.length === 0) {
-      console.log('❌ getTripCollaborators: No profiles found for collaborators');
-      return [];
+      console.log(
+        '⚠️ getTripCollaborators: No profiles found, but creating collaborators with IDs only'
+      );
+      const resultWithoutProfiles = collaboratorIds.map((collab) => ({
+        id: collab.user_id,
+        full_name: null,
+        avatar_url: null,
+        email: null,
+        role: collab.role,
+      }));
+      console.log('✅ getTripCollaborators: Result without profiles:', resultWithoutProfiles);
+      return resultWithoutProfiles;
     }
 
-    // Combinar la información de colaboradores con perfiles
+    // Combinar la información de colaboradores con perfiles (incluyendo los que no tienen perfil)
     const result = collaboratorIds.map((collab) => {
       const profile = profiles.find((p) => p.id === collab.user_id);
+
+      if (!profile) {
+        console.log(
+          `⚠️ getTripCollaborators: No profile found for collaborator ${collab.user_id}, including anyway`
+        );
+        return {
+          id: collab.user_id,
+          full_name: null,
+          avatar_url: null,
+          email: null,
+          role: collab.role,
+        };
+      }
 
       const minimal = !profile?.full_name && !profile?.avatar_url;
       if (minimal) {

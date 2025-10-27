@@ -221,7 +221,13 @@
     "added_to_trip_role": "You were added as {{role}}",
     "trip_unavailable_title": "Trip not available",
     "trip_unavailable_message": "This trip has been deleted and is no longer available.",
-    "history_title": "Notification History"
+    "history_title": "Notification History",
+    "place_added_title": "New place added",
+    "place_added_body": "{{user}} added {{place}} to the trip",
+    "place_added_body_named": "{{user}} added {{place}} to {{trip}}",
+    "place_removed_title": "Place removed",
+    "place_removed_body": "{{user}} removed {{place}} from the trip",
+    "place_removed_body_named": "{{user}} removed {{place}} from {{trip}}"
   },
   "invitations": {
     "invalid_link": "Invalid invitation link",

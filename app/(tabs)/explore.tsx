@@ -206,8 +206,8 @@ export default function ExploreTab() {
         return priceLevelMap[priceLevel] ?? null;
       };
 
-      // Add place to trip - with complete data structure
-      const { error } = await supabase.from('trip_places').insert({
+      // Prepare place data for insertion
+      const placeData = {
         trip_id: tripId,
         place_id: place.id,
         name: place.name,
@@ -218,7 +218,7 @@ export default function ExploreTab() {
         photo_url: place.photos && place.photos.length > 0 ? place.photos[0] : null,
         added_by: user.user.id,
         added_at: new Date().toISOString(),
-        // Google Places API fields - NOW INCLUDED
+        // Google Places API fields
         google_rating: place.rating || null,
         reviews_count: place.reviews_count || null,
         price_level: convertPriceLevel(place.priceLevel),
@@ -226,7 +226,11 @@ export default function ExploreTab() {
         opening_hours: place.openingHours ? { weekdayDescriptions: place.openingHours } : null,
         website: place.website || null,
         phone: place.phone || null,
-      });
+      };
+
+      // Use notification function to add place with notifications to collaborators
+      const { addPlaceToTripWithNotification } = await import('~/lib/placesNotifications');
+      const { error } = await addPlaceToTripWithNotification(tripId, placeData, user.user.id);
 
       if (error) {
         console.error('Error adding place to trip:', error);

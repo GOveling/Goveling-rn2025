@@ -240,7 +240,8 @@ export default function NewTripModal({
             return priceLevelMap[priceLevel] ?? null;
           };
 
-          const { error: placeError } = await supabase.from('trip_places').insert({
+          // Prepare place data for insertion
+          const placeData = {
             trip_id: data.id,
             place_id: addPlaceContext.placeId,
             name: addPlaceContext.placeName,
@@ -251,7 +252,7 @@ export default function NewTripModal({
             photo_url: addPlaceContext.photoUrl || null,
             added_by: user.id,
             added_at: new Date().toISOString(),
-            // Google Places API fields - NOW INCLUDED
+            // Google Places API fields
             google_rating: addPlaceContext.rating || null,
             reviews_count: addPlaceContext.reviewsCount || null,
             price_level: convertPriceLevel(addPlaceContext.priceLevel),
@@ -261,7 +262,15 @@ export default function NewTripModal({
               : null,
             website: addPlaceContext.website || null,
             phone: addPlaceContext.phone || null,
-          });
+          };
+
+          // Use notification function (though no collaborators exist yet for new trip)
+          const { addPlaceToTripWithNotification } = await import('~/lib/placesNotifications');
+          const { error: placeError } = await addPlaceToTripWithNotification(
+            data.id,
+            placeData,
+            user.id
+          );
 
           if (placeError) {
             console.error('❌ Error añadiendo lugar:', placeError);
