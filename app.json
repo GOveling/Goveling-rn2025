@@ -16,9 +16,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "scheme": "goveling",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "plugins": [
       "expo-router",
       "expo-localization",
@@ -28,7 +34,8 @@
       "expo-document-picker",
       "expo-file-system",
       "expo-updates",
-      "./plugins/withReactNativeMaps.js"
+      "./plugins/withReactNativeMaps.js",
+      "expo-web-browser"
     ],
     "ios": {
       "bundleIdentifier": "com.goveling.app",
@@ -37,7 +44,11 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
         "NSLocationWhenInUseUsageDescription": "Esta app necesita acceso a tu ubicación para mostrar lugares cercanos y direcciones.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Esta app necesita acceso a tu ubicación para mostrar lugares cercanos y direcciones.",
         "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para tomar fotos.",

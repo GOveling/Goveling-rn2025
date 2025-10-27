@@ -17,6 +17,7 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 
 import LottieView from 'lottie-react-native';
 
@@ -145,7 +146,7 @@ export default function PlaceDetailModal({
     }
   };
 
-  const handleWebsite = () => {
+  const handleWebsite = async () => {
     // Reproducir animación al hacer clic
     websiteLottieRef.current?.play();
 
@@ -163,8 +164,35 @@ export default function PlaceDetailModal({
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
       }
-      console.log('Opening URL:', url);
-      Linking.openURL(url);
+      console.log('Opening URL in in-app browser:', url);
+
+      try {
+        // Abrir en navegador integrado
+        await WebBrowser.openBrowserAsync(url, {
+          // Opciones de configuración del navegador
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.OVER_FULL_SCREEN,
+          controlsColor: COLORS.primary.main, // Color de los controles del navegador
+          toolbarColor: COLORS.background.primary, // Color de la barra de herramientas
+          // Mostrar título de la página
+          showTitle: true,
+          // Permitir navegación hacia atrás/adelante
+          enableBarCollapsing: false,
+        });
+      } catch (error) {
+        console.error('Error opening in-app browser:', error);
+        // Fallback a navegador externo si hay error
+        Alert.alert(
+          'Error',
+          'No se pudo abrir el navegador integrado. ¿Abrir en navegador externo?',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Abrir externamente',
+              onPress: () => Linking.openURL(url),
+            },
+          ]
+        );
+      }
     } else {
       Alert.alert('Sitio web no disponible', 'No hay sitio web para este lugar');
     }
