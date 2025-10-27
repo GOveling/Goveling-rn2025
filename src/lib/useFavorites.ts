@@ -91,11 +91,6 @@ export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar favoritos al inicializar
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
-
   const loadFavorites = useCallback(async () => {
     try {
       const {
@@ -137,6 +132,11 @@ export function useFavorites() {
       console.error('Error loading favorites:', error);
     }
   }, []);
+
+  // Cargar favoritos al inicializar
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
 
   const isFavorite = useCallback(
     (placeId: string) => {

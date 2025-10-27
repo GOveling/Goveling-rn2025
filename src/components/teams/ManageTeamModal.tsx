@@ -49,6 +49,21 @@ interface InvitationItem {
   status?: string | null;
   created_at?: string | null;
   expires_at?: string | null;
+  accepted_at?: string | null;
+  accepted_by?: string | null;
+  updated_at?: string | null;
+}
+
+interface HistoryItem {
+  id: string | number;
+  type: 'invitation' | 'removal';
+  email: string;
+  role?: Exclude<Role, 'owner'> | string;
+  status?: string | null;
+  created_at?: string | null;
+  accepted_at?: string | null;
+  updated_at?: string | null;
+  removed_user?: string;
 }
 
 interface ManageTeamModalProps {
@@ -84,6 +99,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [invitations, setInvitations] = useState<InvitationItem[]>([]);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Exclude<Role, 'owner'>>('viewer');
@@ -194,25 +210,90 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   const fetchInvitations = useCallback(async () => {
     const { data, error } = await supabase
       .from('trip_invitations')
-      .select('id, email, role, status, created_at, expires_at')
+      .select(
+        'id, email, role, status, created_at, expires_at, accepted_at, accepted_by, updated_at'
+      )
       .eq('trip_id', tripId)
       .order('created_at', { ascending: false });
     if (error) throw error;
     setInvitations((data || []) as InvitationItem[]);
   }, [tripId]);
 
+  const fetchHistory = useCallback(async () => {
+    try {
+      // Fetch invitation history
+      const { data: invitationData, error: invitationError } = await supabase
+        .from('trip_invitations')
+        .select(
+          'id, email, role, status, created_at, expires_at, accepted_at, accepted_by, updated_at'
+        )
+        .eq('trip_id', tripId)
+        .in('status', ['accepted', 'declined'])
+        .order('created_at', { ascending: false });
+
+      if (invitationError) throw invitationError;
+
+      // Fetch member removal notifications
+      const { data: removalData, error: removalError } = await supabase
+        .from('notifications_inbox')
+        .select('id, data, created_at')
+        .eq('data->>type', 'member_removed')
+        .eq('data->>trip_id', tripId)
+        .order('created_at', { ascending: false });
+
+      if (removalError) throw removalError;
+
+      // Combine both types into HistoryItem format
+      const invitationHistory: HistoryItem[] = (invitationData || []).map((item) => ({
+        id: `inv-${item.id}`,
+        type: 'invitation' as const,
+        email: item.email,
+        role: item.role,
+        status: item.status,
+        created_at: item.created_at,
+        accepted_at: item.accepted_at,
+        updated_at: item.updated_at,
+      }));
+
+      const removalHistory: HistoryItem[] = (removalData || []).map((notification) => {
+        const data = notification.data as { removed_user?: string; trip_name?: string };
+        return {
+          id: `rem-${notification.id}`,
+          type: 'removal' as const,
+          email: data.removed_user || 'Unknown User',
+          role: 'removed',
+          status: 'removed',
+          created_at: notification.created_at,
+          removed_user: data.removed_user,
+        };
+      });
+
+      // Combine and sort by date
+      const combinedHistory = [...invitationHistory, ...removalHistory].sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      setHistoryItems(combinedHistory);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+      setHistoryItems([]);
+    }
+  }, [tripId]);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       await fetchBasics();
-      await Promise.all([fetchMembers(), fetchInvitations()]);
+      await Promise.all([fetchMembers(), fetchInvitations(), fetchHistory()]);
     } catch (e) {
       console.error('ManageTeamModal load error', e);
       Alert.alert('Error', 'Could not load team data');
     } finally {
       setLoading(false);
     }
-  }, [fetchBasics, fetchInvitations, fetchMembers]);
+  }, [fetchBasics, fetchInvitations, fetchMembers, fetchHistory]);
 
   // Realtime subscriptions
   useEffect(() => {
@@ -226,6 +307,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         { event: '*', schema: 'public', table: 'trip_invitations', filter: `trip_id=eq.${tripId}` },
         () => {
           fetchInvitations();
+          fetchHistory();
         }
       )
       .on(
@@ -240,6 +322,17 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
           fetchMembers();
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications_inbox' },
+        (payload) => {
+          const data = payload.new as { data?: { type?: string; trip_id?: string } };
+          if (data?.data?.type === 'member_removed' && data?.data?.trip_id === tripId) {
+            console.log('member removal notification, refetching history...');
+            fetchHistory();
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -249,7 +342,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         // Ignore cleanup errors
       }
     };
-  }, [visible, tripId, fetchAll, fetchInvitations, fetchMembers]);
+  }, [visible, tripId, fetchAll, fetchInvitations, fetchMembers, fetchHistory]);
 
   const isOwner = currentRole === 'owner';
   const canInvite = isOwner; // Align with stricter rule: only owner invites
@@ -631,22 +724,74 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
     </View>
   );
 
-  const renderHistoryRow = (item: InvitationItem) => {
-    const accepted = (item.status || '') === 'accepted';
-    const declined = (item.status || '') === 'declined';
-    const bg = accepted ? '#DCFCE7' : declined ? '#FFE4E6' : '#F3F4F6';
-    const bd = accepted ? '#16A34A' : declined ? '#EF4444' : '#E5E7EB';
+  const renderHistoryRow = (item: HistoryItem) => {
+    // Handle different types of history items
+    const isInvitation = item.type === 'invitation';
+    const isRemoval = item.type === 'removal';
+
+    let iconName: keyof typeof Ionicons.glyphMap;
+    let status = '';
+    let bg = '#F3F4F6';
+    let bd = '#E5E7EB';
+
+    if (isInvitation) {
+      const accepted = (item.status || '') === 'accepted';
+      const declined = (item.status || '') === 'declined';
+      bg = accepted ? '#DCFCE7' : declined ? '#FFE4E6' : '#F3F4F6';
+      bd = accepted ? '#16A34A' : declined ? '#EF4444' : '#E5E7EB';
+      iconName = accepted ? 'checkmark-circle' : 'close-circle';
+      status = `${item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')} • ${accepted ? t('trips.accepted', 'Accepted') : t('trips.declined', 'Declined')}`;
+    } else if (isRemoval) {
+      bg = '#FFE4E6';
+      bd = '#EF4444';
+      iconName = 'trash-outline';
+      status = t('trips.removed', 'Removed from trip');
+    }
+
+    // Format date based on type and status
+    const formatDate = (dateString: string | null | undefined) => {
+      if (!dateString) return '';
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      } catch {
+        return '';
+      }
+    };
+
+    // Determine which date to show
+    let displayDate = '';
+    if (isInvitation) {
+      const accepted = (item.status || '') === 'accepted';
+      const declined = (item.status || '') === 'declined';
+      if (accepted && item.accepted_at) {
+        displayDate = formatDate(item.accepted_at);
+      } else if (declined && item.updated_at) {
+        displayDate = formatDate(item.updated_at);
+      } else if (item.created_at) {
+        displayDate = formatDate(item.created_at);
+      }
+    } else if (isRemoval && item.created_at) {
+      displayDate = formatDate(item.created_at);
+    }
+
     return (
       <View style={[styles.historyCard, { backgroundColor: bg, borderLeftColor: bd }]}>
         <View style={styles.historyCardRow}>
           <View style={styles.memberInitials}>
-            <Ionicons name={accepted ? 'checkmark-circle' : 'close-circle'} size={22} color={bd} />
+            <Ionicons name={iconName} size={22} color={bd} />
           </View>
           <View style={styles.historyLeftContainer}>
             <Text style={styles.historyEmail}>{item.email}</Text>
             <Text style={styles.historyStatus}>
-              {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')} •{' '}
-              {accepted ? t('trips.accepted', 'Accepted') : t('trips.declined', 'Declined')}
+              {status}
+              {displayDate && ` • ${displayDate}`}
             </Text>
           </View>
         </View>
@@ -657,9 +802,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   const renderHistoryTab = () => (
     <View style={styles.tabContentWrapper}>
       <FlatList
-        data={invitations.filter(
-          (i) => (i.status || '') === 'accepted' || (i.status || '') === 'declined'
-        )}
+        data={historyItems}
         keyExtractor={(i) => String(i.id)}
         renderItem={({ item }) => renderHistoryRow(item)}
         ListEmptyComponent={
