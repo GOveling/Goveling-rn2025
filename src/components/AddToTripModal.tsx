@@ -150,10 +150,43 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         }
       }
 
-      // 5. Ordenar por fecha de creación
-      combinedTrips.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      // 5. Sort trips: completed at end, active by date or creation
+      combinedTrips.sort((a, b) => {
+        // Helper to check if trip is completed
+        const isCompleted = (trip: Trip) => {
+          if (!trip.start_date || !trip.end_date) return false;
+          const now = new Date();
+          const endDate = new Date(trip.end_date);
+          return now > endDate;
+        };
+
+        const aCompleted = isCompleted(a);
+        const bCompleted = isCompleted(b);
+
+        // Non-completed trips come first
+        if (aCompleted && !bCompleted) return 1;
+        if (!aCompleted && bCompleted) return -1;
+
+        // Both completed - newer completed first
+        if (aCompleted && bCompleted) {
+          const aEndDate = new Date(a.end_date || '1970-01-01');
+          const bEndDate = new Date(b.end_date || '1970-01-01');
+          return bEndDate.getTime() - aEndDate.getTime();
+        }
+
+        // Both active - sort by start_date or created_at
+        const aHasDate = a.start_date && a.start_date.trim() !== '';
+        const bHasDate = b.start_date && b.start_date.trim() !== '';
+
+        if (aHasDate && bHasDate) {
+          return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+        }
+        if (aHasDate && !bHasDate) return -1;
+        if (!aHasDate && bHasDate) return 1;
+
+        // Neither has date - newest first by created_at
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
 
       console.log('🔍 AddToTripModal Final Results:', {
         ownedCount: ownedTrips?.length || 0,

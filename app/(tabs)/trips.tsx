@@ -208,9 +208,35 @@ export default function TripsTab() {
       );
 
       // Sort trips according to business logic:
-      // 1. Trips with start_date: sort by closest start_date first
-      // 2. Trips without start_date: sort by created_at (newest first)
+      // 1. Completed trips go to the end (oldest completed last)
+      // 2. Active trips (planning, upcoming, traveling):
+      //    - With start_date: sort by closest start_date first
+      //    - Without start_date: sort by created_at (newest first)
       const sortedTrips = tripsWithTeam.sort((a, b) => {
+        // Helper function to determine if trip is completed
+        const isCompleted = (trip: TripsListItem) => {
+          if (!trip.start_date || !trip.end_date) return false;
+          const now = new Date();
+          const endDate = new Date(trip.end_date);
+          return now > endDate;
+        };
+
+        const aCompleted = isCompleted(a);
+        const bCompleted = isCompleted(b);
+
+        // If one is completed and the other is not, non-completed comes first
+        if (aCompleted && !bCompleted) return 1;
+        if (!aCompleted && bCompleted) return -1;
+
+        // Both are completed - sort by end_date (oldest last)
+        if (aCompleted && bCompleted) {
+          const aEndDate = new Date(a.end_date || '1970-01-01');
+          const bEndDate = new Date(b.end_date || '1970-01-01');
+          // Newer completed trips first (so older ones sink to the bottom)
+          return bEndDate.getTime() - aEndDate.getTime();
+        }
+
+        // Both are active - apply original sorting logic
         const aHasDate = a.start_date && a.start_date.trim() !== '';
         const bHasDate = b.start_date && b.start_date.trim() !== '';
 
@@ -238,11 +264,13 @@ export default function TripsTab() {
       });
 
       logger.debug(
-        '🧪 TripsTab: Sorted trips order:',
+        '🧪 TripsTab: Sorted trips order (Active first, Completed at end):',
         sortedTrips.map((t) => ({
           title: t.title,
           start_date: t.start_date,
+          end_date: t.end_date,
           created_at: t.created_at,
+          isCompleted: t.end_date && new Date() > new Date(t.end_date),
         }))
       );
 
