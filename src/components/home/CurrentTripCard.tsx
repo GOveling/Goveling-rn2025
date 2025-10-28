@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 
+import { TravelModeModal } from '~/components/travelMode/TravelModeModal';
 import { Skeleton } from '~/components/ui/Skeleton';
 import { useTripRefresh } from '~/contexts/TripRefreshContext';
 import { Trip, getActiveOrNextTrip, getPlanningTripsCount, getActiveTrips } from '~/lib/home';
@@ -72,6 +73,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
   const [mode, setMode] = React.useState<'none' | 'future' | 'active'>('none');
   const [_countdown, setCountdown] = React.useState<number | null>(null);
   const [planningTripsCount, setPlanningTripsCount] = React.useState<number>(0);
+  const [travelModalVisible, setTravelModalVisible] = React.useState(false);
 
   // Use ref to store stable function reference
   const loadTripDataRef = React.useRef<() => Promise<void>>(async () => {});
@@ -418,7 +420,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         <View style={styles.activeTripActions}>
           {/* Acceder a Modo Travel Button - Principal */}
           <TouchableOpacity
-            onPress={() => showComingSoonAlert('El Modo Travel')}
+            onPress={() => setTravelModalVisible(true)}
             style={styles.activeTripTravelButton}
           >
             <View style={styles.activeTripTravelButtonContent}>
@@ -452,9 +454,17 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             </Text>
           </View>
         )}
+
+        {/* Travel Mode Modal */}
+        <TravelModeModal
+          visible={travelModalVisible}
+          onClose={() => setTravelModalVisible(false)}
+          tripId={selectedActiveTrip.id}
+          tripName={selectedActiveTrip.name || 'Mi Viaje'}
+        />
       </LinearGradient>
     );
-  }, [selectedActiveTrip, activeTrips, router]);
+  }, [selectedActiveTrip, activeTrips, router, travelModalVisible]);
 
   // Memoized content for future trips
   const memoizedContent = React.useMemo(() => {
