@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-color-literals, react-native/no-inline-styles */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import {
   View,
@@ -18,6 +18,8 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 
 import AppMap from './AppMap';
+import PlaceDetailModal from './PlaceDetailModal';
+import { EnhancedPlace } from '../lib/placesSearch';
 import { supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
@@ -34,6 +36,15 @@ interface SavedPlaceWithTrip {
   trip_title: string;
   trip_color: string; // Color único asignado al trip
   added_at: string;
+  // Campos adicionales de Google Places
+  google_rating?: number;
+  reviews_count?: number;
+  price_level?: number;
+  editorial_summary?: string;
+  opening_hours?: any;
+  website?: string;
+  phone?: string;
+  photo_url?: string;
 }
 
 // Tipo para los trips disponibles para filtrar
@@ -95,6 +106,23 @@ export default function SavedPlacesMapModal({
     null
   );
   const [showUserLocation] = useState(true);
+  const [selectedPlace, setSelectedPlace] = useState<SavedPlaceWithTrip | null>(null);
+  const [showPlaceDetail, setShowPlaceDetail] = useState(false);
+
+  // Debug: Log cuando cambia showPlaceDetail
+  useEffect(() => {
+    logger.debug('SavedPlacesMapModal: showPlaceDetail changed', {
+      showPlaceDetail,
+      hasSelectedPlace: !!selectedPlace,
+      selectedPlaceName: selectedPlace?.name,
+    });
+  }, [showPlaceDetail, selectedPlace]);
+
+  // Ref para evitar recargas innecesarias cuando solo cambian las distancias
+  const lastNearbyPlacesIdsRef = useRef<string>('');
+
+  // Ref para guardar el centro inicial del mapa (no debe cambiar con ubicación)
+  const initialMapCenterRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
   // Función para obtener el color de un trip basado en su ID
   const getTripColor = useCallback((tripId: string, tripIndex: number): string => {
@@ -105,6 +133,21 @@ export default function SavedPlacesMapModal({
   const loadSavedPlaces = useCallback(async () => {
     // Si estamos en Travel Mode, usar los nearbyPlaces directamente
     if (nearbyPlaces && nearbyPlaces.length > 0) {
+      // Generar un ID único basado en los lugares (solo IDs, no distancias)
+      const currentPlacesIds = nearbyPlaces
+        .map((p) => p.id)
+        .sort()
+        .join(',');
+
+      // Si los lugares no han cambiado (solo cambiaron distancias), no recargar
+      if (currentPlacesIds === lastNearbyPlacesIdsRef.current) {
+        logger.debug('SavedPlacesMapModal: Nearby places unchanged, skipping reload');
+        return;
+      }
+
+      // Actualizar el ref con los nuevos IDs
+      lastNearbyPlacesIdsRef.current = currentPlacesIds;
+
       const enrichedPlaces: SavedPlaceWithTrip[] = nearbyPlaces.map((place) => ({
         id: place.id,
         place_id: place.id, // Usar id como place_id
@@ -214,6 +257,15 @@ export default function SavedPlacesMapModal({
             trip_title: trip?.title || 'Viaje desconocido',
             trip_color: getTripColor(place.trip_id, tripIndex),
             added_at: place.added_at,
+            // Campos adicionales de Google Places
+            google_rating: place.google_rating,
+            reviews_count: place.reviews_count,
+            price_level: place.price_level,
+            editorial_summary: place.editorial_summary,
+            opening_hours: place.opening_hours,
+            website: place.website,
+            phone: place.phone,
+            photo_url: place.photo_url,
           };
         }) || [];
 
@@ -270,6 +322,10 @@ export default function SavedPlacesMapModal({
     if (visible) {
       loadSavedPlaces();
       requestLocation();
+    } else {
+      // Reset refs cuando se cierra el modal para permitir recarga en próxima apertura
+      lastNearbyPlacesIdsRef.current = '';
+      initialMapCenterRef.current = null;
     }
   }, [visible, loadSavedPlaces, requestLocation]);
 
@@ -282,20 +338,131 @@ export default function SavedPlacesMapModal({
     }
   }, [selectedTripFilter, savedPlaces]);
 
-  // Calcular centro del mapa
-  const center =
-    userLocation ||
-    (filteredPlaces.length > 0
-      ? { latitude: filteredPlaces[0].lat, longitude: filteredPlaces[0].lng }
-      : { latitude: 40.4168, longitude: -3.7038 }); // Madrid por defecto
+  // Calcular centro del mapa SOLO UNA VEZ (no debe cambiar con actualizaciones de ubicación)
+  // Esto evita que la cámara se recentre constantemente
+  if (initialMapCenterRef.current === null && filteredPlaces.length > 0) {
+    // Primera vez: establecer centro basado en lugares o ubicación inicial
+    initialMapCenterRef.current = userLocation || {
+      latitude: filteredPlaces[0].lat,
+      longitude: filteredPlaces[0].lng,
+    };
+  }
+
+  const center = useMemo(() => {
+    return (
+      initialMapCenterRef.current ||
+      (filteredPlaces.length > 0
+        ? { latitude: filteredPlaces[0].lat, longitude: filteredPlaces[0].lng }
+        : { latitude: 40.4168, longitude: -3.7038 }) // Madrid por defecto
+    );
+  }, [filteredPlaces]);
 
   // Convertir lugares a marcadores para el mapa
-  const markers = filteredPlaces.map((place) => ({
-    id: place.id,
-    coord: { latitude: place.lat, longitude: place.lng },
-    title: place.name,
-    color: place.trip_color, // Ahora incluimos el color del trip
-  }));
+  // Memoizar para evitar recrear el array en cada render
+  const markers = useMemo(
+    () =>
+      filteredPlaces.map((place) => ({
+        id: place.id,
+        coord: { latitude: place.lat, longitude: place.lng },
+        title: place.name,
+        color: place.trip_color, // Ahora incluimos el color del trip
+      })),
+    [filteredPlaces]
+  );
+
+  // Handler cuando se presiona un marcador
+  const handleMarkerPress = useCallback(
+    (
+      markerId: string,
+      markerData: {
+        id: string;
+        coord: { latitude: number; longitude: number };
+        title?: string;
+        color?: string;
+      }
+    ) => {
+      logger.debug('SavedPlacesMapModal: Marker pressed', {
+        markerId,
+        markerDataId: markerData.id,
+      });
+      // Usar el ID del markerData (que tiene el ID real del lugar)
+      const place = filteredPlaces.find((p) => p.id === markerData.id);
+      if (place) {
+        logger.debug('SavedPlacesMapModal: Place found, setting selectedPlace', {
+          placeName: place.name,
+        });
+        setSelectedPlace(place);
+      } else {
+        logger.warn('SavedPlacesMapModal: Place not found in filteredPlaces', {
+          markerDataId: markerData.id,
+          filteredPlacesCount: filteredPlaces.length,
+        });
+      }
+    },
+    [filteredPlaces]
+  );
+
+  // Calcular distancia entre usuario y lugar seleccionado
+  const calculateDistance = useCallback(
+    (place: SavedPlaceWithTrip): string => {
+      if (!userLocation) return '';
+
+      const R = 6371; // Radio de la Tierra en km
+      const dLat = ((place.lat - userLocation.latitude) * Math.PI) / 180;
+      const dLon = ((place.lng - userLocation.longitude) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((userLocation.latitude * Math.PI) / 180) *
+          Math.cos((place.lat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c * 1000; // en metros
+
+      if (distance >= 1000) {
+        return `${(distance / 1000).toFixed(1)} km`;
+      }
+      return `${Math.round(distance)} m`;
+    },
+    [userLocation]
+  );
+
+  // Convertir SavedPlaceWithTrip a EnhancedPlace
+  const convertToEnhancedPlace = useCallback((place: SavedPlaceWithTrip): EnhancedPlace => {
+    return {
+      id: place.place_id,
+      name: place.name,
+      address: place.address,
+      coordinates: { lat: place.lat, lng: place.lng },
+      category: place.category,
+      source: 'saved_places',
+      // Campos adicionales de Google Places
+      rating: place.google_rating,
+      reviews_count: place.reviews_count,
+      priceLevel: place.price_level,
+      editorialSummary: place.editorial_summary,
+      opening_hours_raw: place.opening_hours,
+      website: place.website,
+      phone: place.phone,
+      photos: place.photo_url ? [place.photo_url] : undefined,
+      // Convertir opening_hours a formato openingHours si existe
+      openingHours: place.opening_hours?.weekday_text || undefined,
+    };
+  }, []);
+
+  // Handler para abrir detalle del lugar
+  const handleOpenPlaceDetail = useCallback(() => {
+    logger.debug('SavedPlacesMapModal: handleOpenPlaceDetail called', {
+      hasSelectedPlace: !!selectedPlace,
+      placeName: selectedPlace?.name,
+    });
+    if (selectedPlace) {
+      logger.debug('SavedPlacesMapModal: Opening place detail modal');
+      setShowPlaceDetail(true);
+    } else {
+      logger.warn('SavedPlacesMapModal: No selectedPlace to show');
+    }
+  }, [selectedPlace]);
 
   // Renderizar botón de filtro de trip
   const renderTripFilter = (trip: TripFilter) => {
@@ -386,8 +553,38 @@ export default function SavedPlacesMapModal({
               center={center}
               markers={markers}
               showUserLocation={showUserLocation}
+              onMarkerPress={handleMarkerPress}
               style={styles.map}
             />
+
+            {/* Callout cuando se selecciona un lugar */}
+            {selectedPlace && (
+              <View style={styles.calloutOverlay}>
+                <View style={styles.callout}>
+                  <TouchableOpacity
+                    style={styles.calloutClose}
+                    onPress={() => setSelectedPlace(null)}
+                  >
+                    <Text style={styles.calloutCloseText}>✕</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.calloutTitle} numberOfLines={2}>
+                    {selectedPlace.name}
+                  </Text>
+
+                  {calculateDistance(selectedPlace) && (
+                    <Text style={styles.calloutDistance}>
+                      📍 {calculateDistance(selectedPlace)}
+                    </Text>
+                  )}
+
+                  <TouchableOpacity style={styles.calloutButton} onPress={handleOpenPlaceDetail}>
+                    <Text style={styles.calloutButtonText}>Ver detalle</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 {filteredPlaces.length} lugar{filteredPlaces.length !== 1 ? 'es' : ''}
@@ -396,6 +593,19 @@ export default function SavedPlacesMapModal({
               </Text>
             </View>
           </>
+        )}
+
+        {/* PlaceDetailModal - se muestra encima del mapa dentro del mismo modal */}
+        {selectedPlace && (
+          <PlaceDetailModal
+            visible={showPlaceDetail}
+            place={convertToEnhancedPlace(selectedPlace)}
+            onClose={() => {
+              logger.debug('SavedPlacesMapModal: Closing PlaceDetailModal');
+              setShowPlaceDetail(false);
+              setSelectedPlace(null);
+            }}
+          />
         )}
       </View>
     </Modal>
@@ -507,5 +717,64 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+  },
+  calloutOverlay: {
+    position: 'absolute',
+    bottom: 80,
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+  },
+  callout: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  calloutClose: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calloutCloseText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: '600',
+  },
+  calloutTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+    paddingRight: 32,
+  },
+  calloutDistance: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  calloutButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  calloutButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
