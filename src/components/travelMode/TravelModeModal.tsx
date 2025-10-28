@@ -191,6 +191,36 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             {state.energyMode && <Text style={styles.energyMode}>🔋 Modo: {state.energyMode}</Text>}
           </View>
 
+          {/* ✅ NUEVO: Transport Mode Card */}
+          {state.transportMode && state.currentLocation && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Modo de Transporte</Text>
+              <View style={styles.transportRow}>
+                <Text style={styles.transportEmoji}>
+                  {state.transportMode === 'stationary' && '🧍'}
+                  {state.transportMode === 'walking' && '🚶'}
+                  {state.transportMode === 'cycling' && '🚴'}
+                  {state.transportMode === 'transit' && '🚌'}
+                  {state.transportMode === 'driving' && '🚗'}
+                </Text>
+                <View style={styles.transportInfo}>
+                  <Text style={styles.transportMode}>
+                    {state.transportMode === 'stationary' && 'Estacionario'}
+                    {state.transportMode === 'walking' && 'Caminando'}
+                    {state.transportMode === 'cycling' && 'En Bicicleta'}
+                    {state.transportMode === 'transit' && 'Transporte Público'}
+                    {state.transportMode === 'driving' && 'Conduciendo'}
+                  </Text>
+                  {state.currentSpeed !== null && state.currentSpeed >= 0 && (
+                    <Text style={styles.speedText}>
+                      {Math.max(0, state.currentSpeed).toFixed(1)} km/h
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Nearby Places */}
           {state.nearbyPlaces.length > 0 && (
             <View style={styles.card}>
@@ -452,5 +482,28 @@ const styles = StyleSheet.create({
   },
   mapButtonTextDisabled: {
     opacity: 0.6,
+  },
+  // ✅ NUEVOS ESTILOS: Transport Mode
+  transportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  transportEmoji: {
+    fontSize: 48,
+    marginRight: 16,
+  },
+  transportInfo: {
+    flex: 1,
+  },
+  transportMode: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  speedText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3B82F6',
   },
 });

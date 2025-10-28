@@ -31,6 +31,11 @@ export function calculateHaversineDistance(coord1: Coordinates, coord2: Coordina
 }
 
 /**
+ * Alias for calculateHaversineDistance (shorter name)
+ */
+export const haversineDistance = calculateHaversineDistance;
+
+/**
  * Convert degrees to radians
  */
 function toRadians(degrees: number): number {

@@ -21,13 +21,14 @@ import {
   WaypointPlace,
   TravelMode,
 } from '~/services/travelMode/NavigationService';
-import {
-  travelNotificationService,
-  NOTIFICATION_THRESHOLDS,
-  ProximityNotificationData,
-} from '~/services/travelMode/TravelNotificationService';
+import { TrackingOptimizer } from '~/services/travelMode/trackingOptimizer';
+import { TransportMode } from '~/services/travelMode/transportDetector';
+import { travelNotificationService } from '~/services/travelMode/TravelNotificationService';
 import { unifiedSpeedTracker, EnergyMode } from '~/services/travelMode/UnifiedSpeedTracker';
 import { getAdaptiveRadius } from '~/services/travelMode/VenueSizeHeuristics';
+
+// ✅ Instancia global del optimizador
+const trackingOptimizer = new TrackingOptimizer();
 
 export interface SavedPlace {
   id: string;
@@ -56,6 +57,8 @@ export interface TravelModeState {
   deviation: DeviationAnalysis | null;
   permissionsGranted: boolean;
   error: string | null;
+  transportMode: TransportMode | null; // ✅ NUEVO: Modo de transporte detectado
+  currentSpeed: number | null; // ✅ NUEVO: Velocidad actual en km/h
 }
 
 export interface TravelModeActions {
@@ -84,6 +87,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     deviation: null,
     permissionsGranted: false,
     error: null,
+    transportMode: null, // ✅ NUEVO
+    currentSpeed: null, // ✅ NUEVO
   });
 
   // Refs for stable references
@@ -100,7 +105,36 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         `📍 Location update: ${location.coordinates.latitude}, ${location.coordinates.longitude} (±${location.accuracy}m)`
       );
 
-      setState((prev) => ({ ...prev, currentLocation: location }));
+      // ✅ FIX: Asegurar que la velocidad sea válida y no negativa
+      const rawSpeed = location.speed ?? 0;
+      const safeSpeed = Math.max(0, rawSpeed); // Nunca negativa
+
+      // ✅ Convertir LocationUpdate a Location.LocationObject para el optimizador
+      const locationObject = {
+        coords: {
+          latitude: location.coordinates.latitude,
+          longitude: location.coordinates.longitude,
+          altitude: null,
+          accuracy: location.accuracy,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: safeSpeed, // Usar velocidad segura
+        },
+        timestamp: location.timestamp,
+      };
+
+      // ✅ Detectar modo de transporte y velocidad
+      const transportContext = trackingOptimizer.getTransportContext(locationObject);
+
+      // ✅ Validar que speedKmh no sea negativa
+      const validSpeed = Math.max(0, transportContext.speedKmh);
+
+      setState((prev) => ({
+        ...prev,
+        currentLocation: location,
+        transportMode: transportContext.mode,
+        currentSpeed: validSpeed, // Siempre >= 0
+      }));
 
       // Add to speed tracker
       unifiedSpeedTracker.addReading(location.coordinates, location.accuracy);
@@ -116,8 +150,44 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         setState((prev) => ({ ...prev, energyMode: suggestedMode }));
       }
 
-      // Calculate distances to saved places
+      // ✅ Usar TrackingOptimizer para calcular ETAs y detectar lugares cercanos
       const places = savedPlacesRef.current;
+      const placesForETA = places.map((p) => ({
+        id: p.id,
+        name: p.name,
+        latitude: p.latitude,
+        longitude: p.longitude,
+      }));
+
+      const etaNotifications = trackingOptimizer.calculateETAsForPlaces(
+        locationObject,
+        placesForETA
+      );
+
+      // ✅ Enviar notificaciones para lugares que requieren notificación
+      etaNotifications.forEach((notification) => {
+        const notifiedSet =
+          notifiedPlacesRef.current.get(notification.placeId) || new Set<number>();
+
+        // Usar distancia como threshold para evitar duplicados
+        const distanceThreshold = Math.round(notification.eta.distanceMeters / 100) * 100;
+
+        if (!notifiedSet.has(distanceThreshold)) {
+          travelNotificationService.sendProximityNotification({
+            placeId: notification.placeId,
+            placeName: notification.placeName,
+            distance: notification.eta.distanceMeters,
+            threshold: distanceThreshold,
+            tripId: places.find((p) => p.id === notification.placeId)?.tripId || '',
+            tripName: places.find((p) => p.id === notification.placeId)?.tripName || '',
+          });
+
+          notifiedSet.add(distanceThreshold);
+          notifiedPlacesRef.current.set(notification.placeId, notifiedSet);
+        }
+      });
+
+      // Calculate distances to ALL saved places (for display)
       const nearby: NearbyPlace[] = [];
 
       places.forEach((place) => {
@@ -139,32 +209,7 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         const maxRadius = Math.max(radius, DEFAULT_PROXIMITY_RADIUS);
 
         if (distance <= maxRadius) {
-          // Find closest threshold
-          const closestThreshold = NOTIFICATION_THRESHOLDS.find(
-            (threshold) => distance <= threshold
-          );
-
-          // Get notified thresholds for this place
           const notifiedSet = notifiedPlacesRef.current.get(place.id) || new Set<number>();
-
-          // Check if we should notify
-          if (closestThreshold && !notifiedSet.has(closestThreshold)) {
-            // Send notification
-            const notificationData: ProximityNotificationData = {
-              placeId: place.id,
-              placeName: place.name,
-              distance,
-              threshold: closestThreshold,
-              tripId: place.tripId,
-              tripName: place.tripName,
-            };
-
-            travelNotificationService.sendProximityNotification(notificationData);
-
-            // Mark as notified
-            notifiedSet.add(closestThreshold);
-            notifiedPlacesRef.current.set(place.id, notifiedSet);
-          }
 
           nearby.push({
             ...place,
@@ -302,6 +347,7 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
       unifiedSpeedTracker.reset();
       deviationDetectionService.reset();
       travelNotificationService.clearAllHistory();
+      trackingOptimizer.reset(); // ✅ NUEVO: Resetear optimizer
 
       // Clear notified places
       notifiedPlacesRef.current.clear();
@@ -317,6 +363,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         deviation: null,
         energyMode: 'normal',
         error: null,
+        transportMode: null, // ✅ NUEVO
+        currentSpeed: null, // ✅ NUEVO
       }));
 
       console.log('✅ Travel Mode stopped');
