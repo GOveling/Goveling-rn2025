@@ -22,6 +22,14 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [list, setList] = React.useState<any[]>([]);
 
+  // Format distance: >= 1km as "1.0 Km", < 1km as "900m"
+  const formatDistance = (distanceInMeters: number): string => {
+    if (distanceInMeters >= 1000) {
+      return `${(distanceInMeters / 1000).toFixed(1)} Km`;
+    }
+    return `${Math.round(distanceInMeters)}m`;
+  };
+
   React.useEffect(() => {
     (async () => {
       const p = await getCurrentPosition();
@@ -116,7 +124,7 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
                 {index + 1}. {item.name}
               </Text>
               {typeof item.distance_m === 'number' && (
-                <Text style={styles.placeDistance}>{(item.distance_m / 1000).toFixed(2)} km</Text>
+                <Text style={styles.placeDistance}>{formatDistance(item.distance_m)}</Text>
               )}
             </View>
           ))}

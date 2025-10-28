@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert } from 'react-native';
 
+import SavedPlacesMapModal from '~/components/SavedPlacesMapModal';
 import { useTravelMode } from '~/contexts/TravelModeContext';
 import { supabase } from '~/lib/supabase';
 import { formatDistance } from '~/services/travelMode/geoUtils';
@@ -22,6 +23,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
   const { state, actions } = useTravelMode();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [mapModalVisible, setMapModalVisible] = useState(false);
   const hasLoadedRef = useRef(false); // ✅ Prevenir múltiples cargas
 
   // Reset hasLoaded when modal closes or trip changes
@@ -140,6 +142,26 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             <Text style={styles.cardTitle}>Viaje Actual</Text>
             <Text style={styles.tripName}>{tripName}</Text>
             <Text style={styles.placesCount}>{state.savedPlaces.length} lugares guardados</Text>
+
+            {/* Ver Mapa Button */}
+            <TouchableOpacity
+              onPress={() => {
+                if (state.isActive) {
+                  setMapModalVisible(true);
+                } else {
+                  Alert.alert(
+                    'Modo Travel Desactivado',
+                    'Activa el Modo Travel para ver el mapa con lugares cercanos',
+                    [{ text: 'Entendido', style: 'default' }]
+                  );
+                }
+              }}
+              style={[styles.mapButton, !state.isActive && styles.mapButtonDisabled]}
+            >
+              <Text style={[styles.mapButtonText, !state.isActive && styles.mapButtonTextDisabled]}>
+                🗺️ Ver Mapa
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Status Card */}
@@ -218,6 +240,15 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             </Text>
           </View>
         </ScrollView>
+
+        {/* Saved Places Map Modal */}
+        <SavedPlacesMapModal
+          visible={mapModalVisible}
+          onClose={() => setMapModalVisible(false)}
+          nearbyPlaces={state.nearbyPlaces}
+          tripTitle={tripName}
+          tripColor="#3B82F6"
+        />
       </View>
     </Modal>
   );
@@ -402,5 +433,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFF',
+  },
+  mapButton: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  mapButtonDisabled: {
+    opacity: 0.4,
+  },
+  mapButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  mapButtonTextDisabled: {
+    opacity: 0.6,
   },
 });

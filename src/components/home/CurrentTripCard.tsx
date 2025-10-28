@@ -365,11 +365,11 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
     });
   };
 
-  const showComingSoonAlert = (feature: string) => {
-    Alert.alert('Próximamente', `${feature} estará disponible pronto`, [
-      { text: 'Entendido', style: 'default' },
-    ]);
-  };
+  // const showComingSoonAlert = (feature: string) => {
+  //   Alert.alert('Próximamente', `${feature} estará disponible pronto`, [
+  //     { text: 'Entendido', style: 'default' },
+  //   ]);
+  // };
 
   // Active Trip Component
   const ActiveTripComponent = React.useMemo(() => {
@@ -438,7 +438,11 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => showComingSoonAlert('El Itinerario')}
+              onPress={() => {
+                Alert.alert('Próximamente', 'El Itinerario estará disponible pronto', [
+                  { text: 'Entendido', style: 'default' },
+                ]);
+              }}
               style={styles.activeTripSecondaryButton}
             >
               <Text style={styles.activeTripSecondaryButtonText}>📋 Ver Itinerario</Text>

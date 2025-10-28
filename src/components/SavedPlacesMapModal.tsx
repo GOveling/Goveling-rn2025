@@ -44,9 +44,22 @@ interface TripFilter {
   placesCount: number;
 }
 
+// Tipo para lugares cercanos (del Travel Mode)
+interface NearbyPlace {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distance: number; // meters
+  tripId: string;
+}
+
 interface SavedPlacesMapModalProps {
   visible: boolean;
   onClose: () => void;
+  nearbyPlaces?: NearbyPlace[]; // Opcional: lugares cercanos del Travel Mode
+  tripTitle?: string; // Opcional: título del trip activo
+  tripColor?: string; // Opcional: color del trip activo
 }
 
 // Colores predefinidos para los trips
@@ -65,7 +78,13 @@ const TRIP_COLORS = [
   '#8B5CF6', // Violeta claro
 ];
 
-export default function SavedPlacesMapModal({ visible, onClose }: SavedPlacesMapModalProps) {
+export default function SavedPlacesMapModal({
+  visible,
+  onClose,
+  nearbyPlaces,
+  tripTitle,
+  tripColor,
+}: SavedPlacesMapModalProps) {
   // Estados
   const [savedPlaces, setSavedPlaces] = useState<SavedPlaceWithTrip[]>([]);
   const [filteredPlaces, setFilteredPlaces] = useState<SavedPlaceWithTrip[]>([]);
@@ -84,6 +103,32 @@ export default function SavedPlacesMapModal({ visible, onClose }: SavedPlacesMap
 
   // Cargar todos los lugares guardados del usuario con información del trip
   const loadSavedPlaces = useCallback(async () => {
+    // Si estamos en Travel Mode, usar los nearbyPlaces directamente
+    if (nearbyPlaces && nearbyPlaces.length > 0) {
+      const enrichedPlaces: SavedPlaceWithTrip[] = nearbyPlaces.map((place) => ({
+        id: place.id,
+        place_id: place.id, // Usar id como place_id
+        name: place.name || 'Lugar sin nombre',
+        address: undefined,
+        lat: place.latitude,
+        lng: place.longitude,
+        category: undefined,
+        trip_id: place.tripId,
+        trip_title: tripTitle || 'Viaje actual',
+        trip_color: tripColor || '#3B82F6',
+        added_at: new Date().toISOString(),
+      }));
+
+      setSavedPlaces(enrichedPlaces);
+      setTrips([]); // No hay filtros en modo Travel
+      setFilteredPlaces(enrichedPlaces);
+      logger.debug('SavedPlacesMapModal: Travel Mode - Nearby places loaded', {
+        placesCount: enrichedPlaces.length,
+      });
+      return;
+    }
+
+    // Modo normal: cargar todos los lugares
     try {
       setLoading(true);
 
@@ -200,7 +245,7 @@ export default function SavedPlacesMapModal({ visible, onClose }: SavedPlacesMap
     } finally {
       setLoading(false);
     }
-  }, [getTripColor]);
+  }, [getTripColor, nearbyPlaces, tripTitle, tripColor]);
 
   // Solicitar ubicación del usuario
   const requestLocation = useCallback(async () => {
@@ -283,12 +328,12 @@ export default function SavedPlacesMapModal({ visible, onClose }: SavedPlacesMap
           <TouchableOpacity onPress={onClose} style={styles.iconBtn}>
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>Vista de Mapa</Text>
+          <Text style={styles.title}>{nearbyPlaces ? 'Lugares Cercanos' : 'Vista de Mapa'}</Text>
           <View style={styles.iconBtn} />
         </View>
 
-        {/* Filtros de trips */}
-        {trips.length > 1 && (
+        {/* Filtros de trips - solo en modo normal */}
+        {!nearbyPlaces && trips.length > 1 && (
           <View style={styles.filtersContainer}>
             <ScrollView
               horizontal
