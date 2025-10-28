@@ -7,6 +7,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import {
+  arrivalDetectionService,
+  PlaceArrival,
+} from '~/services/travelMode/ArrivalDetectionService';
+import {
   backgroundTravelManager,
   LocationUpdate,
 } from '~/services/travelMode/BackgroundTravelManager';
@@ -57,8 +61,9 @@ export interface TravelModeState {
   deviation: DeviationAnalysis | null;
   permissionsGranted: boolean;
   error: string | null;
-  transportMode: TransportMode | null; // ✅ NUEVO: Modo de transporte detectado
-  currentSpeed: number | null; // ✅ NUEVO: Velocidad actual en km/h
+  transportMode: TransportMode | null; // ✅ Modo de transporte detectado
+  currentSpeed: number | null; // ✅ Velocidad actual en km/h
+  pendingArrival: PlaceArrival | null; // ✅ NUEVO: Lugar detectado esperando confirmación
 }
 
 export interface TravelModeActions {
@@ -70,6 +75,8 @@ export interface TravelModeActions {
   stopNavigation: () => void;
   recalculateRoute: () => Promise<void>;
   requestPermissions: () => Promise<boolean>;
+  confirmArrival: (placeId: string) => void; // ✅ NUEVO: Confirmar llegada
+  skipArrival: (placeId: string) => void; // ✅ NUEVO: Saltar llegada
 }
 
 const DEFAULT_PROXIMITY_RADIUS = 5000; // 5km
@@ -89,6 +96,7 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     error: null,
     transportMode: null, // ✅ NUEVO
     currentSpeed: null, // ✅ NUEVO
+    pendingArrival: null, // ✅ NUEVO: Llegada pendiente de confirmación
   });
 
   // Refs for stable references
@@ -224,6 +232,29 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
 
       setState((prev) => ({ ...prev, nearbyPlaces: nearby }));
 
+      // ✅ NUEVO: Check for arrival detection
+      places.forEach((place) => {
+        const arrival = arrivalDetectionService.checkArrival(
+          place.id,
+          place.name,
+          { latitude: place.latitude, longitude: place.longitude },
+          place.types,
+          location.coordinates,
+          new Date(location.timestamp)
+        );
+
+        if (arrival) {
+          console.log(
+            `🎉 ARRIVAL DETECTED: ${arrival.placeName}\n` +
+              `   Distance: ${arrival.distance.toFixed(0)}m\n` +
+              `   Dwelling time: ${arrival.dwellingTimeSeconds.toFixed(0)}s`
+          );
+
+          // Trigger arrival modal
+          setState((prev) => ({ ...prev, pendingArrival: arrival }));
+        }
+      });
+
       // Handle navigation deviation if active
       if (activeRouteRef.current) {
         deviationDetectionService.addLocationReading({
@@ -343,28 +374,31 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
       // Stop background tracking
       await backgroundTravelManager.stopTracking();
 
-      // Reset services
-      unifiedSpeedTracker.reset();
-      deviationDetectionService.reset();
-      travelNotificationService.clearAllHistory();
-      trackingOptimizer.reset(); // ✅ NUEVO: Resetear optimizer
+      // Reset tracking optimizer
+      trackingOptimizer.reset();
 
-      // Clear notified places
-      notifiedPlacesRef.current.clear();
-      activeRouteRef.current = null;
+      // Reset deviation detection
+      deviationDetectionService.reset();
+
+      // Reset arrival detection
+      arrivalDetectionService.resetAll();
+
+      // Reset navigation
+      if (activeRouteRef.current) {
+        activeRouteRef.current = null;
+      }
 
       setState((prev) => ({
         ...prev,
         isTracking: false,
         isActive: false,
         currentLocation: null,
-        nearbyPlaces: [],
         activeRoute: null,
         deviation: null,
-        energyMode: 'normal',
-        error: null,
-        transportMode: null, // ✅ NUEVO
-        currentSpeed: null, // ✅ NUEVO
+        nearbyPlaces: [],
+        pendingArrival: null, // Reset pending arrival
+        transportMode: null,
+        currentSpeed: null,
       }));
 
       console.log('✅ Travel Mode stopped');
@@ -487,6 +521,25 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     };
   }, [state.isTracking, stopTravelMode]);
 
+  /**
+   * Confirm arrival at a place
+   */
+  const confirmArrival = useCallback((placeId: string) => {
+    console.log(`✅ Confirming arrival at place: ${placeId}`);
+    arrivalDetectionService.confirmVisit(placeId);
+    setState((prev) => ({ ...prev, pendingArrival: null }));
+  }, []);
+
+  /**
+   * Skip arrival notification
+   */
+  const skipArrival = useCallback((placeId: string) => {
+    console.log(`⏭️ Skipping arrival at place: ${placeId}`);
+    arrivalDetectionService.skipVisit(placeId);
+    setState((prev) => ({ ...prev, pendingArrival: null }));
+  }, []);
+
+  // Actions
   const actions: TravelModeActions = {
     startTravelMode,
     stopTravelMode,
@@ -496,6 +549,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     stopNavigation,
     recalculateRoute,
     requestPermissions,
+    confirmArrival,
+    skipArrival,
   };
 
   return [state, actions];

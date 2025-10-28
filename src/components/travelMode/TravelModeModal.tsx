@@ -3,7 +3,7 @@
  * Optimized for native hardware (iOS/Android)
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert } from 'react-native';
 
@@ -11,6 +11,8 @@ import SavedPlacesMapModal from '~/components/SavedPlacesMapModal';
 import { useTravelMode } from '~/contexts/TravelModeContext';
 import { supabase } from '~/lib/supabase';
 import { formatDistance } from '~/services/travelMode/geoUtils';
+
+import { PlaceVisitModal } from './PlaceVisitModal';
 
 interface TravelModeModalProps {
   visible: boolean;
@@ -95,6 +97,62 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
     hasLoadedRef.current = false; // Reset the flag
     setLoadError(null);
   };
+
+  /**
+   * Handle visit confirmation
+   */
+  const handleConfirmVisit = useCallback(async () => {
+    if (!state.pendingArrival) return;
+
+    try {
+      const { user } = (await supabase.auth.getUser()).data;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get place details from saved places
+      const place = state.savedPlaces.find((p) => p.id === state.pendingArrival!.placeId);
+
+      // Save visit to trip_visits table
+      const { error } = await supabase.from('trip_visits').insert({
+        user_id: user.id,
+        trip_id: tripId,
+        place_id: place?.id,
+        place_name: state.pendingArrival.placeName,
+        lat: place?.latitude,
+        lng: place?.longitude,
+        visited_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.error('❌ Error saving visit:', error);
+        Alert.alert('Error', 'No se pudo guardar la visita');
+        return;
+      }
+
+      console.log('✅ Visit saved to database');
+
+      // Confirm arrival in service
+      actions.confirmArrival(state.pendingArrival.placeId);
+
+      // Show success message
+      Alert.alert('¡Visita Confirmada!', 'Se ha guardado tu visita en las estadísticas', [
+        { text: 'Genial', style: 'default' },
+      ]);
+    } catch (error) {
+      console.error('❌ Error confirming visit:', error);
+      Alert.alert('Error', 'No se pudo confirmar la visita');
+    }
+  }, [state.pendingArrival, state.savedPlaces, tripId, actions]);
+
+  /**
+   * Handle skip visit
+   */
+  const handleSkipVisit = useCallback(() => {
+    if (!state.pendingArrival) return;
+
+    actions.skipArrival(state.pendingArrival.placeId);
+  }, [state.pendingArrival, actions]);
 
   const handleStartTravelMode = async () => {
     setIsLoading(true);
@@ -270,16 +328,28 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             </Text>
           </View>
         </ScrollView>
-
-        {/* Saved Places Map Modal */}
-        <SavedPlacesMapModal
-          visible={mapModalVisible}
-          onClose={() => setMapModalVisible(false)}
-          nearbyPlaces={state.nearbyPlaces}
-          tripTitle={tripName}
-          tripColor="#3B82F6"
-        />
       </View>
+
+      {/* Saved Places Map Modal */}
+      <SavedPlacesMapModal
+        visible={mapModalVisible}
+        onClose={() => setMapModalVisible(false)}
+        places={state.savedPlaces}
+        currentLocation={state.currentLocation?.coordinates || null}
+      />
+
+      {/* Place Visit Confirmation Modal */}
+      {state.pendingArrival && (
+        <PlaceVisitModal
+          visible={true}
+          placeName={state.pendingArrival.placeName}
+          placeTypes={state.savedPlaces.find((p) => p.id === state.pendingArrival?.placeId)?.types}
+          distance={state.pendingArrival.distance}
+          dwellingTime={state.pendingArrival.dwellingTimeSeconds}
+          onConfirm={handleConfirmVisit}
+          onSkip={handleSkipVisit}
+        />
+      )}
     </Modal>
   );
 }
