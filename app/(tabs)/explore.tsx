@@ -15,7 +15,7 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +38,8 @@ export default function ExploreTab() {
   const { t: _t, i18n } = useTranslation();
   const router = useRouter();
   const { tripId, returnTo } = useLocalSearchParams<{ tripId?: string; returnTo?: string }>();
+
+  const shouldClearContextRef = React.useRef(false);
 
   const [search, setSearch] = React.useState('');
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
@@ -111,6 +113,18 @@ export default function ExploreTab() {
       ensureLocation();
     }
   }, [nearCurrentLocation, userCoords, locLoading, ensureLocation]);
+
+  // Clean up trip context when returning from trip places view
+  useFocusEffect(
+    React.useCallback(() => {
+      if (shouldClearContextRef.current && tripId) {
+        console.log('🧹 Explore: Cleaning trip context after navigation');
+        // Reset the explore tab to free exploration mode
+        router.replace('/(tabs)/explore');
+        shouldClearContextRef.current = false;
+      }
+    }, [tripId, router])
+  );
 
   // Load trip information if tripId is provided
   React.useEffect(() => {
@@ -245,6 +259,8 @@ export default function ExploreTab() {
           onPress: () => {
             // ✅ Navigate to explore without tripId to reset context
             console.log('🔄 Explore: Resetting context - navigating to explore without tripId');
+            // Close the place detail modal before navigating
+            handleCloseModal();
             router.replace('/(tabs)/explore');
           },
         },
@@ -252,11 +268,15 @@ export default function ExploreTab() {
           text: 'Ver lugares del viaje',
           style: 'default',
           onPress: () => {
-            if (returnTo === 'trip-places') {
-              router.back(); // Go back to trip places
-            } else {
-              router.push(`/trips/${tripId}/places`);
-            }
+            console.log(
+              `🔄 Explore: Navigating to trip places - returnTo: ${returnTo}, tripId: ${tripId}`
+            );
+            // Close the place detail modal first
+            handleCloseModal();
+            // Navigate to trip places screen
+            router.push(`/trips/${tripId}/places`);
+            // Signal that context should be cleaned when returning to this screen
+            shouldClearContextRef.current = true;
           },
         },
       ]);
