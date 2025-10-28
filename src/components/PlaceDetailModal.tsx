@@ -97,6 +97,11 @@ export default function PlaceDetailModal({
   // Resetear estados de error y reproducir animaciones cuando el modal se abre
   React.useEffect(() => {
     if (visible) {
+      console.log('[PlaceDetailModal] Opening with place:', {
+        name: place?.name,
+        description: place?.description,
+        hasDescription: !!place?.description,
+      });
       // Resetear estados de error
       setDirectionsLottieError(false);
       setLocationLottieError(false);

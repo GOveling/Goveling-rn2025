@@ -143,6 +143,13 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
           </View>
         )}
 
+        {/* Editorial Summary / About */}
+        {place.description && !compact && (
+          <Text style={styles.editorialText} numberOfLines={2}>
+            {place.description}
+          </Text>
+        )}
+
         {typeof place.distance_km === 'number' && (
           <Text style={[styles.distanceText, compact && styles.distanceTextCompact]}>
             {place.distance_km.toFixed(2)} km
@@ -221,6 +228,14 @@ const styles = StyleSheet.create({
   distanceTextCompact: {
     fontSize: 11,
     marginBottom: 6,
+  },
+  editorialText: {
+    color: COLORS.text.secondary,
+    fontSize: 13,
+    fontStyle: 'italic',
+    lineHeight: 18,
+    marginBottom: 8,
+    marginTop: 4,
   },
   favoriteButton: {
     padding: 4,

@@ -139,7 +139,7 @@ export default function AddToTripScreen() {
         google_rating: place.rating || null,
         reviews_count: place.reviews_count || null,
         price_level: convertPriceLevel(place.priceLevel),
-        editorial_summary: place.editorialSummary || null,
+        editorial_summary: place.description || null,
         opening_hours: place.openingHours ? { weekdayDescriptions: place.openingHours } : null,
         website: place.website || null,
         phone: place.phone || null,

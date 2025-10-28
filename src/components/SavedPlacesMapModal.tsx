@@ -429,7 +429,7 @@ export default function SavedPlacesMapModal({
 
   // Convertir SavedPlaceWithTrip a EnhancedPlace
   const convertToEnhancedPlace = useCallback((place: SavedPlaceWithTrip): EnhancedPlace => {
-    return {
+    const converted = {
       id: place.place_id,
       name: place.name,
       address: place.address,
@@ -440,7 +440,7 @@ export default function SavedPlacesMapModal({
       rating: place.google_rating,
       reviews_count: place.reviews_count,
       priceLevel: place.price_level,
-      editorialSummary: place.editorial_summary,
+      description: place.editorial_summary,
       opening_hours_raw: place.opening_hours,
       website: place.website,
       phone: place.phone,
@@ -448,6 +448,12 @@ export default function SavedPlacesMapModal({
       // Convertir opening_hours a formato openingHours si existe
       openingHours: place.opening_hours?.weekday_text || undefined,
     };
+    console.log('[SavedPlacesMapModal] convertToEnhancedPlace:', {
+      name: place.name,
+      editorial_summary: place.editorial_summary,
+      description: converted.description,
+    });
+    return converted;
   }, []);
 
   // Handler para abrir detalle del lugar

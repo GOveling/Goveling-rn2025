@@ -259,7 +259,7 @@ export default function TripPlacesScreen() {
     rating: place.google_rating,
     reviews_count: place.reviews_count,
     priceLevel: place.price_level,
-    editorialSummary: place.editorial_summary,
+    description: place.editorial_summary,
     openingHours: place.opening_hours?.weekdayDescriptions,
     website: place.website,
     phone: place.phone,
