@@ -23,6 +23,8 @@ import ConfettiCannon from 'react-native-confetti-cannon';
 
 import { CountryInfo } from '~/services/travelMode/CountryDetectionService';
 
+import { PhotoCarousel } from './PhotoCarousel';
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface SavedPlace {
@@ -66,6 +68,14 @@ export function CountryWelcomeModal({
         descriptionLength: countryInfo.description?.length || 0,
         isReturn,
         savedPlacesCount: savedPlaces?.length || 0,
+      });
+
+      // DEBUG PHOTOS
+      console.log('🖼️ CountryWelcomeModal - PHOTO DEBUG:', {
+        hasPhotos: !!countryInfo.photos,
+        photosLength: countryInfo.photos?.length || 0,
+        photosArray: countryInfo.photos,
+        willRenderCarousel: !!(countryInfo.photos && countryInfo.photos.length > 0),
       });
     }
   }, [visible, countryInfo, isReturn, savedPlaces]);
@@ -115,16 +125,6 @@ export function CountryWelcomeModal({
 
   return (
     <Modal visible={true} transparent animationType="none" onRequestClose={onClose}>
-      {/* Confetti Effect */}
-      <ConfettiCannon
-        ref={confettiRef}
-        count={150}
-        origin={{ x: SCREEN_WIDTH / 2, y: -10 }}
-        fadeOut
-        fallSpeed={2500}
-        explosionSpeed={350}
-      />
-
       {/* Overlay */}
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.overlayTouchable} activeOpacity={1} onPress={onClose} />
@@ -157,7 +157,10 @@ export function CountryWelcomeModal({
             )}
 
             {/* Country Stats */}
-            {(countryInfo.capital || countryInfo.population || countryInfo.language) && (
+            {(countryInfo.capital ||
+              countryInfo.population ||
+              countryInfo.language ||
+              countryInfo.currency) && (
               <View style={styles.statsSection}>
                 {countryInfo.capital && (
                   <View style={styles.statRow}>
@@ -188,6 +191,18 @@ export function CountryWelcomeModal({
                     </View>
                   </View>
                 )}
+
+                {countryInfo.currency && (
+                  <View style={styles.statRow}>
+                    <Ionicons name="cash-outline" size={20} color="#007AFF" />
+                    <View style={styles.statTextContainer}>
+                      <Text style={styles.statLabel}>Moneda</Text>
+                      <Text style={styles.statValue}>
+                        {countryInfo.currencySymbol} {countryInfo.currency}
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
 
@@ -197,6 +212,11 @@ export function CountryWelcomeModal({
                 <Text style={styles.descriptionTitle}>Sobre {countryInfo.countryName}</Text>
                 <Text style={styles.description}>{countryInfo.description}</Text>
               </View>
+            )}
+
+            {/* Photo Carousel */}
+            {countryInfo.photos && countryInfo.photos.length > 0 && (
+              <PhotoCarousel photos={countryInfo.photos} placeName={countryInfo.countryName} />
             )}
 
             {/* Saved Places (if any) - Máximo 5 lugares */}
@@ -250,6 +270,16 @@ export function CountryWelcomeModal({
           </View>
         </View>
       </View>
+
+      {/* Confetti - AL FINAL para que esté al frente */}
+      <ConfettiCannon
+        ref={confettiRef}
+        count={150}
+        origin={{ x: SCREEN_WIDTH / 2, y: -10 }}
+        fadeOut
+        fallSpeed={2500}
+        explosionSpeed={350}
+      />
     </Modal>
   );
 }

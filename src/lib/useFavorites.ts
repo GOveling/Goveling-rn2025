@@ -20,6 +20,46 @@ interface FavoritePlace {
 
 type TripMinimal = { id: string; owner_id?: string | null; user_id?: string | null };
 
+/**
+ * Extract city and country from coordinates using Nominatim
+ */
+const getCityFromCoordinates = async (
+  lat: number,
+  lng: number
+): Promise<{ city: string | null; country_code: string | null }> => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'Goveling/1.0',
+          Accept: 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('Nominatim reverse geocoding failed:', response.status);
+      return { city: null, country_code: null };
+    }
+
+    const data = await response.json();
+    const city =
+      data.address?.city ||
+      data.address?.town ||
+      data.address?.village ||
+      data.address?.municipality ||
+      null;
+    const country_code = data.address?.country_code?.toUpperCase() || null;
+
+    console.log(`📍 Geocoded (${lat}, ${lng}) → city: ${city}, country: ${country_code}`);
+    return { city, country_code };
+  } catch (error) {
+    console.error('Error geocoding coordinates:', error);
+    return { city: null, country_code: null };
+  }
+};
+
 // Helper functions
 const getUserTripIds = async (userId: string): Promise<string[]> => {
   // Return trips where the user is owner or active collaborator (any role)
@@ -205,6 +245,18 @@ export function useFavorites() {
             return false;
           }
 
+          // Get city and country from coordinates
+          let city = null;
+          let country_code = null;
+          if (place.coordinates?.lat && place.coordinates?.lng) {
+            const geocoded = await getCityFromCoordinates(
+              place.coordinates.lat,
+              place.coordinates.lng
+            );
+            city = geocoded.city;
+            country_code = geocoded.country_code;
+          }
+
           const tripPlaceData = {
             trip_id: tripId,
             place_id: place.id,
@@ -213,6 +265,9 @@ export function useFavorites() {
             lng: place.coordinates?.lng,
             address: place.address,
             category: place.category,
+            city: city,
+            country_code: country_code,
+            type: place.category, // Use category as type fallback
           };
 
           const { error } = await supabase.from('trip_places').insert([tripPlaceData]);

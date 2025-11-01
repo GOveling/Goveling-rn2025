@@ -25,6 +25,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
+import { VisitedCitiesModal } from '../../src/components/profile/VisitedCitiesModal';
 import { VisitedCountriesModal } from '../../src/components/profile/VisitedCountriesModal';
 import { VisitedPlacesModal } from '../../src/components/profile/VisitedPlacesModal';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../../src/store/api/userApi';
@@ -46,6 +47,7 @@ export default function ProfileTab() {
   // Modal states
   const [showVisitedPlacesModal, setShowVisitedPlacesModal] = React.useState(false);
   const [showVisitedCountriesModal, setShowVisitedCountriesModal] = React.useState(false);
+  const [showVisitedCitiesModal, setShowVisitedCitiesModal] = React.useState(false);
 
   React.useEffect(() => {
     console.log('📱 ProfileTab rendered');
@@ -378,10 +380,10 @@ export default function ProfileTab() {
             <Text style={styles.statLabel}>Países Visitados</Text>
           </TouchableOpacity>
 
-          <View style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedCitiesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.citiesExplored}</Text>
             <Text style={styles.statLabel}>Ciudades Exploradas</Text>
-          </View>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedPlacesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.placesVisited}</Text>
@@ -470,6 +472,23 @@ export default function ProfileTab() {
           iconColor="#666"
           onPress={() => router.push('/settings')}
         />
+
+        {/* 🔧 DEBUG: Botón temporal para limpiar cache de ciudades */}
+        {__DEV__ && (
+          <MenuSection
+            icon="trash-outline"
+            title="🔧 DEBUG: Limpiar Cache de Ciudades"
+            subtitle="Forzar nueva detección de ciudad"
+            iconColor="#FF6B6B"
+            onPress={async () => {
+              const { cityDetectionService } = await import(
+                '~/services/travelMode/CityDetectionService'
+              );
+              await cityDetectionService.clearCache();
+              alert('✅ Cache de ciudades limpiado. Reinicia la app para detectar de nuevo.');
+            }}
+          />
+        )}
       </View>
 
       {/* Botón Cerrar Sesión */}
@@ -524,9 +543,17 @@ export default function ProfileTab() {
         userId={user?.id || ''}
       />
 
+      {/* Visited Countries Modal */}
       <VisitedCountriesModal
         visible={showVisitedCountriesModal}
         onClose={() => setShowVisitedCountriesModal(false)}
+        userId={user?.id || ''}
+      />
+
+      {/* Visited Cities Modal */}
+      <VisitedCitiesModal
+        visible={showVisitedCitiesModal}
+        onClose={() => setShowVisitedCitiesModal(false)}
         userId={user?.id || ''}
       />
 

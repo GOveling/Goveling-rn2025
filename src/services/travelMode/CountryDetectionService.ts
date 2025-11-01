@@ -15,6 +15,50 @@
 import { Coordinates } from './geoUtils';
 import { reverseGeocode } from '../../lib/geocoding';
 
+// Currency mapping by country code
+const CURRENCY_MAP: Record<string, { code: string; symbol: string }> = {
+  CL: { code: 'CLP', symbol: '$' },
+  US: { code: 'USD', symbol: '$' },
+  AR: { code: 'ARS', symbol: '$' },
+  BR: { code: 'BRL', symbol: 'R$' },
+  PE: { code: 'PEN', symbol: 'S/' },
+  CO: { code: 'COP', symbol: '$' },
+  MX: { code: 'MXN', symbol: '$' },
+  ES: { code: 'EUR', symbol: '€' },
+  FR: { code: 'EUR', symbol: '€' },
+  DE: { code: 'EUR', symbol: '€' },
+  IT: { code: 'EUR', symbol: '€' },
+  GB: { code: 'GBP', symbol: '£' },
+  JP: { code: 'JPY', symbol: '¥' },
+  CN: { code: 'CNY', symbol: '¥' },
+  IN: { code: 'INR', symbol: '₹' },
+  AU: { code: 'AUD', symbol: '$' },
+  CA: { code: 'CAD', symbol: '$' },
+  NZ: { code: 'NZD', symbol: '$' },
+  ZA: { code: 'ZAR', symbol: 'R' },
+  CH: { code: 'CHF', symbol: 'Fr' },
+  SE: { code: 'SEK', symbol: 'kr' },
+  NO: { code: 'NOK', symbol: 'kr' },
+  DK: { code: 'DKK', symbol: 'kr' },
+  TH: { code: 'THB', symbol: '฿' },
+  SG: { code: 'SGD', symbol: '$' },
+  HK: { code: 'HKD', symbol: '$' },
+  KR: { code: 'KRW', symbol: '₩' },
+  RU: { code: 'RUB', symbol: '₽' },
+  TR: { code: 'TRY', symbol: '₺' },
+  AE: { code: 'AED', symbol: 'د.إ' },
+  SA: { code: 'SAR', symbol: '﷼' },
+  EG: { code: 'EGP', symbol: '£' },
+  IL: { code: 'ILS', symbol: '₪' },
+  PL: { code: 'PLN', symbol: 'zł' },
+  CZ: { code: 'CZK', symbol: 'Kč' },
+  HU: { code: 'HUF', symbol: 'Ft' },
+  MY: { code: 'MYR', symbol: 'RM' },
+  ID: { code: 'IDR', symbol: 'Rp' },
+  PH: { code: 'PHP', symbol: '₱' },
+  VN: { code: 'VND', symbol: '₫' },
+};
+
 export interface CountryInfo {
   countryCode: string; // ISO 2-letter code (e.g., "CL", "US", "MX")
   countryName: string; // Full name (e.g., "Chile", "United States")
@@ -24,6 +68,9 @@ export interface CountryInfo {
   capital?: string; // Capital city
   population?: string; // Population (formatted string)
   language?: string; // Primary language
+  currency?: string; // Currency code (e.g., "CLP", "USD")
+  currencySymbol?: string; // Currency symbol (e.g., "$", "€")
+  photos?: string[]; // Array of photo URLs (optional, max 5)
 }
 
 export interface CountryVisitEvent {
@@ -756,7 +803,7 @@ class CountryDetectionService {
         const countryCode = geocodeResult.countryCode.toUpperCase();
 
         // Check if we have rich metadata for this country
-        const enrichedData = this.getCountryMetadata(countryCode);
+        const enrichedData = await this.getCountryMetadata(countryCode);
 
         if (enrichedData) {
           // Return enriched data from our database (descriptions, stats, etc.)
@@ -767,6 +814,7 @@ class CountryDetectionService {
         }
 
         // Country detected but no metadata - use basic Nominatim data
+        const currency = CURRENCY_MAP[countryCode];
         const countryInfo: CountryInfo = {
           countryCode,
           countryName: geocodeResult.country || countryCode,
@@ -776,6 +824,8 @@ class CountryDetectionService {
           capital: undefined,
           population: undefined,
           language: undefined,
+          currency: currency?.code,
+          currencySymbol: currency?.symbol,
         };
 
         console.log(
@@ -803,6 +853,7 @@ class CountryDetectionService {
 
       if (latitude >= minLat && latitude <= maxLat && longitude >= minLng && longitude <= maxLng) {
         console.log(`🌍 Country detected via GPS boundaries: ${boundary.flag} ${boundary.name}`);
+        const currency = CURRENCY_MAP[boundary.code];
         return {
           countryCode: boundary.code,
           countryName: boundary.name,
@@ -812,6 +863,8 @@ class CountryDetectionService {
           capital: boundary.capital,
           population: boundary.population,
           language: boundary.language,
+          currency: currency?.code,
+          currencySymbol: currency?.symbol,
         };
       }
     }
@@ -826,12 +879,17 @@ class CountryDetectionService {
    * Get enriched metadata for a country code
    * Returns full info if country is in our enhanced database
    */
-  private getCountryMetadata(countryCode: string): CountryInfo | null {
+  private async getCountryMetadata(countryCode: string): Promise<CountryInfo | null> {
     const boundary = COUNTRY_BOUNDARIES.find((b) => b.code === countryCode);
 
     if (!boundary) {
       return null;
     }
+
+    const currency = CURRENCY_MAP[countryCode];
+
+    // Fetch photos from Wikipedia Edge Function
+    const photos = await this.fetchCountryPhotos(boundary.name, countryCode);
 
     return {
       countryCode: boundary.code,
@@ -842,7 +900,42 @@ class CountryDetectionService {
       capital: boundary.capital,
       population: boundary.population,
       language: boundary.language,
+      currency: currency?.code,
+      currencySymbol: currency?.symbol,
+      photos,
     };
+  }
+
+  /**
+   * Fetch country photos from Wikipedia via Edge Function
+   */
+  private async fetchCountryPhotos(countryName: string, countryCode: string): Promise<string[]> {
+    try {
+      console.log(`📸 Fetching photos for ${countryName}...`);
+
+      const { supabase } = await import('~/lib/supabase');
+      const { data, error } = await supabase.functions.invoke('wikipedia-country-photos', {
+        body: {
+          countryName,
+          countryCode,
+        },
+      });
+
+      if (error) {
+        console.error('❌ Error fetching country photos:', error);
+        return [];
+      }
+
+      if (data?.photos && Array.isArray(data.photos)) {
+        console.log(`✅ Got ${data.photos.length} photos for ${countryName}`);
+        return data.photos;
+      }
+
+      return [];
+    } catch (error) {
+      console.error('❌ Exception fetching country photos:', error);
+      return [];
+    }
   }
 
   /**

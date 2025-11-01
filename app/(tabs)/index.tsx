@@ -20,8 +20,10 @@ import CurrentTripCard from '~/components/home/CurrentTripCard';
 import LocationWidget from '~/components/home/LocationWidget';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
 import StatCards from '~/components/home/StatCards';
+import { CityWelcomeModal } from '~/components/travelMode/CityWelcomeModal';
 import { CountryWelcomeModal } from '~/components/travelMode/CountryWelcomeModal';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
+import { useCityDetectionOnAppStart } from '~/hooks/useCityDetectionOnAppStart';
 import { useCountryDetectionOnAppStart } from '~/hooks/useCountryDetectionOnAppStart';
 import {
   getCurrentPosition,
@@ -47,8 +49,15 @@ export default function HomeTab() {
   const _router = useRouter();
   const { units, setUnits } = useSettingsStore();
 
-  // Country detection on app start
-  const { pendingCountryVisit, dismissModal } = useCountryDetectionOnAppStart();
+  // Country detection on app start (runs first)
+  const { pendingCountryVisit, dismissModal: dismissCountryModal } =
+    useCountryDetectionOnAppStart();
+
+  // City detection on app start (runs AFTER country modal is dismissed)
+  // Only detect city if country modal is not showing
+  const shouldDetectCity = !pendingCountryVisit;
+  const { pendingCityVisit, dismissModal: dismissCityModal } =
+    useCityDetectionOnAppStart(shouldDetectCity);
 
   // RTK Query for trips - automatic caching & refetching
   const {
@@ -455,14 +464,25 @@ export default function HomeTab() {
         </View>
       </ScrollView>
 
-      {/* Country Welcome Modal - Shows when country changes */}
+      {/* Country Welcome Modal - Shows when country changes (priority) */}
       {pendingCountryVisit && (
         <CountryWelcomeModal
           visible={true}
           countryInfo={pendingCountryVisit.countryInfo}
           isReturn={pendingCountryVisit.isReturn}
           savedPlaces={pendingCountryVisit.savedPlaces || []}
-          onClose={dismissModal}
+          onClose={dismissCountryModal}
+        />
+      )}
+
+      {/* City Welcome Modal - Shows AFTER country modal (if city changed) */}
+      {!pendingCountryVisit && pendingCityVisit && (
+        <CityWelcomeModal
+          visible={true}
+          cityInfo={pendingCityVisit.cityInfo}
+          isReturn={pendingCityVisit.isReturn}
+          savedPlaces={pendingCityVisit.savedPlaces || []}
+          onClose={dismissCityModal}
         />
       )}
     </TripRefreshProvider>
