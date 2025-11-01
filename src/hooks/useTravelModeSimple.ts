@@ -232,8 +232,20 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
 
       setState((prev) => ({ ...prev, nearbyPlaces: nearby }));
 
-      // ✅ NUEVO: Check for arrival detection
-      places.forEach((place) => {
+      // ✅ Calculate distances to all places and sort by distance
+      const placesWithDistances = places.map((place) => {
+        const placeDistance = calculateHaversineDistance(location.coordinates, {
+          latitude: place.latitude,
+          longitude: place.longitude,
+        });
+
+        return { place, distance: placeDistance };
+      });
+
+      placesWithDistances.sort((a, b) => a.distance - b.distance);
+
+      // ✅ Check for arrival detection (prioritizing closest places)
+      for (const { place } of placesWithDistances) {
         const arrival = arrivalDetectionService.checkArrival(
           place.id,
           place.name,
@@ -247,13 +259,14 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
           console.log(
             `🎉 ARRIVAL DETECTED: ${arrival.placeName}\n` +
               `   Distance: ${arrival.distance.toFixed(0)}m\n` +
-              `   Dwelling time: ${arrival.dwellingTimeSeconds.toFixed(0)}s`
+              `   Dwelling time: ${arrival.dwellingTimeSeconds.toFixed(0)}s\n` +
+              `   Radius: ${arrival.detectionRadius}m`
           );
 
-          // Trigger arrival modal
           setState((prev) => ({ ...prev, pendingArrival: arrival }));
+          break;
         }
-      });
+      }
 
       // Handle navigation deviation if active
       if (activeRouteRef.current) {

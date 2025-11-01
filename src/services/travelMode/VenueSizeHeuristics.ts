@@ -26,17 +26,17 @@ interface VenueHeuristic {
 const VENUE_HEURISTICS: Record<VenueType, VenueHeuristic> = {
   airport: {
     type: 'airport',
-    radiusMeters: 2000,
+    radiusMeters: 500,
     description: 'Large airport facility',
   },
   stadium: {
     type: 'stadium',
-    radiusMeters: 500,
+    radiusMeters: 300,
     description: 'Sports stadium or arena',
   },
   park: {
     type: 'park',
-    radiusMeters: 300,
+    radiusMeters: 150,
     description: 'Public park',
   },
   shopping_mall: {
@@ -46,42 +46,42 @@ const VENUE_HEURISTICS: Record<VenueType, VenueHeuristic> = {
   },
   museum: {
     type: 'museum',
-    radiusMeters: 150,
+    radiusMeters: 100,
     description: 'Museum or gallery',
   },
   restaurant: {
     type: 'restaurant',
-    radiusMeters: 100,
+    radiusMeters: 30,
     description: 'Restaurant or dining establishment',
   },
   cafe: {
     type: 'cafe',
-    radiusMeters: 75,
+    radiusMeters: 25,
     description: 'Cafe or coffee shop',
   },
   hotel: {
     type: 'hotel',
-    radiusMeters: 150,
+    radiusMeters: 80,
     description: 'Hotel or accommodation',
   },
   tourist_attraction: {
     type: 'tourist_attraction',
-    radiusMeters: 200,
+    radiusMeters: 100,
     description: 'Tourist attraction or landmark',
   },
   point_of_interest: {
     type: 'point_of_interest',
-    radiusMeters: 150,
+    radiusMeters: 100,
     description: 'General point of interest',
   },
   establishment: {
     type: 'establishment',
-    radiusMeters: 100,
+    radiusMeters: 50,
     description: 'Business establishment',
   },
   default: {
     type: 'default',
-    radiusMeters: 100,
+    radiusMeters: 50,
     description: 'Default venue',
   },
 };
@@ -91,33 +91,26 @@ const VENUE_HEURISTICS: Record<VenueType, VenueHeuristic> = {
  * @param types Array of place types from Google Places API
  * @returns Radius in meters
  */
-export function getAdaptiveRadius(types?: string[]): number {
-  if (!types || types.length === 0) {
-    return VENUE_HEURISTICS.default.radiusMeters;
-  }
+/**
+ * Check if a place is a "large venue" that requires more dwelling time
+ */
+export function isLargeVenue(placeTypes?: string[]): boolean {
+  if (!placeTypes) return false;
 
-  // Priority order for venue types
-  const priorityTypes: VenueType[] = [
+  const largeVenues = [
     'airport',
+    'international_airport',
     'stadium',
+    'sports_complex',
+    'amusement_park',
+    'theme_park',
     'shopping_mall',
-    'tourist_attraction',
+    'university',
+    'zoo',
     'park',
-    'museum',
-    'hotel',
-    'restaurant',
-    'cafe',
-    'point_of_interest',
-    'establishment',
   ];
 
-  for (const priorityType of priorityTypes) {
-    if (types.includes(priorityType)) {
-      return VENUE_HEURISTICS[priorityType].radiusMeters;
-    }
-  }
-
-  return VENUE_HEURISTICS.default.radiusMeters;
+  return placeTypes.some((type) => largeVenues.includes(type.toLowerCase()));
 }
 
 /**
