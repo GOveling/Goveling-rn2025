@@ -41,6 +41,73 @@ const corsHeaders = {
 const GOOGLE_PLACES_KEY =
   Deno.env.get('GOOGLE_PLACES_API_KEY') || Deno.env.get('GOOGLE_MAPS_API_KEY');
 
+const PEXELS_API_KEY = 'FiZKukOZgoEtIs4txpu4eyyvqynG8jXRe5gcdroujQiEd0K00Z2HRUbR';
+
+/**
+ * Fetch city landscape photos from Pexels API
+ * Returns: array of photo URLs (max 6, landscape orientation)
+ */
+async function fetchPexelsCityPhotos(
+  cityName: string,
+  stateName: string,
+  countryName: string
+): Promise<string[]> {
+  try {
+    console.log(`🌄 Searching Pexels for landscape photos of: ${cityName}`);
+
+    // Build search query with city, state/region, and country
+    const searchQuery = `${cityName} ${stateName || ''} ${countryName} landscape scenic cityscape`;
+    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=6&orientation=landscape`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: PEXELS_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`❌ Pexels API error: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+
+    if (!data.photos || data.photos.length === 0) {
+      console.warn(`⚠️ No photos found for: ${cityName}, trying with just city name...`);
+
+      // Fallback: try with just city name + country
+      const fallbackQuery = `${cityName} ${countryName} landscape`;
+      const fallbackUrl = `https://api.pexels.com/v1/search?query=${encodeURIComponent(fallbackQuery)}&per_page=6&orientation=landscape`;
+
+      const fallbackResponse = await fetch(fallbackUrl, {
+        headers: {
+          Authorization: PEXELS_API_KEY,
+        },
+      });
+
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData.photos && fallbackData.photos.length > 0) {
+          const photoUrls = fallbackData.photos.map((photo: any) => photo.src.large).slice(0, 6);
+          console.log(`✅ Found ${photoUrls.length} photos (fallback search)`);
+          return photoUrls;
+        }
+      }
+
+      return [];
+    }
+
+    // Extract photo URLs (use 'large' size for good quality)
+    const photoUrls = data.photos.map((photo: any) => photo.src.large).slice(0, 6);
+
+    console.log(`✅ Found ${photoUrls.length} landscape photos for ${cityName}`);
+    return photoUrls;
+  } catch (error) {
+    console.error('❌ Pexels photos fetch error:', error);
+    return [];
+  }
+}
+
 /**
  * Fetch city data from Wikipedia API (FREE)
  * Returns: description, population, extract
@@ -103,75 +170,7 @@ async function fetchWikipediaData(cityName: string, countryName: string) {
     const page = Object.values(pages)[0] as any;
     const extract = page.extract;
 
-    // Step 3: Extract photos
-    const photos: string[] = [];
-
-    // Get main page image (thumbnail)
-    if (page.thumbnail?.source) {
-      photos.push(page.thumbnail.source);
-      console.log(`📸 Main thumbnail: ${page.thumbnail.source}`);
-    }
-
-    // Get additional images from the page
-    if (page.images && Array.isArray(page.images)) {
-      console.log(`🖼️ Found ${page.images.length} images in article`);
-
-      // Filter and fetch image URLs (max 5 total)
-      const imagePromises = page.images
-        .slice(0, 10) // Get first 10 to filter
-        .filter((img: any) => {
-          const filename = img.title.toLowerCase();
-          // Filter out icons, logos, flags, maps
-          return (
-            !filename.includes('bandera') &&
-            !filename.includes('escudo') &&
-            !filename.includes('logo') &&
-            !filename.includes('coat') &&
-            !filename.includes('flag') &&
-            !filename.includes('map') &&
-            !filename.includes('mapa') &&
-            filename.match(/\.(jpg|jpeg|png)$/i)
-          );
-        })
-        .slice(0, 5) // Max 5 images
-        .map(async (img: any) => {
-          try {
-            // Get image URL using imageinfo
-            const imgUrl = new URL('https://es.wikipedia.org/w/api.php');
-            imgUrl.searchParams.set('action', 'query');
-            imgUrl.searchParams.set('titles', img.title);
-            imgUrl.searchParams.set('prop', 'imageinfo');
-            imgUrl.searchParams.set('iiprop', 'url');
-            imgUrl.searchParams.set('iiurlwidth', '800');
-            imgUrl.searchParams.set('format', 'json');
-
-            const imgResponse = await fetch(imgUrl.toString());
-            if (imgResponse.ok) {
-              const imgData = await imgResponse.json();
-              const imgPages = imgData.query?.pages;
-              if (imgPages) {
-                const imgPage = Object.values(imgPages)[0] as any;
-                const imageUrl = imgPage.imageinfo?.[0]?.thumburl || imgPage.imageinfo?.[0]?.url;
-                if (imageUrl && !photos.includes(imageUrl)) {
-                  return imageUrl;
-                }
-              }
-            }
-          } catch (error) {
-            console.warn('⚠️ Failed to fetch image:', img.title);
-          }
-          return null;
-        });
-
-      const imageUrls = (await Promise.all(imagePromises)).filter(Boolean) as string[];
-      photos.push(...imageUrls);
-    }
-
-    // Limit to 5 photos total
-    const finalPhotos = photos.slice(0, 5);
-    console.log(`✅ Total photos collected: ${finalPhotos.length}`);
-
-    // Step 4: Try to get population from Wikidata (structured data)
+    // Step 3: Try to get population from Wikidata (structured data)
     let population = null;
 
     // Check if page has Wikidata ID
@@ -212,12 +211,10 @@ async function fetchWikipediaData(cityName: string, countryName: string) {
     console.log('✅ Wikipedia data extracted');
     console.log('   Description:', extract ? `${extract.substring(0, 100)}...` : 'N/A');
     console.log('   Population:', population || 'N/A');
-    console.log('   Photos:', finalPhotos.length);
 
     return {
       description: extract || null,
       population: population || null,
-      photos: finalPhotos,
       source: 'wikipedia' as const,
     };
   } catch (error) {
@@ -254,9 +251,14 @@ serve(async (req: Request) => {
     console.log(`🔍 Searching for city: ${cityName}, ${countryName}`);
 
     // ========================================
-    // STEP 1: Get Wikipedia data (FREE)
+    // STEP 1: Get Wikipedia data (FREE) + Pexels photos
     // ========================================
     const wikipediaData = await fetchWikipediaData(cityName, countryName);
+
+    // Fetch Pexels photos separately
+    console.log(`📸 Fetching Pexels photos for ${cityName}, ${countryName}...`);
+    const photos = await fetchPexelsCityPhotos(cityName, stateName || '', countryName);
+    console.log(`✅ Pexels photos fetched: ${photos.length}`);
 
     // ========================================
     // STEP 2: Get Google Places data for technical info only
@@ -345,26 +347,15 @@ serve(async (req: Request) => {
     // ========================================
     // STEP 3: Merge data with priority: Wikipedia > Google
     // ========================================
-    const enrichedDetails = {
-      // Wikipedia data (free, detailed)
-      description: wikipediaData?.description,
-      population: wikipediaData?.population,
-      photos: wikipediaData?.photos || [], // ← FIX: Include photos from Wikipedia!
-
-      // Google Places data (only technical info)
-      timezone: googleData?.timezone,
-      formattedAddress: googleData?.formattedAddress,
+    const enrichedDetails: any = {
+      name: cityName,
+      description: wikipediaData?.description || 'No description available',
+      population: wikipediaData?.population || null,
+      timezone: googleData?.timezone || null,
+      formattedAddress: googleData?.formattedAddress || null,
       types: googleData?.types || [],
-
-      // Source attribution
-      source:
-        wikipediaData && googleData
-          ? 'hybrid'
-          : wikipediaData
-            ? 'wikipedia'
-            : googleData
-              ? 'google'
-              : 'none',
+      photos: photos, // Use Pexels photos
+      source: 'wikipedia+pexels',
     };
 
     console.log('✅ Final enriched details:', enrichedDetails);
