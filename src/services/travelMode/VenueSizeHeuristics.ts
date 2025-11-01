@@ -51,12 +51,12 @@ const VENUE_HEURISTICS: Record<VenueType, VenueHeuristic> = {
   },
   restaurant: {
     type: 'restaurant',
-    radiusMeters: 30,
+    radiusMeters: 50, // Increased from 30m for better detection
     description: 'Restaurant or dining establishment',
   },
   cafe: {
     type: 'cafe',
-    radiusMeters: 25,
+    radiusMeters: 40, // Increased from 25m for better detection
     description: 'Cafe or coffee shop',
   },
   hotel: {
@@ -91,6 +91,11 @@ const VENUE_HEURISTICS: Record<VenueType, VenueHeuristic> = {
  * @param types Array of place types from Google Places API
  * @returns Radius in meters
  */
+export function getAdaptiveRadius(placeTypes?: string[]): number {
+  const heuristic = getVenueHeuristic(placeTypes);
+  return heuristic.radiusMeters;
+}
+
 /**
  * Check if a place is a "large venue" that requires more dwelling time
  */

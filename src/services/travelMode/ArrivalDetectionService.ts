@@ -36,8 +36,8 @@ interface ArrivalDetectionConfig {
 }
 
 const DEFAULT_CONFIG: ArrivalDetectionConfig = {
-  dwellingTimeThresholdSeconds: 30, // 30 seconds minimum
-  consecutiveReadingsRequired: 3, // 3 consecutive readings
+  dwellingTimeThresholdSeconds: 15, // 15 seconds minimum (reduced from 30 for faster detection)
+  consecutiveReadingsRequired: 2, // 2 consecutive readings (reduced from 3 for faster detection)
   exitDistanceMultiplier: 1.5, // 1.5x radius to exit
   blockDurationMs: 5 * 60 * 1000, // 5 minutes
 };
@@ -66,11 +66,17 @@ export class ArrivalDetectionService {
   ): PlaceArrival | null {
     // Skip if there's already a modal open for another place
     if (this.activeArrivalPlaceId && this.activeArrivalPlaceId !== placeId) {
+      console.log(
+        `⏸️  ArrivalDetection: Skipping ${placeName} - Modal already open for another place (${this.activeArrivalPlaceId})`
+      );
       return null;
     }
 
     // Skip if user has already arrived at this place
     if (this.arrivedPlaces.has(placeId)) {
+      console.log(
+        `⏸️  ArrivalDetection: Skipping ${placeName} - Already arrived/confirmed in this session`
+      );
       return null;
     }
 
@@ -81,6 +87,13 @@ export class ArrivalDetectionService {
     const radius = getAdaptiveRadius(placeTypes);
 
     const isWithinRadius = distance <= radius;
+
+    console.log(
+      `📍 ArrivalDetection: Checking ${placeName}\n` +
+        `   Distance: ${distance.toFixed(0)}m / Radius: ${radius}m\n` +
+        `   Within radius: ${isWithinRadius ? 'YES ✅' : 'NO ❌'}\n` +
+        `   Place types: ${placeTypes?.join(', ') || 'none'}`
+    );
 
     // Get or create proximity state
     let state = this.proximityStates.get(placeId);
@@ -101,8 +114,15 @@ export class ArrivalDetectionService {
     // Check if place is blocked
     if (state.isBlocked && state.blockedUntil) {
       if (timestamp < state.blockedUntil) {
+        const remainingMs = state.blockedUntil.getTime() - timestamp.getTime();
+        console.log(
+          `🚫 ArrivalDetection: ${placeName} is BLOCKED\n` +
+            `   Blocked until: ${state.blockedUntil.toISOString()}\n` +
+            `   Time remaining: ${Math.ceil(remainingMs / 1000)}s`
+        );
         return null;
       } else {
+        console.log(`🔓 ArrivalDetection: ${placeName} UNBLOCKED - block expired`);
         state.isBlocked = false;
         state.blockedUntil = null;
       }
@@ -110,6 +130,9 @@ export class ArrivalDetectionService {
 
     // Check if user skipped this place
     if (state.skipNotification) {
+      console.log(
+        `⏩ ArrivalDetection: ${placeName} was SKIPPED by user - will not trigger notification`
+      );
       return null;
     }
 
@@ -121,11 +144,19 @@ export class ArrivalDetectionService {
         state.enteredAt = timestamp;
         state.consecutiveReadings = 1;
         console.log(
-          `🎯 ArrivalDetection: User entered radius for ${placeName} (${distance.toFixed(0)}m/${radius}m)`
+          `🎯 ArrivalDetection: User entered radius for ${placeName}\n` +
+            `   Distance: ${distance.toFixed(0)}m / Radius: ${radius}m\n` +
+            `   Started tracking at: ${timestamp.toISOString()}`
         );
       } else {
         // Still within radius
         state.consecutiveReadings++;
+        console.log(
+          `🔄 ArrivalDetection: Still within radius for ${placeName}\n` +
+            `   Distance: ${distance.toFixed(0)}m / Radius: ${radius}m\n` +
+            `   Consecutive readings: ${state.consecutiveReadings}/${this.config.consecutiveReadingsRequired}\n` +
+            `   Time elapsed: ${((timestamp.getTime() - state.enteredAt.getTime()) / 1000).toFixed(1)}s`
+        );
       }
 
       state.lastDistance = distance;
@@ -139,6 +170,16 @@ export class ArrivalDetectionService {
       const dwellingThreshold = isLargeVenue(placeTypes)
         ? this.config.dwellingTimeThresholdSeconds * 1.5
         : this.config.dwellingTimeThresholdSeconds;
+
+      // Log progress towards arrival confirmation
+      console.log(
+        `⏱️  ArrivalDetection Progress for ${placeName}:\n` +
+          `   Dwelling time: ${dwellingTime.toFixed(1)}s / ${dwellingThreshold}s required\n` +
+          `   Consecutive readings: ${state.consecutiveReadings}/${this.config.consecutiveReadingsRequired} required\n` +
+          `   Distance: ${distance.toFixed(0)}m / ${radius}m radius\n` +
+          `   Progress: ${Math.min(100, (dwellingTime / dwellingThreshold) * 100).toFixed(0)}% time, ` +
+          `${Math.min(100, (state.consecutiveReadings / this.config.consecutiveReadingsRequired) * 100).toFixed(0)}% readings`
+      );
 
       if (
         dwellingTime >= dwellingThreshold &&
@@ -242,7 +283,7 @@ export class ArrivalDetectionService {
   resetPlace(placeId: string): void {
     this.proximityStates.delete(placeId);
     this.arrivedPlaces.delete(placeId);
-    console.log(`🔄 ArrivalDetection: Reset place ${placeId}`);
+    console.log(`🔄 ArrivalDetection: Reset place ${placeId} - can be detected again`);
   }
 
   /**
@@ -252,7 +293,7 @@ export class ArrivalDetectionService {
     this.proximityStates.clear();
     this.arrivedPlaces.clear();
     this.activeArrivalPlaceId = null;
-    console.log('🔄 ArrivalDetection: Reset all states');
+    console.log('🔄 ArrivalDetection: Reset all states - fresh start');
   }
 
   /**
@@ -267,6 +308,46 @@ export class ArrivalDetectionService {
    */
   hasArrived(placeId: string): boolean {
     return this.arrivedPlaces.has(placeId);
+  }
+
+  /**
+   * Get debugging statistics
+   */
+  getDebugStats(): {
+    totalTrackedPlaces: number;
+    arrivedPlaces: number;
+    activeArrivalPlaceId: string | null;
+    blockedPlaces: number;
+    skippedPlaces: number;
+    placesInProgress: Array<{
+      placeId: string;
+      enteredAt: Date | null;
+      consecutiveReadings: number;
+      isBlocked: boolean;
+      skipNotification: boolean;
+    }>;
+  } {
+    const blockedPlaces = Array.from(this.proximityStates.values()).filter(
+      (s) => s.isBlocked
+    ).length;
+    const skippedPlaces = Array.from(this.proximityStates.values()).filter(
+      (s) => s.skipNotification
+    ).length;
+
+    return {
+      totalTrackedPlaces: this.proximityStates.size,
+      arrivedPlaces: this.arrivedPlaces.size,
+      activeArrivalPlaceId: this.activeArrivalPlaceId,
+      blockedPlaces,
+      skippedPlaces,
+      placesInProgress: Array.from(this.proximityStates.entries()).map(([id, state]) => ({
+        placeId: id,
+        enteredAt: state.enteredAt,
+        consecutiveReadings: state.consecutiveReadings,
+        isBlocked: state.isBlocked,
+        skipNotification: state.skipNotification,
+      })),
+    };
   }
 
   /**

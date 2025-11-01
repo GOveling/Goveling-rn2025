@@ -29,6 +29,21 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
   const [mapModalVisible, setMapModalVisible] = useState(false);
   const hasLoadedRef = useRef(false); // ✅ Prevenir múltiples cargas
 
+  // 🐛 DEBUG: Expose actions to window in development mode
+  useEffect(() => {
+    if (__DEV__ && typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).debugActions = actions;
+      console.log('🐛 DEBUG: Actions exposed to window.debugActions');
+      console.log('   Try: window.debugActions.getArrivalDebugStats()');
+      console.log('   Try: window.debugActions.resetArrivalDetection()');
+    }
+    return () => {
+      if (__DEV__ && typeof window !== 'undefined') {
+        delete (window as unknown as Record<string, unknown>).debugActions;
+      }
+    };
+  }, [actions]);
+
   // Reset hasLoaded when modal closes or trip changes
   useEffect(() => {
     if (!visible) {

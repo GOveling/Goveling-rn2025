@@ -86,6 +86,9 @@ export interface TravelModeActions {
   skipArrival: (placeId: string) => void; // ✅ NUEVO: Saltar llegada a lugar
   confirmCountryVisit: (countryCode: string) => void; // ✅ NUEVO: Confirmar llegada a país
   dismissCountryVisit: () => void; // ✅ NUEVO: Cerrar modal sin confirmar
+  // 🐛 DEBUG ACTIONS
+  resetArrivalDetection: () => void; // Reset all arrival detection state
+  getArrivalDebugStats: () => Record<string, unknown>; // Get debug statistics
 }
 
 const DEFAULT_PROXIMITY_RADIUS = 5000; // 5km
@@ -658,6 +661,41 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     setState((prev) => ({ ...prev, pendingCountryVisit: null }));
   }, []);
 
+  /**
+   * 🐛 DEBUG: Reset all arrival detection state
+   */
+  const resetArrivalDetection = useCallback(() => {
+    console.log(`🔄 Resetting all arrival detection state...`);
+    arrivalDetectionService.resetAll();
+    setState((prev) => ({ ...prev, pendingArrival: null }));
+    console.log('✅ Arrival detection state reset - all places can be detected again');
+  }, []);
+
+  /**
+   * 🐛 DEBUG: Get arrival detection statistics
+   */
+  const getArrivalDebugStats = useCallback(() => {
+    const stats = arrivalDetectionService.getDebugStats();
+    console.log(
+      '📊 Arrival Detection Debug Stats:\n' +
+        `   Total tracked places: ${stats.totalTrackedPlaces}\n` +
+        `   Arrived places: ${stats.arrivedPlaces}\n` +
+        `   Active arrival modal: ${stats.activeArrivalPlaceId || 'none'}\n` +
+        `   Blocked places: ${stats.blockedPlaces}\n` +
+        `   Skipped places: ${stats.skippedPlaces}\n` +
+        `   Places in progress: ${stats.placesInProgress.length}`
+    );
+    if (stats.placesInProgress.length > 0) {
+      console.log('   Progress details:');
+      stats.placesInProgress.forEach((p) => {
+        console.log(
+          `     - ${p.placeId}: readings=${p.consecutiveReadings}, blocked=${p.isBlocked}, skipped=${p.skipNotification}`
+        );
+      });
+    }
+    return stats;
+  }, []);
+
   // Actions
   const actions: TravelModeActions = {
     startTravelMode,
@@ -672,6 +710,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     skipArrival,
     confirmCountryVisit,
     dismissCountryVisit,
+    resetArrivalDetection,
+    getArrivalDebugStats,
   };
 
   return [state, actions];
