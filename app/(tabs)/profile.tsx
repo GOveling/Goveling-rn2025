@@ -25,6 +25,8 @@ import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
+import { VisitedCountriesModal } from '../../src/components/profile/VisitedCountriesModal';
+import { VisitedPlacesModal } from '../../src/components/profile/VisitedPlacesModal';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../../src/store/api/userApi';
 
 const { width } = Dimensions.get('window');
@@ -41,6 +43,10 @@ export default function ProfileTab() {
   } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
+  // Modal states
+  const [showVisitedPlacesModal, setShowVisitedPlacesModal] = React.useState(false);
+  const [showVisitedCountriesModal, setShowVisitedCountriesModal] = React.useState(false);
+
   React.useEffect(() => {
     console.log('📱 ProfileTab rendered');
     console.log('👤 Current user:', user?.email);
@@ -55,7 +61,7 @@ export default function ProfileTab() {
     stats: {
       countriesVisited: 0,
       citiesExplored: 0,
-      placesVisited: 2,
+      placesVisited: 0,
       achievementPoints: 0,
     },
   });
@@ -143,7 +149,7 @@ export default function ProfileTab() {
           stats: {
             countriesVisited: uniqueCountries.size,
             citiesExplored: uniqueCities.size,
-            placesVisited: visits?.length || 2,
+            placesVisited: visits?.length || 0,
             achievementPoints: calculateAchievementPoints(visits?.length || 0),
           },
         }));
@@ -154,7 +160,7 @@ export default function ProfileTab() {
           stats: {
             countriesVisited: travelStats.countries_count || 0,
             citiesExplored: travelStats.cities_count || 0,
-            placesVisited: travelStats.places_count || 2,
+            placesVisited: travelStats.places_count || 0,
             achievementPoints: calculateAchievementPoints(travelStats.places_count || 0),
           },
         }));
@@ -167,7 +173,7 @@ export default function ProfileTab() {
         stats: {
           countriesVisited: 0,
           citiesExplored: 0,
-          placesVisited: 2,
+          placesVisited: 0,
           achievementPoints: 0,
         },
       }));
@@ -364,20 +370,23 @@ export default function ProfileTab() {
         <Text style={styles.statsTitle}>Estadísticas de Viaje</Text>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => setShowVisitedCountriesModal(true)}
+          >
             <Text style={styles.statNumber}>{profileData.stats.countriesVisited}</Text>
             <Text style={styles.statLabel}>Países Visitados</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{profileData.stats.citiesExplored}</Text>
             <Text style={styles.statLabel}>Ciudades Exploradas</Text>
           </View>
 
-          <View style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedPlacesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.placesVisited}</Text>
             <Text style={styles.statLabel}>Lugares Visitados</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{profileData.stats.achievementPoints}</Text>
@@ -506,6 +515,19 @@ export default function ProfileTab() {
           refetchProfile();
           setShowProfileEditModal(false);
         }}
+      />
+
+      {/* Visited Places Modal */}
+      <VisitedPlacesModal
+        visible={showVisitedPlacesModal}
+        onClose={() => setShowVisitedPlacesModal(false)}
+        userId={user?.id || ''}
+      />
+
+      <VisitedCountriesModal
+        visible={showVisitedCountriesModal}
+        onClose={() => setShowVisitedCountriesModal(false)}
+        userId={user?.id || ''}
       />
 
       <View style={{ height: 100 }} />

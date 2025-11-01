@@ -20,7 +20,9 @@ import CurrentTripCard from '~/components/home/CurrentTripCard';
 import LocationWidget from '~/components/home/LocationWidget';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
 import StatCards from '~/components/home/StatCards';
+import { CountryWelcomeModal } from '~/components/travelMode/CountryWelcomeModal';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
+import { useCountryDetectionOnAppStart } from '~/hooks/useCountryDetectionOnAppStart';
 import {
   getCurrentPosition,
   reverseCityCached,
@@ -44,6 +46,9 @@ export default function HomeTab() {
   const { colors: _colors } = useTheme();
   const _router = useRouter();
   const { units, setUnits } = useSettingsStore();
+
+  // Country detection on app start
+  const { pendingCountryVisit, dismissModal } = useCountryDetectionOnAppStart();
 
   // RTK Query for trips - automatic caching & refetching
   const {
@@ -449,6 +454,17 @@ export default function HomeTab() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Country Welcome Modal - Shows when country changes */}
+      {pendingCountryVisit && (
+        <CountryWelcomeModal
+          visible={true}
+          countryInfo={pendingCountryVisit.countryInfo}
+          isReturn={pendingCountryVisit.isReturn}
+          savedPlaces={pendingCountryVisit.savedPlaces || []}
+          onClose={dismissModal}
+        />
+      )}
     </TripRefreshProvider>
   );
 }

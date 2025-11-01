@@ -6,6 +6,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+import * as Location from 'expo-location';
+
+import { supabase } from '~/lib/supabase';
 import {
   arrivalDetectionService,
   PlaceArrival,
@@ -14,6 +17,10 @@ import {
   backgroundTravelManager,
   LocationUpdate,
 } from '~/services/travelMode/BackgroundTravelManager';
+import {
+  countryDetectionService,
+  CountryVisitEvent,
+} from '~/services/travelMode/CountryDetectionService';
 import {
   deviationDetectionService,
   DeviationAnalysis,
@@ -29,7 +36,6 @@ import { TrackingOptimizer } from '~/services/travelMode/trackingOptimizer';
 import { TransportMode } from '~/services/travelMode/transportDetector';
 import { travelNotificationService } from '~/services/travelMode/TravelNotificationService';
 import { unifiedSpeedTracker, EnergyMode } from '~/services/travelMode/UnifiedSpeedTracker';
-import { getAdaptiveRadius } from '~/services/travelMode/VenueSizeHeuristics';
 
 // ✅ Instancia global del optimizador
 const trackingOptimizer = new TrackingOptimizer();
@@ -64,6 +70,7 @@ export interface TravelModeState {
   transportMode: TransportMode | null; // ✅ Modo de transporte detectado
   currentSpeed: number | null; // ✅ Velocidad actual en km/h
   pendingArrival: PlaceArrival | null; // ✅ NUEVO: Lugar detectado esperando confirmación
+  pendingCountryVisit: CountryVisitEvent | null; // ✅ NUEVO: País detectado esperando confirmación
 }
 
 export interface TravelModeActions {
@@ -75,8 +82,10 @@ export interface TravelModeActions {
   stopNavigation: () => void;
   recalculateRoute: () => Promise<void>;
   requestPermissions: () => Promise<boolean>;
-  confirmArrival: (placeId: string) => void; // ✅ NUEVO: Confirmar llegada
-  skipArrival: (placeId: string) => void; // ✅ NUEVO: Saltar llegada
+  confirmArrival: (placeId: string) => void; // ✅ NUEVO: Confirmar llegada a lugar
+  skipArrival: (placeId: string) => void; // ✅ NUEVO: Saltar llegada a lugar
+  confirmCountryVisit: (countryCode: string) => void; // ✅ NUEVO: Confirmar llegada a país
+  dismissCountryVisit: () => void; // ✅ NUEVO: Cerrar modal sin confirmar
 }
 
 const DEFAULT_PROXIMITY_RADIUS = 5000; // 5km
@@ -97,6 +106,7 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     transportMode: null, // ✅ NUEVO
     currentSpeed: null, // ✅ NUEVO
     pendingArrival: null, // ✅ NUEVO: Llegada pendiente de confirmación
+    pendingCountryVisit: null, // ✅ NUEVO: País pendiente de confirmación
   });
 
   // Refs for stable references
@@ -108,7 +118,7 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
    * Handle location update from background manager
    */
   const handleLocationUpdate = useCallback(
-    (location: LocationUpdate) => {
+    async (location: LocationUpdate) => {
       console.log(
         `📍 Location update: ${location.coordinates.latitude}, ${location.coordinates.longitude} (±${location.accuracy}m)`
       );
@@ -212,8 +222,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
             `   Distance: ${(distance / 1000).toFixed(2)} km (${Math.round(distance)} m)`
         );
 
-        // Get adaptive radius for this place type
-        const radius = getAdaptiveRadius(place.types);
+        // Use default proximity radius for place detection
+        const radius = DEFAULT_PROXIMITY_RADIUS;
         const maxRadius = Math.max(radius, DEFAULT_PROXIMITY_RADIUS);
 
         if (distance <= maxRadius) {
@@ -243,6 +253,18 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
       });
 
       placesWithDistances.sort((a, b) => a.distance - b.distance);
+
+      // ✅ NUEVO: Check for country change
+      const countryChange = await countryDetectionService.checkCountryChange(location.coordinates);
+      if (countryChange) {
+        console.log(
+          `🌍 COUNTRY CHANGE DETECTED: ${countryChange.countryInfo.countryFlag} ${countryChange.countryInfo.countryName}\n` +
+            `   Is Return: ${countryChange.isReturn}\n` +
+            `   Previous Country: ${countryChange.previousCountryCode || 'None'}`
+        );
+
+        setState((prev) => ({ ...prev, pendingCountryVisit: countryChange }));
+      }
 
       // ✅ Check for arrival detection (prioritizing closest places)
       for (const { place } of placesWithDistances) {
@@ -354,6 +376,68 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         return false;
       }
 
+      // Initialize country detection with smart logic
+      try {
+        // Get current location first
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+
+        const currentCoords = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        };
+
+        // Detect current country from GPS
+        const currentCountry = await countryDetectionService.detectCountry(currentCoords);
+
+        if (currentCountry) {
+          console.log(
+            `📍 Current location detected: ${currentCountry.countryFlag} ${currentCountry.countryName}`
+          );
+
+          // Get last visited country from database
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user) {
+            const { data: lastVisit } = await supabase
+              .from('country_visits')
+              .select('country_code, country_name')
+              .eq('user_id', user.id)
+              .order('entry_date', { ascending: false })
+              .limit(1)
+              .single();
+
+            if (lastVisit) {
+              console.log(
+                `💾 Last visit in DB: ${lastVisit.country_name} (${lastVisit.country_code})`
+              );
+
+              // Compare: Are we in the same country?
+              if (lastVisit.country_code === currentCountry.countryCode) {
+                // SAME COUNTRY: Use cache to avoid duplicate modal
+                console.log(`✅ Still in ${currentCountry.countryName} - using cache`);
+                countryDetectionService.setLastCountry(currentCountry.countryCode);
+              } else {
+                // DIFFERENT COUNTRY: User traveled, reset detection
+                console.log(
+                  `🌍 Traveled from ${lastVisit.country_name} to ${currentCountry.countryName} - will show welcome modal`
+                );
+                countryDetectionService.reset();
+                // Let normal detection trigger the modal on first location update
+              }
+            } else {
+              // No previous visits: Start fresh
+              console.log('🆕 First time using Travel Mode - will detect countries normally');
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not initialize country detection:', error);
+        // Continue anyway, detection will work on first location update
+      }
+
       // Send welcome notification
       if (state.savedPlaces.length > 0) {
         const tripName = state.savedPlaces[0].tripName || 'tu viaje';
@@ -396,6 +480,9 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
       // Reset arrival detection
       arrivalDetectionService.resetAll();
 
+      // Reset country detection
+      countryDetectionService.reset();
+
       // Reset navigation
       if (activeRouteRef.current) {
         activeRouteRef.current = null;
@@ -410,6 +497,7 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         deviation: null,
         nearbyPlaces: [],
         pendingArrival: null, // Reset pending arrival
+        pendingCountryVisit: null, // Reset pending country visit
         transportMode: null,
         currentSpeed: null,
       }));
@@ -552,6 +640,24 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     setState((prev) => ({ ...prev, pendingArrival: null }));
   }, []);
 
+  /**
+   * Confirm country visit (will be handled by parent component with DB insert)
+   */
+  const confirmCountryVisit = useCallback((countryCode: string) => {
+    console.log(`✅ Confirming country visit: ${countryCode}`);
+    // Parent component will handle DB insert
+    // Just clear the pending state here
+    setState((prev) => ({ ...prev, pendingCountryVisit: null }));
+  }, []);
+
+  /**
+   * Dismiss country visit modal without confirming
+   */
+  const dismissCountryVisit = useCallback(() => {
+    console.log(`⏭️ Dismissing country visit modal`);
+    setState((prev) => ({ ...prev, pendingCountryVisit: null }));
+  }, []);
+
   // Actions
   const actions: TravelModeActions = {
     startTravelMode,
@@ -564,6 +670,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
     requestPermissions,
     confirmArrival,
     skipArrival,
+    confirmCountryVisit,
+    dismissCountryVisit,
   };
 
   return [state, actions];

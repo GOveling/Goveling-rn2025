@@ -12,6 +12,7 @@ import { useTravelMode } from '~/contexts/TravelModeContext';
 import { supabase } from '~/lib/supabase';
 import { formatDistance } from '~/services/travelMode/geoUtils';
 
+import { CountryWelcomeModal } from './CountryWelcomeModal';
 import { PlaceVisitModal } from './PlaceVisitModal';
 
 interface TravelModeModalProps {
@@ -105,32 +106,71 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
     if (!state.pendingArrival) return;
 
     try {
-      const { user } = (await supabase.auth.getUser()).data;
-      if (!user) {
-        throw new Error('User not authenticated');
+      console.log('🔄 Confirming visit...', {
+        placeId: state.pendingArrival.placeId,
+        placeName: state.pendingArrival.placeName,
+        tripId,
+      });
+
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user) {
+        console.error('❌ User authentication error:', userError);
+        Alert.alert('Error', 'No estás autenticado. Por favor inicia sesión nuevamente.');
+        return;
       }
 
       // Get place details from saved places
       const place = state.savedPlaces.find((p) => p.id === state.pendingArrival!.placeId);
 
-      // Save visit to trip_visits table
-      const { error } = await supabase.from('trip_visits').insert({
-        user_id: user.id,
-        trip_id: tripId,
-        place_id: place?.id,
-        place_name: state.pendingArrival.placeName,
-        lat: place?.latitude,
-        lng: place?.longitude,
-        visited_at: new Date().toISOString(),
-      });
-
-      if (error) {
-        console.error('❌ Error saving visit:', error);
-        Alert.alert('Error', 'No se pudo guardar la visita');
+      if (!place) {
+        console.error('❌ Place not found in saved places');
+        Alert.alert('Error', 'No se encontró el lugar en la lista de lugares guardados');
         return;
       }
 
-      console.log('✅ Visit saved to database');
+      console.log('📍 Place details:', {
+        id: place.id,
+        name: place.name,
+        lat: place.latitude,
+        lng: place.longitude,
+      });
+
+      // Prepare visit data
+      const visitData = {
+        user_id: userData.user.id,
+        trip_id: tripId,
+        place_id: place.id,
+        place_name: state.pendingArrival.placeName,
+        lat: place.latitude,
+        lng: place.longitude,
+        visited_at: new Date().toISOString(),
+      };
+
+      console.log('💾 Saving visit to database:', visitData);
+
+      // Save visit to trip_visits table
+      const { data: insertedData, error: insertError } = await supabase
+        .from('trip_visits')
+        .insert(visitData)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('❌ Error saving visit:', insertError);
+        console.error('Error details:', {
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          code: insertError.code,
+        });
+        Alert.alert(
+          'Error al guardar',
+          `No se pudo guardar la visita: ${insertError.message}\n\nCódigo: ${insertError.code}`
+        );
+        return;
+      }
+
+      console.log('✅ Visit saved to database:', insertedData);
 
       // Confirm arrival in service
       actions.confirmArrival(state.pendingArrival.placeId);
@@ -153,6 +193,68 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
     actions.skipArrival(state.pendingArrival.placeId);
   }, [state.pendingArrival, actions]);
+
+  /**
+   * Handle country visit confirmation (with DB insert)
+   */
+  const handleConfirmCountryVisit = useCallback(async () => {
+    if (!state.pendingCountryVisit) return;
+
+    const { countryInfo, coordinates, isReturn, previousCountryCode } = state.pendingCountryVisit;
+
+    try {
+      console.log(`🌍 Saving country visit to database: ${countryInfo.countryName}`);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        Alert.alert('Error', 'No estás autenticado');
+        return;
+      }
+
+      // Count places in this country
+      const placesInCountry = state.savedPlaces.filter((place) => {
+        // Match by country_code if available in place data
+        return place.types && place.types.includes(countryInfo.countryCode);
+      });
+
+      // Insert country visit
+      const { error } = await supabase.from('country_visits').insert({
+        user_id: user.id,
+        trip_id: tripId,
+        country_code: countryInfo.countryCode,
+        country_name: countryInfo.countryName,
+        lat: coordinates.latitude,
+        lng: coordinates.longitude,
+        is_return: isReturn,
+        places_count: placesInCountry.length,
+        previous_country_code: previousCountryCode,
+      });
+
+      if (error) {
+        console.error('❌ Error saving country visit:', error);
+        Alert.alert('Error', 'No se pudo guardar la visita al país');
+        return;
+      }
+
+      console.log(`✅ Country visit saved successfully: ${countryInfo.countryName}`);
+
+      // Clear pending state
+      actions.confirmCountryVisit(countryInfo.countryCode);
+    } catch (error) {
+      console.error('❌ Error in handleConfirmCountryVisit:', error);
+      Alert.alert('Error', 'Ocurrió un error al guardar la visita');
+    }
+  }, [state.pendingCountryVisit, state.savedPlaces, tripId, actions]);
+
+  /**
+   * Handle dismissing country visit modal
+   */
+  const handleDismissCountryVisit = useCallback(() => {
+    actions.dismissCountryVisit();
+  }, [actions]);
 
   const handleStartTravelMode = async () => {
     setIsLoading(true);
@@ -348,6 +450,32 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
           dwellingTime={state.pendingArrival.dwellingTimeSeconds}
           onConfirm={handleConfirmVisit}
           onSkip={handleSkipVisit}
+        />
+      )}
+
+      {/* Country Welcome Modal */}
+      {state.pendingCountryVisit && (
+        <CountryWelcomeModal
+          visible={true}
+          countryInfo={state.pendingCountryVisit.countryInfo}
+          isReturn={state.pendingCountryVisit.isReturn}
+          savedPlaces={state.savedPlaces
+            .filter((place) => {
+              // Filter places that belong to this country
+              // This is a simplified version - you may need to enhance matching logic
+              const countryCode = state.pendingCountryVisit?.countryInfo.countryCode;
+              // For now, we'll just show up to 10 places
+              return true; // TODO: Add proper country_code matching when available in place data
+            })
+            .slice(0, 10)
+            .map((p) => ({
+              id: p.id,
+              name: p.name,
+              city: undefined, // TODO: Add city if available
+              type: p.types?.[0],
+            }))}
+          onClose={handleDismissCountryVisit}
+          onConfirm={handleConfirmCountryVisit}
         />
       )}
     </Modal>
