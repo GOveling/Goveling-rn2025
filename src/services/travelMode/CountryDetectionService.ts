@@ -438,7 +438,7 @@ const COUNTRY_BOUNDARIES: CountryBoundary[] = [
     name: 'Brasil',
     flag: '🇧🇷',
     latRange: [-33.7, 5.3],
-    lngRange: [-73.9, -28.8],
+    lngRange: [-73.9, -28.8], // Note: Western edge overlaps with Peru/Bolivia, but smaller area prioritization handles this
     description:
       'Brasil es país más grande de Sudamérica. Hogar de Amazonas, Cristo Redentor, Carnaval de Río, playas de Copacabana, samba, y fútbol legendario. Conocido por Iguazú, Pantanal, y biodiversidad extrema.',
     continent: 'América del Sur',
@@ -783,6 +783,16 @@ class CountryDetectionService {
   private lastDetectedCountry: string | null = null;
   private countryHistory: string[] = []; // Track country sequence
 
+  // ✅ NEW: Country change debouncing to prevent GPS noise
+  private pendingCountryChange: {
+    countryCode: string;
+    confirmations: number;
+    firstDetectedAt: number;
+  } | null = null;
+
+  private readonly CHANGE_CONFIRMATIONS_REQUIRED = 3; // Require 3 consecutive detections
+  private readonly CHANGE_TIMEOUT_MS = 30000; // 30 seconds max to confirm
+
   /**
    * HYBRID DETECTION: Nominatim API (primary) + GPS boundaries (fallback)
    * Detects country from GPS coordinates using the best available method
@@ -845,34 +855,63 @@ class CountryDetectionService {
    * FALLBACK: Detect country using GPS boundaries (offline support)
    * Used when Nominatim API is unavailable or fails
    * Covers 60+ most visited countries with complete metadata
+   *
+   * ✅ IMPROVED: Sorts by boundary area to prioritize smaller/more specific countries
+   * This prevents large countries (like Brazil) from incorrectly matching coordinates
+   * in neighboring smaller countries (like Chile)
    */
   private detectCountryFromBoundaries(latitude: number, longitude: number): CountryInfo | null {
+    // Find all matching countries
+    const matches: Array<{ boundary: CountryBoundary; area: number }> = [];
+
     for (const boundary of COUNTRY_BOUNDARIES) {
       const [minLat, maxLat] = boundary.latRange;
       const [minLng, maxLng] = boundary.lngRange;
 
       if (latitude >= minLat && latitude <= maxLat && longitude >= minLng && longitude <= maxLng) {
-        console.log(`🌍 Country detected via GPS boundaries: ${boundary.flag} ${boundary.name}`);
-        const currency = CURRENCY_MAP[boundary.code];
-        return {
-          countryCode: boundary.code,
-          countryName: boundary.name,
-          countryFlag: boundary.flag,
-          description: boundary.description,
-          continent: boundary.continent,
-          capital: boundary.capital,
-          population: boundary.population,
-          language: boundary.language,
-          currency: currency?.code,
-          currencySymbol: currency?.symbol,
-        };
+        // Calculate bounding box area
+        const area = (maxLat - minLat) * (maxLng - minLng);
+        matches.push({ boundary, area });
       }
     }
 
-    console.warn(
-      `⚠️ Country not found in boundaries: lat=${latitude}, lng=${longitude}. May be a country not in top 60.`
-    );
-    return null;
+    // If no matches, return null
+    if (matches.length === 0) {
+      console.warn(
+        `⚠️ Country not found in boundaries: lat=${latitude}, lng=${longitude}. May be a country not in top 60.`
+      );
+      return null;
+    }
+
+    // Sort by area (smallest first) - smallest bounding box = most specific match
+    matches.sort((a, b) => a.area - b.area);
+
+    const bestMatch = matches[0].boundary;
+
+    if (matches.length > 1) {
+      console.log(
+        `🎯 Multiple country matches found. Selected most specific: ${bestMatch.flag} ${bestMatch.name} ` +
+          `(area: ${matches[0].area.toFixed(2)}, rejected: ${matches
+            .slice(1)
+            .map((m) => m.boundary.name)
+            .join(', ')})`
+      );
+    }
+
+    console.log(`🌍 Country detected via GPS boundaries: ${bestMatch.flag} ${bestMatch.name}`);
+    const currency = CURRENCY_MAP[bestMatch.code];
+    return {
+      countryCode: bestMatch.code,
+      countryName: bestMatch.name,
+      countryFlag: bestMatch.flag,
+      description: bestMatch.description,
+      continent: bestMatch.continent,
+      capital: bestMatch.capital,
+      population: bestMatch.population,
+      language: bestMatch.language,
+      currency: currency?.code,
+      currencySymbol: currency?.symbol,
+    };
   }
 
   /**
@@ -978,6 +1017,9 @@ class CountryDetectionService {
   /**
    * Check if country has changed and should be recorded
    * Returns CountryVisitEvent if new country detected, null otherwise
+   *
+   * ✅ IMPROVED: Requires multiple consecutive confirmations to prevent GPS noise
+   * This is critical in border areas or when GPS accuracy is low
    */
   async checkCountryChange(coordinates: Coordinates): Promise<CountryVisitEvent | null> {
     const countryInfo = await this.detectCountry(coordinates);
@@ -1003,30 +1045,101 @@ class CountryDetectionService {
       };
     }
 
-    // Same country as last detection - no change
+    // Same country as last detection - no change, reset pending change
     if (this.lastDetectedCountry === countryInfo.countryCode) {
+      if (this.pendingCountryChange) {
+        console.log(
+          `🔄 Country detection stabilized back to ${countryInfo.countryName}. ` +
+            `Cancelled pending change to ${this.pendingCountryChange.countryCode}.`
+        );
+        this.pendingCountryChange = null;
+      }
       return null;
     }
 
-    // Different country detected!
-    const previousCountryCode = this.lastDetectedCountry;
-    const isReturn = this.countryHistory.includes(countryInfo.countryCode);
+    // Different country detected - START or UPDATE pending change tracking
+    const now = Date.now();
 
-    // Update tracking
-    this.lastDetectedCountry = countryInfo.countryCode;
-    this.countryHistory.push(countryInfo.countryCode);
+    if (!this.pendingCountryChange) {
+      // First detection of new country - start tracking
+      this.pendingCountryChange = {
+        countryCode: countryInfo.countryCode,
+        confirmations: 1,
+        firstDetectedAt: now,
+      };
 
-    console.log(
-      `🌍 Country change detected: ${countryInfo.countryFlag} ${countryInfo.countryName} ${isReturn ? '(RETURN)' : '(NEW)'}`
-    );
-    console.log(`📍 Previous country: ${previousCountryCode}`);
+      console.log(
+        `⏳ NEW country detected: ${countryInfo.countryFlag} ${countryInfo.countryName}. ` +
+          `Need ${this.CHANGE_CONFIRMATIONS_REQUIRED - 1} more confirmations within ${this.CHANGE_TIMEOUT_MS / 1000}s.`
+      );
 
-    return {
-      countryInfo,
-      coordinates,
-      isReturn,
-      previousCountryCode,
-    };
+      return null; // Don't trigger event yet
+    }
+
+    // Check if this is the same pending country
+    if (this.pendingCountryChange.countryCode === countryInfo.countryCode) {
+      // Check timeout
+      if (now - this.pendingCountryChange.firstDetectedAt > this.CHANGE_TIMEOUT_MS) {
+        console.log(
+          `⚠️ Country change timeout expired for ${countryInfo.countryName}. Resetting confirmation count.`
+        );
+        this.pendingCountryChange = {
+          countryCode: countryInfo.countryCode,
+          confirmations: 1,
+          firstDetectedAt: now,
+        };
+        return null;
+      }
+
+      // Increment confirmations
+      this.pendingCountryChange.confirmations++;
+
+      console.log(
+        `✅ Country confirmation ${this.pendingCountryChange.confirmations}/${this.CHANGE_CONFIRMATIONS_REQUIRED}: ` +
+          `${countryInfo.countryFlag} ${countryInfo.countryName}`
+      );
+
+      // Check if we have enough confirmations
+      if (this.pendingCountryChange.confirmations >= this.CHANGE_CONFIRMATIONS_REQUIRED) {
+        // CONFIRMED! Country has changed
+        const previousCountryCode = this.lastDetectedCountry;
+        const isReturn = this.countryHistory.includes(countryInfo.countryCode);
+
+        // Update tracking
+        this.lastDetectedCountry = countryInfo.countryCode;
+        this.countryHistory.push(countryInfo.countryCode);
+        this.pendingCountryChange = null; // Reset
+
+        console.log(
+          `� Country change CONFIRMED: ${countryInfo.countryFlag} ${countryInfo.countryName} ${isReturn ? '(RETURN)' : '(NEW)'}`
+        );
+        console.log(`📍 Previous country: ${previousCountryCode}`);
+
+        return {
+          countryInfo,
+          coordinates,
+          isReturn,
+          previousCountryCode,
+        };
+      }
+
+      // Not enough confirmations yet
+      return null;
+    } else {
+      // Different country than pending - reset and start tracking this new one
+      console.log(
+        `🔄 Country detection changed from pending ${this.pendingCountryChange.countryCode} ` +
+          `to ${countryInfo.countryCode}. Restarting confirmation count.`
+      );
+
+      this.pendingCountryChange = {
+        countryCode: countryInfo.countryCode,
+        confirmations: 1,
+        firstDetectedAt: now,
+      };
+
+      return null;
+    }
   }
 
   /**
@@ -1049,6 +1162,7 @@ class CountryDetectionService {
   reset(): void {
     this.lastDetectedCountry = null;
     this.countryHistory = [];
+    this.pendingCountryChange = null; // ✅ Reset pending changes too
     console.log('🔄 Country detection reset');
   }
 
