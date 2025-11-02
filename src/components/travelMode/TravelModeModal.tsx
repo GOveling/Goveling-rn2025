@@ -454,8 +454,16 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       <SavedPlacesMapModal
         visible={mapModalVisible}
         onClose={() => setMapModalVisible(false)}
-        places={state.savedPlaces}
-        currentLocation={state.currentLocation?.coordinates || null}
+        nearbyPlaces={state.nearbyPlaces.map((place) => ({
+          id: place.id,
+          name: place.name,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          distance: place.distance,
+          tripId: place.tripId,
+        }))}
+        tripTitle={tripName}
+        tripColor="#3B82F6"
       />
 
       {/* Place Visit Confirmation Modal */}
