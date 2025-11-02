@@ -26,6 +26,7 @@ import {
 import { CountryImage } from './CountryImage';
 import GroupOptionsModal from './GroupOptionsModal';
 import LiquidButton from './LiquidButton';
+import TripChatModal from './TripChatModalSimple';
 import TripDetailsModal from './TripDetailsModal';
 import { useGetProfileQuery } from '../store/api/userApi';
 
@@ -99,6 +100,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   });
   const [showModal, setShowModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [ownerProfile, setOwnerProfile] = useState<{
     id: string;
     full_name?: string;
@@ -957,88 +960,155 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             flexDirection: 'row',
             alignItems: 'center',
             marginBottom: 24,
+            justifyContent: 'space-between',
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 14,
-              color: '#666666',
-              fontWeight: '500',
-              marginRight: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              flex: 1,
             }}
           >
-            Equipo:
-          </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: '#666666',
+                fontWeight: '500',
+                marginRight: 8,
+              }}
+            >
+              Equipo:
+            </Text>
 
-          {/* Dueño del trip (primera posición) */}
-          <View style={{ marginRight: 4 }}>{renderOwnerAvatar()}</View>
+            {/* Dueño del trip (primera posición) */}
+            <View style={{ marginRight: 4 }}>{renderOwnerAvatar()}</View>
 
-          {/* Colaboradores (excluyendo al owner para evitar duplicados) */}
-          {tripData.collaborators
-            .filter((collaborator) => {
+            {/* Colaboradores (excluyendo al owner para evitar duplicados) */}
+            {tripData.collaborators
+              .filter((collaborator) => {
+                const ownerId = currentTrip.owner_id || currentTrip.user_id;
+                return collaborator.id !== ownerId;
+              })
+              .slice(0, 2)
+              .map((collaborator, index) => (
+                <View key={collaborator.id} style={{ marginRight: 4 }}>
+                  {collaborator.avatar_url ? (
+                    <Image
+                      source={{ uri: collaborator.avatar_url }}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                      }}
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: '#10B981',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#FFFFFF',
+                          fontWeight: '700',
+                          fontSize: 11,
+                        }}
+                      >
+                        {getUserInitials(collaborator.full_name, collaborator.email)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+
+            {(() => {
+              // Calcular colaboradores únicos (excluyendo owner)
               const ownerId = currentTrip.owner_id || currentTrip.user_id;
-              return collaborator.id !== ownerId;
-            })
-            .slice(0, 2)
-            .map((collaborator, index) => (
-              <View key={collaborator.id} style={{ marginRight: 4 }}>
-                {collaborator.avatar_url ? (
-                  <Image
-                    source={{ uri: collaborator.avatar_url }}
+              const uniqueCollaborators = tripData.collaborators.filter(
+                (c) => c.id !== ownerId
+              ).length;
+              // Mostrar "+X más" si hay más de 2 colaboradores únicos (además del owner)
+              const remaining = uniqueCollaborators - 2;
+
+              return (
+                remaining > 0 && (
+                  <Text
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
+                      fontSize: 14,
+                      color: '#666666',
+                      marginLeft: 4,
                     }}
-                  />
-                ) : (
+                  >
+                    +{remaining} más
+                  </Text>
+                )
+              );
+            })()}
+          </View>
+
+          {/* Botón de Chat Rápido */}
+          {tripData.collaboratorsCount > 1 && (
+            <TouchableOpacity
+              onPress={() => setShowChatModal(true)}
+              style={{
+                marginLeft: 8,
+              }}
+            >
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  gap: 6,
+                }}
+              >
+                <Ionicons name="chatbubble" size={14} color="#FFFFFF" />
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: '600',
+                  }}
+                >
+                  Chat
+                </Text>
+                {unreadMessagesCount > 0 && (
                   <View
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      backgroundColor: '#10B981',
+                      backgroundColor: '#EF4444',
+                      borderRadius: 10,
+                      minWidth: 18,
+                      height: 18,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      paddingHorizontal: 4,
                     }}
                   >
                     <Text
                       style={{
                         color: '#FFFFFF',
+                        fontSize: 10,
                         fontWeight: '700',
-                        fontSize: 11,
                       }}
                     >
-                      {getUserInitials(collaborator.full_name, collaborator.email)}
+                      {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                     </Text>
                   </View>
                 )}
-              </View>
-            ))}
-
-          {(() => {
-            // Calcular colaboradores únicos (excluyendo owner)
-            const ownerId = currentTrip.owner_id || currentTrip.user_id;
-            const uniqueCollaborators = tripData.collaborators.filter(
-              (c) => c.id !== ownerId
-            ).length;
-            // Mostrar "+X más" si hay más de 2 colaboradores únicos (además del owner)
-            const remaining = uniqueCollaborators - 2;
-
-            return (
-              remaining > 0 && (
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: '#666666',
-                    marginLeft: 4,
-                  }}
-                >
-                  +{remaining} más
-                </Text>
-              )
-            );
-          })()}
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Botones de Acción */}
@@ -1120,6 +1190,17 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           visible={showGroupModal}
           onClose={() => setShowGroupModal(false)}
           trip={currentTrip}
+        />
+      )}
+
+      {/* Modal de Chat */}
+      {tripData.collaboratorsCount > 1 && (
+        <TripChatModal
+          visible={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          tripId={currentTrip.id}
+          tripTitle={currentTrip.title}
+          onUnreadCountChange={setUnreadMessagesCount}
         />
       )}
     </View>

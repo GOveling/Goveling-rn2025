@@ -37,6 +37,7 @@ import { useAppDispatch } from '~/store/hooks';
 
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
+import TripChatModal from './TripChatModalSimple';
 
 // Mapas para obtener íconos de alojamiento y transporte
 const accommodationIcons: { [key: string]: string } = {
@@ -134,6 +135,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const [showManageTeam, setShowManageTeam] = useState(openManageTeam);
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
   const [pendingInvites, setPendingInvites] = useState(0);
+
+  // Estados para el chat grupal
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   // Set initial tab and manage team state when props change
   React.useEffect(() => {
@@ -576,6 +581,46 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </Text>
       </View>
 
+      {/* Equipo: Avatares + Botón Chat */}
+      <View style={styles.teamSection}>
+        <View style={styles.teamHeader}>
+          <Text style={styles.teamLabel}>Equipo:</Text>
+          <View style={styles.teamAvatarsContainer}>
+            {tripOwner && (
+              <View style={styles.teamAvatar}>
+                {tripOwner.avatar_url ? (
+                  <Image source={{ uri: tripOwner.avatar_url }} style={styles.teamAvatarImage} />
+                ) : (
+                  <View style={styles.teamAvatarPlaceholder}>
+                    <Text style={styles.teamAvatarInitials}>
+                      {getUserInitials(tripOwner.full_name, tripOwner.email)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+            {collaborators.slice(0, 3).map((collaborator) => (
+              <View key={collaborator.id} style={styles.teamAvatar}>
+                {collaborator.avatar_url ? (
+                  <Image source={{ uri: collaborator.avatar_url }} style={styles.teamAvatarImage} />
+                ) : (
+                  <View style={styles.teamAvatarPlaceholder}>
+                    <Text style={styles.teamAvatarInitials}>
+                      {getUserInitials(collaborator.full_name, collaborator.email)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+            {collaborators.length > 3 && (
+              <View style={styles.teamAvatarMore}>
+                <Text style={styles.teamAvatarMoreText}>+{collaborators.length - 3}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+
       {/* Destino */}
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -793,20 +838,44 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {/* Botones de acción */}
       <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Chat Grupal', 'Funcionalidad de chat próximamente disponible')
-          }
-        >
+        <TouchableOpacity onPress={() => setShowChatModal(true)}>
           <LinearGradient
             colors={['#3B82F6', '#1E40AF']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientButton}
           >
-            <View style={styles.buttonContent}>
+            <View style={[styles.buttonContent, { position: 'relative' }]}>
               <Ionicons name="chatbubble-outline" size={20} color="white" />
               <Text style={styles.buttonText}>Chat Grupal</Text>
+              {unreadMessagesCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: 40,
+                    backgroundColor: COLORS.status.error,
+                    borderRadius: 10,
+                    minWidth: 20,
+                    height: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 6,
+                    borderWidth: 2,
+                    borderColor: COLORS.utility.white,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: COLORS.utility.white,
+                      fontSize: 11,
+                      fontWeight: '700',
+                    }}
+                  >
+                    {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                  </Text>
+                </View>
+              )}
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -918,6 +987,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           loadTripStats();
           loadUsers();
         }}
+      />
+
+      {/* Chat Modal */}
+      <TripChatModal
+        visible={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        tripId={trip.id}
+        tripTitle={trip.title}
+        onUnreadCountChange={setUnreadMessagesCount}
       />
     </Modal>
   );
@@ -1379,6 +1457,63 @@ const styles = StyleSheet.create({
     color: COLORS.text.white,
     fontSize: 12,
     fontWeight: '600',
+  },
+
+  // Team section quick access
+  teamSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    justifyContent: 'space-between',
+  },
+  teamHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  teamLabel: {
+    fontSize: 14,
+    color: COLORS.text.tertiary,
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  teamAvatarsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  teamAvatar: {
+    marginRight: 4,
+  },
+  teamAvatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  teamAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary.main,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamAvatarInitials: {
+    color: COLORS.utility.white,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  teamAvatarMore: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.background.purple.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamAvatarMoreText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.primary.main,
   },
 });
 
