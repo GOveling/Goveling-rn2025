@@ -179,11 +179,6 @@ export function useCountryDetectionOnAppStart() {
     try {
       setState((prev) => ({ ...prev, isDetecting: true }));
 
-      // CRITICAL: Ensure cache is loaded BEFORE detection
-      // This prevents showing the modal for the same country after app restart
-      const cachedCountry = countryDetectionService.getLastCountry();
-      console.log(`💾 Cached country from last session: ${cachedCountry || 'none'}`);
-
       // Get current location
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -216,15 +211,7 @@ export function useCountryDetectionOnAppStart() {
         `🎯 Detected country: ${currentCountry.countryFlag} ${currentCountry.countryName} (${currentCountry.countryCode})`
       );
 
-      // CRITICAL CHECK: Compare with cached country FIRST
-      // If same as cached, skip DB query and modal
-      if (cachedCountry === currentCountry.countryCode) {
-        console.log(`✅ Still in ${currentCountry.countryName} (cached) - no modal needed`);
-        setState((prev) => ({ ...prev, isDetecting: false }));
-        return;
-      }
-
-      // Get last visited country from database
+      // Get last visited country from DATABASE (single source of truth)
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -244,14 +231,14 @@ export function useCountryDetectionOnAppStart() {
 
       if (lastVisit) {
         console.log(
-          `💾 Last visit: ${lastVisit.country_name} (${lastVisit.country_code}) on ${lastVisit.entry_date}`
+          `💾 Last visit in DB: ${lastVisit.country_name} (${lastVisit.country_code}) on ${lastVisit.entry_date}`
         );
 
         // Check if country changed
         if (lastVisit.country_code === currentCountry.countryCode) {
           console.log(`✅ Still in ${currentCountry.countryName} - no modal needed`);
-          // Update cache to prevent duplicate detection in Travel Mode
-          countryDetectionService.setLastCountry(currentCountry.countryCode);
+          // Update cache to sync with DB
+          await countryDetectionService.setLastCountry(currentCountry.countryCode);
           setState((prev) => ({ ...prev, isDetecting: false }));
           return;
         }
@@ -399,8 +386,20 @@ export function useCountryDetectionOnAppStart() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * 🐛 DEBUG: Clear cache and force re-detection
+   * Use when cache becomes inconsistent with DB
+   */
+  const clearCacheAndRedetect = async () => {
+    console.log('🧹 Clearing country cache and forcing re-detection...');
+    await countryDetectionService.clearCacheAndReset();
+    await detectCurrentCountry();
+  };
+
   return {
     ...state,
     dismissModal,
+    // 🐛 DEBUG: Expose for development/debugging
+    clearCacheAndRedetect: __DEV__ ? clearCacheAndRedetect : undefined,
   };
 }

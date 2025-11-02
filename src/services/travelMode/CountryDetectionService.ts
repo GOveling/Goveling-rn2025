@@ -796,9 +796,11 @@ class CountryDetectionService {
     firstDetectedAt: number;
   } | null = null;
 
-  // ✅ IMPROVED: More conservative thresholds to prevent false positives in border areas
-  private readonly CHANGE_CONFIRMATIONS_REQUIRED = 5; // Require 5 consecutive detections (was 3)
-  private readonly CHANGE_TIMEOUT_MS = 120000; // 2 minutes max to confirm (was 30s)
+  // ✅ HYBRID THRESHOLDS:
+  // - First detection: INSTANT (0 confirmations)
+  // - Country changes: Conservative validation to avoid false positives
+  private readonly CHANGE_CONFIRMATIONS_REQUIRED = 3; // Reduced from 5 for better UX
+  private readonly CHANGE_TIMEOUT_MS = 90000; // 1.5 minutes (reduced from 2 min)
 
   constructor() {
     this.loadCacheFromStorage();
@@ -1052,6 +1054,9 @@ class CountryDetectionService {
    *
    * ✅ IMPROVED: Requires multiple consecutive confirmations to prevent GPS noise
    * This is critical in border areas or when GPS accuracy is low
+   *
+   * IMPORTANT: First-time detection is INSTANT (no confirmations needed)
+   * Subsequent changes require 5 confirmations to avoid false positives
    */
   async checkCountryChange(coordinates: Coordinates): Promise<CountryVisitEvent | null> {
     // Ensure cache is loaded before checking
@@ -1063,13 +1068,13 @@ class CountryDetectionService {
       return null; // Unknown country
     }
 
-    // First visit ever
+    // ✅ FIRST VISIT EVER - INSTANT DETECTION (no confirmations needed)
     if (this.lastDetectedCountry === null) {
       this.lastDetectedCountry = countryInfo.countryCode;
       this.countryHistory.push(countryInfo.countryCode);
 
       console.log(
-        `🌍 First country detected: ${countryInfo.countryFlag} ${countryInfo.countryName}`
+        `🌍 First country detected (instant): ${countryInfo.countryFlag} ${countryInfo.countryName}`
       );
 
       return {
@@ -1261,6 +1266,24 @@ class CountryDetectionService {
       description: b.description,
       continent: b.continent,
     }));
+  }
+
+  /**
+   * 🐛 DEBUG: Clear cache and reset state
+   * Use when cache becomes inconsistent with DB (e.g., after DB cleanup)
+   */
+  async clearCacheAndReset(): Promise<void> {
+    this.lastDetectedCountry = null;
+    this.countryHistory = [];
+    this.pendingCountryChange = null;
+    this.cacheLoaded = false;
+
+    try {
+      await AsyncStorage.removeItem(COUNTRY_CACHE_KEY);
+      console.log('🧹 Country cache cleared and state reset');
+    } catch (error) {
+      console.warn('⚠️ Could not clear country cache:', error);
+    }
   }
 }
 
