@@ -458,17 +458,9 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             </Text>
           </View>
         )}
-
-        {/* Travel Mode Modal */}
-        <TravelModeModal
-          visible={travelModalVisible}
-          onClose={() => setTravelModalVisible(false)}
-          tripId={selectedActiveTrip.id}
-          tripName={selectedActiveTrip.name || 'Mi Viaje'}
-        />
       </LinearGradient>
     );
-  }, [selectedActiveTrip, activeTrips, router, travelModalVisible]);
+  }, [selectedActiveTrip, activeTrips, router]);
 
   // Memoized content for future trips
   const memoizedContent = React.useMemo(() => {
@@ -521,64 +513,82 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
       </View>
     );
 
+  // Render main content based on mode
+  let mainContent = null;
+
   // Active trip state - NEW PRIORITY
   if (mode === 'active' && selectedActiveTrip) {
-    return ActiveTripComponent;
+    mainContent = ActiveTripComponent;
   }
-
   // Future trip state
-  if (mode === 'future' && trip) {
-    return memoizedContent;
+  else if (mode === 'future' && trip) {
+    mainContent = memoizedContent;
+  }
+  // No trip state
+  else {
+    mainContent = (
+      <View style={styles.noTripContainer}>
+        {planningTripsCount > 0 ? (
+          // Has planning trips - encourage user to complete them
+          <>
+            <Text style={styles.noTripTitle}>¡Completa tus viajes!</Text>
+            <Text style={styles.noTripSubtitle}>
+              Tienes {planningTripsCount} viaje{planningTripsCount > 1 ? 's' : ''} sin fecha. Agrega
+              lugares y fechas para comenzar a planificar
+            </Text>
+            <View style={styles.noTripButtonRow}>
+              <TouchableOpacity onPress={() => router.push('/trips')} style={styles.noTripButton}>
+                <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripButtonGradient}>
+                  <Text style={styles.noTripButtonText}>Completar Viajes</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/explore')}
+                style={styles.noTripButton}
+              >
+                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.noTripButtonGradient}>
+                  <Text style={styles.noTripButtonText}>Agregar Lugares</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/trips?openModal=true')}
+                style={styles.noTripButton}
+              >
+                <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.noTripButtonGradient}>
+                  <Text style={styles.noTripButtonText}>{t('+ New Trip')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          // No trips at all - encourage user to create first trip
+          <>
+            <Text style={styles.noTripTitle}>{t('No tienes viajes')}</Text>
+            <Text style={styles.noTripSubtitle}>{t('Crea tu primer viaje para comenzar')}</Text>
+            <TouchableOpacity onPress={() => router.push('/trips?openModal=true')}>
+              <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripSingleButton}>
+                <Text style={styles.noTripSingleButtonText}>{t('+ New Trip')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    );
   }
 
-  // No trip state
   return (
-    <View style={styles.noTripContainer}>
-      {planningTripsCount > 0 ? (
-        // Has planning trips - encourage user to complete them
-        <>
-          <Text style={styles.noTripTitle}>¡Completa tus viajes!</Text>
-          <Text style={styles.noTripSubtitle}>
-            Tienes {planningTripsCount} viaje{planningTripsCount > 1 ? 's' : ''} sin fecha. Agrega
-            lugares y fechas para comenzar a planificar
-          </Text>
-          <View style={styles.noTripButtonRow}>
-            <TouchableOpacity onPress={() => router.push('/trips')} style={styles.noTripButton}>
-              <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripButtonGradient}>
-                <Text style={styles.noTripButtonText}>Completar Viajes</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/explore')}
-              style={styles.noTripButton}
-            >
-              <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.noTripButtonGradient}>
-                <Text style={styles.noTripButtonText}>Agregar Lugares</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push('/trips?openModal=true')}
-              style={styles.noTripButton}
-            >
-              <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.noTripButtonGradient}>
-                <Text style={styles.noTripButtonText}>{t('+ New Trip')}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </>
-      ) : (
-        // No trips at all - encourage user to create first trip
-        <>
-          <Text style={styles.noTripTitle}>{t('No tienes viajes')}</Text>
-          <Text style={styles.noTripSubtitle}>{t('Crea tu primer viaje para comenzar')}</Text>
-          <TouchableOpacity onPress={() => router.push('/trips?openModal=true')}>
-            <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripSingleButton}>
-              <Text style={styles.noTripSingleButtonText}>{t('+ New Trip')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </>
+    <>
+      {mainContent}
+      {/* Travel Mode Modal - Rendered outside main content to avoid z-index issues */}
+      {mode === 'active' && selectedActiveTrip && (
+        <TravelModeModal
+          visible={travelModalVisible}
+          onClose={() => setTravelModalVisible(false)}
+          tripId={selectedActiveTrip.id}
+          tripName={selectedActiveTrip.name || 'Mi Viaje'}
+        />
       )}
-    </View>
+    </>
   );
 });
 

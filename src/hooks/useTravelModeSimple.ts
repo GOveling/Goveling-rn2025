@@ -421,13 +421,13 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
               if (lastVisit.country_code === currentCountry.countryCode) {
                 // SAME COUNTRY: Use cache to avoid duplicate modal
                 console.log(`✅ Still in ${currentCountry.countryName} - using cache`);
-                countryDetectionService.setLastCountry(currentCountry.countryCode);
+                await countryDetectionService.setLastCountry(currentCountry.countryCode);
               } else {
-                // DIFFERENT COUNTRY: User traveled, reset detection
+                // DIFFERENT COUNTRY: User traveled, reset pending changes to allow detection
                 console.log(
                   `🌍 Traveled from ${lastVisit.country_name} to ${currentCountry.countryName} - will show welcome modal`
                 );
-                countryDetectionService.reset();
+                countryDetectionService.resetPendingChanges();
                 // Let normal detection trigger the modal on first location update
               }
             } else {
@@ -483,8 +483,8 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
       // Reset arrival detection
       arrivalDetectionService.resetAll();
 
-      // Reset country detection
-      countryDetectionService.reset();
+      // Reset country detection PENDING CHANGES only (preserve cache to prevent modal re-appearing)
+      countryDetectionService.resetPendingChanges();
 
       // Reset navigation
       if (activeRouteRef.current) {

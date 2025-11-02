@@ -48,6 +48,8 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
   useEffect(() => {
     if (!visible) {
       hasLoadedRef.current = false;
+      // ✅ FIX: Reset map modal state when parent modal closes
+      setMapModalVisible(false);
     }
   }, [visible, tripId]);
 
@@ -291,6 +293,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      transparent={false}
     >
       <View style={styles.container}>
         {/* Header */}

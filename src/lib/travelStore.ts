@@ -40,6 +40,9 @@ class TravelStore {
 // Create store instance
 const travelStore = new TravelStore();
 
+// Export store instance for direct access
+export { travelStore };
+
 // Hook for React components
 export const useTravel = () => {
   const [state, setState] = useState(travelStore.getState());

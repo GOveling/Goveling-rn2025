@@ -173,15 +173,18 @@ export function useCountryDetectionOnAppStart() {
   };
 
   /**
-   * Detect country from current GPS location
+   * Detect current country and show modal if changed
    */
   const detectCurrentCountry = async (): Promise<void> => {
     try {
       setState((prev) => ({ ...prev, isDetecting: true }));
 
-      console.log('🌍 Checking country on app start...');
+      // CRITICAL: Ensure cache is loaded BEFORE detection
+      // This prevents showing the modal for the same country after app restart
+      const cachedCountry = countryDetectionService.getLastCountry();
+      console.log(`💾 Cached country from last session: ${cachedCountry || 'none'}`);
 
-      // Request location permissions
+      // Get current location
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         console.log('❌ Location permission denied');
@@ -189,9 +192,8 @@ export function useCountryDetectionOnAppStart() {
         return;
       }
 
-      // Get current location
       const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.High,
       });
 
       const coordinates = {
@@ -213,6 +215,14 @@ export function useCountryDetectionOnAppStart() {
       console.log(
         `🎯 Detected country: ${currentCountry.countryFlag} ${currentCountry.countryName} (${currentCountry.countryCode})`
       );
+
+      // CRITICAL CHECK: Compare with cached country FIRST
+      // If same as cached, skip DB query and modal
+      if (cachedCountry === currentCountry.countryCode) {
+        console.log(`✅ Still in ${currentCountry.countryName} (cached) - no modal needed`);
+        setState((prev) => ({ ...prev, isDetecting: false }));
+        return;
+      }
 
       // Get last visited country from database
       const {
@@ -345,8 +355,8 @@ export function useCountryDetectionOnAppStart() {
 
       console.log('✅ Country visit saved successfully');
 
-      // Update cache
-      countryDetectionService.setLastCountry(countryInfo.countryCode);
+      // Update cache to prevent re-showing modal
+      await countryDetectionService.setLastCountry(countryInfo.countryCode);
     } catch (error) {
       console.error('❌ Exception saving country visit:', error);
     }
@@ -368,6 +378,7 @@ export function useCountryDetectionOnAppStart() {
       console.log('🚀 App launched - detecting country...');
       detectCurrentCountry();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
@@ -385,6 +396,7 @@ export function useCountryDetectionOnAppStart() {
     return () => {
       subscription.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

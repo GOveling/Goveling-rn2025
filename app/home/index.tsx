@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
+import { useTravelMode } from '~/contexts/TravelModeContext';
 import {
   getCurrentPosition,
   reverseCity,
@@ -20,7 +21,6 @@ import {
 import { registerDeviceToken } from '~/lib/push';
 import { useSettingsStore } from '~/lib/settingsStore';
 import { useTheme } from '~/lib/theme';
-import { useTravel } from '~/lib/travelStore';
 import { getWeather } from '~/lib/weather';
 
 export const options = { headerShown: false };
@@ -31,7 +31,15 @@ export default function Home() {
   const router = useRouter();
   const { units, setUnits } = useSettingsStore();
   const toggleUnits = () => setUnits(units === 'c' ? 'f' : 'c');
-  const { enabled: travelModeEnabled, setEnabled: setTravelModeEnabled } = useTravel();
+  const { state, actions } = useTravelMode();
+  const travelModeEnabled = state.isActive;
+  const setTravelModeEnabled = (enabled: boolean) => {
+    if (enabled) {
+      actions.startTravelMode();
+    } else {
+      actions.stopTravelMode();
+    }
+  };
 
   const [city, setCity] = React.useState<string>('—');
   const [temp, setTemp] = React.useState<number | undefined>(undefined);

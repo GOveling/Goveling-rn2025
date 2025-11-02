@@ -12,6 +12,8 @@
  * - Optimized for iOS & Android native
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Coordinates } from './geoUtils';
 import { reverseGeocode } from '../../lib/geocoding';
 
@@ -779,19 +781,49 @@ const COUNTRY_BOUNDARIES: CountryBoundary[] = [
   },
 ];
 
+// Cache key for AsyncStorage
+const COUNTRY_CACHE_KEY = '@goveling/lastDetectedCountry';
+
 class CountryDetectionService {
   private lastDetectedCountry: string | null = null;
   private countryHistory: string[] = []; // Track country sequence
+  private cacheLoaded = false; // Track if we've loaded from storage
 
-  // ✅ NEW: Country change debouncing to prevent GPS noise
+  // ✅ IMPROVED: Country change debouncing to prevent GPS noise
   private pendingCountryChange: {
     countryCode: string;
     confirmations: number;
     firstDetectedAt: number;
   } | null = null;
 
-  private readonly CHANGE_CONFIRMATIONS_REQUIRED = 3; // Require 3 consecutive detections
-  private readonly CHANGE_TIMEOUT_MS = 30000; // 30 seconds max to confirm
+  // ✅ IMPROVED: More conservative thresholds to prevent false positives in border areas
+  private readonly CHANGE_CONFIRMATIONS_REQUIRED = 5; // Require 5 consecutive detections (was 3)
+  private readonly CHANGE_TIMEOUT_MS = 120000; // 2 minutes max to confirm (was 30s)
+
+  constructor() {
+    this.loadCacheFromStorage();
+  }
+
+  /**
+   * Load cached country from AsyncStorage
+   * This ensures persistence across app restarts
+   */
+  private async loadCacheFromStorage(): Promise<void> {
+    if (this.cacheLoaded) return;
+
+    try {
+      const cached = await AsyncStorage.getItem(COUNTRY_CACHE_KEY);
+      if (cached) {
+        this.lastDetectedCountry = cached;
+        this.countryHistory = [cached];
+        console.log(`💾 Loaded last detected country from cache: ${cached}`);
+      }
+      this.cacheLoaded = true;
+    } catch (error) {
+      console.warn('⚠️ Could not load country cache:', error);
+      this.cacheLoaded = true;
+    }
+  }
 
   /**
    * HYBRID DETECTION: Nominatim API (primary) + GPS boundaries (fallback)
@@ -1022,6 +1054,9 @@ class CountryDetectionService {
    * This is critical in border areas or when GPS accuracy is low
    */
   async checkCountryChange(coordinates: Coordinates): Promise<CountryVisitEvent | null> {
+    // Ensure cache is loaded before checking
+    await this.loadCacheFromStorage();
+
     const countryInfo = await this.detectCountry(coordinates);
 
     if (!countryInfo) {
@@ -1158,21 +1193,44 @@ class CountryDetectionService {
 
   /**
    * Reset detection state (e.g., when travel mode ends)
+   * NOTE: We now preserve lastDetectedCountry to prevent modal re-appearing
    */
-  reset(): void {
+  resetPendingChanges(): void {
+    this.pendingCountryChange = null; // Only reset pending changes
+    console.log('🔄 Country detection pending changes reset (cache preserved)');
+  }
+
+  /**
+   * Full reset - clears everything including cache (use sparingly)
+   */
+  async reset(): Promise<void> {
     this.lastDetectedCountry = null;
     this.countryHistory = [];
-    this.pendingCountryChange = null; // ✅ Reset pending changes too
-    console.log('🔄 Country detection reset');
+    this.pendingCountryChange = null;
+    try {
+      await AsyncStorage.removeItem(COUNTRY_CACHE_KEY);
+      console.log('🔄 Country detection fully reset (cache cleared)');
+    } catch (error) {
+      console.warn('⚠️ Could not clear country cache:', error);
+    }
   }
 
   /**
    * Manually set last detected country (useful when loading from DB)
+   * Also persists to AsyncStorage
    */
-  setLastCountry(countryCode: string): void {
+  async setLastCountry(countryCode: string): Promise<void> {
     this.lastDetectedCountry = countryCode;
     if (!this.countryHistory.includes(countryCode)) {
       this.countryHistory.push(countryCode);
+    }
+
+    // Persist to storage
+    try {
+      await AsyncStorage.setItem(COUNTRY_CACHE_KEY, countryCode);
+      console.log(`💾 Saved country to cache: ${countryCode}`);
+    } catch (error) {
+      console.warn('⚠️ Could not save country to cache:', error);
     }
   }
 
