@@ -5,6 +5,12 @@ declare const Deno: any;
 // deno-lint-ignore-file
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  getCachedResults,
+  saveCachedResults,
+  generateCacheKey,
+  calculateDynamicTTL,
+} from '../_shared/cacheHelper.ts';
 
 // CORS headers
 const corsHeaders = {
@@ -455,6 +461,37 @@ serve(async (req: Request) => {
   console.log('[google-places-enhanced] Google Places API key present:', !!GOOGLE_PLACES_KEY);
   console.log('[google-places-enhanced] Starting search with categories:', selectedCategories);
 
+  // ============================================================================
+  // L2 CACHE: Check shared cache in Supabase DB
+  // ============================================================================
+  const cacheKey = generateCacheKey({ input, selectedCategories, userLocation, locale });
+  console.log('[google-places-enhanced] Cache key:', cacheKey);
+
+  if (supabase) {
+    const cachedResult = await getCachedResults(supabase, cacheKey);
+
+    if (cachedResult.hit && cachedResult.data) {
+      console.log('[google-places-enhanced] ✅ L2 Cache HIT - Returning cached results');
+      const cachedResponse = {
+        ...cachedResult.data,
+        source: 'google_places_enhanced_cached',
+        cached: true,
+        cache_level: 'l2',
+      };
+
+      return new Response(JSON.stringify(cachedResponse), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('[google-places-enhanced] ❌ L2 Cache MISS - Will call Google API');
+  } else {
+    console.warn('[google-places-enhanced] Supabase client not available, skipping L2 cache');
+  }
+
+  // ============================================================================
+  // L3: Google Places API (Cache miss - need to fetch fresh data)
+  // ============================================================================
   const start = Date.now();
   const aggregated: EnhancedPlace[] = [];
   const seen = new Set<string>();
@@ -526,11 +563,16 @@ serve(async (req: Request) => {
   }
 
   if (selectedCategories.length > 0) {
-    console.log('[google-places-enhanced] Running category-based search');
-    for (const cat of selectedCategories.slice(0, 5)) {
-      // límite preventivo
-      await runCategorySearch(cat);
-    }
+    console.log('[google-places-enhanced] Running category-based search (PARALLEL)');
+
+    // Execute all category searches in parallel for better performance
+    const categorySearchPromises = selectedCategories
+      .slice(0, 5) // límite preventivo
+      .map((cat) => runCategorySearch(cat));
+
+    await Promise.all(categorySearchPromises);
+
+    console.log('[google-places-enhanced] All parallel category searches completed');
   } else {
     console.log('[google-places-enhanced] Running general search');
     // Búsqueda general (sin includedType)
@@ -606,6 +648,28 @@ serve(async (req: Request) => {
     count: results.length,
     fallbackUsed: false,
   };
+
+  // ============================================================================
+  // SAVE TO L2 CACHE: Save results to shared cache for other users
+  // ============================================================================
+  if (supabase) {
+    const ttl = calculateDynamicTTL(input);
+    console.log(
+      '[google-places-enhanced] Saving to L2 cache with TTL:',
+      ttl / (60 * 60 * 1000),
+      'hours'
+    );
+
+    saveCachedResults(
+      supabase,
+      cacheKey,
+      { input, selectedCategories, userLocation, locale },
+      response,
+      ttl
+    ).catch((err) => {
+      console.error('[google-places-enhanced] Failed to save to cache:', err);
+    });
+  }
 
   // Async log (fire and forget)
   if (supabase) {

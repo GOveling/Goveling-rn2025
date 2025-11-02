@@ -49,14 +49,15 @@ export interface PlacesSearchResponse {
   error?: string;
 }
 
-// Cache en memoria de corto plazo (sesión)
+// Cache en memoria optimizado para reducir costos de API
+// TTL de 1 hora: balance entre frescura de datos y reducción de costos
 export function clearPlacesCache() {
   memoryCache.clear();
   console.log('[placesSearch] Cache cleared');
 }
 
 const memoryCache = new Map<string, { ts: number; data: PlacesSearchResponse }>();
-const CACHE_TTL_MS = 30_000; // 30s
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora (optimización de costos)
 
 // Función para limpiar el cache (útil en desarrollo)
 export function clearSearchCache() {

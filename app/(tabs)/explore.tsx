@@ -30,7 +30,7 @@ import {
   categoryDisplayToInternal,
 } from '../../src/lib/categories';
 import { reverseGeocode } from '../../src/lib/geocoding';
-import { searchPlacesEnhanced, EnhancedPlace, clearPlacesCache } from '../../src/lib/placesSearch';
+import { searchPlacesEnhanced, EnhancedPlace } from '../../src/lib/placesSearch';
 import { supabase } from '../../src/lib/supabase';
 import { resolveCurrentUserRoleForTripId } from '../../src/lib/userUtils';
 
@@ -304,8 +304,8 @@ export default function ExploreTab() {
       return;
     }
 
-    // Clear cache for fresh data
-    clearPlacesCache();
+    // NOTE: Cache is now 1 hour (optimization), no need to clear
+    // clearPlacesCache(); // Removed to leverage 1-hour cache
 
     if (nearCurrentLocation && !userCoords) {
       console.log('[performSearch] Need location, calling ensureLocation');
@@ -367,6 +367,21 @@ export default function ExploreTab() {
       setLoading(false);
     }
   };
+
+  // ❌ REMOVED: Automatic debounced search
+  // Search is now triggered ONLY when:
+  // 1. User presses Enter (onSubmitEditing)
+  // 2. User presses search button (🔍)
+  // This improves UX and reduces unnecessary API calls
+
+  // Clean up abort controller on unmount
+  React.useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
+  }, []);
 
   const renderSearchResult = (item: EnhancedPlace) => (
     <PlaceCard key={item.id} place={item} onPress={handlePlacePress} />
