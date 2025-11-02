@@ -29,7 +29,7 @@ import { supabase } from '../../src/lib/supabase';
 const { width, height } = Dimensions.get('window');
 
 export default function AuthScreen() {
-  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+  const [mode, setMode] = useState<'signup' | 'signin'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
