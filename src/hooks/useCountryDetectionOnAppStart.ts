@@ -187,9 +187,57 @@ export function useCountryDetectionOnAppStart() {
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // Try to get location with retry logic
+      let location = null;
+      let lastError = null;
+
+      // First try: Use balanced accuracy with timeout (faster, works in most cases)
+      try {
+        console.log('📍 Attempting to get location (attempt 1/3 - Balanced)...');
+        location = await Promise.race([
+          Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Location timeout')), 5000)),
+        ]);
+      } catch (error) {
+        console.log('⚠️ First attempt failed:', error);
+        lastError = error;
+
+        // Second try: Use low accuracy (even faster)
+        try {
+          console.log('📍 Attempting to get location (attempt 2/3 - Low)...');
+          location = await Promise.race([
+            Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Low,
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Location timeout')), 5000)
+            ),
+          ]);
+        } catch (error2) {
+          console.log('⚠️ Second attempt failed:', error2);
+          lastError = error2;
+
+          // Third try: Use last known location as fallback
+          try {
+            console.log('📍 Attempting to get last known location (attempt 3/3)...');
+            location = await Location.getLastKnownPositionAsync({
+              maxAge: 300000, // Accept locations up to 5 minutes old
+              requiredAccuracy: 1000, // Accept accuracy up to 1km
+            });
+          } catch (error3) {
+            console.error('❌ All location attempts failed:', error3);
+            lastError = error3;
+          }
+        }
+      }
+
+      if (!location) {
+        console.error('❌ Could not get location after 3 attempts. Last error:', lastError);
+        setState((prev) => ({ ...prev, isDetecting: false }));
+        return;
+      }
 
       const coordinates = {
         latitude: location.coords.latitude,
