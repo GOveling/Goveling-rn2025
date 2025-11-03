@@ -20,7 +20,6 @@ import {
   Image,
   Alert,
   StyleSheet,
-  Keyboard,
   InteractionManager,
 } from 'react-native';
 
@@ -71,9 +70,28 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
+
   const flatListRef = useRef<FlatList>(null);
   const channelRef = useRef<any>(null);
   const inputRef = useRef<TextInput>(null);
+
+  // ============================================================
+  // SCROLL TO BOTTOM (para FlatList invertido)
+  // ============================================================
+
+  const scrollToBottom = (animated: boolean = true) => {
+    // Usar múltiples estrategias para asegurar el scroll
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (flatListRef.current) {
+          flatListRef.current.scrollToOffset({ offset: 0, animated });
+        }
+      }, 100);
+    });
+  };
 
   // ============================================================
   // FORMAT TIME
@@ -98,7 +116,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
   };
 
   // ============================================================
-  // LOAD MESSAGES
+  // LOAD MESSAGES (Initial load - last 50)
   // ============================================================
 
   const loadMessages = async () => {
@@ -107,22 +125,65 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
 
       const { data, error } = await supabase.rpc('get_trip_messages_paginated', {
         p_trip_id: tripId,
-        p_limit: 100,
+        p_limit: 50,
         p_offset: 0,
       });
 
       if (error) throw error;
 
-      if (data) {
-        // Invertir array para mostrar más recientes al final
-        setMessages(data.reverse());
-        setTimeout(() => scrollToBottom(), 100);
+      if (data && data.length > 0) {
+        // Los mensajes vienen ordenados por created_at DESC (más recientes primero)
+        // Para FlatList invertido, queremos que el más reciente esté primero
+        setMessages(data);
+        setOldestMessageId(data[data.length - 1].id);
+        setHasMoreMessages(data.length === 50);
+      } else {
+        setMessages([]);
+        setHasMoreMessages(false);
       }
     } catch (error: any) {
       console.error('Error loading messages:', error);
       Alert.alert('Error', 'No se pudieron cargar los mensajes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================================
+  // LOAD MORE MESSAGES (Older messages)
+  // ============================================================
+
+  const loadMoreMessages = async () => {
+    if (loadingMore || !hasMoreMessages || messages.length === 0) return;
+
+    try {
+      setLoadingMore(true);
+
+      // Con FlatList invertido, el mensaje más antiguo está al final del array
+      const oldestMessage = messages[messages.length - 1];
+
+      // Usamos la misma RPC pero filtramos por timestamp
+      const { data, error } = await supabase.rpc('get_trip_messages_paginated', {
+        p_trip_id: tripId,
+        p_limit: 50,
+        p_offset: messages.length, // Offset basado en cuántos mensajes ya tenemos
+      });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Los mensajes vienen DESC (más recientes primero)
+        // Para FlatList invertido, agregamos al final del array
+        setMessages((prev) => [...prev, ...data]);
+        setOldestMessageId(data[data.length - 1].id);
+        setHasMoreMessages(data.length === 50);
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch (error: any) {
+      console.error('Error loading more messages:', error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -191,6 +252,8 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
       // Limpiar el input
       setInputText('');
 
+      // NO hacer scroll aquí - el scroll se hará cuando el mensaje llegue vía realtime
+
       // Estrategia para mantener el teclado abierto en iOS:
       // Usamos InteractionManager para re-enfocar después de que el estado se actualice
       InteractionManager.runAfterInteractions(() => {
@@ -227,30 +290,31 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
         async (payload) => {
           const newMessage = payload.new as Message;
 
-          // Enriquecer mensaje con datos de perfil
-          const { data: profileData } = await supabase.rpc('get_trip_members_profiles', {
-            p_trip_id: tripId,
-          });
+          // Enriquecer mensaje con datos de perfil directamente desde profiles
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, avatar_url')
+            .eq('id', newMessage.user_id)
+            .single();
 
-          if (profileData) {
-            const profile = profileData.find((p: any) => p.id === newMessage.user_id);
-            if (profile) {
-              newMessage.user_full_name = profile.full_name || profile.email || 'Usuario';
-              newMessage.user_avatar_url = profile.avatar_url || null;
-              newMessage.user_email = profile.email || '';
-            } else {
-              // Fallback si no se encuentra el perfil
-              newMessage.user_full_name = 'Usuario';
-              newMessage.user_email = '';
-            }
+          if (profileData && !profileError) {
+            newMessage.user_full_name = profileData.full_name || profileData.email || 'Usuario';
+            newMessage.user_avatar_url = profileData.avatar_url || null;
+            newMessage.user_email = profileData.email || '';
           } else {
-            // Fallback si falla la llamada RPC
+            // Fallback si no se encuentra el perfil
             newMessage.user_full_name = 'Usuario';
             newMessage.user_email = '';
+            newMessage.user_avatar_url = null;
           }
 
-          setMessages((prev) => [...prev, newMessage]);
-          setTimeout(() => scrollToBottom(), 100);
+          setMessages((prev) => [newMessage, ...prev]);
+
+          // Scroll automático siempre que llega un mensaje
+          // Usamos un delay más largo para asegurar que el FlatList se haya renderizado
+          setTimeout(() => {
+            scrollToBottom(true);
+          }, 200);
         }
       )
       .subscribe();
@@ -290,33 +354,9 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
     };
   }, [tripId]);
 
-  // Listener para scroll automático cuando se abre el teclado
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      setTimeout(() => scrollToBottom(), 150);
-    });
-
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      // Opcional: hacer algo cuando se cierra el teclado
-    });
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, [messages]);
-
   // ============================================================
   // UTILITY FUNCTIONS
   // ============================================================
-
-  const scrollToBottom = () => {
-    if (flatListRef.current && messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  };
 
   const getUserInitials = (fullName: string, email: string): string => {
     // Validación segura para evitar errores con undefined/null
@@ -431,10 +471,22 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
             renderItem={renderMessage}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.messagesList}
+            inverted
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={scrollToBottom}
-            onLayout={scrollToBottom}
+            onEndReached={loadMoreMessages}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={styles.loadingMoreContainer}>
+                  <ActivityIndicator size="small" color={COLORS.primary.main} />
+                  <Text style={styles.loadingMoreText}>Cargando más mensajes...</Text>
+                </View>
+              ) : null
+            }
+            maintainVisibleContentPosition={{
+              minIndexForVisible: 0,
+            }}
           />
         )}
 
@@ -527,6 +579,15 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 15,
+    color: COLORS.text.tertiary,
+  },
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    marginTop: 8,
+    fontSize: 13,
     color: COLORS.text.tertiary,
   },
   emptyContainer: {
