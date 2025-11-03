@@ -174,61 +174,76 @@ export function useCountryDetectionOnAppStart() {
 
   /**
    * Detect current country and show modal if changed
+   * ✅ ENHANCED with validation checks to prevent false positives
    */
-  const detectCurrentCountry = async (): Promise<void> => {
+  const detectCurrentCountry = async () => {
+    if (state.isDetecting) return;
+
+    setState((prev) => ({ ...prev, isDetecting: true }));
+
     try {
-      setState((prev) => ({ ...prev, isDetecting: true }));
+      console.log('🚀 App launched - detecting country...');
 
-      // Get current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        console.log('❌ Location permission denied');
-        setState((prev) => ({ ...prev, isDetecting: false }));
-        return;
-      }
+      // Get location with 3 retry attempts
+      let location: Location.LocationObject | null = null;
+      let lastError: Error | null = null;
 
-      // Try to get location with retry logic
-      let location = null;
-      let lastError = null;
-
-      // First try: Use balanced accuracy with timeout (faster, works in most cases)
-      try {
-        console.log('📍 Attempting to get location (attempt 1/3 - Balanced)...');
-        location = await Promise.race([
-          Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Location timeout')), 5000)),
-        ]);
-      } catch (error) {
-        console.log('⚠️ First attempt failed:', error);
-        lastError = error;
-
-        // Second try: Use low accuracy (even faster)
+      for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          console.log('📍 Attempting to get location (attempt 2/3 - Low)...');
-          location = await Promise.race([
-            Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.Low,
-            }),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Location timeout')), 5000)
-            ),
-          ]);
-        } catch (error2) {
-          console.log('⚠️ Second attempt failed:', error2);
-          lastError = error2;
+          console.log(`📍 Location attempt ${attempt}/3...`);
 
-          // Third try: Use last known location as fallback
-          try {
-            console.log('📍 Attempting to get last known location (attempt 3/3)...');
-            location = await Location.getLastKnownPositionAsync({
-              maxAge: 300000, // Accept locations up to 5 minutes old
-              requiredAccuracy: 1000, // Accept accuracy up to 1km
-            });
-          } catch (error3) {
-            console.error('❌ All location attempts failed:', error3);
-            lastError = error3;
+          location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+
+          // ✅ NEW: Validate GPS accuracy (< 100m for reliable country detection)
+          if (location.coords.accuracy && location.coords.accuracy > 100) {
+            console.warn(
+              `⚠️ GPS accuracy too low: ${location.coords.accuracy.toFixed(0)}m. ` +
+                `Retrying for better accuracy...`
+            );
+
+            if (attempt < 3) {
+              location = null; // Force retry
+              continue;
+            } else {
+              console.warn(
+                `⚠️ Using low accuracy location (${location.coords.accuracy.toFixed(0)}m) as fallback. ` +
+                  `Country detection may be less reliable.`
+              );
+            }
+          }
+
+          break; // Success
+        } catch (error1) {
+          console.warn(`❌ Location attempt ${attempt} failed:`, error1);
+          lastError = error1;
+
+          // Try again with lower accuracy
+          if (attempt === 2) {
+            try {
+              console.log('� Retrying with Balanced accuracy...');
+              location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+              });
+              break;
+            } catch (error2) {
+              console.error('❌ Balanced accuracy also failed:', error2);
+              lastError = error2;
+            }
+          }
+
+          if (attempt === 3) {
+            try {
+              console.log('� Final attempt with Low accuracy...');
+              location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Low,
+              });
+              break;
+            } catch (error3) {
+              console.error('❌ All location attempts failed:', error3);
+              lastError = error3;
+            }
           }
         }
       }
@@ -244,7 +259,12 @@ export function useCountryDetectionOnAppStart() {
         longitude: location.coords.longitude,
       };
 
-      console.log(`📍 Current coordinates: [${coordinates.latitude}, ${coordinates.longitude}]`);
+      const accuracy = location.coords.accuracy;
+
+      console.log(
+        `📍 Current coordinates: [${coordinates.latitude}, ${coordinates.longitude}] ` +
+          `(accuracy: ${accuracy ? accuracy.toFixed(0) + 'm' : 'unknown'})`
+      );
 
       // Detect country from coordinates
       const currentCountry = await countryDetectionService.detectCountry(coordinates);
@@ -271,7 +291,7 @@ export function useCountryDetectionOnAppStart() {
 
       const { data: lastVisit } = await supabase
         .from('country_visits')
-        .select('country_code, country_name, entry_date')
+        .select('country_code, country_name, entry_date, latitude, longitude')
         .eq('user_id', user.id)
         .order('entry_date', { ascending: false })
         .limit(1)
@@ -291,9 +311,49 @@ export function useCountryDetectionOnAppStart() {
           return;
         }
 
+        // ✅ NEW: Validate distance traveled (must be > 50km to change country)
+        if (lastVisit.latitude && lastVisit.longitude) {
+          const distance = calculateDistance(
+            parseFloat(lastVisit.latitude),
+            parseFloat(lastVisit.longitude),
+            coordinates.latitude,
+            coordinates.longitude
+          );
+
+          console.log(
+            `📏 Distance from last visit: ${distance.toFixed(1)}km ` +
+              `(${lastVisit.country_code} -> ${currentCountry.countryCode})`
+          );
+
+          if (distance < 50) {
+            console.warn(
+              `⚠️ REJECTED: Distance too small (${distance.toFixed(1)}km < 50km). ` +
+                `Likely GPS drift/error near border. Not registering country change.`
+            );
+            setState((prev) => ({ ...prev, isDetecting: false }));
+            return;
+          }
+        }
+
+        // ✅ NEW: Validate time since last visit (must be > 30 minutes in current country)
+        const lastVisitTime = new Date(lastVisit.entry_date).getTime();
+        const timeInCountryMinutes = (Date.now() - lastVisitTime) / (60 * 1000);
+
+        console.log(`⏱️ Time since last country visit: ${timeInCountryMinutes.toFixed(1)} minutes`);
+
+        if (timeInCountryMinutes < 30) {
+          console.warn(
+            `⚠️ REJECTED: Time in current country too short (${timeInCountryMinutes.toFixed(1)} min < 30 min). ` +
+              `Possible GPS error or quick pass-through. Not registering country change.`
+          );
+          setState((prev) => ({ ...prev, isDetecting: false }));
+          return;
+        }
+
         // COUNTRY CHANGED! Show modal and save to DB
         console.log(
-          `🎉 COUNTRY CHANGED from ${lastVisit.country_name} to ${currentCountry.countryName}!`
+          `🎉 COUNTRY CHANGED from ${lastVisit.country_name} to ${currentCountry.countryName}! ` +
+            `(Distance: ${lastVisit.latitude && lastVisit.longitude ? calculateDistance(parseFloat(lastVisit.latitude), parseFloat(lastVisit.longitude), coordinates.latitude, coordinates.longitude).toFixed(1) + 'km' : 'unknown'})`
         );
 
         // Check if this is a return visit
@@ -311,7 +371,8 @@ export function useCountryDetectionOnAppStart() {
           currentCountry,
           coordinates,
           isReturn,
-          lastVisit.country_code
+          lastVisit.country_code,
+          accuracy
         );
 
         // Get saved places in this country
@@ -332,7 +393,7 @@ export function useCountryDetectionOnAppStart() {
         console.log(`🆕 First country visit: ${currentCountry.countryName}`);
 
         // Save to database
-        await saveCountryVisit(user.id, currentCountry, coordinates, false, null);
+        await saveCountryVisit(user.id, currentCountry, coordinates, false, null, accuracy);
 
         // Get saved places in this country
         const savedPlaces = await getSavedPlacesInCountry(user.id, currentCountry.countryCode);
@@ -355,17 +416,40 @@ export function useCountryDetectionOnAppStart() {
   };
 
   /**
+   * Calculate distance between two coordinates using Haversine formula
+   * Returns distance in kilometers
+   */
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  /**
    * Save country visit to database
+   * ✅ ENHANCED: Now stores latitude, longitude, and GPS accuracy for validation
    */
   const saveCountryVisit = async (
     userId: string,
     countryInfo: CountryInfo,
     coordinates: { latitude: number; longitude: number },
     isReturn: boolean,
-    previousCountryCode: string | null
+    previousCountryCode: string | null,
+    accuracy?: number
   ): Promise<void> => {
     try {
-      console.log(`💾 Saving country visit to DB: ${countryInfo.countryName}`);
+      console.log(
+        `💾 Saving country visit to DB: ${countryInfo.countryName} ` +
+          `(accuracy: ${accuracy ? accuracy.toFixed(0) + 'm' : 'unknown'})`
+      );
 
       // TODO: Count places in this country (needs trip context)
       const placesCount = 0;
@@ -376,8 +460,8 @@ export function useCountryDetectionOnAppStart() {
         country_code: countryInfo.countryCode,
         country_name: countryInfo.countryName,
         entry_date: new Date().toISOString(),
-        lat: coordinates.latitude,
-        lng: coordinates.longitude,
+        latitude: coordinates.latitude.toString(), // Store as text for DB compatibility
+        longitude: coordinates.longitude.toString(), // Store as text for DB compatibility
         is_return: isReturn,
         places_count: placesCount,
         previous_country_code: previousCountryCode,

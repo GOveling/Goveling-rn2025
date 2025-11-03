@@ -783,9 +783,37 @@ const COUNTRY_BOUNDARIES: CountryBoundary[] = [
 
 // Cache key for AsyncStorage
 const COUNTRY_CACHE_KEY = '@goveling/lastDetectedCountry';
+const COUNTRY_LOCATION_CACHE_KEY = '@goveling/lastCountryLocation';
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in kilometers
+ */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+interface LastCountryLocation {
+  countryCode: string;
+  latitude: number;
+  longitude: number;
+  timestamp: number;
+  accuracy?: number;
+}
 
 class CountryDetectionService {
   private lastDetectedCountry: string | null = null;
+  private lastCountryLocation: LastCountryLocation | null = null;
   private countryHistory: string[] = []; // Track country sequence
   private cacheLoaded = false; // Track if we've loaded from storage
 
@@ -794,6 +822,7 @@ class CountryDetectionService {
     countryCode: string;
     confirmations: number;
     firstDetectedAt: number;
+    lastCoordinates: { latitude: number; longitude: number };
   } | null = null;
 
   // ✅ HYBRID THRESHOLDS:
@@ -801,6 +830,12 @@ class CountryDetectionService {
   // - Country changes: Conservative validation to avoid false positives
   private readonly CHANGE_CONFIRMATIONS_REQUIRED = 3; // Reduced from 5 for better UX
   private readonly CHANGE_TIMEOUT_MS = 90000; // 1.5 minutes (reduced from 2 min)
+
+  // ✅ NEW: Distance and accuracy requirements to prevent false positives
+  private readonly MIN_DISTANCE_FOR_COUNTRY_CHANGE_KM = 50; // Must travel 50km to change country
+  private readonly MIN_TIME_IN_COUNTRY_MS = 30 * 60 * 1000; // 30 minutes minimum in a country
+  private readonly MAX_GPS_ACCURACY_METERS = 100; // Only trust GPS with <100m accuracy
+  private readonly BORDER_BUFFER_KM = 20; // Extra caution within 20km of borders
 
   constructor() {
     this.loadCacheFromStorage();
@@ -815,11 +850,22 @@ class CountryDetectionService {
 
     try {
       const cached = await AsyncStorage.getItem(COUNTRY_CACHE_KEY);
+      const cachedLocation = await AsyncStorage.getItem(COUNTRY_LOCATION_CACHE_KEY);
+
       if (cached) {
         this.lastDetectedCountry = cached;
         this.countryHistory = [cached];
         console.log(`💾 Loaded last detected country from cache: ${cached}`);
       }
+
+      if (cachedLocation) {
+        this.lastCountryLocation = JSON.parse(cachedLocation);
+        console.log(
+          `📍 Loaded last country location: ${this.lastCountryLocation?.countryCode} at ` +
+            `[${this.lastCountryLocation?.latitude.toFixed(4)}, ${this.lastCountryLocation?.longitude.toFixed(4)}]`
+        );
+      }
+
       this.cacheLoaded = true;
     } catch (error) {
       console.warn('⚠️ Could not load country cache:', error);
