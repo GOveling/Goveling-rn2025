@@ -26,7 +26,6 @@ import {
 import { CountryImage } from './CountryImage';
 import GroupOptionsModal from './GroupOptionsModal';
 import LiquidButton from './LiquidButton';
-import TripChatModal from './TripChatModalSimple';
 import TripDetailsModal from './TripDetailsModal';
 import { useGetProfileQuery } from '../store/api/userApi';
 
@@ -100,7 +99,6 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   });
   const [showModal, setShowModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [ownerProfile, setOwnerProfile] = useState<{
     id: string;
@@ -1055,7 +1053,15 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           {/* Botón de Chat Rápido */}
           {tripData.collaboratorsCount > 1 && (
             <TouchableOpacity
-              onPress={() => setShowChatModal(true)}
+              onPress={() =>
+                router.push({
+                  pathname: '/chat/[tripId]',
+                  params: {
+                    tripId: currentTrip.id,
+                    tripTitle: currentTrip.title,
+                  },
+                })
+              }
               style={{
                 marginLeft: 8,
               }}
@@ -1190,17 +1196,6 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           visible={showGroupModal}
           onClose={() => setShowGroupModal(false)}
           trip={currentTrip}
-        />
-      )}
-
-      {/* Modal de Chat */}
-      {tripData.collaboratorsCount > 1 && (
-        <TripChatModal
-          visible={showChatModal}
-          onClose={() => setShowChatModal(false)}
-          tripId={currentTrip.id}
-          tripTitle={currentTrip.title}
-          onUnreadCountChange={setUnreadMessagesCount}
         />
       )}
     </View>

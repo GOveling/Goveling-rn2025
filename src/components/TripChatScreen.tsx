@@ -1,8 +1,8 @@
 /**
- * TripChatModal.tsx - Versión Simplificada
+ * TripChatScreen.tsx
  *
- * Sistema de chat grupal para viajes (implementación básica funcional)
- * Sin optimizaciones avanzadas - Implementación directa
+ * Sistema de chat grupal para viajes
+ * Pantalla completa para mensajería en tiempo real
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -10,8 +10,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  Modal,
   TouchableOpacity,
+  Pressable,
   TextInput,
   FlatList,
   KeyboardAvoidingView,
@@ -20,11 +20,14 @@ import {
   Image,
   Alert,
   StyleSheet,
+  Keyboard,
+  InteractionManager,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
@@ -34,8 +37,7 @@ import { getCurrentUser } from '~/lib/userUtils';
 // TYPES
 // ============================================================
 
-interface TripChatModalProps {
-  visible: boolean;
+interface TripChatScreenProps {
   onClose: () => void;
   tripId: string;
   tripTitle: string;
@@ -57,13 +59,13 @@ interface Message {
 // COMPONENT
 // ============================================================
 
-const TripChatModal: React.FC<TripChatModalProps> = ({
-  visible,
+const TripChatScreen: React.FC<TripChatScreenProps> = ({
   onClose,
   tripId,
   tripTitle,
   onUnreadCountChange,
 }) => {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,6 +73,7 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const channelRef = useRef<any>(null);
+  const inputRef = useRef<TextInput>(null);
 
   // ============================================================
   // FORMAT TIME
@@ -185,7 +188,17 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
 
       if (error) throw error;
 
+      // Limpiar el input
       setInputText('');
+
+      // Estrategia para mantener el teclado abierto en iOS:
+      // Usamos InteractionManager para re-enfocar después de que el estado se actualice
+      InteractionManager.runAfterInteractions(() => {
+        // Pequeño delay para asegurar que el render completó
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 50);
+      });
     } catch (error: any) {
       console.error('Error sending message:', error);
       Alert.alert('Error', error.message || 'No se pudo enviar el mensaje');
@@ -199,7 +212,7 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
   // ============================================================
 
   const subscribeToMessages = () => {
-    if (!visible || !tripId) return;
+    if (!tripId) return;
 
     channelRef.current = supabase
       .channel(`trip_chat_${tripId}`)
@@ -263,7 +276,7 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
   }, []);
 
   useEffect(() => {
-    if (visible && tripId) {
+    if (tripId) {
       loadMessages();
       loadUnreadCount();
       subscribeToMessages();
@@ -275,7 +288,23 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
     return () => {
       unsubscribeFromMessages();
     };
-  }, [visible, tripId]);
+  }, [tripId]);
+
+  // Listener para scroll automático cuando se abre el teclado
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setTimeout(() => scrollToBottom(), 150);
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      // Opcional: hacer algo cuando se cierra el teclado
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [messages]);
 
   // ============================================================
   // UTILITY FUNCTIONS
@@ -283,7 +312,9 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
 
   const scrollToBottom = () => {
     if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
@@ -357,17 +388,18 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
   // RENDER
   // ============================================================
 
-  if (!visible) return null;
-
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
+    <View style={styles.container}>
       <KeyboardAvoidingView
-        style={styles.container}
+        style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         {/* Header */}
-        <LinearGradient colors={[COLORS.primary.main, COLORS.primary.blue]} style={styles.header}>
+        <LinearGradient
+          colors={[COLORS.primary.main, COLORS.primary.blue]}
+          style={[styles.header, { paddingTop: insets.top + 16 }]}
+        >
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={28} color="white" />
@@ -380,7 +412,7 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
           </View>
         </LinearGradient>
 
-        {/* Messages List */}
+        {/* Messages Area */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.primary.main} />
@@ -401,43 +433,53 @@ const TripChatModal: React.FC<TripChatModalProps> = ({
             contentContainerStyle={styles.messagesList}
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
+            onContentSizeChange={scrollToBottom}
+            onLayout={scrollToBottom}
           />
         )}
 
         {/* Input Area */}
         <View style={styles.inputContainer}>
           <TextInput
+            ref={inputRef}
             value={inputText}
             onChangeText={setInputText}
             placeholder="Escribe un mensaje..."
             placeholderTextColor={COLORS.text.lightGray}
-            multiline
+            multiline={true}
             maxLength={1000}
             style={styles.textInput}
-            editable={!sending}
-            onSubmitEditing={() => {
+            returnKeyType="default"
+            blurOnSubmit={false}
+            autoFocus={false}
+          />
+
+          <View
+            onStartShouldSetResponder={() => true}
+            onResponderGrant={() => {
               if (inputText.trim() && !sending) {
                 sendMessage();
               }
             }}
-            blurOnSubmit={false}
-            returnKeyType="send"
-          />
-
-          <TouchableOpacity
-            onPress={sendMessage}
-            disabled={!inputText.trim() || sending}
-            style={[styles.sendButton, (!inputText.trim() || sending) && styles.sendButtonDisabled]}
+            style={styles.sendButtonWrapper}
           >
-            {sending ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Ionicons name="send" size={20} color="white" />
-            )}
-          </TouchableOpacity>
+            <Pressable
+              disabled={!inputText.trim() || sending}
+              style={[
+                styles.sendButton,
+                (!inputText.trim() || sending) && styles.sendButtonDisabled,
+              ]}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="send" size={20} color="white" />
+              )}
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </View>
   );
 };
 
@@ -450,8 +492,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background.primary,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 16,
     paddingHorizontal: 16,
   },
@@ -611,6 +655,9 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: COLORS.text.lightGray,
   },
+  sendButtonWrapper: {
+    pointerEvents: 'box-only',
+  },
 });
 
-export default TripChatModal;
+export default TripChatScreen;

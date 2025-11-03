@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -37,7 +38,6 @@ import { useAppDispatch } from '~/store/hooks';
 
 import EditTripModal from './EditTripModal';
 import ManageTeamModal from './teams/ManageTeamModal';
-import TripChatModal from './TripChatModalSimple';
 
 // Mapas para obtener íconos de alojamiento y transporte
 const accommodationIcons: { [key: string]: string } = {
@@ -114,6 +114,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   manageTeamTab = 'members',
 }) => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [tripData, setTripData] = useState<TripStats>({
     collaboratorsCount: 1,
@@ -137,8 +138,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const [pendingInvites, setPendingInvites] = useState(0);
 
   // Estados para el chat grupal
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [unreadMessagesCount] = useState(0);
 
   // Set initial tab and manage team state when props change
   React.useEffect(() => {
@@ -838,7 +838,18 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {/* Botones de acción */}
       <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity onPress={() => setShowChatModal(true)}>
+        <TouchableOpacity
+          onPress={() => {
+            onClose(); // Cierra el modal primero
+            router.push({
+              pathname: '/chat/[tripId]',
+              params: {
+                tripId: trip.id,
+                tripTitle: trip.title,
+              },
+            });
+          }}
+        >
           <LinearGradient
             colors={['#3B82F6', '#1E40AF']}
             start={{ x: 0, y: 0 }}
@@ -987,15 +998,6 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           loadTripStats();
           loadUsers();
         }}
-      />
-
-      {/* Chat Modal */}
-      <TripChatModal
-        visible={showChatModal}
-        onClose={() => setShowChatModal(false)}
-        tripId={trip.id}
-        tripTitle={trip.title}
-        onUnreadCountChange={setUnreadMessagesCount}
       />
     </Modal>
   );
