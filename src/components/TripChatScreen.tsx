@@ -74,6 +74,11 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
 
+  // Cache de perfiles para enriquecer mensajes en tiempo real
+  const profilesCache = useRef<
+    Map<string, { full_name: string; email: string; avatar_url: string | null }>
+  >(new Map());
+
   const flatListRef = useRef<FlatList>(null);
   const channelRef = useRef<any>(null);
   const inputRef = useRef<TextInput>(null);
@@ -132,6 +137,19 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
       if (error) throw error;
 
       if (data && data.length > 0) {
+        // Poblar cache de perfiles con los datos de los mensajes cargados
+        data.forEach((msg: Message) => {
+          if (msg.user_id && !profilesCache.current.has(msg.user_id)) {
+            profilesCache.current.set(msg.user_id, {
+              full_name: msg.user_full_name || 'Usuario',
+              email: msg.user_email || '',
+              avatar_url: msg.user_avatar_url || null,
+            });
+          }
+        });
+
+        console.log('📋 Cache de perfiles poblado con', profilesCache.current.size, 'usuarios');
+
         // Los mensajes vienen ordenados por created_at DESC (más recientes primero)
         // Para FlatList invertido, queremos que el más reciente esté primero
         setMessages(data);
@@ -288,30 +306,60 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
           filter: `trip_id=eq.${tripId}`,
         },
         async (payload) => {
-          const newMessage = payload.new as Message;
+          const rawMessage = payload.new as any;
 
-          // Enriquecer mensaje con datos de perfil directamente desde profiles
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, full_name, email, avatar_url')
-            .eq('id', newMessage.user_id)
-            .single();
+          console.log('🔔 Nuevo mensaje recibido (raw):', rawMessage);
 
-          if (profileData && !profileError) {
-            newMessage.user_full_name = profileData.full_name || profileData.email || 'Usuario';
-            newMessage.user_avatar_url = profileData.avatar_url || null;
-            newMessage.user_email = profileData.email || '';
-          } else {
-            // Fallback si no se encuentra el perfil
-            newMessage.user_full_name = 'Usuario';
-            newMessage.user_email = '';
-            newMessage.user_avatar_url = null;
+          // Intentar obtener del cache primero
+          let userProfile = profilesCache.current.get(rawMessage.user_id);
+
+          console.log('💾 Perfil desde cache:', userProfile);
+
+          // Si no está en cache, hacer consulta y agregarlo
+          if (!userProfile) {
+            console.log('⚠️ Perfil no en cache, consultando...');
+            const { data: profiles } = await supabase.rpc('get_trip_members_profiles', {
+              p_trip_id: tripId,
+            });
+
+            const foundProfile = profiles?.find(
+              (p: { user_id: string }) => p.user_id === rawMessage.user_id
+            );
+
+            if (foundProfile) {
+              userProfile = {
+                full_name: foundProfile.full_name || 'Usuario',
+                email: foundProfile.email || '',
+                avatar_url: foundProfile.avatar_url || null,
+              };
+              // Agregar al cache para futuras consultas
+              profilesCache.current.set(rawMessage.user_id, userProfile);
+              console.log('✅ Perfil agregado al cache');
+            }
           }
 
-          setMessages((prev) => [newMessage, ...prev]);
+          // Crear un NUEVO objeto mensaje con todos los datos
+          const enrichedMessage: Message = {
+            id: rawMessage.id,
+            trip_id: rawMessage.trip_id,
+            user_id: rawMessage.user_id,
+            message: rawMessage.message,
+            created_at: rawMessage.created_at,
+            user_full_name: userProfile?.full_name || 'Usuario',
+            user_email: userProfile?.email || '',
+            user_avatar_url: userProfile?.avatar_url || null,
+          };
+
+          console.log('✅ Mensaje enriquecido:', enrichedMessage);
+
+          // Forzar actualización con una nueva referencia del array
+          setMessages((prev) => {
+            const newMessages = [enrichedMessage, ...prev];
+            console.log('📝 Total mensajes:', newMessages.length);
+            return newMessages;
+          });
 
           // Scroll automático siempre que llega un mensaje
-          // Usamos un delay más largo para asegurar que el FlatList se haya renderizado
           setTimeout(() => {
             scrollToBottom(true);
           }, 200);
@@ -383,6 +431,16 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isMyMessage = item.user_id === currentUserId;
+
+    // Log para debug
+    if (!isMyMessage) {
+      console.log('🎨 Renderizando mensaje de otro usuario:', {
+        user_full_name: item.user_full_name,
+        user_avatar_url: item.user_avatar_url,
+        user_email: item.user_email,
+        message: item.message.substring(0, 20),
+      });
+    }
 
     // Validación defensiva de datos del usuario
     const userName = item.user_full_name || item.user_email || 'Usuario';
@@ -470,6 +528,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
             data={messages}
             renderItem={renderMessage}
             keyExtractor={(item) => item.id}
+            extraData={messages}
             contentContainerStyle={styles.messagesList}
             inverted
             keyboardDismissMode="interactive"
