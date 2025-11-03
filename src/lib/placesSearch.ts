@@ -38,6 +38,10 @@ export interface EnhancedPlace {
   plusCode?: string;
   shortFormattedAddress?: string;
   accessibilityOptions?: any;
+  // Geographic information from Google Places API
+  country_code?: string;
+  country?: string;
+  city?: string;
 }
 
 export interface PlacesSearchResponse {

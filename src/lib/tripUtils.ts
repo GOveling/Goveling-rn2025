@@ -43,6 +43,12 @@ const getCountryFromCoordinates = async (lat: number, lng: number): Promise<stri
       return 'CL';
     }
 
+    // Peru coordinate ranges (approximate) - Added to prevent Chile overlap
+    if (lat >= -18.4 && lat <= 0.0 && lng >= -81.4 && lng <= -68.7) {
+      console.log('🗺️ getCountryFromCoordinates: Matched Peru (PE)');
+      return 'PE';
+    }
+
     // Argentina coordinate ranges (approximate) - Check Argentina before Brazil
     if (lat >= -55.1 && lat <= -21.8 && lng >= -73.6 && lng <= -53.6) {
       console.log('🗺️ getCountryFromCoordinates: Matched Argentina (AR)');

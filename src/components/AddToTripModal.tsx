@@ -287,6 +287,11 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         opening_hours: place.openingHours ? { weekdayDescriptions: place.openingHours } : null,
         website: place.website || null,
         phone: place.phone || null,
+        // Geographic information from Google Places API
+        country_code: place.country_code || null,
+        country: place.country || null,
+        city: place.city || null,
+        full_address: place.address || null,
       };
 
       // Use notification function to add place with notifications to collaborators

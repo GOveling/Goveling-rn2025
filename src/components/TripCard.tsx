@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 
@@ -109,7 +109,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
   const [pendingInvites, setPendingInvites] = useState(0);
 
-  const fetchPendingInvites = async () => {
+  const fetchPendingInvites = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('trip_invitations')
@@ -121,14 +121,146 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     } catch (e) {
       console.warn('TripCard: Failed to fetch pending invites', e);
     }
-  };
+  }, [trip.id]);
+
+  const loadUnreadMessagesCount = useCallback(async () => {
+    try {
+      console.log(`🔔 TripCard: Loading unread count for trip ${trip.id}`);
+      const { data, error } = await supabase.rpc('get_unread_messages_count', {
+        p_trip_id: trip.id,
+      });
+
+      if (error) throw error;
+
+      const count = data || 0;
+      console.log(`🔔 TripCard: Unread count for trip ${trip.id}: ${count}`);
+      setUnreadMessagesCount(count);
+    } catch (error) {
+      console.error('TripCard: Error loading unread messages count:', error);
+      setUnreadMessagesCount(0);
+    }
+  }, [trip.id]);
+
+  const loadTripData = useCallback(async () => {
+    try {
+      console.log('🔍 TripCard: Loading trip data for trip ID:', trip.id);
+
+      // Diagnóstico adicional: verificar directamente los lugares de la base de datos
+      const { data: directPlaces, error: directError } = await supabase
+        .from('trip_places')
+        .select('*')
+        .eq('trip_id', trip.id);
+
+      console.log('🔍 TripCard: Direct places query result:', { directPlaces, directError });
+      console.log('🔍 TripCard: Direct places found:', directPlaces?.length || 0);
+
+      if (directPlaces) {
+        directPlaces.forEach((place, index) => {
+          console.log(`🔍 Direct Place ${index + 1}:`, {
+            id: place.id,
+            name: place.name,
+            country_code: place.country_code,
+            country: place.country,
+            city: place.city,
+            full_address: place.full_address,
+          });
+        });
+      }
+
+      const stats = await getTripStats(trip.id);
+      console.log('📊 TripCard: Trip stats loaded:', stats);
+      console.log('🌍 TripCard: Countries found:', stats.countries);
+      console.log('🏷️ TripCard: Country codes found:', stats.countryCodes);
+      setTripData(stats);
+    } catch (error) {
+      console.error('❌ TripCard: Error loading trip data:', error);
+    }
+  }, [trip.id]);
+
+  const loadOwnerProfile = useCallback(async () => {
+    try {
+      // 1) Intentar resolver vía RPC tipado (bypassa RLS y trae profile del owner)
+      try {
+        const team = await (await import('~/lib/teamHelpers')).getTripWithTeamRPC(trip.id);
+        if (team?.owner) {
+          setOwnerProfile({
+            id: team.owner.id,
+            full_name: team.owner.full_name,
+            avatar_url: team.owner.avatar_url,
+            email: team.owner.email,
+          });
+          // Si falta owner_id en el trip recibido, persistirlo localmente para filtros/igualdad
+          if (!trip.owner_id) {
+            setCurrentTrip((prev) => ({ ...prev, owner_id: team.owner!.id }));
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn(
+          'TripCard.loadOwnerProfile: RPC getTripWithTeamRPC failed, fallback to direct profile',
+          e
+        );
+      }
+
+      // 2) Fallback a consulta directa si no hay RPC o vino vacío
+      const ownerId = trip.owner_id || trip.user_id;
+      if (!ownerId || ownerId === 'null') {
+        console.warn('TripCard: No owner ID found for trip', trip.id);
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, email')
+        .eq('id', ownerId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading owner profile:', error);
+        return;
+      }
+
+      if (profile) {
+        console.log('🔍 TripCard: Owner profile loaded (fallback):', {
+          id: profile.id,
+          full_name: profile.full_name,
+          has_avatar: !!profile.avatar_url,
+          avatar_url: profile.avatar_url,
+          email: profile.email,
+        });
+        setOwnerProfile(profile);
+      } else {
+        console.warn('TripCard: Owner profile not found for owner_id', ownerId);
+      }
+    } catch (error) {
+      console.error('Error loading owner profile:', error);
+    }
+  }, [trip.id, trip.owner_id, trip.user_id]);
+
+  const deriveCurrentRole = useCallback(async () => {
+    try {
+      const role = await resolveCurrentUserRoleForTripId(currentTrip.id);
+      setCurrentRole(role);
+    } catch (e) {
+      console.warn('TripCard deriveCurrentRole failed, defaulting to viewer', e);
+      setCurrentRole('viewer');
+    }
+  }, [currentTrip.id]);
 
   useEffect(() => {
     loadTripData();
     loadOwnerProfile();
     deriveCurrentRole();
     fetchPendingInvites();
-  }, [trip.id]);
+    loadUnreadMessagesCount();
+  }, [
+    trip.id,
+    loadTripData,
+    loadOwnerProfile,
+    deriveCurrentRole,
+    fetchPendingInvites,
+    loadUnreadMessagesCount,
+  ]);
 
   // Realtime subscription to reflect collaborator role & invitations changes promptly
   useEffect(() => {
@@ -203,108 +335,57 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         // Ignore cleanup errors on unmount
       }
     };
-  }, [trip.id]);
+  }, [trip.id, deriveCurrentRole, loadTripData, fetchPendingInvites]);
+
+  // Realtime subscription específica para mensajes no leídos
+  useEffect(() => {
+    console.log(`🔔 TripCard: Setting up messages channel for trip ${trip.id}`);
+    const messagesChannel = supabase
+      .channel(`tripcard-messages-${trip.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_messages',
+          filter: `trip_id=eq.${trip.id}`,
+        },
+        (payload) => {
+          console.log(
+            `🔔 TripCard: trip_messages ${payload.eventType} detected for trip ${trip.id}`
+          );
+          loadUnreadMessagesCount();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_message_reads',
+          filter: `trip_id=eq.${trip.id}`,
+        },
+        (payload) => {
+          console.log(
+            `🔔 TripCard: trip_message_reads ${payload.eventType} detected for trip ${trip.id}`
+          );
+          loadUnreadMessagesCount();
+        }
+      )
+      .subscribe((status) => {
+        console.log(`🔔 TripCard: Messages channel status for trip ${trip.id}:`, status);
+      });
+
+    return () => {
+      console.log(`🔔 TripCard: Cleaning up messages channel for trip ${trip.id}`);
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [trip.id, loadUnreadMessagesCount]);
 
   // Actualizar el trip local cuando se recibe una nueva prop
   useEffect(() => {
     setCurrentTrip(trip);
   }, [trip]);
-
-  const loadTripData = async () => {
-    try {
-      console.log('🔍 TripCard: Loading trip data for trip ID:', trip.id);
-
-      // Diagnóstico adicional: verificar directamente los lugares de la base de datos
-      const { data: directPlaces, error: directError } = await supabase
-        .from('trip_places')
-        .select('*')
-        .eq('trip_id', trip.id);
-
-      console.log('🔍 TripCard: Direct places query result:', { directPlaces, directError });
-      console.log('🔍 TripCard: Direct places found:', directPlaces?.length || 0);
-
-      if (directPlaces) {
-        directPlaces.forEach((place, index) => {
-          console.log(`🔍 Direct Place ${index + 1}:`, {
-            id: place.id,
-            name: place.name,
-            country_code: place.country_code,
-            country: place.country,
-            city: place.city,
-            full_address: place.full_address,
-          });
-        });
-      }
-
-      const stats = await getTripStats(trip.id);
-      console.log('📊 TripCard: Trip stats loaded:', stats);
-      console.log('🌍 TripCard: Countries found:', stats.countries);
-      console.log('🏷️ TripCard: Country codes found:', stats.countryCodes);
-      setTripData(stats);
-    } catch (error) {
-      console.error('❌ TripCard: Error loading trip data:', error);
-    }
-  };
-
-  const loadOwnerProfile = async () => {
-    try {
-      // 1) Intentar resolver vía RPC tipado (bypassa RLS y trae profile del owner)
-      try {
-        const team = await (await import('~/lib/teamHelpers')).getTripWithTeamRPC(trip.id);
-        if (team?.owner) {
-          setOwnerProfile({
-            id: team.owner.id,
-            full_name: team.owner.full_name,
-            avatar_url: team.owner.avatar_url,
-            email: team.owner.email,
-          });
-          // Si falta owner_id en el trip recibido, persistirlo localmente para filtros/igualdad
-          if (!trip.owner_id) {
-            setCurrentTrip((prev) => ({ ...prev, owner_id: team.owner!.id }));
-          }
-          return;
-        }
-      } catch (e) {
-        console.warn(
-          'TripCard.loadOwnerProfile: RPC getTripWithTeamRPC failed, fallback to direct profile',
-          e
-        );
-      }
-
-      // 2) Fallback a consulta directa si no hay RPC o vino vacío
-      const ownerId = trip.owner_id || trip.user_id;
-      if (!ownerId || ownerId === 'null') {
-        console.warn('TripCard: No owner ID found for trip', trip.id);
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, email')
-        .eq('id', ownerId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error loading owner profile:', error);
-        return;
-      }
-
-      if (profile) {
-        console.log('🔍 TripCard: Owner profile loaded (fallback):', {
-          id: profile.id,
-          full_name: profile.full_name,
-          has_avatar: !!profile.avatar_url,
-          avatar_url: profile.avatar_url,
-          email: profile.email,
-        });
-        setOwnerProfile(profile);
-      } else {
-        console.warn('TripCard: Owner profile not found for owner_id', ownerId);
-      }
-    } catch (error) {
-      console.error('Error loading owner profile:', error);
-    }
-  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -341,16 +422,6 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: 'Viewer' },
     };
     return configs[role];
-  };
-
-  const deriveCurrentRole = async () => {
-    try {
-      const role = await resolveCurrentUserRoleForTripId(currentTrip.id);
-      setCurrentRole(role);
-    } catch (e) {
-      console.warn('TripCard deriveCurrentRole failed, defaulting to viewer', e);
-      setCurrentRole('viewer');
-    }
   };
 
   const getStatusConfig = () => {
@@ -1064,6 +1135,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               }
               style={{
                 marginLeft: 8,
+                position: 'relative',
               }}
             >
               <LinearGradient
@@ -1089,30 +1161,43 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 >
                   Chat
                 </Text>
-                {unreadMessagesCount > 0 && (
-                  <View
+              </LinearGradient>
+
+              {/* Badge de notificación en esquina superior izquierda */}
+              {unreadMessagesCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    left: -6,
+                    backgroundColor: '#EF4444',
+                    borderRadius: 10,
+                    minWidth: 20,
+                    height: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 5,
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3,
+                    elevation: 5,
+                  }}
+                >
+                  <Text
                     style={{
-                      backgroundColor: '#EF4444',
-                      borderRadius: 10,
-                      minWidth: 18,
-                      height: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      paddingHorizontal: 4,
+                      color: '#FFFFFF',
+                      fontSize: 10,
+                      fontWeight: '700',
+                      lineHeight: 12,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: '#FFFFFF',
-                        fontSize: 10,
-                        fontWeight: '700',
-                      }}
-                    >
-                      {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-                    </Text>
-                  </View>
-                )}
-              </LinearGradient>
+                    {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           )}
         </View>

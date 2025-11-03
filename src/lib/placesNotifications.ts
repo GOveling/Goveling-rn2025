@@ -20,6 +20,11 @@ interface PlaceData {
   opening_hours?: { weekdayDescriptions?: string[] } | null;
   website?: string | null;
   phone?: string | null;
+  // Geographic information from Google Places API
+  country_code?: string | null;
+  country?: string | null;
+  city?: string | null;
+  full_address?: string | null;
 }
 
 /**

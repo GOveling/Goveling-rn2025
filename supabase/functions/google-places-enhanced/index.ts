@@ -94,6 +94,10 @@ interface EnhancedPlace {
   plusCode?: string;
   shortFormattedAddress?: string;
   accessibilityOptions?: any;
+  // Geographic information from Google Places API
+  country_code?: string;
+  country?: string;
+  city?: string;
 }
 
 // Distancia Haversine en km
@@ -181,6 +185,8 @@ async function textSearchGoogle(params: {
     'places.plusCode',
     'places.shortFormattedAddress',
     'places.accessibilityOptions',
+    // Geographic components for country/city detection
+    'places.addressComponents',
   ].join(',');
 
   console.log('[textSearchGoogle] Request body:', JSON.stringify(body, null, 2));
@@ -225,6 +231,32 @@ function normalizePlace(
       distance_km = haversine(userLocation.lat, userLocation.lng, coords.lat, coords.lng);
     }
 
+    // Extract geographic information from addressComponents
+    let country_code: string | undefined;
+    let country: string | undefined;
+    let city: string | undefined;
+
+    if (raw.addressComponents && Array.isArray(raw.addressComponents)) {
+      for (const component of raw.addressComponents) {
+        const types = component.types || [];
+
+        // Extract country
+        if (types.includes('country')) {
+          country_code = component.shortText; // ISO code (e.g., "CL", "US")
+          country = component.longText; // Full name (e.g., "Chile", "United States")
+        }
+
+        // Extract city (locality is the most specific city level)
+        if (types.includes('locality')) {
+          city = component.longText;
+        }
+        // Fallback to administrative_area_level_3 if locality not found
+        else if (!city && types.includes('administrative_area_level_3')) {
+          city = component.longText;
+        }
+      }
+    }
+
     // Limitar fotos (máx 5) construyendo URL media endpoint
     const photos: string[] = [];
     if (raw.photos && Array.isArray(raw.photos)) {
@@ -263,6 +295,10 @@ function normalizePlace(
       plusCode: raw.plusCode?.globalCode || raw.plusCode?.compoundCode || undefined,
       shortFormattedAddress: raw.shortFormattedAddress || undefined,
       accessibilityOptions: raw.accessibilityOptions || undefined,
+      // Geographic information
+      country_code,
+      country,
+      city,
     };
   } catch (e) {
     console.warn('normalizePlace error', e);
