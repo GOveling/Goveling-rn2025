@@ -20,6 +20,8 @@ const CATEGORY_TRANSLATIONS: Record<string, string> = {
   // Comida y bebida
   restaurant: 'Restaurante',
   food: 'Comida',
+  fast_food: 'Comida Rápida',
+  fast_food_restaurant: 'Restaurante de Comida Rápida',
   meal_takeaway: 'Comida para Llevar',
   meal_delivery: 'Entrega a Domicilio',
   cafe: 'Café',

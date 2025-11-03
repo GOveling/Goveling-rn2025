@@ -22,6 +22,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 
+import { processPlaceCategories } from '~/lib/categoryProcessor';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PlaceVisitModalProps {
@@ -97,22 +99,9 @@ export function PlaceVisitModal({
   const getPlaceCategory = (): string => {
     if (!placeTypes || placeTypes.length === 0) return 'Lugar';
 
-    const type = placeTypes[0]?.toLowerCase();
-
-    if (type.includes('airport')) return 'Aeropuerto';
-    if (type.includes('stadium')) return 'Estadio';
-    if (type.includes('park')) return 'Parque';
-    if (type.includes('museum')) return 'Museo';
-    if (type.includes('restaurant')) return 'Restaurante';
-    if (type.includes('cafe') || type.includes('coffee')) return 'Café';
-    if (type.includes('hotel') || type.includes('lodging')) return 'Hotel';
-    if (type.includes('shopping') || type.includes('mall')) return 'Centro Comercial';
-    if (type.includes('beach')) return 'Playa';
-    if (type.includes('mountain')) return 'Montaña';
-    if (type.includes('church') || type.includes('temple')) return 'Templo';
-    if (type.includes('tourist')) return 'Atracción Turística';
-
-    return 'Lugar de Interés';
+    // Usar processPlaceCategories para obtener la categoría formateada correctamente
+    const processed = processPlaceCategories(placeTypes, undefined, 1);
+    return processed[0] || 'Lugar de Interés';
   };
 
   return (

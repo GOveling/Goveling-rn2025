@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '~/contexts/AuthContext';
+import { processPlaceCategories } from '~/lib/categoryProcessor';
 import { supabase } from '~/lib/supabase';
 import { resolveUserRoleForTrip } from '~/lib/userUtils';
 
@@ -663,10 +664,9 @@ export default function TripPlacesScreen() {
                             fontSize: 12,
                             color: '#007AFF',
                             fontWeight: '600',
-                            textTransform: 'capitalize',
                           }}
                         >
-                          {place.category.replace('_', ' ')}
+                          {processPlaceCategories([], place.category, 1)[0] || 'Lugar'}
                         </Text>
                       </View>
                     </View>
