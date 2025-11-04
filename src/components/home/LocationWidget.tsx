@@ -4,6 +4,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { useTranslation } from 'react-i18next';
+
 import NotificationBell from './NotificationBell';
 
 interface LocationWidgetProps {
@@ -20,7 +22,13 @@ interface LocationWidgetProps {
  */
 const LocationWidget = React.memo<LocationWidgetProps>(
   function LocationWidget({ city, temp, units, onToggleUnits }) {
-    const currentDate = new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    const { i18n } = useTranslation();
+
+    // Use current language for date formatting
+    const currentDate = new Date().toLocaleDateString(i18n.language, {
+      month: 'short',
+      day: 'numeric',
+    });
 
     return (
       <LinearGradient

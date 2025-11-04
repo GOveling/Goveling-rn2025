@@ -5,6 +5,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
+import { useTranslation } from 'react-i18next';
+
 import { COLORS } from '~/constants/colors';
 
 interface StatCardsProps {
@@ -20,6 +22,7 @@ interface StatCardsProps {
 const StatCards = React.memo<StatCardsProps>(
   function StatCards({ savedPlacesCount, upcomingTripsCount }) {
     const router = useRouter();
+    const { t } = useTranslation();
 
     return (
       <View style={styles.container}>
@@ -31,7 +34,7 @@ const StatCards = React.memo<StatCardsProps>(
           <LinearGradient colors={COLORS.gradients.purple} style={styles.gradientCard}>
             <Text style={styles.iconText}>📍</Text>
             <Text style={styles.countText}>{savedPlacesCount}</Text>
-            <Text style={styles.labelText}>Lugares Guardados</Text>
+            <Text style={styles.labelText}>{t('home.saved_places')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -40,7 +43,7 @@ const StatCards = React.memo<StatCardsProps>(
           <LinearGradient colors={COLORS.gradients.orange} style={styles.gradientCard}>
             <Text style={styles.iconText}>📅</Text>
             <Text style={styles.countText}>{upcomingTripsCount}</Text>
-            <Text style={styles.labelText}>Próximos Viajes</Text>
+            <Text style={styles.labelText}>{t('home.upcoming_trips')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

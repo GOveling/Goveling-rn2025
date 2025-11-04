@@ -36,7 +36,7 @@ import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
 export const options = { headerShown: false };
 
 export default function HomeTab() {
-  const { t: _t } = useTranslation();
+  const { t } = useTranslation();
   const { colors: _colors } = useTheme();
   const _router = useRouter();
   const { units, setUnits } = useSettingsStore();
@@ -101,7 +101,7 @@ export default function HomeTab() {
               reverseCityCached(p.lat, p.lng),
               getWeatherCached(p.lat, p.lng, units),
             ]);
-            setCity(cityName || 'Ubicación');
+            setCity(cityName || t('home.location'));
             setTemp(weather?.temp);
           }
         })(),
@@ -113,7 +113,7 @@ export default function HomeTab() {
     } finally {
       setRefreshing(false);
     }
-  }, [recomputeSavedPlaces, refetchTrips, units]);
+  }, [recomputeSavedPlaces, refetchTrips, units, t]);
 
   React.useEffect(() => {
     registerDeviceToken().catch(() => {});
@@ -390,7 +390,7 @@ export default function HomeTab() {
             onRefresh={onRefresh}
             colors={['#4A90E2', '#9B59B6']} // Android
             tintColor="#4A90E2" // iOS
-            title="Actualizando..." // iOS
+            title={t('home.refreshing')} // iOS
             titleColor="#666" // iOS
           />
         }
@@ -415,7 +415,7 @@ export default function HomeTab() {
             onPlacePress={(place) => {
               Alert.alert(
                 place.name,
-                `${place.description || 'Lugar popular entre viajeros'}\n\n📍 ${place.location_display}`,
+                `${place.description || t('home.popular_place_fallback')}\n\n📍 ${place.location_display}`,
                 [{ text: 'OK' }]
               );
             }}

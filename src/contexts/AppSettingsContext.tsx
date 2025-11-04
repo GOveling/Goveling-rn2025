@@ -12,11 +12,13 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import i18n from '~/i18n';
+
 // ═══════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════
 
-export type Language = 'es' | 'en' | 'pt' | 'fr' | 'it' | 'zh' | 'ja';
+export type Language = 'es' | 'en' | 'pt' | 'fr' | 'it' | 'zh' | 'ja' | 'hi';
 export type Theme = 'light' | 'dark' | 'auto';
 export type Units = 'metric' | 'imperial';
 
@@ -104,10 +106,26 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(und
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const [, forceUpdate] = useState(0); // Estado dummy para forzar re-renders
 
   // Load settings on mount
   useEffect(() => {
     loadSettings();
+  }, []);
+
+  // ✅ Listener de cambios de idioma en i18n
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      console.log('🌐 i18n language changed to:', lng);
+      // Forzar re-render de todos los componentes que usen traducciones
+      forceUpdate((prev) => prev + 1);
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
   }, []);
 
   const loadSettings = async () => {
@@ -129,6 +147,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       };
 
       setSettings(loadedSettings);
+
+      // ✅ Aplicar idioma guardado a i18n
+      if (loadedSettings.language && loadedSettings.language !== i18n.language) {
+        await i18n.changeLanguage(loadedSettings.language);
+        console.log('✅ Applied saved language:', loadedSettings.language);
+      }
     } catch (error) {
       console.error('Error loading app settings:', error);
     } finally {
@@ -139,10 +163,15 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const setLanguage = async (lang: Language) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
+      await AsyncStorage.setItem('app.lang', lang); // También guardar en el storage de i18n
+
+      // ✅ Cambiar idioma en i18n PRIMERO
+      await i18n.changeLanguage(lang);
+
+      // LUEGO actualizar el estado (esto forzará re-render)
       setSettings((prev) => ({ ...prev, language: lang }));
 
-      // TODO: Integrate with i18n when available
-      console.log('Language changed to:', lang);
+      console.log('✅ Language changed to:', lang);
     } catch (error) {
       console.error('Error setting language:', error);
       throw error;

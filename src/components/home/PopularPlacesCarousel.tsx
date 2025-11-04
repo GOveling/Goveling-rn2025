@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
+
 import { usePopularPlacesV2, type PopularPlace } from '~/hooks/usePopularPlacesV2';
 
 const AUTO_ROTATE_INTERVAL = 8000; // 8 seconds
@@ -18,6 +20,7 @@ export default function PopularPlacesCarousel({
   userContinent,
   onPlacePress,
 }: Props) {
+  const { t } = useTranslation();
   const { places, isLive, isLoading, refresh } = usePopularPlacesV2({
     userCountryCode,
     userContinent,
@@ -50,12 +53,12 @@ export default function PopularPlacesCarousel({
       <View style={styles.card}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>📈 Lugares Populares</Text>
-            <Text style={styles.titleLine2}>Globalmente</Text>
+            <Text style={styles.title}>{t('home.popular_places')}</Text>
+            <Text style={styles.titleLine2}>{t('home.globally')}</Text>
           </View>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando lugares populares...</Text>
+          <Text style={styles.loadingText}>{t('home.loading_popular_places')}</Text>
         </View>
       </View>
     );
@@ -65,20 +68,26 @@ export default function PopularPlacesCarousel({
 
   // Format saves count
   const getSavesText = () => {
-    if (!isLive) return 'Destino icónico mundial';
+    if (!isLive) return t('home.iconic_destination');
 
     const totalSaves = currentPlace.saves_1h + currentPlace.saves_6h + currentPlace.saves_24h;
-    if (totalSaves === 0) return 'Destino icónico mundial';
+    if (totalSaves === 0) return t('home.iconic_destination');
 
     if (currentPlace.saves_1h > 0) {
-      return `${currentPlace.saves_1h} ${currentPlace.saves_1h === 1 ? 'viajero lo guardó' : 'viajeros lo guardaron'} en la última hora`;
+      const savedText =
+        currentPlace.saves_1h === 1 ? t('home.traveler_saved_it') : t('home.travelers_saved_it');
+      return `${currentPlace.saves_1h} ${savedText} ${t('home.in_last_hour')}`;
     }
 
     if (currentPlace.saves_6h > 0) {
-      return `${currentPlace.saves_6h} ${currentPlace.saves_6h === 1 ? 'viajero lo guardó' : 'viajeros lo guardaron'} en las últimas 6 horas`;
+      const savedText =
+        currentPlace.saves_6h === 1 ? t('home.traveler_saved_it') : t('home.travelers_saved_it');
+      return `${currentPlace.saves_6h} ${savedText} ${t('home.in_last_6_hours')}`;
     }
 
-    return `${currentPlace.saves_24h} ${currentPlace.saves_24h === 1 ? 'viajero lo guardó' : 'viajeros lo guardaron'} hoy`;
+    const savedText =
+      currentPlace.saves_24h === 1 ? t('home.traveler_saved_it') : t('home.travelers_saved_it');
+    return `${currentPlace.saves_24h} ${savedText} ${t('home.today')}`;
   };
 
   return (
@@ -87,20 +96,20 @@ export default function PopularPlacesCarousel({
       <View style={styles.header}>
         <View>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>📈 Lugares Populares</Text>
+            <Text style={styles.title}>{t('home.popular_places')}</Text>
           </View>
           <View style={styles.titleRow}>
-            <Text style={styles.titleLine2}>Globalmente</Text>
+            <Text style={styles.titleLine2}>{t('home.globally')}</Text>
             {isLive && (
               <View style={styles.liveBadge}>
-                <Text style={styles.liveText}>EN VIVO</Text>
+                <Text style={styles.liveText}>{t('home.live')}</Text>
               </View>
             )}
           </View>
         </View>
 
         <TouchableOpacity onPress={refresh} style={styles.refreshButton}>
-          <Text style={styles.refreshText}>🔄 Actualizar</Text>
+          <Text style={styles.refreshText}>{t('home.refresh')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -135,7 +144,7 @@ export default function PopularPlacesCarousel({
           </Text>
 
           <Text style={styles.placeDescription} numberOfLines={2}>
-            {currentPlace.description || 'Lugar popular entre viajeros'}
+            {currentPlace.description || t('home.popular_place_fallback')}
           </Text>
 
           <Text style={styles.placeStats} numberOfLines={1}>

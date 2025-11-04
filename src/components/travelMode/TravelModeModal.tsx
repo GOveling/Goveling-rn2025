@@ -7,6 +7,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
+
 import SavedPlacesMapModal from '~/components/SavedPlacesMapModal';
 import { useTravelMode } from '~/contexts/TravelModeContext';
 import { supabase } from '~/lib/supabase';
@@ -23,6 +25,7 @@ interface TravelModeModalProps {
 }
 
 export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelModeModalProps) {
+  const { t } = useTranslation();
   const { state, actions } = useTravelMode();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -75,7 +78,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
         if (error) {
           console.error('❌ TravelMode: Error loading places:', error);
-          setLoadError('Error al cargar lugares del viaje');
+          setLoadError(t('home.error_loading_places'));
           return;
         }
 
@@ -103,12 +106,12 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
         actions.setSavedPlaces(savedPlaces);
       } catch (err) {
         console.error('❌ TravelMode: Unexpected error loading places:', err);
-        setLoadError('Error inesperado al cargar lugares');
+        setLoadError(t('home.error_loading_places_unexpected'));
       }
     };
 
     loadPlaces();
-  }, [visible, tripId, tripName, actions]);
+  }, [visible, tripId, tripName, actions, t]);
 
   // Retry function for manual reload
   const handleRetry = () => {
@@ -132,7 +135,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData?.user) {
         console.error('❌ User authentication error:', userError);
-        Alert.alert('Error', 'No estás autenticado. Por favor inicia sesión nuevamente.');
+        Alert.alert(t('home.error'), t('home.not_authenticated'));
         return;
       }
 
@@ -141,7 +144,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
       if (!place) {
         console.error('❌ Place not found in saved places');
-        Alert.alert('Error', 'No se encontró el lugar en la lista de lugares guardados');
+        Alert.alert(t('home.error'), t('home.place_not_found'));
         return;
       }
 
@@ -181,8 +184,8 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
           code: insertError.code,
         });
         Alert.alert(
-          'Error al guardar',
-          `No se pudo guardar la visita: ${insertError.message}\n\nCódigo: ${insertError.code}`
+          t('home.error_saving_visit'),
+          `${insertError.message}\n\n${t('home.code')}: ${insertError.code}`
         );
         return;
       }
@@ -193,14 +196,14 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       actions.confirmArrival(state.pendingArrival.placeId);
 
       // Show success message
-      Alert.alert('¡Visita Confirmada!', 'Se ha guardado tu visita en las estadísticas', [
-        { text: 'Genial', style: 'default' },
+      Alert.alert(t('home.visit_confirmed'), t('home.visit_saved_stats'), [
+        { text: t('home.great'), style: 'default' },
       ]);
     } catch (error) {
       console.error('❌ Error confirming visit:', error);
-      Alert.alert('Error', 'No se pudo confirmar la visita');
+      Alert.alert(t('home.error'), t('home.error_confirming_visit'));
     }
-  }, [state.pendingArrival, state.savedPlaces, tripId, actions]);
+  }, [state.pendingArrival, state.savedPlaces, tripId, actions, t]);
 
   /**
    * Handle skip visit
@@ -227,7 +230,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       } = await supabase.auth.getUser();
 
       if (!user) {
-        Alert.alert('Error', 'No estás autenticado');
+        Alert.alert(t('home.error'), t('home.not_authenticated'));
         return;
       }
 
@@ -252,7 +255,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
       if (error) {
         console.error('❌ Error saving country visit:', error);
-        Alert.alert('Error', 'No se pudo guardar la visita al país');
+        Alert.alert(t('home.error'), t('home.error_saving_country_visit'));
         return;
       }
 
@@ -262,9 +265,9 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       actions.confirmCountryVisit(countryInfo.countryCode);
     } catch (error) {
       console.error('❌ Error in handleConfirmCountryVisit:', error);
-      Alert.alert('Error', 'Ocurrió un error al guardar la visita');
+      Alert.alert(t('home.error'), t('home.error_occurred'));
     }
-  }, [state.pendingCountryVisit, state.savedPlaces, tripId, actions]);
+  }, [state.pendingCountryVisit, state.savedPlaces, tripId, actions, t]);
 
   /**
    * Handle dismissing country visit modal
@@ -279,7 +282,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
     setIsLoading(false);
 
     if (!success) {
-      Alert.alert('Error', 'No se pudo iniciar el Modo Travel. Verifica los permisos.');
+      Alert.alert(t('home.error'), t('home.error_starting_travel_mode'));
     }
   };
 
@@ -298,9 +301,9 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>🚀 Modo Travel</Text>
+          <Text style={styles.title}>🚀 {t('home.travel_mode')}</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>
         </View>
 
@@ -310,16 +313,18 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             <View style={styles.errorCard}>
               <Text style={styles.errorText}>⚠️ {loadError}</Text>
               <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
-                <Text style={styles.retryButtonText}>Reintentar</Text>
+                <Text style={styles.retryButtonText}>{t('home.retry')}</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* Trip Info */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Viaje Actual</Text>
+            <Text style={styles.cardTitle}>{t('home.current_trip')}</Text>
             <Text style={styles.tripName}>{tripName}</Text>
-            <Text style={styles.placesCount}>{state.savedPlaces.length} lugares guardados</Text>
+            <Text style={styles.placesCount}>
+              {t('home.saved_places_count', { count: state.savedPlaces.length })}
+            </Text>
 
             {/* Ver Mapa Button */}
             <TouchableOpacity
@@ -328,27 +333,27 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                   setMapModalVisible(true);
                 } else {
                   Alert.alert(
-                    'Modo Travel Desactivado',
-                    'Activa el Modo Travel para ver el mapa con lugares cercanos',
-                    [{ text: 'Entendido', style: 'default' }]
+                    t('home.travel_mode_deactivated'),
+                    t('home.activate_travel_mode_to_see_map'),
+                    [{ text: t('home.understood'), style: 'default' }]
                   );
                 }
               }}
               style={[styles.mapButton, !state.isActive && styles.mapButtonDisabled]}
             >
               <Text style={[styles.mapButtonText, !state.isActive && styles.mapButtonTextDisabled]}>
-                🗺️ Ver Mapa
+                🗺️ {t('home.view_map')}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Status Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Estado</Text>
+            <Text style={styles.cardTitle}>{t('home.status')}</Text>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, state.isTracking && styles.statusDotActive]} />
               <Text style={styles.statusText}>
-                {state.isTracking ? 'Rastreando ubicación' : 'Inactivo'}
+                {state.isTracking ? t('home.tracking_location') : t('home.inactive')}
               </Text>
             </View>
 
@@ -372,7 +377,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
           {/* ✅ NUEVO: Transport Mode Card */}
           {state.transportMode && state.currentLocation && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Modo de Transporte</Text>
+              <Text style={styles.cardTitle}>{t('home.transport_mode')}</Text>
               <View style={styles.transportRow}>
                 <Text style={styles.transportEmoji}>
                   {state.transportMode === 'stationary' && '🧍'}
@@ -383,11 +388,11 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 </Text>
                 <View style={styles.transportInfo}>
                   <Text style={styles.transportMode}>
-                    {state.transportMode === 'stationary' && 'Estacionario'}
-                    {state.transportMode === 'walking' && 'Caminando'}
-                    {state.transportMode === 'cycling' && 'En Bicicleta'}
-                    {state.transportMode === 'transit' && 'Transporte Público'}
-                    {state.transportMode === 'driving' && 'Conduciendo'}
+                    {state.transportMode === 'stationary' && t('home.stationary')}
+                    {state.transportMode === 'walking' && t('home.walking')}
+                    {state.transportMode === 'cycling' && t('home.cycling')}
+                    {state.transportMode === 'transit' && t('home.public_transit')}
+                    {state.transportMode === 'driving' && t('home.driving')}
                   </Text>
                   {state.currentSpeed !== null && state.currentSpeed >= 0 && (
                     <Text style={styles.speedText}>
@@ -402,7 +407,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
           {/* Nearby Places */}
           {state.nearbyPlaces.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Lugares Cercanos</Text>
+              <Text style={styles.cardTitle}>{t('home.nearby_places')}</Text>
               {state.nearbyPlaces.slice(0, 5).map((place) => (
                 <View key={place.id} style={styles.placeItem}>
                   <Text style={styles.placeName}>{place.name}</Text>
@@ -421,7 +426,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 disabled={isLoading}
               >
                 <Text style={styles.buttonText}>
-                  {isLoading ? 'Iniciando...' : '🚀 Iniciar Modo Travel'}
+                  {isLoading ? t('home.starting') : `🚀 ${t('home.start_travel_mode')}`}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -429,23 +434,17 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 onPress={handleStopTravelMode}
                 style={[styles.button, styles.dangerButton]}
               >
-                <Text style={styles.buttonText}>🛑 Detener Modo Travel</Text>
+                <Text style={styles.buttonText}>🛑 {t('home.stop_travel_mode')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Info Section */}
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>¿Cómo funciona?</Text>
-            <Text style={styles.infoText}>
-              • Recibirás notificaciones cuando te acerques a lugares guardados
-            </Text>
-            <Text style={styles.infoText}>
-              • El sistema optimiza el uso de batería automáticamente
-            </Text>
-            <Text style={styles.infoText}>
-              • Puedes cerrar la app y seguirás recibiendo notificaciones
-            </Text>
+            <Text style={styles.infoTitle}>{t('home.how_it_works')}</Text>
+            <Text style={styles.infoText}>• {t('home.how_it_works_1')}</Text>
+            <Text style={styles.infoText}>• {t('home.how_it_works_2')}</Text>
+            <Text style={styles.infoText}>• {t('home.how_it_works_3')}</Text>
           </View>
         </ScrollView>
       </View>

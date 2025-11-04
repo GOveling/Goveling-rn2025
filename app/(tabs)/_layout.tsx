@@ -65,7 +65,7 @@ export default function TabLayout() {
               <AnimatedTabIcon
                 focused={focused}
                 source={homeAnimation}
-                label="Home"
+                label={t('tabs.home')}
                 size={36}
                 key={`home-${tabKeys.home}`}
               />
@@ -83,7 +83,7 @@ export default function TabLayout() {
               <AnimatedTabIcon
                 focused={focused}
                 source={exploreAnimation}
-                label="Explore"
+                label={t('tabs.explore')}
                 size={36}
                 key={`explore-${tabKeys.explore}`}
               />
@@ -102,7 +102,7 @@ export default function TabLayout() {
               <AnimatedTabIcon
                 focused={focused}
                 source={tripsAnimation}
-                label="Trips"
+                label={t('tabs.trips')}
                 size={36}
                 key={`trips-${tabKeys.trips}`}
               />
@@ -120,7 +120,7 @@ export default function TabLayout() {
               <AnimatedTabIcon
                 focused={focused}
                 source={bookingAnimation}
-                label="Booking"
+                label={t('tabs.booking')}
                 size={36}
                 key={`booking-${tabKeys.booking}`}
               />
@@ -138,7 +138,7 @@ export default function TabLayout() {
               <AnimatedTabIcon
                 focused={focused}
                 source={profileAnimation}
-                label="Profile"
+                label={t('tabs.profile')}
                 size={36}
                 key={`profile-${tabKeys.profile}`}
               />

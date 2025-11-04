@@ -110,11 +110,27 @@ export default function Root() {
   useFrameworkReady();
   logger.debug('🚀 Root Layout mounting...');
 
+  // ✅ Listener para forzar re-mount cuando cambie el idioma
+  const [i18nKey, setI18nKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handleLanguageChange = () => {
+      logger.debug('🌐 Language changed, forcing re-mount...');
+      setI18nKey((prev) => prev + 1);
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <Provider store={store}>
         <PersistGate loading={<ActivityIndicator size="large" />} persistor={persistor}>
-          <I18nextProvider i18n={i18n}>
+          <I18nextProvider i18n={i18n} key={i18nKey}>
             <ThemeProvider>
               <AppSettingsProvider>
                 <AuthProvider>

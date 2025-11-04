@@ -36,7 +36,7 @@ const parseLocalDate = (dateString: string): Date => {
   return new Date(dateString);
 };
 
-const getCountdownText = (startDate: string): string => {
+const getCountdownText = (startDate: string, t: (key: string) => string): string => {
   const now = new Date();
   const start = parseLocalDate(startDate);
   const diff = start.getTime() - now.getTime();
@@ -49,20 +49,23 @@ const getCountdownText = (startDate: string): string => {
     diff_hours: Math.floor(diff / (1000 * 60 * 60)),
   });
 
-  if (diff <= 0) return '¡Ya comenzó!';
+  if (diff <= 0) return t('home.trip_started');
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
   if (days > 0) {
-    return `${days} día${days !== 1 ? 's' : ''} y ${hours} hora${hours !== 1 ? 's' : ''}`;
+    const dayText = days !== 1 ? t('home.days') : t('home.day');
+    const hourText = hours !== 1 ? t('home.hours') : t('home.hour');
+    return `${days} ${dayText} ${t('home.and')} ${hours} ${hourText}`;
   } else {
-    return `${hours} hora${hours !== 1 ? 's' : ''}`;
+    const hourText = hours !== 1 ? t('home.hours') : t('home.hour');
+    return `${hours} ${hourText}`;
   }
 };
 
 const CurrentTripCard = React.memo(function CurrentTripCard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { registerRefreshFunction } = useTripRefresh();
   const [loading, setLoading] = React.useState(true);
@@ -356,14 +359,17 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
     };
   }, [loadTripData]); // Include loadTripData dependency
 
-  const formatDate = (dateStr: string) => {
-    const date = parseLocalDate(dateStr);
-    return date.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+  const formatDate = React.useCallback(
+    (dateStr: string) => {
+      const date = parseLocalDate(dateStr);
+      return date.toLocaleDateString(i18n.language, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    },
+    [i18n.language]
+  );
 
   // const showComingSoonAlert = (feature: string) => {
   //   Alert.alert('Próximamente', `${feature} estará disponible pronto`, [
@@ -385,7 +391,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         {/* Header */}
         <View style={styles.activeTripHeader}>
           <View style={styles.activeTripHeaderRow}>
-            <Text style={styles.activeTripLabel}>✈️ Viaje Activo</Text>
+            <Text style={styles.activeTripLabel}>{t('home.active_trip')}</Text>
             {activeTrips.length > 1 && (
               <TouchableOpacity
                 onPress={() => {
@@ -406,7 +412,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             )}
           </View>
 
-          <Text style={styles.activeTripName}>{selectedActiveTrip.name || 'Mi Viaje'}</Text>
+          <Text style={styles.activeTripName}>{selectedActiveTrip.name || t('home.my_trip')}</Text>
 
           {selectedActiveTrip.start_date && selectedActiveTrip.end_date && (
             <Text style={styles.activeTripDates}>
@@ -424,7 +430,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
             style={styles.activeTripTravelButton}
           >
             <View style={styles.activeTripTravelButtonContent}>
-              <Text style={styles.activeTripTravelButtonText}>🚀 Acceder a Modo Travel</Text>
+              <Text style={styles.activeTripTravelButtonText}>{t('home.access_travel_mode')}</Text>
             </View>
           </TouchableOpacity>
 
@@ -434,18 +440,20 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               onPress={() => router.push(`/trips/${selectedActiveTrip.id}`)}
               style={styles.activeTripSecondaryButton}
             >
-              <Text style={styles.activeTripSecondaryButtonText}>🔍 Ver Detalles del Viaje</Text>
+              <Text style={styles.activeTripSecondaryButtonText}>
+                {t('home.view_trip_details')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => {
-                Alert.alert('Próximamente', 'El Itinerario estará disponible pronto', [
-                  { text: 'Entendido', style: 'default' },
+                Alert.alert(t('home.coming_soon'), t('home.itinerary_coming_soon'), [
+                  { text: t('home.understood'), style: 'default' },
                 ]);
               }}
               style={styles.activeTripSecondaryButton}
             >
-              <Text style={styles.activeTripSecondaryButtonText}>📋 Ver Itinerario</Text>
+              <Text style={styles.activeTripSecondaryButtonText}>{t('home.view_itinerary')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -454,26 +462,24 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         {activeTrips.length > 1 && (
           <View style={styles.activeTripMultipleIndicator}>
             <Text style={styles.activeTripMultipleText}>
-              Tienes {activeTrips.length} viajes activos • Toca para cambiar
+              {t('home.multiple_active_trips', { count: activeTrips.length })}
             </Text>
           </View>
         )}
       </LinearGradient>
     );
-  }, [selectedActiveTrip, activeTrips, router]);
+  }, [selectedActiveTrip, activeTrips, router, formatDate, t]);
 
   // Memoized content for future trips
   const memoizedContent = React.useMemo(() => {
     if (!trip || mode !== 'future') return null;
 
-    const countdownText = getCountdownText(trip.start_date);
-    const tripName = trip?.name || 'Mi Viaje';
+    const countdownText = getCountdownText(trip.start_date, t);
+    const tripName = trip?.name || t('home.my_trip');
 
     return (
       <TouchableOpacity
-        onPress={() =>
-          Alert.alert('Trip Details', 'Funcionalidad de detalles del trip próximamente disponible')
-        }
+        onPress={() => Alert.alert(t('home.trip_details'), t('home.trip_details_coming_soon'))}
         activeOpacity={0.8}
       >
         <LinearGradient
@@ -485,7 +491,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           <View style={styles.futureTripContent}>
             {/* Contenido del lado izquierdo */}
             <View style={styles.futureTripLeft}>
-              <Text style={styles.futureTripLabel}>Tu próximo viaje comienza en:</Text>
+              <Text style={styles.futureTripLabel}>{t('home.next_trip_starts_in')}</Text>
               <Text style={styles.futureTripCountdown}>{countdownText}</Text>
               <Text style={styles.futureTripName}>{tripName}</Text>
             </View>
@@ -495,13 +501,13 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
               onPress={() => router.push('/(tabs)/explore')}
               style={styles.futureTripButton}
             >
-              <Text style={styles.futureTripButtonText}>➕ Agregar más lugares</Text>
+              <Text style={styles.futureTripButtonText}>{t('home.add_more_places')}</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
       </TouchableOpacity>
     );
-  }, [trip, mode, router]);
+  }, [trip, mode, router, t]);
 
   // Loading state
   if (loading)
@@ -531,15 +537,16 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         {planningTripsCount > 0 ? (
           // Has planning trips - encourage user to complete them
           <>
-            <Text style={styles.noTripTitle}>¡Completa tus viajes!</Text>
+            <Text style={styles.noTripTitle}>{t('home.complete_your_trips')}</Text>
             <Text style={styles.noTripSubtitle}>
-              Tienes {planningTripsCount} viaje{planningTripsCount > 1 ? 's' : ''} sin fecha. Agrega
-              lugares y fechas para comenzar a planificar
+              {planningTripsCount === 1
+                ? t('home.incomplete_trips_message', { count: planningTripsCount })
+                : t('home.incomplete_trips_message_plural', { count: planningTripsCount })}
             </Text>
             <View style={styles.noTripButtonRow}>
               <TouchableOpacity onPress={() => router.push('/trips')} style={styles.noTripButton}>
                 <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripButtonGradient}>
-                  <Text style={styles.noTripButtonText}>Completar Viajes</Text>
+                  <Text style={styles.noTripButtonText}>{t('home.complete_trips')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity
@@ -547,7 +554,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
                 style={styles.noTripButton}
               >
                 <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.noTripButtonGradient}>
-                  <Text style={styles.noTripButtonText}>Agregar Lugares</Text>
+                  <Text style={styles.noTripButtonText}>{t('home.add_places')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity
@@ -555,7 +562,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
                 style={styles.noTripButton}
               >
                 <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.noTripButtonGradient}>
-                  <Text style={styles.noTripButtonText}>{t('+ New Trip')}</Text>
+                  <Text style={styles.noTripButtonText}>{t('home.new_trip')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -563,11 +570,11 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
         ) : (
           // No trips at all - encourage user to create first trip
           <>
-            <Text style={styles.noTripTitle}>{t('No tienes viajes')}</Text>
-            <Text style={styles.noTripSubtitle}>{t('Crea tu primer viaje para comenzar')}</Text>
+            <Text style={styles.noTripTitle}>{t('home.no_trips')}</Text>
+            <Text style={styles.noTripSubtitle}>{t('home.create_first_trip')}</Text>
             <TouchableOpacity onPress={() => router.push('/trips?openModal=true')}>
               <LinearGradient colors={['#10B981', '#059669']} style={styles.noTripSingleButton}>
-                <Text style={styles.noTripSingleButtonText}>{t('+ New Trip')}</Text>
+                <Text style={styles.noTripSingleButtonText}>{t('home.new_trip')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </>
@@ -585,7 +592,7 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           visible={travelModalVisible}
           onClose={() => setTravelModalVisible(false)}
           tripId={selectedActiveTrip.id}
-          tripName={selectedActiveTrip.name || 'Mi Viaje'}
+          tripName={selectedActiveTrip.name || t('home.my_trip')}
         />
       )}
     </>

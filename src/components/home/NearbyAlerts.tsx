@@ -4,6 +4,8 @@ import { View, Text, StyleSheet } from 'react-native';
 
 import * as Notifications from 'expo-notifications';
 
+import { useTranslation } from 'react-i18next';
+
 import { COLORS } from '~/constants/colors';
 import { useTravelMode } from '~/contexts/TravelModeContext';
 import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
@@ -28,6 +30,7 @@ interface Place {
 }
 
 const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsProps) {
+  const { t } = useTranslation();
   const { state } = useTravelMode();
   const enabled = state.isActive;
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
@@ -78,7 +81,10 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
     const r = Math.max(60, Math.min(150, Math.round((nearest.distance_m || 200) / 3)));
     if ((nearest.distance_m || 1e9) <= r) {
       Notifications.scheduleNotificationAsync({
-        content: { title: 'Estás cerca', body: `Llegando a ${nearest.name}` },
+        content: {
+          title: t('home.youre_close'),
+          body: t('home.arriving_at', { place: nearest.name }),
+        },
         trigger: null,
       });
       // Optional: notify collaborators (best‑effort)
@@ -96,8 +102,8 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
           if (ids.length)
             await sendPush(
               ids,
-              'Cerca de un lugar',
-              `Tu compañero está llegando a ${nearest.name}`,
+              t('home.near_a_place'),
+              t('home.companion_arriving_at', { place: nearest.name }),
               { type: 'nearby', place_id: nearest.place_id }
             );
         } catch {
@@ -105,7 +111,7 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
         }
       })();
     }
-  }, [enabled, pos, list]);
+  }, [enabled, pos, list, t]);
 
   // Don't render anything if travel mode is not enabled
   if (!enabled) {
@@ -117,10 +123,8 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
           </View>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Alertas Cercanas</Text>
-            <Text style={styles.headerSubtitle}>
-              Activa el Modo Viaje para ver lugares guardados cercanos
-            </Text>
+            <Text style={styles.headerTitle}>{t('home.nearby_alerts')}</Text>
+            <Text style={styles.headerSubtitle}>{t('home.enable_travel_mode_to_see_places')}</Text>
           </View>
         </View>
       </View>
@@ -136,11 +140,11 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
         </View>
 
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Alertas Cercanas</Text>
+          <Text style={styles.headerTitle}>{t('home.nearby_alerts')}</Text>
           <Text style={styles.headerSubtitle}>
             {list.length > 0
-              ? `${list.length} ${list.length === 1 ? 'lugar encontrado' : 'lugares encontrados'} cerca`
-              : 'Buscando lugares cercanos...'}
+              ? `${list.length} ${list.length === 1 ? t('home.place_found') : t('home.places_found')} ${t('home.near')}`
+              : t('home.searching_nearby_places')}
           </Text>
         </View>
       </View>

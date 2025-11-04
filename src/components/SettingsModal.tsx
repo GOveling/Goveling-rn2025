@@ -21,6 +21,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { useAppSettings, Language, Theme, Units } from '~/contexts/AppSettingsContext';
 
@@ -30,22 +31,24 @@ interface SettingsModalProps {
 }
 
 const LANGUAGES = [
-  { code: 'es' as Language, name: 'Español', flag: '🇪🇸', native: 'Español' },
+  { code: 'es' as Language, name: 'Spanish', flag: '🇪🇸', native: 'Español' },
   { code: 'en' as Language, name: 'English', flag: '🇬🇧', native: 'English' },
   { code: 'pt' as Language, name: 'Portuguese', flag: '🇵🇹', native: 'Português' },
   { code: 'fr' as Language, name: 'French', flag: '🇫🇷', native: 'Français' },
   { code: 'it' as Language, name: 'Italian', flag: '🇮🇹', native: 'Italiano' },
   { code: 'zh' as Language, name: 'Chinese', flag: '🇨🇳', native: '中文' },
   { code: 'ja' as Language, name: 'Japanese', flag: '🇯🇵', native: '日本語' },
+  { code: 'hi' as Language, name: 'Hindi', flag: '🇮🇳', native: 'हिन्दी' },
 ];
 
 const THEMES = [
-  { value: 'light' as Theme, label: 'Claro', icon: 'sunny-outline' as const },
-  { value: 'dark' as Theme, label: 'Oscuro', icon: 'moon-outline' as const },
-  { value: 'auto' as Theme, label: 'Automático', icon: 'phone-portrait-outline' as const },
+  { value: 'light' as Theme, label: 'theme_light', icon: 'sunny-outline' as const },
+  { value: 'dark' as Theme, label: 'theme_dark', icon: 'moon-outline' as const },
+  { value: 'auto' as Theme, label: 'theme_auto', icon: 'phone-portrait-outline' as const },
 ];
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
+  const { t } = useTranslation();
   const {
     settings,
     setLanguage,
@@ -63,21 +66,24 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const handleLanguageChange = async (lang: Language) => {
     try {
+      console.log('🔄 Cambiando idioma a:', lang);
       setIsSaving(true);
       await setLanguage(lang);
+      console.log('✅ Idioma cambiado exitosamente a:', lang);
       setShowLanguageModal(false);
 
       // Show success message
       if (Platform.OS === 'web') {
-        alert('Idioma actualizado. La aplicación se recargará.');
+        alert(t('settings.language_updated'));
         window.location.reload();
       } else {
-        Alert.alert('Idioma Actualizado', 'El idioma se ha cambiado correctamente.', [
-          { text: 'OK' },
+        Alert.alert(t('settings.language_updated'), t('settings.language_updated_desc'), [
+          { text: t('common.ok') },
         ]);
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo cambiar el idioma');
+      console.error('❌ Error cambiando idioma:', error);
+      Alert.alert(t('settings.error'), t('settings.language_error'));
     } finally {
       setIsSaving(false);
     }
@@ -119,12 +125,12 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const getCurrentLanguageName = () => {
     const lang = LANGUAGES.find((l) => l.code === settings.language);
-    return lang ? `${lang.flag} ${lang.native}` : 'Español';
+    return lang?.native || 'English';
   };
 
   const getCurrentThemeName = () => {
-    const theme = THEMES.find((t) => t.value === settings.theme);
-    return theme?.label || 'Claro';
+    const theme = THEMES.find((th) => th.value === settings.theme);
+    return theme ? t(`settings.${theme.label}`) : t('settings.theme_light');
   };
 
   if (isLoading) {
@@ -150,7 +156,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <Ionicons name="settings-sharp" size={24} color="#fff" />
-              <Text style={styles.headerTitle}>Configuración</Text>
+              <Text style={styles.headerTitle}>{t('settings.title')}</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={28} color="#fff" />
@@ -161,7 +167,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* General Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>GENERAL</Text>
+            <Text style={styles.sectionTitle}>{t('settings.general')}</Text>
 
             {/* Language */}
             <TouchableOpacity style={styles.settingItem} onPress={() => setShowLanguageModal(true)}>
@@ -170,7 +176,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Ionicons name="language" size={22} color="#4F8EF7" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Idioma</Text>
+                  <Text style={styles.settingTitle}>{t('settings.language')}</Text>
                   <Text style={styles.settingValue}>{getCurrentLanguageName()}</Text>
                 </View>
               </View>
@@ -184,7 +190,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Ionicons name="color-palette" size={22} color="#7B61FF" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Tema</Text>
+                  <Text style={styles.settingTitle}>{t('settings.theme')}</Text>
                   <Text style={styles.settingValue}>{getCurrentThemeName()}</Text>
                 </View>
               </View>
@@ -198,9 +204,11 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <MaterialIcons name="straighten" size={22} color="#FF8C42" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Unidades</Text>
+                  <Text style={styles.settingTitle}>{t('settings.units')}</Text>
                   <Text style={styles.settingValue}>
-                    {settings.units === 'metric' ? 'Métrico (km, °C)' : 'Imperial (mi, °F)'}
+                    {settings.units === 'metric'
+                      ? t('settings.units_metric')
+                      : t('settings.units_imperial')}
                   </Text>
                 </View>
               </View>
@@ -217,7 +225,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
           {/* Notifications Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>NOTIFICACIONES</Text>
+            <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
 
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
@@ -225,8 +233,10 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Ionicons name="notifications" size={22} color="#00C853" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Notificaciones Push</Text>
-                  <Text style={styles.settingSubtitle}>Recibir alertas generales</Text>
+                  <Text style={styles.settingTitle}>{t('settings.push_notifications')}</Text>
+                  <Text style={styles.settingSubtitle}>
+                    {t('settings.push_notifications_desc')}
+                  </Text>
                 </View>
               </View>
               <Switch
@@ -412,7 +422,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Seleccionar Idioma</Text>
+                <Text style={styles.modalTitle}>{t('settings.select_language')}</Text>
                 <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
                   <Ionicons name="close" size={24} color="#333" />
                 </TouchableOpacity>
@@ -454,7 +464,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Seleccionar Tema</Text>
+                <Text style={styles.modalTitle}>{t('settings.select_theme')}</Text>
                 <TouchableOpacity onPress={() => setShowThemeModal(false)}>
                   <Ionicons name="close" size={24} color="#333" />
                 </TouchableOpacity>
@@ -481,7 +491,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                       settings.theme === theme.value && styles.themeLabelSelected,
                     ]}
                   >
-                    {theme.label}
+                    {t(`settings.${theme.label}`)}
                   </Text>
                   {settings.theme === theme.value && (
                     <Ionicons name="checkmark-circle" size={24} color="#4F8EF7" />

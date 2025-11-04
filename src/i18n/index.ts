@@ -19,6 +19,7 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
+import hi from './locales/hi.json';
 import it from './locales/it.json';
 import ja from './locales/ja.json';
 import pt from './locales/pt.json';
@@ -34,6 +35,7 @@ const resources = {
   it: { translation: it },
   zh: { translation: zh },
   ja: { translation: ja },
+  hi: { translation: hi },
 };
 
 const STORAGE_KEY = 'app.lang';
