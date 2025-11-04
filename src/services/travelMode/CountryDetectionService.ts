@@ -453,7 +453,7 @@ const COUNTRY_BOUNDARIES: CountryBoundary[] = [
     name: 'Argentina',
     flag: '🇦🇷',
     latRange: [-55.0, -21.8],
-    lngRange: [-73.6, -53.6],
+    lngRange: [-68.0, -53.6],
     description:
       'Argentina es segundo país más grande de Sudamérica. Famoso por Buenos Aires (tango, carne), glaciares patagónicos (Perito Moreno), Iguazú, Mendoza (vino Malbec), y fútbol pasional. Tierra de Maradona.',
     continent: 'América del Sur',
@@ -466,7 +466,7 @@ const COUNTRY_BOUNDARIES: CountryBoundary[] = [
     name: 'Chile',
     flag: '🇨🇱',
     latRange: [-56.0, -17.5],
-    lngRange: [-109.5, -66.4],
+    lngRange: [-109.5, -66.5],
     description:
       'Chile es país largo y estrecho entre Andes y Pacífico. Conocido por Atacama (desierto más árido), Torres del Paine, Isla de Pascua (moáis), Valle de Elqui, viñedos, y cultura poética. Tierra de Neruda.',
     continent: 'América del Sur',
@@ -949,8 +949,10 @@ class CountryDetectionService {
       const [minLng, maxLng] = boundary.lngRange;
 
       if (latitude >= minLat && latitude <= maxLat && longitude >= minLng && longitude <= maxLng) {
-        // Calculate bounding box area
-        const area = (maxLat - minLat) * (maxLng - minLng);
+        // Calculate bounding box area using absolute differences
+        const latDiff = Math.abs(maxLat - minLat);
+        const lngDiff = Math.abs(maxLng - minLng);
+        const area = latDiff * lngDiff;
         matches.push({ boundary, area });
       }
     }
@@ -1026,14 +1028,14 @@ class CountryDetectionService {
   }
 
   /**
-   * Fetch country photos from Wikipedia via Edge Function
+   * Fetch country photos from Pexels via Edge Function
    */
   private async fetchCountryPhotos(countryName: string, countryCode: string): Promise<string[]> {
     try {
       console.log(`📸 Fetching photos for ${countryName}...`);
 
       const { supabase } = await import('~/lib/supabase');
-      const { data, error } = await supabase.functions.invoke('wikipedia-country-photos', {
+      const { data, error } = await supabase.functions.invoke('pexels-country-photos', {
         body: {
           countryName,
           countryCode,
