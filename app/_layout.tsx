@@ -15,6 +15,7 @@ import { store, persistor } from '~/store';
 import { logger } from '~/utils/logger';
 
 import { ToastProvider } from '../src/components/ui/Toast';
+import { AppSettingsProvider } from '../src/contexts/AppSettingsContext';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { TravelModeProvider } from '../src/contexts/TravelModeContext';
 import i18n from '../src/i18n';
@@ -115,33 +116,35 @@ export default function Root() {
         <PersistGate loading={<ActivityIndicator size="large" />} persistor={persistor}>
           <I18nextProvider i18n={i18n}>
             <ThemeProvider>
-              <AuthProvider>
-                <TravelModeProvider>
-                  <ToastProvider>
-                    <>
-                      {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          ...(Platform.OS === 'web' && {
-                            contentStyle: { backgroundColor: '#F7F7FA' },
-                          }),
-                        }}
-                      >
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        {/* Use explicit routes to match actual files */}
-                        <Stack.Screen name="auth/index" options={{ headerShown: false }} />
-                        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
-                        <Stack.Screen name="settings/index" options={{ headerShown: false }} />
-                        <Stack.Screen name="+not-found" />
-                      </Stack>
-                      {/* El guard se renderiza como hermano y solo hace Redirect cuando corresponde */}
-                      <InlineAuthGuard />
-                      <StatusBar style="auto" />
-                    </>
-                  </ToastProvider>
-                </TravelModeProvider>
-              </AuthProvider>
+              <AppSettingsProvider>
+                <AuthProvider>
+                  <TravelModeProvider>
+                    <ToastProvider>
+                      <>
+                        {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            ...(Platform.OS === 'web' && {
+                              contentStyle: { backgroundColor: '#F7F7FA' },
+                            }),
+                          }}
+                        >
+                          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                          {/* Use explicit routes to match actual files */}
+                          <Stack.Screen name="auth/index" options={{ headerShown: false }} />
+                          <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+                          <Stack.Screen name="settings/index" options={{ headerShown: false }} />
+                          <Stack.Screen name="+not-found" />
+                        </Stack>
+                        {/* El guard se renderiza como hermano y solo hace Redirect cuando corresponde */}
+                        <InlineAuthGuard />
+                        <StatusBar style="auto" />
+                      </>
+                    </ToastProvider>
+                  </TravelModeProvider>
+                </AuthProvider>
+              </AppSettingsProvider>
             </ThemeProvider>
           </I18nextProvider>
         </PersistGate>

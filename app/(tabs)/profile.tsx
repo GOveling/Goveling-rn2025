@@ -21,6 +21,7 @@ import { Ionicons, MaterialIcons, Feather, AntDesign } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next';
 
 import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
+import SettingsModal from '~/components/SettingsModal';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 
@@ -48,6 +49,7 @@ export default function ProfileTab() {
   const [showVisitedPlacesModal, setShowVisitedPlacesModal] = React.useState(false);
   const [showVisitedCountriesModal, setShowVisitedCountriesModal] = React.useState(false);
   const [showVisitedCitiesModal, setShowVisitedCitiesModal] = React.useState(false);
+  const [showSettingsModal, setShowSettingsModal] = React.useState(false);
 
   React.useEffect(() => {
     console.log('📱 ProfileTab rendered');
@@ -470,7 +472,7 @@ export default function ProfileTab() {
           title="Configuración"
           subtitle="Preferencias de la app"
           iconColor="#666"
-          onPress={() => router.push('/settings')}
+          onPress={() => setShowSettingsModal(true)}
         />
 
         {/* 🔧 DEBUG: Botón temporal para limpiar cache de ciudades */}
@@ -556,6 +558,9 @@ export default function ProfileTab() {
         onClose={() => setShowVisitedCitiesModal(false)}
         userId={user?.id || ''}
       />
+
+      {/* Settings Modal */}
+      <SettingsModal visible={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
 
       <View style={{ height: 100 }} />
     </ScrollView>
