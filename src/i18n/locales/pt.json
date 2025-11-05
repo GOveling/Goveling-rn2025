@@ -417,6 +417,85 @@
         "geocode_error": "Não foi possível encontrar o endereço especificado",
         "add_error": "Não foi possível adicionar a acomodação personalizada"
       }
+    },
+    "card": {
+      "no_title": "Sem título",
+      "destinations": "Destinos:",
+      "more": "mais",
+      "team": "Equipe:",
+      "place": "lugar",
+      "places": "lugares",
+      "chat": "Chat",
+      "view_details": "Ver Detalhes",
+      "view_places": "Ver Meus Lugares",
+      "smart_route": "Rota Inteligente IA",
+      "accommodation": "Acomodação",
+      "status": {
+        "completed": "Concluído",
+        "upcoming": "Próximo",
+        "planning": "Planejando",
+        "traveling": "Viajando",
+        "no_status": "Sem status"
+      },
+      "role": {
+        "owner": "Proprietário",
+        "editor": "Editor",
+        "viewer": "Leitor"
+      },
+      "type": {
+        "group": "Grupo",
+        "individual": "Individual"
+      },
+      "dates_to_confirm": "Datas a confirmar",
+      "traveler": "viajante",
+      "travelers": "viajantes"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "Visão Geral",
+        "itinerary": "Itinerário",
+        "team": "Equipe"
+      },
+      "overview": {
+        "dates": "Datas",
+        "no_dates_set": "Sem datas definidas",
+        "travelers": "Viajantes",
+        "traveler": "viajante",
+        "pending": "pendente",
+        "team_label": "Equipe:",
+        "destination": "Destino",
+        "to_be_defined": "A definir",
+        "budget": "Orçamento",
+        "no_budget_set": "Sem orçamento definido",
+        "accommodation": "Acomodação",
+        "transport": "Transporte",
+        "description": "Descrição",
+        "edit_trip": "Editar Viagem"
+      },
+      "team_tab": {
+        "title": "Colaboradores da Viagem",
+        "incomplete_profiles_title": "Perfis incompletos",
+        "incomplete_profiles_message": "Um ou mais colaboradores ainda não completaram seu perfil (sem nome ou avatar). Convide-os a atualizar para uma melhor experiência.",
+        "owner_label": "Proprietário",
+        "you_label": "(Você)",
+        "editor_role": "Editor",
+        "viewer_role": "Visualizador",
+        "no_collaborators_title": "Ainda sem colaboradores",
+        "no_collaborators_message": "Convide amigos para planejar juntos",
+        "group_chat": "Chat em Grupo",
+        "manage_team": "Gerenciar Equipe"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "Itinerário em Breve",
+        "coming_soon_message": "Planeje suas atividades e rotas dia a dia"
+      },
+      "alerts": {
+        "error_title": "Erro",
+        "update_error": "Não foi possível atualizar a viagem",
+        "general_error": "Ocorreu um erro ao atualizar a viagem",
+        "success_title": "Sucesso",
+        "update_success": "Viagem atualizada com sucesso"
+      }
     }
   },
   "booking": {

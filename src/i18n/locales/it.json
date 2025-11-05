@@ -417,6 +417,85 @@
         "geocode_error": "Impossibile trovare l'indirizzo specificato",
         "add_error": "Impossibile aggiungere l'alloggio personalizzato"
       }
+    },
+    "card": {
+      "no_title": "Senza titolo",
+      "destinations": "Destinazioni:",
+      "more": "più",
+      "team": "Squadra:",
+      "place": "luogo",
+      "places": "luoghi",
+      "chat": "Chat",
+      "view_details": "Vedi Dettagli",
+      "view_places": "Vedi I Miei Luoghi",
+      "smart_route": "Percorso Intelligente IA",
+      "accommodation": "Alloggio",
+      "status": {
+        "completed": "Completato",
+        "upcoming": "In arrivo",
+        "planning": "Pianificazione",
+        "traveling": "In viaggio",
+        "no_status": "Senza stato"
+      },
+      "role": {
+        "owner": "Proprietario",
+        "editor": "Editore",
+        "viewer": "Lettore"
+      },
+      "type": {
+        "group": "Gruppo",
+        "individual": "Individuale"
+      },
+      "dates_to_confirm": "Date da confermare",
+      "traveler": "viaggiatore",
+      "travelers": "viaggiatori"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "Panoramica",
+        "itinerary": "Itinerario",
+        "team": "Team"
+      },
+      "overview": {
+        "dates": "Date",
+        "no_dates_set": "Nessuna data impostata",
+        "travelers": "Viaggiatori",
+        "traveler": "viaggiatore",
+        "pending": "in attesa",
+        "team_label": "Team:",
+        "destination": "Destinazione",
+        "to_be_defined": "Da definire",
+        "budget": "Budget",
+        "no_budget_set": "Nessun budget impostato",
+        "accommodation": "Alloggio",
+        "transport": "Trasporto",
+        "description": "Descrizione",
+        "edit_trip": "Modifica Viaggio"
+      },
+      "team_tab": {
+        "title": "Collaboratori del Viaggio",
+        "incomplete_profiles_title": "Profili incompleti",
+        "incomplete_profiles_message": "Uno o più collaboratori non hanno completato il loro profilo (senza nome o avatar). Invitali ad aggiornarlo per un'esperienza migliore.",
+        "owner_label": "Proprietario",
+        "you_label": "(Tu)",
+        "editor_role": "Editor",
+        "viewer_role": "Visualizzatore",
+        "no_collaborators_title": "Ancora nessun collaboratore",
+        "no_collaborators_message": "Invita amici per pianificare insieme",
+        "group_chat": "Chat di Gruppo",
+        "manage_team": "Gestisci Team"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "Itinerario Prossimamente",
+        "coming_soon_message": "Pianifica le tue attività e percorsi giorno per giorno"
+      },
+      "alerts": {
+        "error_title": "Errore",
+        "update_error": "Impossibile aggiornare il viaggio",
+        "general_error": "Si è verificato un errore durante l'aggiornamento del viaggio",
+        "success_title": "Successo",
+        "update_success": "Viaggio aggiornato con successo"
+      }
     }
   },
   "booking": {

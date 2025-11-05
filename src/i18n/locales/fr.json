@@ -417,6 +417,85 @@
         "geocode_error": "Impossible de trouver l'adresse spécifiée",
         "add_error": "Impossible d'ajouter l'hébergement personnalisé"
       }
+    },
+    "card": {
+      "no_title": "Sans titre",
+      "destinations": "Destinations:",
+      "more": "plus",
+      "team": "Équipe:",
+      "place": "lieu",
+      "places": "lieux",
+      "chat": "Chat",
+      "view_details": "Voir les Détails",
+      "view_places": "Voir Mes Lieux",
+      "smart_route": "Itinéraire Intelligent IA",
+      "accommodation": "Hébergement",
+      "status": {
+        "completed": "Terminé",
+        "upcoming": "À venir",
+        "planning": "Planification",
+        "traveling": "En voyage",
+        "no_status": "Sans statut"
+      },
+      "role": {
+        "owner": "Propriétaire",
+        "editor": "Éditeur",
+        "viewer": "Lecteur"
+      },
+      "type": {
+        "group": "Groupe",
+        "individual": "Individuel"
+      },
+      "dates_to_confirm": "Dates à confirmer",
+      "traveler": "voyageur",
+      "travelers": "voyageurs"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "Aperçu",
+        "itinerary": "Itinéraire",
+        "team": "Équipe"
+      },
+      "overview": {
+        "dates": "Dates",
+        "no_dates_set": "Aucune date définie",
+        "travelers": "Voyageurs",
+        "traveler": "voyageur",
+        "pending": "en attente",
+        "team_label": "Équipe:",
+        "destination": "Destination",
+        "to_be_defined": "À définir",
+        "budget": "Budget",
+        "no_budget_set": "Aucun budget défini",
+        "accommodation": "Hébergement",
+        "transport": "Transport",
+        "description": "Description",
+        "edit_trip": "Modifier le Voyage"
+      },
+      "team_tab": {
+        "title": "Collaborateurs du Voyage",
+        "incomplete_profiles_title": "Profils incomplets",
+        "incomplete_profiles_message": "Un ou plusieurs collaborateurs n'ont pas complété leur profil (sans nom ni avatar). Invitez-les à le mettre à jour pour une meilleure expérience.",
+        "owner_label": "Propriétaire",
+        "you_label": "(Vous)",
+        "editor_role": "Éditeur",
+        "viewer_role": "Lecteur",
+        "no_collaborators_title": "Pas encore de collaborateurs",
+        "no_collaborators_message": "Invitez des amis à planifier ensemble",
+        "group_chat": "Discussion de Groupe",
+        "manage_team": "Gérer l'Équipe"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "Itinéraire Bientôt Disponible",
+        "coming_soon_message": "Planifiez vos activités et itinéraires jour après jour"
+      },
+      "alerts": {
+        "error_title": "Erreur",
+        "update_error": "Impossible de mettre à jour le voyage",
+        "general_error": "Une erreur s'est produite lors de la mise à jour du voyage",
+        "success_title": "Succès",
+        "update_success": "Voyage mis à jour avec succès"
+      }
     }
   },
   "booking": {

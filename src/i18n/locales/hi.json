@@ -430,6 +430,85 @@
         "geocode_error": "निर्दिष्ट पता नहीं मिल सका",
         "add_error": "कस्टम आवास नहीं जोड़ा जा सका"
       }
+    },
+    "card": {
+      "no_title": "शीर्षक नहीं",
+      "destinations": "गंतव्य:",
+      "more": "अधिक",
+      "team": "टीम:",
+      "place": "स्थान",
+      "places": "स्थान",
+      "chat": "चैट",
+      "view_details": "विवरण देखें",
+      "view_places": "मेरे स्थान देखें",
+      "smart_route": "AI स्मार्ट रूट",
+      "accommodation": "आवास",
+      "status": {
+        "completed": "पूर्ण",
+        "upcoming": "आगामी",
+        "planning": "योजना बना रहे हैं",
+        "traveling": "यात्रा कर रहे हैं",
+        "no_status": "कोई स्थिति नहीं"
+      },
+      "role": {
+        "owner": "मालिक",
+        "editor": "संपादक",
+        "viewer": "दर्शक"
+      },
+      "type": {
+        "group": "समूह",
+        "individual": "व्यक्तिगत"
+      },
+      "dates_to_confirm": "तिथियां निर्धारित करने के लिए",
+      "traveler": "यात्री",
+      "travelers": "यात्रियों"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "अवलोकन",
+        "itinerary": "यात्रा कार्यक्रम",
+        "team": "टीम"
+      },
+      "overview": {
+        "dates": "तिथियां",
+        "no_dates_set": "कोई तिथि निर्धारित नहीं",
+        "travelers": "यात्री",
+        "traveler": "यात्री",
+        "pending": "लंबित",
+        "team_label": "टीम:",
+        "destination": "गंतव्य",
+        "to_be_defined": "परिभाषित किया जाना है",
+        "budget": "बजट",
+        "no_budget_set": "कोई बजट निर्धारित नहीं",
+        "accommodation": "आवास",
+        "transport": "परिवहन",
+        "description": "विवरण",
+        "edit_trip": "यात्रा संपादित करें"
+      },
+      "team_tab": {
+        "title": "यात्रा सहयोगी",
+        "incomplete_profiles_title": "अधूरी प्रोफाइल",
+        "incomplete_profiles_message": "एक या अधिक सहयोगियों ने अपनी प्रोफ़ाइल पूरी नहीं की है (नाम या अवतार नहीं)। बेहतर अनुभव के लिए उन्हें अपडेट करने के लिए आमंत्रित करें।",
+        "owner_label": "स्वामी",
+        "you_label": "(आप)",
+        "editor_role": "संपादक",
+        "viewer_role": "दर्शक",
+        "no_collaborators_title": "अभी तक कोई सहयोगी नहीं",
+        "no_collaborators_message": "मित्रों को एक साथ योजना बनाने के लिए आमंत्रित करें",
+        "group_chat": "समूह चैट",
+        "manage_team": "टीम प्रबंधित करें"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "यात्रा कार्यक्रम जल्द आ रहा है",
+        "coming_soon_message": "अपनी दिन-प्रतिदिन की गतिविधियों और मार्गों की योजना बनाएं"
+      },
+      "alerts": {
+        "error_title": "त्रुटि",
+        "update_error": "यात्रा अपडेट नहीं की जा सकी",
+        "general_error": "यात्रा को अपडेट करते समय एक त्रुटि हुई",
+        "success_title": "सफलता",
+        "update_success": "यात्रा सफलतापूर्वक अपडेट की गई"
+      }
     }
   },
   "profile": {

@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
@@ -72,6 +73,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   // RTK Query: Get current user profile (IGUAL QUE PROFILE.TSX)
   const { data: currentUserProfile, isLoading, isError, error } = useGetProfileQuery();
@@ -417,9 +419,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
       'owner' | 'editor' | 'viewer',
       { bgColor: string; textColor: string; label: string }
     > = {
-      owner: { bgColor: '#FEF3C7', textColor: '#92400E', label: 'Owner' },
-      editor: { bgColor: '#DBEAFE', textColor: '#1E40AF', label: 'Editor' },
-      viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: 'Viewer' },
+      owner: { bgColor: '#FEF3C7', textColor: '#92400E', label: t('trips.card.role.owner') },
+      editor: { bgColor: '#DBEAFE', textColor: '#1E40AF', label: t('trips.card.role.editor') },
+      viewer: { bgColor: '#E5E7EB', textColor: '#374151', label: t('trips.card.role.viewer') },
     };
     return configs[role];
   };
@@ -428,27 +430,27 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     const status = getTripStatus();
     const configs = {
       completed: {
-        text: 'Completado',
+        text: t('trips.card.status.completed'),
         bgColor: '#DCFCE7', // bg-green-100
         textColor: '#166534', // text-green-800
       },
       upcoming: {
-        text: 'Próximo',
+        text: t('trips.card.status.upcoming'),
         bgColor: '#DBEAFE', // bg-blue-100
         textColor: '#1E40AF', // text-blue-800
       },
       planning: {
-        text: 'Planificando',
+        text: t('trips.card.status.planning'),
         bgColor: '#F3E8FF', // bg-purple-100
         textColor: '#6B21A8', // text-purple-800
       },
       traveling: {
-        text: 'Viajando',
+        text: t('trips.card.status.traveling'),
         bgColor: '#FED7AA', // bg-orange-100
         textColor: '#C2410C', // text-orange-800
       },
       default: {
-        text: 'Sin estado',
+        text: t('trips.card.status.no_status'),
         bgColor: '#F3F4F6', // bg-gray-100
         textColor: '#374151', // text-gray-800
       },
@@ -631,7 +633,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             marginRight: 8,
           }}
         >
-          Destinos:
+          {t('trips.card.destinations')}
         </Text>
 
         {displayCountries.map((countryCode, index) => {
@@ -691,7 +693,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 letterSpacing: 0.2,
               }}
             >
-              +{remainingCount} más
+              +{remainingCount} {t('trips.card.more')}
             </Text>
           </View>
         )}
@@ -699,7 +701,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     );
   };
   const getTripType = () => {
-    return tripData.collaboratorsCount > 1 ? 'Grupo' : 'Individual';
+    return tripData.collaboratorsCount > 1
+      ? t('trips.card.type.group')
+      : t('trips.card.type.individual');
   };
 
   return (
@@ -825,7 +829,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 marginBottom: 4,
               }}
             >
-              {currentTrip.title || 'Sin título'}
+              {currentTrip.title || t('trips.card.no_title')}
             </Text>
 
             <View
@@ -969,7 +973,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           >
             {currentTrip.start_date && currentTrip.end_date
               ? `${formatDate(currentTrip.start_date)} - ${formatDate(currentTrip.end_date)}`
-              : 'Fechas por confirmar'}
+              : t('trips.card.dates_to_confirm')}
           </Text>
         </View>
 
@@ -985,7 +989,9 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             <Text style={{ fontSize: 16, marginRight: 8 }}>👥</Text>
             <Text style={{ fontSize: 16, color: '#1A1A1A', fontWeight: '500' }}>
               {tripData.collaboratorsCount}{' '}
-              {tripData.collaboratorsCount === 1 ? 'viajero' : 'viajeros'}
+              {tripData.collaboratorsCount === 1
+                ? t('trips.card.traveler')
+                : t('trips.card.travelers')}
             </Text>
             {pendingInvites > 0 && (
               <View
@@ -1018,7 +1024,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 fontWeight: '500',
               }}
             >
-              {tripData.placesCount} {tripData.placesCount === 1 ? 'lugar' : 'lugares'}
+              {tripData.placesCount}{' '}
+              {tripData.placesCount === 1 ? t('trips.card.place') : t('trips.card.places')}
             </Text>
           </View>
         </View>
@@ -1047,7 +1054,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 marginRight: 8,
               }}
             >
-              Equipo:
+              {t('trips.card.team')}
             </Text>
 
             {/* Dueño del trip (primera posición) */}
@@ -1114,7 +1121,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                       marginLeft: 4,
                     }}
                   >
-                    +{remaining} más
+                    +{remaining} {t('trips.card.more')}
                   </Text>
                 )
               );
@@ -1159,7 +1166,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                     fontWeight: '600',
                   }}
                 >
-                  Chat
+                  {t('trips.card.chat')}
                 </Text>
               </LinearGradient>
 
@@ -1210,10 +1217,14 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             marginBottom: 16,
           }}
         >
-          <LiquidButton title="Ver Detalles" onPress={() => setShowModal(true)} variant="primary" />
+          <LiquidButton
+            title={t('trips.card.view_details')}
+            onPress={() => setShowModal(true)}
+            variant="primary"
+          />
 
           <LiquidButton
-            title="Ver Mis lugares"
+            title={t('trips.card.view_places')}
             icon="❤️"
             onPress={() => router.push(`/trips/${trip.id}/places`)}
             variant="accent"
@@ -1227,14 +1238,14 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           }}
         >
           <LiquidButton
-            title="Ruta Inteligente IA"
+            title={t('trips.card.smart_route')}
             icon="🧠"
             onPress={() => router.push(`/trips/${trip.id}/route`)}
             variant="glass"
           />
 
           <LiquidButton
-            title="Estadía"
+            title={t('trips.card.accommodation')}
             icon="🏠"
             onPress={() => router.push(`/trips/${trip.id}/accommodation`)}
             variant="success"

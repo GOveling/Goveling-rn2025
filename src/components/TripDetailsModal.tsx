@@ -19,9 +19,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { COLORS } from '~/constants/colors';
-import i18n from '~/i18n';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
@@ -113,6 +113,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   openManageTeam = false,
   manageTeamTab = 'members',
 }) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
@@ -372,7 +373,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         .eq('id', trip.id);
 
       if (error) {
-        Alert.alert('Error', 'No se pudo actualizar el viaje');
+        Alert.alert(
+          t('trips.detail_modal.alerts.error_title', 'Error'),
+          t('trips.detail_modal.alerts.update_error', 'Could not update the trip')
+        );
         return;
       }
 
@@ -383,10 +387,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       console.log('🔄 TripDetailsModal: Trip updated, triggering global refresh');
       triggerGlobalTripRefresh();
 
-      Alert.alert('Éxito', 'Viaje actualizado correctamente');
+      Alert.alert(
+        t('trips.detail_modal.alerts.success_title', 'Success'),
+        t('trips.detail_modal.alerts.update_success', 'Trip updated successfully')
+      );
     } catch (error) {
       console.error('Error updating trip:', error);
-      Alert.alert('Error', 'Ocurrió un error al actualizar el viaje');
+      Alert.alert(
+        t('trips.detail_modal.alerts.error_title', 'Error'),
+        t('trips.detail_modal.alerts.general_error', 'An error occurred while updating the trip')
+      );
     } finally {
       setLoading(false);
     }
@@ -432,29 +442,29 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     });
   };
 
-  const getTripStatus = () => {
-    if (!editableTrip.start_date || !editableTrip.end_date) return 'Planning';
+  const getTripStatus = (): 'completed' | 'upcoming' | 'planning' | 'traveling' => {
+    if (!editableTrip.start_date || !editableTrip.end_date) return 'planning';
 
     const now = new Date();
     const startDate = parseLocalDate(editableTrip.start_date);
     const endDate = parseLocalDate(editableTrip.end_date);
 
-    if (now < startDate) return 'Upcoming';
-    if (now >= startDate && now <= endDate) return 'Traveling';
-    if (now > endDate) return 'Completed';
+    if (now < startDate) return 'upcoming';
+    if (now >= startDate && now <= endDate) return 'traveling';
+    if (now > endDate) return 'completed';
 
-    return 'Planning';
+    return 'planning';
   };
 
   const getStatusConfig = () => {
     const status = getTripStatus();
     const configs = {
-      Completed: { bgColor: COLORS.status.successLight, textColor: COLORS.status.successDark },
-      Upcoming: { bgColor: COLORS.background.purple.ultraLight, textColor: COLORS.status.infoDark },
-      Planning: { bgColor: COLORS.background.purple.light, textColor: COLORS.primary.violet },
-      Traveling: { bgColor: COLORS.background.amber.light, textColor: COLORS.secondary.amberDark },
+      completed: { bgColor: COLORS.status.successLight, textColor: COLORS.status.successDark },
+      upcoming: { bgColor: COLORS.background.purple.ultraLight, textColor: COLORS.status.infoDark },
+      planning: { bgColor: COLORS.background.purple.light, textColor: COLORS.primary.violet },
+      traveling: { bgColor: COLORS.background.amber.light, textColor: COLORS.secondary.amberDark },
     };
-    return configs[status as keyof typeof configs] || configs.Planning;
+    return configs[status] || configs.planning;
   };
 
   const getRoleConfig = () => {
@@ -466,17 +476,17 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       owner: {
         bgColor: COLORS.background.amber.light,
         textColor: COLORS.secondary.amberDark,
-        label: 'Owner',
+        label: t('trips.card.role.owner', 'Owner'),
       },
       editor: {
         bgColor: COLORS.background.purple.ultraLight,
         textColor: COLORS.status.infoDark,
-        label: 'Editor',
+        label: t('trips.card.role.editor', 'Editor'),
       },
       viewer: {
         bgColor: COLORS.border.dark,
         textColor: COLORS.text.mediumDarkGray,
-        label: 'Viewer',
+        label: t('trips.card.role.viewer', 'Viewer'),
       },
     };
     return configs[role];
@@ -527,7 +537,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 color: getStatusConfig().textColor,
               }}
             >
-              {getTripStatus()}
+              {t(`trips.card.status.${getTripStatus()}`, getTripStatus())}
             </Text>
           </View>
           <View
@@ -555,12 +565,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="calendar-outline" size={20} color={COLORS.text.tertiary} />
-          <Text style={styles.sectionTitle}>Dates</Text>
+          <Text style={styles.sectionTitle}>{t('trips.detail_modal.overview.dates', 'Dates')}</Text>
         </View>
         <Text style={styles.sectionContent}>
           {editableTrip.start_date && editableTrip.end_date
             ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
-            : 'No dates set'}
+            : t('trips.detail_modal.overview.no_dates_set', 'No dates set')}
         </Text>
       </View>
 
@@ -568,23 +578,31 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="people-outline" size={20} color={COLORS.text.tertiary} />
-          <Text style={styles.sectionTitle}>Travelers</Text>
+          <Text style={styles.sectionTitle}>
+            {t('trips.detail_modal.overview.travelers', 'Travelers')}
+          </Text>
           {pendingInvites > 0 && (
             <View style={styles.pendingBadgeContainer}>
-              <Text style={styles.pendingBadgeText}>{pendingInvites} pending</Text>
+              <Text style={styles.pendingBadgeText}>
+                {pendingInvites} {t('trips.detail_modal.overview.pending', 'pending')}
+              </Text>
             </View>
           )}
         </View>
         <Text style={styles.sectionContent}>
           {tripData.collaboratorsCount}{' '}
-          {tripData.collaboratorsCount === 1 ? 'traveler' : 'travelers'}
+          {tripData.collaboratorsCount === 1
+            ? t('trips.detail_modal.overview.traveler', 'traveler')
+            : t('trips.detail_modal.overview.travelers', 'travelers')}
         </Text>
       </View>
 
       {/* Equipo: Avatares + Botón Chat */}
       <View style={styles.teamSection}>
         <View style={styles.teamHeader}>
-          <Text style={styles.teamLabel}>Equipo:</Text>
+          <Text style={styles.teamLabel}>
+            {t('trips.detail_modal.overview.team_label', 'Team:')}
+          </Text>
           <View style={styles.teamAvatarsContainer}>
             {tripOwner && (
               <View style={styles.teamAvatar}>
@@ -628,11 +646,13 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           <Text
             style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}
           >
-            Destination
+            {t('trips.detail_modal.overview.destination', 'Destination')}
           </Text>
         </View>
         <Text style={{ fontSize: 16, color: COLORS.text.tertiary }}>
-          {tripData.countries.length > 0 ? tripData.countries.join(', ') : 'To be defined'}
+          {tripData.countries.length > 0
+            ? tripData.countries.join(', ')
+            : t('trips.detail_modal.overview.to_be_defined', 'To be defined')}
         </Text>
       </View>
 
@@ -643,11 +663,13 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           <Text
             style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}
           >
-            Budget
+            {t('trips.detail_modal.overview.budget', 'Budget')}
           </Text>
         </View>
         <Text style={{ fontSize: 16, color: COLORS.text.tertiary }}>
-          {editableTrip.budget ? `$${editableTrip.budget.toLocaleString()}` : 'No budget set'}
+          {editableTrip.budget
+            ? `$${editableTrip.budget.toLocaleString()}`
+            : t('trips.detail_modal.overview.no_budget_set', 'No budget set')}
         </Text>
       </View>
 
@@ -656,7 +678,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="bed-outline" size={20} color={COLORS.text.tertiary} />
-            <Text style={styles.sectionTitle}>Accommodation</Text>
+            <Text style={styles.sectionTitle}>
+              {t('trips.detail_modal.overview.accommodation', 'Accommodation')}
+            </Text>
           </View>
           <View style={styles.tagContainer}>
             {editableTrip.accommodation_preference.split(',').map((acc, index) => {
@@ -680,7 +704,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="car-outline" size={20} color={COLORS.text.tertiary} />
-            <Text style={styles.sectionTitle}>Transport</Text>
+            <Text style={styles.sectionTitle}>
+              {t('trips.detail_modal.overview.transport', 'Transport')}
+            </Text>
           </View>
           <View style={styles.tagContainer}>
             {editableTrip.transport_preference.split(',').map((transport, index) => {
@@ -702,7 +728,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Descripción */}
       {editableTrip.description && (
         <View style={styles.section}>
-          <Text style={styles.descriptionTitle}>Description</Text>
+          <Text style={styles.descriptionTitle}>
+            {t('trips.detail_modal.overview.description', 'Description')}
+          </Text>
           <Text style={styles.descriptionText}>{editableTrip.description}</Text>
         </View>
       )}
@@ -726,7 +754,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           >
             <View style={styles.buttonContent}>
               <Ionicons name="pencil" size={20} color="white" />
-              <Text style={styles.buttonText}>Edit Trip</Text>
+              <Text style={styles.buttonText}>
+                {t('trips.detail_modal.overview.edit_trip', 'Edit Trip')}
+              </Text>
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -736,7 +766,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const TeamTab = () => (
     <ScrollView style={styles.scrollViewContainer}>
-      <Text style={styles.teamTitle}>Trip Collaborators</Text>
+      <Text style={styles.teamTitle}>
+        {t('trips.detail_modal.team_tab.title', 'Trip Collaborators')}
+      </Text>
 
       {hasMinimalProfiles && (
         <View style={styles.warningBanner}>
@@ -747,10 +779,14 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             style={styles.warningIcon}
           />
           <View style={styles.warningContent}>
-            <Text style={styles.warningTitle}>Perfiles incompletos</Text>
+            <Text style={styles.warningTitle}>
+              {t('trips.detail_modal.team_tab.incomplete_profiles_title', 'Incomplete profiles')}
+            </Text>
             <Text style={styles.warningText}>
-              Uno o más colaboradores aún no completan su perfil (sin nombre ni avatar). Invítalos a
-              actualizarlo para una mejor experiencia.
+              {t(
+                'trips.detail_modal.team_tab.incomplete_profiles_message',
+                'One or more collaborators have not completed their profile (no name or avatar). Invite them to update for a better experience.'
+              )}
             </Text>
           </View>
         </View>
@@ -771,15 +807,20 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             )}
             <View style={styles.memberDetails}>
               <Text style={styles.memberName}>
-                {tripOwner.full_name || tripOwner.email || 'Owner'}
-                {currentUser?.id === tripOwner.id && ' (You)'}
+                {tripOwner.full_name ||
+                  tripOwner.email ||
+                  t('trips.detail_modal.team_tab.owner_label', 'Owner')}
+                {currentUser?.id === tripOwner.id &&
+                  ` ${t('trips.detail_modal.team_tab.you_label', '(You)')}`}
               </Text>
               {tripOwner.full_name && tripOwner.email && (
                 <Text style={styles.memberEmail}>{tripOwner.email}</Text>
               )}
             </View>
             <View style={styles.ownerBadge}>
-              <Text style={styles.ownerBadgeText}>Owner</Text>
+              <Text style={styles.ownerBadgeText}>
+                {t('trips.detail_modal.team_tab.owner_label', 'Owner')}
+              </Text>
             </View>
           </View>
         </View>
@@ -810,7 +851,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             <View style={styles.memberDetails}>
               <Text style={styles.memberName}>
                 {collaborator.full_name || collaborator.email || 'Collaborator'}
-                {currentUser?.id === collaborator.id && ' (You)'}
+                {currentUser?.id === collaborator.id &&
+                  ` ${t('trips.detail_modal.team_tab.you_label', '(You)')}`}
               </Text>
               {collaborator.full_name && collaborator.email && (
                 <Text style={styles.memberEmail}>{collaborator.email}</Text>
@@ -819,8 +861,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             <View style={styles.roleBadge}>
               <Text style={styles.roleBadgeText}>
                 {(collaborator as unknown as { role?: 'viewer' | 'editor' }).role === 'editor'
-                  ? 'Editor'
-                  : 'Viewer'}
+                  ? t('trips.detail_modal.team_tab.editor_role', 'Editor')
+                  : t('trips.detail_modal.team_tab.viewer_role', 'Viewer')}
               </Text>
             </View>
           </View>
@@ -831,8 +873,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {collaborators.length === 0 && (
         <View style={styles.emptyState}>
           <Ionicons name="people-outline" size={32} color={COLORS.text.lightGray} />
-          <Text style={styles.emptyStateTitle}>No collaborators yet</Text>
-          <Text style={styles.emptyStateText}>Invite friends to plan together</Text>
+          <Text style={styles.emptyStateTitle}>
+            {t('trips.detail_modal.team_tab.no_collaborators_title', 'No collaborators yet')}
+          </Text>
+          <Text style={styles.emptyStateText}>
+            {t(
+              'trips.detail_modal.team_tab.no_collaborators_message',
+              'Invite friends to plan together'
+            )}
+          </Text>
         </View>
       )}
 
@@ -858,7 +907,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           >
             <View style={[styles.buttonContent, { position: 'relative' }]}>
               <Ionicons name="chatbubble-outline" size={20} color="white" />
-              <Text style={styles.buttonText}>Chat Grupal</Text>
+              <Text style={styles.buttonText}>
+                {t('trips.detail_modal.team_tab.group_chat', 'Group Chat')}
+              </Text>
               {unreadMessagesCount > 0 && (
                 <View
                   style={{
@@ -900,7 +951,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           >
             <View style={styles.buttonContent}>
               <Ionicons name="people" size={20} color="white" />
-              <Text style={styles.buttonText}>{i18n.t('trips.manageTeam', 'Manage Team')}</Text>
+              <Text style={styles.buttonText}>
+                {t('trips.detail_modal.team_tab.manage_team', 'Manage Team')}
+              </Text>
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -911,8 +964,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const ItineraryTab = () => (
     <View style={styles.itineraryPlaceholder}>
       <Ionicons name="map-outline" size={64} color={COLORS.border.gray} />
-      <Text style={styles.itineraryTitle}>Itinerary Coming Soon</Text>
-      <Text style={styles.itineraryText}>Plan your day-by-day activities and routes</Text>
+      <Text style={styles.itineraryTitle}>
+        {t('trips.detail_modal.itinerary_tab.coming_soon_title', 'Itinerary Coming Soon')}
+      </Text>
+      <Text style={styles.itineraryText}>
+        {t(
+          'trips.detail_modal.itinerary_tab.coming_soon_message',
+          'Plan your day-by-day activities and routes'
+        )}
+      </Text>
     </View>
   );
 
@@ -956,13 +1016,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               <Text style={styles.subHeaderText}>
                 {editableTrip.start_date && editableTrip.end_date
                   ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
-                  : 'No dates set'}
+                  : t('trips.detail_modal.overview.no_dates_set', 'No dates set')}
               </Text>
             </View>
             <View style={styles.subHeaderItem}>
               <Ionicons name="people-outline" size={16} color={COLORS.text.tertiary} />
               <Text style={styles.subHeaderText}>
-                {tripData.collaboratorsCount} traveler{tripData.collaboratorsCount !== 1 ? 's' : ''}
+                {tripData.collaboratorsCount}{' '}
+                {tripData.collaboratorsCount !== 1
+                  ? t('trips.detail_modal.overview.travelers', 'travelers')
+                  : t('trips.detail_modal.overview.traveler', 'traveler')}
               </Text>
             </View>
           </View>
@@ -970,9 +1033,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
         {/* Tabs */}
         <View style={styles.tabContainer}>
-          <TabButton tab="overview" title="Overview" />
-          <TabButton tab="itinerary" title="Itinerary" />
-          <TabButton tab="team" title="Team" />
+          <TabButton tab="overview" title={t('trips.detail_modal.tabs.overview', 'Overview')} />
+          <TabButton tab="itinerary" title={t('trips.detail_modal.tabs.itinerary', 'Itinerary')} />
+          <TabButton tab="team" title={t('trips.detail_modal.tabs.team', 'Team')} />
         </View>
 
         {/* Tab Content */}

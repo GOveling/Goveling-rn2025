@@ -417,6 +417,85 @@
         "geocode_error": "找不到指定的地址",
         "add_error": "无法添加自定义住宿"
       }
+    },
+    "card": {
+      "no_title": "无标题",
+      "destinations": "目的地:",
+      "more": "更多",
+      "team": "团队:",
+      "place": "地点",
+      "places": "地点",
+      "chat": "聊天",
+      "view_details": "查看详情",
+      "view_places": "查看我的地点",
+      "smart_route": "AI智能路线",
+      "accommodation": "住宿",
+      "status": {
+        "completed": "已完成",
+        "upcoming": "即将到来",
+        "planning": "计划中",
+        "traveling": "旅行中",
+        "no_status": "无状态"
+      },
+      "role": {
+        "owner": "所有者",
+        "editor": "编辑者",
+        "viewer": "查看者"
+      },
+      "type": {
+        "group": "团体",
+        "individual": "个人"
+      },
+      "dates_to_confirm": "日期待确认",
+      "traveler": "旅行者",
+      "travelers": "旅行者"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "概览",
+        "itinerary": "行程",
+        "team": "团队"
+      },
+      "overview": {
+        "dates": "日期",
+        "no_dates_set": "未设置日期",
+        "travelers": "旅行者",
+        "traveler": "旅行者",
+        "pending": "待处理",
+        "team_label": "团队：",
+        "destination": "目的地",
+        "to_be_defined": "待定",
+        "budget": "预算",
+        "no_budget_set": "未设置预算",
+        "accommodation": "住宿",
+        "transport": "交通",
+        "description": "描述",
+        "edit_trip": "编辑旅行"
+      },
+      "team_tab": {
+        "title": "旅行协作者",
+        "incomplete_profiles_title": "个人资料不完整",
+        "incomplete_profiles_message": "一个或多个协作者尚未完成其个人资料（无姓名或头像）。邀请他们更新以获得更好的体验。",
+        "owner_label": "所有者",
+        "you_label": "（你）",
+        "editor_role": "编辑者",
+        "viewer_role": "查看者",
+        "no_collaborators_title": "暂无协作者",
+        "no_collaborators_message": "邀请朋友一起计划",
+        "group_chat": "群聊",
+        "manage_team": "管理团队"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "行程即将推出",
+        "coming_soon_message": "计划每日活动和路线"
+      },
+      "alerts": {
+        "error_title": "错误",
+        "update_error": "无法更新旅行",
+        "general_error": "更新旅行时发生错误",
+        "success_title": "成功",
+        "update_success": "旅行更新成功"
+      }
     }
   },
   "booking": {

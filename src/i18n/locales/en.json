@@ -428,6 +428,85 @@
         "geocode_error": "Could not find the specified address",
         "add_error": "Could not add custom accommodation"
       }
+    },
+    "card": {
+      "no_title": "No title",
+      "destinations": "Destinations:",
+      "more": "more",
+      "team": "Team:",
+      "place": "place",
+      "places": "places",
+      "chat": "Chat",
+      "view_details": "View Details",
+      "view_places": "View My Places",
+      "smart_route": "AI Smart Route",
+      "accommodation": "Accommodation",
+      "status": {
+        "completed": "Completed",
+        "upcoming": "Upcoming",
+        "planning": "Planning",
+        "traveling": "Traveling",
+        "no_status": "No status"
+      },
+      "role": {
+        "owner": "Owner",
+        "editor": "Editor",
+        "viewer": "Viewer"
+      },
+      "type": {
+        "group": "Group",
+        "individual": "Individual"
+      },
+      "dates_to_confirm": "Dates to confirm",
+      "traveler": "traveler",
+      "travelers": "travelers"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "Overview",
+        "itinerary": "Itinerary",
+        "team": "Team"
+      },
+      "overview": {
+        "dates": "Dates",
+        "no_dates_set": "No dates set",
+        "travelers": "Travelers",
+        "traveler": "traveler",
+        "pending": "pending",
+        "team_label": "Team:",
+        "destination": "Destination",
+        "to_be_defined": "To be defined",
+        "budget": "Budget",
+        "no_budget_set": "No budget set",
+        "accommodation": "Accommodation",
+        "transport": "Transport",
+        "description": "Description",
+        "edit_trip": "Edit Trip"
+      },
+      "team_tab": {
+        "title": "Trip Collaborators",
+        "incomplete_profiles_title": "Incomplete profiles",
+        "incomplete_profiles_message": "One or more collaborators have not completed their profile (no name or avatar). Invite them to update for a better experience.",
+        "owner_label": "Owner",
+        "you_label": "(You)",
+        "editor_role": "Editor",
+        "viewer_role": "Viewer",
+        "no_collaborators_title": "No collaborators yet",
+        "no_collaborators_message": "Invite friends to plan together",
+        "group_chat": "Group Chat",
+        "manage_team": "Manage Team"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "Itinerary Coming Soon",
+        "coming_soon_message": "Plan your day-by-day activities and routes"
+      },
+      "alerts": {
+        "error_title": "Error",
+        "update_error": "Could not update the trip",
+        "general_error": "An error occurred while updating the trip",
+        "success_title": "Success",
+        "update_success": "Trip updated successfully"
+      }
     }
   },
   "booking": {

@@ -417,6 +417,85 @@
         "geocode_error": "指定された住所が見つかりませんでした",
         "add_error": "カスタム宿泊施設を追加できませんでした"
       }
+    },
+    "card": {
+      "no_title": "タイトルなし",
+      "destinations": "目的地:",
+      "more": "その他",
+      "team": "チーム:",
+      "place": "場所",
+      "places": "場所",
+      "chat": "チャット",
+      "view_details": "詳細を見る",
+      "view_places": "私の場所を見る",
+      "smart_route": "AIスマートルート",
+      "accommodation": "宿泊施設",
+      "status": {
+        "completed": "完了",
+        "upcoming": "予定",
+        "planning": "計画中",
+        "traveling": "旅行中",
+        "no_status": "ステータスなし"
+      },
+      "role": {
+        "owner": "オーナー",
+        "editor": "編集者",
+        "viewer": "閲覧者"
+      },
+      "type": {
+        "group": "グループ",
+        "individual": "個人"
+      },
+      "dates_to_confirm": "日程調整中",
+      "traveler": "旅行者",
+      "travelers": "旅行者"
+    },
+    "detail_modal": {
+      "tabs": {
+        "overview": "概要",
+        "itinerary": "旅程",
+        "team": "チーム"
+      },
+      "overview": {
+        "dates": "日程",
+        "no_dates_set": "日程未設定",
+        "travelers": "旅行者",
+        "traveler": "旅行者",
+        "pending": "保留中",
+        "team_label": "チーム：",
+        "destination": "目的地",
+        "to_be_defined": "未定",
+        "budget": "予算",
+        "no_budget_set": "予算未設定",
+        "accommodation": "宿泊施設",
+        "transport": "交通手段",
+        "description": "説明",
+        "edit_trip": "旅行を編集"
+      },
+      "team_tab": {
+        "title": "旅行の協力者",
+        "incomplete_profiles_title": "プロフィール未完成",
+        "incomplete_profiles_message": "一人以上の協力者がプロフィールを完成させていません（名前またはアバターなし）。より良い体験のために更新を促してください。",
+        "owner_label": "オーナー",
+        "you_label": "（あなた）",
+        "editor_role": "編集者",
+        "viewer_role": "閲覧者",
+        "no_collaborators_title": "協力者なし",
+        "no_collaborators_message": "友達を招待して一緒に計画しましょう",
+        "group_chat": "グループチャット",
+        "manage_team": "チームを管理"
+      },
+      "itinerary_tab": {
+        "coming_soon_title": "旅程は近日公開",
+        "coming_soon_message": "日ごとのアクティビティとルートを計画"
+      },
+      "alerts": {
+        "error_title": "エラー",
+        "update_error": "旅行を更新できませんでした",
+        "general_error": "旅行の更新中にエラーが発生しました",
+        "success_title": "成功",
+        "update_success": "旅行が正常に更新されました"
+      }
     }
   },
   "booking": {
