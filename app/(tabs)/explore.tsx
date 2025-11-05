@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   StyleSheet,
+  Platform,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -391,32 +392,19 @@ export default function ExploreTab() {
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerIconContainer}>
-              <Text style={styles.headerIcon}>🔍</Text>
-            </View>
-
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>
-                {tripId ? 'Agregar Lugares' : 'Explorar Lugares'}
-              </Text>
-              <Text style={styles.headerSubtitle}>
-                {tripId
-                  ? `Agregando lugares a: ${tripTitle}`
-                  : 'Descubre destinos de ensueño para tu próxima aventura'}
-              </Text>
-            </View>
-
-            <View style={styles.toggleContainer}>
-              <View style={[styles.toggleTrackOn, { transform: [{ rotate: '15deg' }] }]} />
-              <View style={styles.toggleTrackOff} />
-            </View>
-          </View>
-        </View>
-
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>
+              {tripId ? 'Agregar Lugares' : 'Explorar Lugares'}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {tripId
+                ? `Agregando lugares a: ${tripTitle}`
+                : 'Descubre destinos de ensueño para tu próxima aventura'}
+            </Text>
+          </View>
+
           {/* Filtros Categorías (UI/UX Mejorado) */}
           <View style={styles.section}>
             {/* Header del filtro (colapsado/expandido) */}
@@ -766,68 +754,18 @@ const styles = StyleSheet.create({
 
   // Header styles
   header: {
-    backgroundColor: '#F3F4F6',
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  headerIcon: {
-    fontSize: 24,
-  },
-  headerTextContainer: {
-    flex: 1,
+    marginBottom: 24,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#1A1A1A',
+    marginBottom: 8,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-
-  // Toggle switch styles
-  toggleContainer: {
-    width: 80,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  toggleTrackOn: {
-    backgroundColor: '#FF6B35',
-    width: 60,
-    height: 40,
-    borderRadius: 30,
-    position: 'absolute',
-    right: -10,
-    top: 0,
-  },
-  toggleTrackOff: {
-    backgroundColor: '#8B5CF6',
-    width: 40,
-    height: 25,
-    borderRadius: 15,
-    position: 'absolute',
-    right: 15,
-    bottom: 8,
+    fontSize: 16,
+    color: '#666666',
+    fontWeight: '500',
   },
 
   // Content styles
@@ -836,6 +774,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
   },
 
   // Section styles

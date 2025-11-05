@@ -549,7 +549,7 @@ export default function TripsTab() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('trips.title')}</Text>
-          <Text style={styles.subtitle}>{t('trips.subtitle')}</Text>
+          <Text style={styles.subtitle}>Planifica, organiza y vive aventuras inolvidables</Text>
         </View>
 
         {/* Vista de Mapa Button */}
