@@ -108,7 +108,14 @@
     "not_authenticated": "You are not authenticated. Please log in again.",
     "place_not_found": "Place not found in saved places list",
     "error_saving_country_visit": "Could not save country visit",
-    "error_occurred": "An error occurred while saving the visit"
+    "error_occurred": "An error occurred while saving the visit",
+    "precise_detection": "Precise Detection",
+    "country": "Country",
+    "region": "Region",
+    "gps_accuracy": "GPS Accuracy",
+    "near_border": "Near Border",
+    "near_border_description": "Using precise Point-in-Polygon detection",
+    "detecting": "Detecting..."
   },
   "explore": {
     "title": "Explore",

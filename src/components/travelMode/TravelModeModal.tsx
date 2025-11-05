@@ -10,7 +10,9 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert } fr
 import { useTranslation } from 'react-i18next';
 
 import SavedPlacesMapModal from '~/components/SavedPlacesMapModal';
+import { isFeatureEnabled } from '~/config/featureFlags';
 import { useTravelMode } from '~/contexts/TravelModeContext';
+import { useGeoDetection } from '~/lib/geo';
 import { supabase } from '~/lib/supabase';
 import { formatDistance } from '~/services/travelMode/geoUtils';
 
@@ -31,6 +33,11 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mapModalVisible, setMapModalVisible] = useState(false);
   const hasLoadedRef = useRef(false); // ✅ Prevenir múltiples cargas
+
+  // ✅ NUEVO: Sistema de geo-detección precisa
+  const usePreciseGeo = isFeatureEnabled('USE_PRECISE_GEO_DETECTION');
+  const showDebugPanel = isFeatureEnabled('SHOW_GEO_DEBUG_PANEL');
+  const preciseGeo = useGeoDetection(usePreciseGeo && visible && state.isTracking);
 
   // 🐛 DEBUG: Expose actions to window in development mode
   useEffect(() => {
@@ -373,6 +380,98 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
             {state.energyMode && <Text style={styles.energyMode}>🔋 Modo: {state.energyMode}</Text>}
           </View>
+
+          {/* ✅ NUEVO: Precise Geo Detection Card */}
+          {usePreciseGeo && state.isTracking && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>🎯 {t('home.precise_detection')}</Text>
+
+              {preciseGeo.currentCountry && (
+                <View style={styles.geoInfoRow}>
+                  <Text style={styles.geoLabel}>{t('home.country')}:</Text>
+                  <Text style={styles.geoValue}>{preciseGeo.currentCountry}</Text>
+                </View>
+              )}
+
+              {preciseGeo.currentRegion && (
+                <View style={styles.geoInfoRow}>
+                  <Text style={styles.geoLabel}>{t('home.region')}:</Text>
+                  <Text style={styles.geoValue}>{preciseGeo.currentRegion}</Text>
+                </View>
+              )}
+
+              {preciseGeo.accuracy && (
+                <View style={styles.geoInfoRow}>
+                  <Text style={styles.geoLabel}>{t('home.gps_accuracy')}:</Text>
+                  <Text style={styles.geoValue}>±{Math.round(preciseGeo.accuracy)}m</Text>
+                </View>
+              )}
+
+              {preciseGeo.isNearBorder && (
+                <View style={styles.borderWarning}>
+                  <Text style={styles.borderWarningText}>⚠️ {t('home.near_border')}</Text>
+                  <Text style={styles.borderWarningSubtext}>
+                    {t('home.near_border_description')}
+                  </Text>
+                </View>
+              )}
+
+              {preciseGeo.isDetecting && (
+                <View style={styles.detectingBadge}>
+                  <Text style={styles.detectingText}>⏳ {t('home.detecting')}</Text>
+                </View>
+              )}
+
+              {preciseGeo.error && (
+                <View style={styles.geoErrorBadge}>
+                  <Text style={styles.geoErrorText}>❌ {preciseGeo.error}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* ✅ NUEVO: Debug Panel (solo desarrollo) */}
+          {showDebugPanel && usePreciseGeo && state.isTracking && preciseGeo.debugInfo && (
+            <View style={styles.debugPanel}>
+              <Text style={styles.debugTitle}>🐛 Geo Detection Debug</Text>
+
+              <View style={styles.debugGrid}>
+                <View style={styles.debugItem}>
+                  <Text style={styles.debugLabel}>Buffer:</Text>
+                  <Text style={styles.debugValue}>{preciseGeo.debugInfo.bufferSize}/4</Text>
+                </View>
+
+                <View style={styles.debugItem}>
+                  <Text style={styles.debugLabel}>Cache:</Text>
+                  <Text style={styles.debugValue}>
+                    {preciseGeo.debugInfo.cacheHit ? '✓ Hit' : '❌ Miss'}
+                  </Text>
+                </View>
+
+                <View style={styles.debugItem}>
+                  <Text style={styles.debugLabel}>Method:</Text>
+                  <Text style={styles.debugValue}>
+                    {preciseGeo.debugInfo.usedPreciseDetection ? '🎯 PIP' : '⚡ BBox'}
+                  </Text>
+                </View>
+
+                <View style={styles.debugItem}>
+                  <Text style={styles.debugLabel}>Status:</Text>
+                  <Text style={styles.debugValue}>
+                    {preciseGeo.isDetecting ? '⏳ Active' : '✓ Ready'}
+                  </Text>
+                </View>
+              </View>
+
+              {preciseGeo.debugInfo.lastReading && (
+                <Text style={styles.debugSmall}>
+                  Last: [{preciseGeo.debugInfo.lastReading.lat.toFixed(4)},{' '}
+                  {preciseGeo.debugInfo.lastReading.lng.toFixed(4)}] @{' '}
+                  {new Date(preciseGeo.debugInfo.lastReading.timestamp).toLocaleTimeString()}
+                </Text>
+              )}
+            </View>
+          )}
 
           {/* ✅ NUEVO: Transport Mode Card */}
           {state.transportMode && state.currentLocation && (
@@ -728,5 +827,99 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#3B82F6',
+  },
+  // ✅ NUEVOS ESTILOS: Precise Geo Detection
+  geoInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  geoLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  geoValue: {
+    fontSize: 15,
+    color: '#000',
+    fontWeight: '600',
+  },
+  borderWarning: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  borderWarningText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 4,
+  },
+  borderWarningSubtext: {
+    fontSize: 12,
+    color: '#78350F',
+  },
+  detectingBadge: {
+    backgroundColor: '#DBEAFE',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  detectingText: {
+    fontSize: 13,
+    color: '#1E40AF',
+    fontWeight: '500',
+  },
+  geoErrorBadge: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+  },
+  geoErrorText: {
+    fontSize: 13,
+    color: '#991B1B',
+  },
+  // ✅ NUEVOS ESTILOS: Debug Panel
+  debugPanel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  debugTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#10B981',
+    marginBottom: 12,
+  },
+  debugGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  debugItem: {
+    width: '50%',
+    marginBottom: 8,
+  },
+  debugLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginBottom: 2,
+  },
+  debugValue: {
+    fontSize: 13,
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  debugSmall: {
+    fontSize: 10,
+    color: '#6B7280',
+    marginTop: 4,
   },
 });

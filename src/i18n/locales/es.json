@@ -108,7 +108,14 @@
     "not_authenticated": "No estás autenticado. Por favor inicia sesión nuevamente.",
     "place_not_found": "No se encontró el lugar en la lista de lugares guardados",
     "error_saving_country_visit": "No se pudo guardar la visita al país",
-    "error_occurred": "Ocurrió un error al guardar la visita"
+    "error_occurred": "Ocurrió un error al guardar la visita",
+    "precise_detection": "Detección Precisa",
+    "country": "País",
+    "region": "Región",
+    "gps_accuracy": "Precisión GPS",
+    "near_border": "Cerca de Frontera",
+    "near_border_description": "Usando detección precisa Point-in-Polygon",
+    "detecting": "Detectando..."
   },
   "explore": {
     "title": "Explorar",

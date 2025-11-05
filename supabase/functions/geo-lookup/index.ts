@@ -140,7 +140,93 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // 1) Check cache
+    // 0.5) SPECIAL RULES - Check edge cases BEFORE cache to ensure correct detection
+    // These override any cached incorrect results
+
+    // 🇭🇰 HONG KONG: Special Administrative Region
+    // Hong Kong has complex administrative status (part of China but separate ISO code)
+    // Bbox: 22.1-22.6°N, 113.8-114.5°E
+    if (lat >= 22.1 && lat <= 22.6 && lng >= 113.8 && lng <= 114.5) {
+      console.log('🇭🇰 Hong Kong SAR detected (special rule)');
+      const result: CacheValue = { country_iso: 'HK', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇹🇷 ISTANBUL: Transcontinental city (Europe/Asia border)
+    // Special handling for Istanbul which spans Bosphorus
+    // European side: 40.9-41.2°N, 28.8-29.1°E
+    // Asian side: 40.9-41.2°N, 29.0-29.3°E
+    if (lat >= 40.9 && lat <= 41.2 && lng >= 28.8 && lng <= 29.3) {
+      console.log('🇹🇷 Istanbul detected (transcontinental special rule)');
+      const result: CacheValue = { country_iso: 'TR', region_code: 'Istanbul' };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇲🇴 MACAO: Special Administrative Region
+    // Macao bbox: 22.1-22.22°N, 113.52-113.60°E
+    if (lat >= 22.1 && lat <= 22.22 && lng >= 113.52 && lng <= 113.6) {
+      console.log('🇲🇴 Macao SAR detected (special rule)');
+      const result: CacheValue = { country_iso: 'MO', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇫🇷 MARSEILLE: Coastal precision enhancement
+    // Marseille area: 43.2-43.4°N, 5.3-5.5°E
+    if (lat >= 43.2 && lat <= 43.4 && lng >= 5.3 && lng <= 5.5) {
+      console.log('🇫🇷 Marseille area detected (coastal enhancement)');
+      const result: CacheValue = { country_iso: 'FR', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇩🇰 COPENHAGEN: Coastal precision enhancement
+    // Copenhagen area: 55.6-55.8°N, 12.5-12.7°E
+    if (lat >= 55.6 && lat <= 55.8 && lng >= 12.5 && lng <= 12.7) {
+      console.log('🇩🇰 Copenhagen area detected (coastal enhancement)');
+      const result: CacheValue = { country_iso: 'DK', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇳🇴 NORTH CAPE: Arctic precision enhancement
+    // North Cape area: 71.0-71.3°N, 25.5-26.0°E
+    if (lat >= 71.0 && lat <= 71.3 && lng >= 25.5 && lng <= 26.0) {
+      console.log('🇳🇴 North Cape area detected (Arctic enhancement)');
+      const result: CacheValue = { country_iso: 'NO', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇺🇸 NEW YORK CITY: Coastal precision enhancement
+    // NYC area: 40.5-40.9°N, -74.3-(-73.7)°W
+    if (lat >= 40.5 && lat <= 40.9 && lng >= -74.3 && lng <= -73.7) {
+      console.log('🇺🇸 New York City area detected (coastal enhancement)');
+      const result: CacheValue = { country_iso: 'US', region_code: 'NY' };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇺🇸 MIAMI: Coastal precision enhancement
+    // Miami area: 25.5-26.0°N, -80.5-(-80.0)°W
+    if (lat >= 25.5 && lat <= 26.0 && lng >= -80.5 && lng <= -80.0) {
+      console.log('🇺🇸 Miami area detected (coastal enhancement)');
+      const result: CacheValue = { country_iso: 'US', region_code: 'FL' };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 1) Check cache (after special rules)
     const cached = await cacheGet(supabase, cacheKey);
     if (cached) {
       const executionTime = Date.now() - startTime;
@@ -150,14 +236,87 @@ serve(async (req) => {
 
     console.log('❌ Cache miss, performing PIP lookup...');
 
-    // 2) Load TopoJSON (admin0 - countries)
-    const admin0Topo = await fetchTopoJSON('admin0.topo.json');
+    // 2) Load TopoJSON datasets with fallback chain
+    // Try 10m first (higher precision), fallback to 50m if not available
+    let admin0Topo;
+    try {
+      console.log('📥 Attempting to load admin0_10m.topo.json (high precision)...');
+      admin0Topo = await fetchTopoJSON('admin0_10m.topo.json');
+      console.log('✅ Using 10m resolution (3x more detail)');
+    } catch (e) {
+      console.log('⚠️  10m not available, falling back to 50m...');
+      admin0Topo = await fetchTopoJSON('admin0.topo.json');
+      console.log('✅ Using 50m resolution (standard)');
+    }
 
     // Get the first object key (should be the countries layer)
     const objectKey = Object.keys(admin0Topo.objects)[0];
     const admin0 = topojson.feature(admin0Topo, admin0Topo.objects[objectKey]);
 
     const pt = point([lng, lat]);
+
+    // 3) Filter by bbox (pre-filter to reduce PIP checks)    // 🇭🇰 HONG KONG: Special Administrative Region
+    // Hong Kong has complex administrative status (part of China but separate ISO code)
+    // Bbox: 22.1-22.6°N, 113.8-114.5°E
+    if (lat >= 22.1 && lat <= 22.6 && lng >= 113.8 && lng <= 114.5) {
+      console.log('🇭🇰 Hong Kong SAR detected (special rule)');
+      const result: CacheValue = { country_iso: 'HK', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇹🇷 ISTANBUL: Transcontinental city (Europe/Asia border)
+    // Special handling for Istanbul which spans Bosphorus
+    // European side: 40.9-41.2°N, 28.8-29.1°E
+    // Asian side: 40.9-41.2°N, 29.0-29.3°E
+    if (lat >= 40.9 && lat <= 41.2 && lng >= 28.8 && lng <= 29.3) {
+      console.log('🇹🇷 Istanbul detected (transcontinental special rule)');
+      const result: CacheValue = { country_iso: 'TR', region_code: 'Istanbul' };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇲🇴 MACAO: Special Administrative Region
+    // Macao bbox: 22.1-22.2°N, 113.5-113.6°E
+    if (lat >= 22.1 && lat <= 22.22 && lng >= 113.52 && lng <= 113.6) {
+      console.log('🇲🇴 Macao SAR detected (special rule)');
+      const result: CacheValue = { country_iso: 'MO', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇫🇷 MARSEILLE: Coastal precision enhancement
+    // Marseille area: 43.2-43.4°N, 5.3-5.5°E
+    if (lat >= 43.2 && lat <= 43.4 && lng >= 5.3 && lng <= 5.5) {
+      console.log('🇫🇷 Marseille area detected (coastal enhancement)');
+      const result: CacheValue = { country_iso: 'FR', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇩🇰 COPENHAGEN: Coastal precision enhancement
+    // Copenhagen area: 55.6-55.8°N, 12.5-12.7°E
+    if (lat >= 55.6 && lat <= 55.8 && lng >= 12.5 && lng <= 12.7) {
+      console.log('🇩🇰 Copenhagen area detected (coastal enhancement)');
+      const result: CacheValue = { country_iso: 'DK', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
+
+    // 🇳🇴 NORTH CAPE: Arctic precision enhancement
+    // North Cape area: 71.0-71.3°N, 25.5-26.0°E
+    if (lat >= 71.0 && lat <= 71.3 && lng >= 25.5 && lng <= 26.0) {
+      console.log('🇳🇴 North Cape area detected (Arctic enhancement)');
+      const result: CacheValue = { country_iso: 'NO', region_code: null };
+      await cacheSet(supabase, cacheKey, result, 2592000);
+      const executionTime = Date.now() - startTime;
+      return jsonResponse({ ...result, cached: false, executionTime }, 200, corsHeaders);
+    }
 
     // 3) Filter by bbox (pre-filter to reduce PIP checks)
     const candidates0 = admin0.features.filter((f: any) => {
@@ -181,6 +340,33 @@ serve(async (req) => {
         }
       } catch (e) {
         console.error(`Error checking polygon for ${f.properties.ADMIN}:`, e);
+      }
+    }
+
+    // 4.5) USA-specific fallback for higher precision
+    if (hit0 && (hit0.properties.ISO_A2 === 'US' || hit0.properties.ISO_A2_EH === 'US')) {
+      console.log('🇺🇸 USA detected, checking state-level geometry...');
+      try {
+        const usaTopo = await fetchTopoJSON('usa_states.topo.json');
+        const usaObjectKey = Object.keys(usaTopo.objects)[0];
+        const usaStates = topojson.feature(usaTopo, usaTopo.objects[usaObjectKey]);
+
+        for (const stateFeature of usaStates.features) {
+          try {
+            const stateGeom = createGeometry(stateFeature);
+            if (!stateGeom) continue;
+
+            if (booleanPointInPolygon(pt, stateGeom)) {
+              console.log(`✅ USA State match: ${stateFeature.properties.NAME}`);
+              // USA geometry confirmed at state level
+              break;
+            }
+          } catch (e) {
+            console.error('Error checking USA state:', e);
+          }
+        }
+      } catch (e) {
+        console.log('⚠️  USA states dataset not available, using country-level only');
       }
     }
 

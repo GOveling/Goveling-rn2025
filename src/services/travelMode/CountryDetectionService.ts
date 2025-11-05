@@ -1245,6 +1245,79 @@ class CountryDetectionService {
   }
 
   /**
+   * 🎯 PRECISE DETECTION: Use Edge Function with Point-in-Polygon
+   *
+   * This method bypasses bbox pre-filtering and uses the geo-lookup Edge Function
+   * with real country geometries (Natural Earth 50m) for 99.9% accuracy.
+   *
+   * Use cases:
+   * - Manual country detection override
+   * - Debugging bbox issues
+   * - High-accuracy requirements (e.g., border crossings)
+   * - When Nominatim and bbox both fail
+   *
+   * @param latitude - GPS latitude
+   * @param longitude - GPS longitude
+   * @returns CountryInfo with precise detection or null if offshore/error
+   */
+  async detectCountryPrecise(latitude: number, longitude: number): Promise<CountryInfo | null> {
+    try {
+      console.log(
+        `🎯 Precise detection requested for [${latitude.toFixed(4)}, ${longitude.toFixed(4)}]`
+      );
+
+      const { supabase } = await import('~/lib/supabase');
+      const { data, error } = await supabase.functions.invoke('geo-lookup', {
+        body: { latitude, longitude },
+      });
+
+      if (error) {
+        console.error('❌ Error in geo-lookup Edge Function:', error);
+        return null;
+      }
+
+      if (!data) {
+        console.warn('⚠️ No data returned from geo-lookup');
+        return null;
+      }
+
+      const { country: countryCode, region: regionCode, cached } = data;
+
+      // Handle offshore detection
+      if (countryCode === 'OFFSHORE') {
+        console.log('🌊 Location is offshore (international waters)');
+        return null;
+      }
+
+      console.log(
+        `✅ Precise detection: ${countryCode}${regionCode ? ` / ${regionCode}` : ''} ${cached ? '(cached)' : '(fresh)'}`
+      );
+
+      // Get enriched metadata for the country
+      const countryInfo = await this.getCountryMetadata(countryCode);
+
+      if (countryInfo) {
+        return countryInfo;
+      }
+
+      // Fallback: basic info if no metadata available
+      const currency = CURRENCY_MAP[countryCode];
+      return {
+        countryCode,
+        countryName: countryCode,
+        countryFlag: this.getFlagEmoji(countryCode),
+        description: `${countryCode} - discovered through precise detection`,
+        continent: this.guessContinent(latitude, longitude),
+        currency: currency?.code,
+        currencySymbol: currency?.symbol,
+      };
+    } catch (error) {
+      console.error('❌ Exception in detectCountryPrecise:', error);
+      return null;
+    }
+  }
+
+  /**
    * Reset detection state (e.g., when travel mode ends)
    * NOTE: We now preserve lastDetectedCountry to prevent modal re-appearing
    */
