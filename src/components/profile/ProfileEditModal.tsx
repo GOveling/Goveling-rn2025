@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
@@ -40,6 +41,7 @@ interface ProfileData {
 
 export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -90,18 +92,18 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
     }
   };
 
-  const pickImage = async () => {
-    Alert.alert('Seleccionar imagen', 'Elige una opción', [
+  const selectImage = () => {
+    Alert.alert(t('profile.edit_modal.avatar_section.select_image'), '', [
       {
-        text: 'Cámara',
+        text: t('profile.edit_modal.avatar_section.camera'),
         onPress: () => openCamera(),
       },
       {
-        text: 'Galería',
+        text: t('profile.edit_modal.avatar_section.gallery'),
         onPress: () => openGallery(),
       },
       {
-        text: 'Cancelar',
+        text: t('profile.edit_modal.cancel'),
         style: 'cancel',
       },
     ]);
@@ -110,7 +112,10 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
   const openCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permisos necesarios', 'Necesitamos permisos para acceder a la cámara');
+      Alert.alert(
+        t('profile.edit_modal.permissions.camera_needed'),
+        t('profile.edit_modal.permissions.camera_message')
+      );
       return;
     }
 
@@ -129,7 +134,10 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
   const openGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permisos necesarios', 'Necesitamos permisos para acceder a tus fotos');
+      Alert.alert(
+        t('profile.edit_modal.permissions.gallery_needed'),
+        t('profile.edit_modal.permissions.gallery_message')
+      );
       return;
     }
 
@@ -307,12 +315,18 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
     if (!user) return;
 
     if (!profileData.full_name.trim()) {
-      Alert.alert('Error', 'El nombre completo es obligatorio');
+      Alert.alert(
+        t('profile.edit_modal.errors.title'),
+        t('profile.edit_modal.errors.full_name_required')
+      );
       return;
     }
 
     if (profileData.description.length > 70) {
-      Alert.alert('Error', 'La descripción no puede tener más de 70 caracteres');
+      Alert.alert(
+        t('profile.edit_modal.errors.title'),
+        t('profile.edit_modal.errors.description_too_long')
+      );
       return;
     }
 
@@ -338,18 +352,22 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
         throw error;
       }
 
-      Alert.alert('Éxito', 'Tu perfil se ha actualizado correctamente', [
-        {
-          text: 'OK',
-          onPress: () => {
-            onSaved?.();
-            onClose();
+      Alert.alert(
+        t('profile.edit_modal.success.title'),
+        t('profile.edit_modal.success.profile_updated'),
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              onSaved?.();
+              onClose();
+            },
           },
-        },
-      ]);
+        ]
+      );
     } catch (error) {
       console.error('Error saving profile:', error);
-      Alert.alert('Error', 'No se pudo guardar el perfil');
+      Alert.alert(t('profile.edit_modal.errors.title'), t('profile.edit_modal.errors.save_failed'));
     } finally {
       setLoading(false);
     }
@@ -384,13 +402,13 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
               <Ionicons name="close" size={22} color="#fff" />
             </TouchableOpacity>
 
-            <Text style={styles.headerTitle}>Editar Perfil</Text>
+            <Text style={styles.headerTitle}>{t('profile.edit_modal.title')}</Text>
 
             <TouchableOpacity onPress={saveProfile} disabled={loading} style={styles.saveButton}>
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>Guardar</Text>
+                <Text style={styles.saveButtonText}>{t('profile.edit_modal.save')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -401,7 +419,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
             {/* Avatar Section */}
             <View style={styles.avatarSection}>
               <TouchableOpacity
-                onPress={pickImage}
+                onPress={selectImage}
                 disabled={uploading}
                 style={styles.avatarTouchable}
               >
@@ -432,18 +450,18 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
               <Text style={styles.changePhotoText}>
                 {uploading
-                  ? 'Optimizando imagen...'
-                  : 'Selecciona una imagen. Se optimizará automáticamente.'}
+                  ? t('profile.edit_modal.avatar_section.uploading')
+                  : t('profile.edit_modal.avatar_section.change_photo')}
               </Text>
             </View>
 
             {/* Nombre Completo */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Nombre completo</Text>
+              <Text style={styles.label}>{t('profile.edit_modal.fields.full_name')}</Text>
               <TextInput
                 value={profileData.full_name}
                 onChangeText={(text) => setProfileData((prev) => ({ ...prev, full_name: text }))}
-                placeholder="Tu nombre completo"
+                placeholder={t('profile.edit_modal.fields.full_name_placeholder')}
                 style={styles.textInput}
                 placeholderTextColor="#666"
               />
@@ -451,7 +469,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
             {/* Descripción */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Descripción</Text>
+              <Text style={styles.label}>{t('profile.edit_modal.fields.description')}</Text>
               <TextInput
                 value={profileData.description}
                 onChangeText={(text) => {
@@ -459,24 +477,28 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                     setProfileData((prev) => ({ ...prev, description: text }));
                   }
                 }}
-                placeholder="Entusiasta de Viajes"
+                placeholder={t('profile.edit_modal.fields.description_placeholder')}
                 multiline
                 maxLength={70}
                 style={[styles.textInput, styles.textInputMultiline]}
                 placeholderTextColor="#666"
               />
               <Text style={styles.characterCount}>
-                {profileData.description.length}/70 caracteres
+                {t('profile.edit_modal.fields.character_count', {
+                  count: profileData.description.length,
+                })}
               </Text>
             </View>
 
             {/* Email (solo lectura) */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('profile.edit_modal.fields.email')}</Text>
               <View style={styles.emailContainer}>
                 <Text style={styles.emailText}>{profileData.email}</Text>
               </View>
-              <Text style={styles.emailHelperText}>El email no se puede cambiar</Text>
+              <Text style={styles.emailHelperText}>
+                {t('profile.edit_modal.fields.email_readonly')}
+              </Text>
             </View>
           </View>
         </ScrollView>

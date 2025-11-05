@@ -616,6 +616,45 @@
         "title": "成功",
         "saved": "個人情報が更新されました"
       }
+    },
+    "edit_modal": {
+      "title": "プロフィールを編集",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "avatar_section": {
+        "change_photo": "画像を選択してください。自動的に最適化されます。",
+        "uploading": "画像を最適化中...",
+        "select_image": "画像を選択",
+        "camera": "カメラ",
+        "gallery": "ギャラリー"
+      },
+      "fields": {
+        "full_name": "フルネーム",
+        "full_name_placeholder": "あなたのフルネーム",
+        "description": "説明",
+        "description_placeholder": "旅行愛好家",
+        "character_count": "{{count}}/70 文字",
+        "email": "メール",
+        "email_readonly": "メールは変更できません"
+      },
+      "permissions": {
+        "camera_needed": "権限が必要です",
+        "camera_message": "カメラへのアクセス許可が必要です",
+        "gallery_needed": "権限が必要です",
+        "gallery_message": "写真へのアクセス許可が必要です"
+      },
+      "errors": {
+        "title": "エラー",
+        "full_name_required": "フルネームは必須です",
+        "description_too_long": "説明は70文字以内にしてください",
+        "save_failed": "プロフィールを保存できませんでした",
+        "image_processing_failed": "画像を処理できませんでした",
+        "image_upload_failed": "画像をアップロードできませんでした"
+      },
+      "success": {
+        "title": "成功",
+        "profile_updated": "プロフィールが正常に更新されました"
+      }
     }
   },
   "notifications": {

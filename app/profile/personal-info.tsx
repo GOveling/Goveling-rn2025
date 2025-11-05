@@ -44,12 +44,17 @@ interface ProfileData {
 }
 
 const genderOptions = [
-  { label: 'Masculino', value: 'masculine', icon: '👨' },
-  { label: 'Femenino', value: 'feminine', icon: '👩' },
-  { label: 'Prefiero no decirlo', value: 'prefer_not_to_say', icon: '🤐' },
+  { label: 'profile.personal_info.genders.masculine', value: 'masculine', icon: '👨' },
+  { label: 'profile.personal_info.genders.feminine', value: 'feminine', icon: '👩' },
+  {
+    label: 'profile.personal_info.genders.prefer_not_to_say',
+    value: 'prefer_not_to_say',
+    icon: '🤐',
+  },
 ];
 
 export default function PersonalInfoScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -152,7 +157,9 @@ export default function PersonalInfoScreen() {
           <Text style={[styles.pickerOptionText, isSelected && styles.pickerOptionTextSelected]}>
             {item.city}
           </Text>
-          <Text style={styles.populationText}>{item.population.toLocaleString()} habitantes</Text>
+          <Text style={styles.populationText}>
+            {item.population.toLocaleString()} {t('profile.personal_info.city_picker.inhabitants')}
+          </Text>
         </View>
         {isSelected && <Ionicons name="checkmark" size={20} color="#6366F1" />}
       </TouchableOpacity>
@@ -346,7 +353,7 @@ export default function PersonalInfoScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={styles.loadingText}>Cargando información...</Text>
+        <Text style={styles.loadingText}>{t('profile.personal_info.loading')}</Text>
       </View>
     );
   }
@@ -359,7 +366,7 @@ export default function PersonalInfoScreen() {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Información Personal</Text>
+        <Text style={styles.headerTitle}>{t('profile.personal_info.title')}</Text>
 
         <TouchableOpacity
           style={styles.editButton}
@@ -375,7 +382,9 @@ export default function PersonalInfoScreen() {
           {loading ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text style={styles.editButtonText}>{isEditing ? 'Guardar' : 'Editar'}</Text>
+            <Text style={styles.editButtonText}>
+              {isEditing ? t('profile.personal_info.save') : t('profile.personal_info.edit')}
+            </Text>
           )}
         </TouchableOpacity>
       </LinearGradient>
@@ -388,11 +397,13 @@ export default function PersonalInfoScreen() {
           <View style={styles.form}>
             {/* Información Básica */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Información Básica</Text>
+              <Text style={styles.sectionTitle}>{t('profile.personal_info.basic_info')}</Text>
 
               {/* Nombre Completo */}
               <View style={styles.fieldContainer}>
-                <Text style={styles.fieldLabel}>Nombre Completo *</Text>
+                <Text style={styles.fieldLabel}>
+                  {t('profile.personal_info.full_name_required')}
+                </Text>
                 {isEditing ? (
                   <TextInput
                     style={styles.textInput}

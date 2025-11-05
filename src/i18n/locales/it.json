@@ -616,6 +616,45 @@
         "title": "Successo",
         "saved": "Le tue informazioni personali sono state aggiornate"
       }
+    },
+    "edit_modal": {
+      "title": "Modifica Profilo",
+      "save": "Salva",
+      "cancel": "Annulla",
+      "avatar_section": {
+        "change_photo": "Seleziona un'immagine. Verrà ottimizzata automaticamente.",
+        "uploading": "Ottimizzazione immagine...",
+        "select_image": "Seleziona immagine",
+        "camera": "Fotocamera",
+        "gallery": "Galleria"
+      },
+      "fields": {
+        "full_name": "Nome Completo",
+        "full_name_placeholder": "Il tuo nome completo",
+        "description": "Descrizione",
+        "description_placeholder": "Appassionato di Viaggi",
+        "character_count": "{{count}}/70 caratteri",
+        "email": "Email",
+        "email_readonly": "L'email non può essere modificata"
+      },
+      "permissions": {
+        "camera_needed": "Autorizzazioni Richieste",
+        "camera_message": "Abbiamo bisogno di autorizzazioni per accedere alla fotocamera",
+        "gallery_needed": "Autorizzazioni Richieste",
+        "gallery_message": "Abbiamo bisogno di autorizzazioni per accedere alle tue foto"
+      },
+      "errors": {
+        "title": "Errore",
+        "full_name_required": "Il nome completo è obbligatorio",
+        "description_too_long": "La descrizione non può superare i 70 caratteri",
+        "save_failed": "Impossibile salvare il profilo",
+        "image_processing_failed": "Impossibile elaborare l'immagine",
+        "image_upload_failed": "Impossibile caricare l'immagine"
+      },
+      "success": {
+        "title": "Successo",
+        "profile_updated": "Il tuo profilo è stato aggiornato con successo"
+      }
     }
   },
   "notifications": {

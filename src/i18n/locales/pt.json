@@ -616,6 +616,45 @@
         "title": "Sucesso",
         "saved": "Suas informações pessoais foram atualizadas"
       }
+    },
+    "edit_modal": {
+      "title": "Editar Perfil",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "avatar_section": {
+        "change_photo": "Selecione uma imagem. Será otimizada automaticamente.",
+        "uploading": "Otimizando imagem...",
+        "select_image": "Selecionar imagem",
+        "camera": "Câmera",
+        "gallery": "Galeria"
+      },
+      "fields": {
+        "full_name": "Nome Completo",
+        "full_name_placeholder": "Seu nome completo",
+        "description": "Descrição",
+        "description_placeholder": "Entusiasta de Viagens",
+        "character_count": "{{count}}/70 caracteres",
+        "email": "Email",
+        "email_readonly": "O email não pode ser alterado"
+      },
+      "permissions": {
+        "camera_needed": "Permissões Necessárias",
+        "camera_message": "Precisamos de permissões para acessar a câmera",
+        "gallery_needed": "Permissões Necessárias",
+        "gallery_message": "Precisamos de permissões para acessar suas fotos"
+      },
+      "errors": {
+        "title": "Erro",
+        "full_name_required": "O nome completo é obrigatório",
+        "description_too_long": "A descrição não pode ter mais de 70 caracteres",
+        "save_failed": "Não foi possível salvar o perfil",
+        "image_processing_failed": "Não foi possível processar a imagem",
+        "image_upload_failed": "Não foi possível enviar a imagem"
+      },
+      "success": {
+        "title": "Sucesso",
+        "profile_updated": "Seu perfil foi atualizado com sucesso"
+      }
     }
   },
   "notifications": {

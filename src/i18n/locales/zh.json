@@ -616,6 +616,45 @@
         "title": "成功",
         "saved": "您的个人信息已更新"
       }
+    },
+    "edit_modal": {
+      "title": "编辑个人资料",
+      "save": "保存",
+      "cancel": "取消",
+      "avatar_section": {
+        "change_photo": "选择图片。将自动优化。",
+        "uploading": "正在优化图片...",
+        "select_image": "选择图片",
+        "camera": "相机",
+        "gallery": "相册"
+      },
+      "fields": {
+        "full_name": "全名",
+        "full_name_placeholder": "您的全名",
+        "description": "描述",
+        "description_placeholder": "旅行爱好者",
+        "character_count": "{{count}}/70 个字符",
+        "email": "邮箱",
+        "email_readonly": "邮箱无法更改"
+      },
+      "permissions": {
+        "camera_needed": "需要权限",
+        "camera_message": "我们需要权限访问相机",
+        "gallery_needed": "需要权限",
+        "gallery_message": "我们需要权限访问您的照片"
+      },
+      "errors": {
+        "title": "错误",
+        "full_name_required": "全名为必填项",
+        "description_too_long": "描述不能超过70个字符",
+        "save_failed": "无法保存个人资料",
+        "image_processing_failed": "无法处理图片",
+        "image_upload_failed": "无法上传图片"
+      },
+      "success": {
+        "title": "成功",
+        "profile_updated": "您的个人资料已成功更新"
+      }
     }
   },
   "notifications": {

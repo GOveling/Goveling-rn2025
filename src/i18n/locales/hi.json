@@ -622,7 +622,46 @@
       },
       "success": {
         "title": "सफलता",
-        "saved": "आपकी व्यक्तिगत जानकारी अपडेट कर दी गई है"
+        "saved": "आपकी व्यक्तिगत जानकारी अपडेट हो गई है"
+      }
+    },
+    "edit_modal": {
+      "title": "प्रोफाइल संपादित करें",
+      "save": "सहेजें",
+      "cancel": "रद्द करें",
+      "avatar_section": {
+        "change_photo": "एक छवि चुनें। यह स्वचालित रूप से अनुकूलित होगी।",
+        "uploading": "छवि अनुकूलित हो रही है...",
+        "select_image": "छवि चुनें",
+        "camera": "कैमरा",
+        "gallery": "गैलरी"
+      },
+      "fields": {
+        "full_name": "पूरा नाम",
+        "full_name_placeholder": "आपका पूरा नाम",
+        "description": "विवरण",
+        "description_placeholder": "यात्रा प्रेमी",
+        "character_count": "{{count}}/70 अक्षर",
+        "email": "ईमेल",
+        "email_readonly": "ईमेल नहीं बदला जा सकता"
+      },
+      "permissions": {
+        "camera_needed": "अनुमतियाँ आवश्यक हैं",
+        "camera_message": "हमें कैमरे तक पहुँचने के लिए अनुमति की आवश्यकता है",
+        "gallery_needed": "अनुमतियाँ आवश्यक हैं",
+        "gallery_message": "हमें आपकी तस्वीरों तक पहुँचने के लिए अनुमति की आवश्यकता है"
+      },
+      "errors": {
+        "title": "त्रुटि",
+        "full_name_required": "पूरा नाम आवश्यक है",
+        "description_too_long": "विवरण 70 अक्षरों से अधिक नहीं हो सकता",
+        "save_failed": "प्रोफाइल सहेज नहीं सके",
+        "image_processing_failed": "छवि संसाधित नहीं हो सकी",
+        "image_upload_failed": "छवि अपलोड नहीं हो सकी"
+      },
+      "success": {
+        "title": "सफलता",
+        "profile_updated": "आपकी प्रोफाइल सफलतापूर्वक अपडेट हो गई है"
       }
     }
   },

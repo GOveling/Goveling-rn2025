@@ -627,6 +627,45 @@
         "title": "Success",
         "saved": "Your personal information has been updated"
       }
+    },
+    "edit_modal": {
+      "title": "Edit Profile",
+      "save": "Save",
+      "cancel": "Cancel",
+      "avatar_section": {
+        "change_photo": "Select an image. It will be automatically optimized.",
+        "uploading": "Optimizing image...",
+        "select_image": "Select image",
+        "camera": "Camera",
+        "gallery": "Gallery"
+      },
+      "fields": {
+        "full_name": "Full Name",
+        "full_name_placeholder": "Your full name",
+        "description": "Description",
+        "description_placeholder": "Travel Enthusiast",
+        "character_count": "{{count}}/70 characters",
+        "email": "Email",
+        "email_readonly": "Email cannot be changed"
+      },
+      "permissions": {
+        "camera_needed": "Permissions Required",
+        "camera_message": "We need permissions to access the camera",
+        "gallery_needed": "Permissions Required",
+        "gallery_message": "We need permissions to access your photos"
+      },
+      "errors": {
+        "title": "Error",
+        "full_name_required": "Full name is required",
+        "description_too_long": "Description cannot be more than 70 characters",
+        "save_failed": "Could not save profile",
+        "image_processing_failed": "Could not process image",
+        "image_upload_failed": "Could not upload image"
+      },
+      "success": {
+        "title": "Success",
+        "profile_updated": "Your profile has been updated successfully"
+      }
     }
   },
   "auto": {
