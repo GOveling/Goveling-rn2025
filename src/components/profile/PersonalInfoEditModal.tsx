@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 
 import { COLORS } from '~/constants/colors';
 import { useCitiesByCountry } from '~/hooks/useCitiesByCountry';
@@ -50,9 +51,13 @@ const REQUIRED_ERROR = {
 };
 
 const genderOptions = [
-  { label: 'Masculino', value: 'masculine', icon: '👨' },
-  { label: 'Femenino', value: 'feminine', icon: '👩' },
-  { label: 'Prefiero no decirlo', value: 'prefer_not_to_say', icon: '🤐' },
+  { label: 'profile.personal_info.gender_options.masculine', value: 'masculine', icon: '👨' },
+  { label: 'profile.personal_info.gender_options.feminine', value: 'feminine', icon: '👩' },
+  {
+    label: 'profile.personal_info.gender_options.prefer_not_to_say',
+    value: 'prefer_not_to_say',
+    icon: '🤐',
+  },
 ];
 
 export const PersonalInfoEditModal: React.FC<Props> = ({
@@ -62,6 +67,8 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
   userEmail,
   onSaved,
 }) => {
+  const { t } = useTranslation();
+
   console.log('🎯 PersonalInfoEditModal Component: Rendering with props:', {
     visible,
     userId,
@@ -305,8 +312,16 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
   };
 
   const save = async () => {
-    if (!form.full_name.trim()) return Alert.alert('Error', REQUIRED_ERROR.full_name);
-    if (!form.birth_date) return Alert.alert('Error', REQUIRED_ERROR.birth_date);
+    if (!form.full_name.trim())
+      return Alert.alert(
+        t('profile.personal_info.errors.title'),
+        t('profile.personal_info.errors.full_name_required')
+      );
+    if (!form.birth_date)
+      return Alert.alert(
+        t('profile.personal_info.errors.title'),
+        t('profile.personal_info.errors.birth_date_required')
+      );
 
     setLoading(true);
     try {
@@ -392,16 +407,20 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
 
       console.log('✅ Profile saved successfully:', savedData);
 
-      Alert.alert('Éxito', '¡Tu información personal se guardó correctamente!', [
-        {
-          text: 'Continuar',
-          style: 'default',
-          onPress: () => {
-            onSaved?.();
-            onClose();
+      Alert.alert(
+        t('profile.personal_info.success.title'),
+        t('profile.personal_info.success.saved'),
+        [
+          {
+            text: t('profile.personal_info.continue'),
+            style: 'default',
+            onPress: () => {
+              onSaved?.();
+              onClose();
+            },
           },
-        },
-      ]);
+        ]
+      );
     } catch (e: any) {
       console.error('💥 Save error', e);
 
@@ -467,7 +486,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
 
   const genderLabel = (val: string) => {
     const opt = genderOptions.find((o) => o.value === val);
-    return opt ? `${opt.icon} ${opt.label}` : 'Seleccionar género';
+    return opt ? `${opt.icon} ${t(opt.label)}` : t('profile.personal_info.gender_placeholder');
   };
 
   if (!visible) {
@@ -506,12 +525,12 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             </TouchableOpacity>
             <View style={{ alignItems: 'center', flex: 1, paddingHorizontal: 16 }}>
               <Text style={{ color: COLORS.utility.white, fontSize: 18, fontWeight: '700' }}>
-                Información Personal
+                {t('profile.personal_info.title')}
               </Text>
               {initialLoaded && (
                 <View style={{ marginTop: 4, alignItems: 'center' }}>
                   <Text style={{ color: COLORS.background.whiteOpacity.strong, fontSize: 12 }}>
-                    Progreso: {getCompletionPercentage()}%
+                    {t('profile.personal_info.progress', { percentage: getCompletionPercentage() })}
                   </Text>
                   <View
                     style={{
@@ -549,7 +568,9 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               {loading ? (
                 <ActivityIndicator size="small" color={COLORS.utility.white} />
               ) : (
-                <Text style={{ color: COLORS.utility.white, fontWeight: '600' }}>Guardar</Text>
+                <Text style={{ color: COLORS.utility.white, fontWeight: '600' }}>
+                  {t('profile.personal_info.save')}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -580,12 +601,11 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     fontWeight: '600',
                   }}
                 >
-                  Completa la información básica
+                  {t('profile.personal_info.complete_basic_info')}
                 </Text>
               </View>
               <Text style={{ color: COLORS.secondary.amberDark, fontSize: 12, marginTop: 4 }}>
-                Necesitamos tu nombre, fecha de nacimiento y ubicación para personalizar tu
-                experiencia.
+                {t('profile.personal_info.complete_basic_info_description')}
               </Text>
             </View>
           )}
@@ -612,28 +632,28 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     fontWeight: '600',
                   }}
                 >
-                  ¡Perfil completo!
+                  {t('profile.personal_info.profile_complete')}
                 </Text>
               </View>
               <Text style={{ color: COLORS.status.successDark, fontSize: 12, marginTop: 4 }}>
-                Tu información básica está completa. Puedes agregar más detalles si lo deseas.
+                {t('profile.personal_info.profile_complete_description')}
               </Text>
             </View>
           )}
 
           {/* Nombre Completo */}
-          <Field label="Nombre Completo *">
+          <Field label={t('profile.personal_info.full_name')}>
             <TextInput
               value={form.full_name}
               onChangeText={(t) => update('full_name', t)}
-              placeholder="Tu nombre completo"
+              placeholder={t('profile.personal_info.full_name_placeholder')}
               style={styles.input}
               placeholderTextColor="#666"
             />
           </Field>
 
           {/* Fecha de Nacimiento + Edad */}
-          <Field label="Fecha de Nacimiento *">
+          <Field label={t('profile.personal_info.birth_date')}>
             <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.selectorButton}>
               <Ionicons name="calendar" size={18} color="#6366F1" />
               <Text style={styles.selectorText}>
@@ -643,27 +663,31 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       month: 'short',
                       year: 'numeric',
                     })
-                  : 'Seleccionar fecha'}
+                  : t('profile.personal_info.date_picker.select_date')}
               </Text>
             </TouchableOpacity>
-            {age !== null && <Text style={styles.helperText}>Edad: {age} años</Text>}
+            {age !== null && (
+              <Text style={styles.helperText}>
+                {t('profile.personal_info.age_years', { years: age })}
+              </Text>
+            )}
           </Field>
 
           {/* Género */}
-          <Field label="Género">
+          <Field label={t('profile.personal_info.gender')}>
             <TouchableOpacity
               onPress={() => setShowGenderPicker(true)}
               style={styles.selectorButton}
             >
               <Text style={styles.selectorText}>
-                {gender ? genderLabel(gender) : '👤 Seleccionar género'}
+                {gender ? genderLabel(gender) : t('profile.personal_info.gender_placeholder')}
               </Text>
               <Ionicons name="chevron-down" size={18} color="#6366F1" />
             </TouchableOpacity>
           </Field>
 
           {/* País */}
-          <Field label="País">
+          <Field label={t('profile.personal_info.country')}>
             <TouchableOpacity
               disabled={countriesLoading}
               onPress={() => {
@@ -678,7 +702,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 {form.country
                   ? countries.find((c) => c.country_code === form.country)?.country_name ||
                     form.country
-                  : '🌍 Seleccionar país'}
+                  : t('profile.personal_info.country_placeholder')}
               </Text>
               {countriesLoading ? (
                 <ActivityIndicator size="small" color="#6366F1" />
@@ -689,20 +713,19 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           </Field>
 
           {/* Ciudad */}
-          <Field label="Ciudad / Estado">
+          <Field label={t('profile.personal_info.city_state')}>
             {supportsManualEntry ? (
               // Input manual para países sin ciudades disponibles en el API
               <View>
                 <TextInput
                   value={form.city_state}
                   onChangeText={(t) => update('city_state', t)}
-                  placeholder="Escribe el nombre de tu ciudad"
+                  placeholder={t('profile.personal_info.city_picker.manual_entry_placeholder')}
                   style={styles.input}
                   placeholderTextColor="#666"
                 />
                 <Text style={[styles.helperText, { color: '#6b7280' }]}>
-                  📝 No tenemos ciudades predefinidas para este país. Escribe manualmente el nombre
-                  de tu ciudad.
+                  {t('profile.personal_info.city_picker.manual_entry_helper')}
                 </Text>
               </View>
             ) : (
@@ -725,10 +748,10 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 <Text style={styles.selectorText}>
                   {form.city_state ||
                     (!form.country
-                      ? '🌍 Selecciona país primero'
+                      ? t('profile.personal_info.select_country_first')
                       : citiesLoading
-                        ? '⏳ Cargando...'
-                        : '🏙️ Seleccionar ciudad')}
+                        ? t('profile.personal_info.loading_cities')
+                        : t('profile.personal_info.city_state_placeholder'))}
                 </Text>
                 {citiesLoading ? (
                   <ActivityIndicator size="small" color="#6366F1" />
@@ -747,27 +770,29 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               !citiesError &&
               !supportsManualEntry && (
                 <Text style={[styles.helperText, { color: '#6b7280' }]}>
-                  � Cargando ciudades desde el servidor...
+                  {t('profile.personal_info.city_picker.loading_from_server')}
                 </Text>
               )}
             {hasApiData && (
               <Text style={[styles.helperText, { color: '#10B981' }]}>
-                🌐 {cities.length} ciudades disponibles desde el servidor
+                {t('profile.personal_info.city_picker.api_data_available', {
+                  count: cities.length,
+                })}
               </Text>
             )}
             {!hasApiData && cities.length > 0 && (
               <Text style={[styles.helperText, { color: '#F59E0B' }]}>
-                📋 {cities.length} ciudades principales (lista local)
+                {t('profile.personal_info.city_picker.local_data', { count: cities.length })}
               </Text>
             )}
           </Field>
 
           {/* Dirección */}
-          <Field label="Dirección de residencia">
+          <Field label={t('profile.personal_info.address')}>
             <TextInput
               value={form.address}
               onChangeText={(t) => update('address', t)}
-              placeholder="Calle, número, etc."
+              placeholder={t('profile.personal_info.address_placeholder')}
               style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
               multiline
               placeholderTextColor="#666"
@@ -780,7 +805,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           </Field>
 
           {/* Teléfono */}
-          <Field label="Teléfono móvil">
+          <Field label={t('profile.personal_info.mobile_phone')}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <View
                 style={[
@@ -810,7 +835,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 style={[styles.input, { flex: 1 }]}
                 value={form.mobile_phone}
                 onChangeText={(t) => update('mobile_phone', t.replace(/[^0-9\s]/g, ''))}
-                placeholder="123 456 789"
+                placeholder={t('profile.personal_info.mobile_phone_placeholder')}
                 keyboardType="phone-pad"
                 placeholderTextColor="#666"
                 editable={!!form.country_code}
@@ -825,11 +850,13 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             <View style={styles.pickerSheet}>
               <View style={styles.sheetHeader}>
                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.cancel}>Cancelar</Text>
+                  <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>Fecha de Nacimiento</Text>
+                <Text style={styles.sheetTitle}>
+                  {t('profile.personal_info.date_picker.title')}
+                </Text>
                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.done}>Listo</Text>
+                  <Text style={styles.done}>{t('profile.personal_info.date_picker.done')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={{ backgroundColor: '#fff', paddingVertical: 20 }}>
@@ -872,11 +899,13 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             <View style={styles.pickerSheet}>
               <View style={styles.sheetHeader}>
                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.cancel}>Cancelar</Text>
+                  <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>Fecha de Nacimiento</Text>
+                <Text style={styles.sheetTitle}>
+                  {t('profile.personal_info.date_picker.title')}
+                </Text>
                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.done}>Listo</Text>
+                  <Text style={styles.done}>{t('profile.personal_info.date_picker.done')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={{ padding: 20, backgroundColor: '#fff' }}>
@@ -911,9 +940,11 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
             <View style={styles.pickerSheetLarge}>
               <View style={styles.sheetHeader}>
                 <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
-                  <Text style={styles.cancel}>Cancelar</Text>
+                  <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>Seleccionar Género</Text>
+                <Text style={styles.sheetTitle}>
+                  {t('profile.personal_info.gender_picker.title')}
+                </Text>
                 <View style={{ width: 60 }} />
               </View>
               <ScrollView style={{ paddingHorizontal: 20 }}>
@@ -930,7 +961,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     <Text
                       style={[styles.optionText, gender === g.value && styles.optionTextSelected]}
                     >
-                      {g.label}
+                      {t(g.label)}
                     </Text>
                     {gender === g.value && <Ionicons name="checkmark" size={18} color="#6366F1" />}
                   </TouchableOpacity>
@@ -951,9 +982,11 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     setCountrySearchQuery('');
                   }}
                 >
-                  <Text style={styles.cancel}>Cancelar</Text>
+                  <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>Seleccionar País</Text>
+                <Text style={styles.sheetTitle}>
+                  {t('profile.personal_info.country_picker.title')}
+                </Text>
                 <View style={{ width: 60 }} />
               </View>
 
@@ -970,7 +1003,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 <TextInput
                   value={countrySearchQuery}
                   onChangeText={setCountrySearchQuery}
-                  placeholder="Buscar país..."
+                  placeholder={t('profile.personal_info.country_picker.search_placeholder')}
                   style={[styles.input, { marginBottom: 0, fontSize: 14 }]}
                   placeholderTextColor="#666"
                   autoFocus={false}
@@ -980,7 +1013,9 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               <ScrollView style={{ paddingHorizontal: 20 }}>
                 {filteredCountries.length === 0 ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                    <Text style={{ color: '#6b7280' }}>No se encontraron países</Text>
+                    <Text style={{ color: '#6b7280' }}>
+                      {t('profile.personal_info.country_picker.no_results')}
+                    </Text>
                   </View>
                 ) : (
                   filteredCountries.map((c) => (
@@ -1041,9 +1076,11 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     setCitySearchQuery('');
                   }}
                 >
-                  <Text style={styles.cancel}>Cancelar</Text>
+                  <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>Seleccionar Ciudad</Text>
+                <Text style={styles.sheetTitle}>
+                  {t('profile.personal_info.city_picker.title')}
+                </Text>
                 <View style={{ width: 60 }} />
               </View>
 
@@ -1064,14 +1101,16 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       setCitySearchQuery(text);
                       searchCities(text);
                     }}
-                    placeholder="Buscar ciudad..."
+                    placeholder={t('profile.personal_info.city_picker.search_placeholder')}
                     style={[styles.input, { marginBottom: 0, fontSize: 14 }]}
                     placeholderTextColor="#666"
                     autoFocus={false}
                   />
                   {citySearchQuery.length > 0 && (
                     <Text style={[styles.helperText, { marginTop: 4, color: '#6b7280' }]}>
-                      🔍 Mostrando resultados para "{citySearchQuery}"
+                      {t('profile.personal_info.city_picker.showing_results', {
+                        query: citySearchQuery,
+                      })}
                     </Text>
                   )}
                 </View>
@@ -1081,7 +1120,9 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 {citiesLoading ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#6366F1" />
-                    <Text style={{ color: '#6b7280', marginTop: 10 }}>Cargando ciudades...</Text>
+                    <Text style={{ color: '#6b7280', marginTop: 10 }}>
+                      {t('profile.personal_info.loading_cities')}
+                    </Text>
                   </View>
                 ) : cities.length === 0 ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
@@ -1090,8 +1131,10 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       style={{ color: '#6b7280', textAlign: 'center', marginTop: 12, fontSize: 16 }}
                     >
                       {citySearchQuery.length > 0
-                        ? `No se encontraron ciudades que coincidan con "${citySearchQuery}"`
-                        : 'No se encontraron ciudades para este país'}
+                        ? t('profile.personal_info.city_picker.no_results_query', {
+                            query: citySearchQuery,
+                          })
+                        : t('profile.personal_info.city_picker.no_cities_found')}
                     </Text>
                     {citySearchQuery.length > 0 && (
                       <TouchableOpacity
@@ -1108,14 +1151,14 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                         }}
                       >
                         <Text style={{ color: '#6366F1', fontSize: 14 }}>
-                          Mostrar todas las ciudades
+                          {t('profile.personal_info.city_picker.show_all')}
                         </Text>
                       </TouchableOpacity>
                     )}
                     <Text
                       style={{ color: '#9CA3AF', textAlign: 'center', marginTop: 8, fontSize: 12 }}
                     >
-                      Verifica tu conexión a internet o intenta más tarde.
+                      {t('profile.personal_info.city_picker.check_connection')}
                     </Text>
                   </View>
                 ) : (
@@ -1131,8 +1174,12 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     >
                       <Text style={{ fontSize: 12, color: '#6b7280', textAlign: 'center' }}>
                         {hasApiData
-                          ? `🌐 ${cities.length} ciudades desde el servidor`
-                          : `📋 ${cities.length} ciudades principales (datos locales)`}
+                          ? t('profile.personal_info.city_picker.api_data_available', {
+                              count: cities.length,
+                            })
+                          : t('profile.personal_info.city_picker.local_data', {
+                              count: cities.length,
+                            })}
                       </Text>
                       <Text
                         style={{
@@ -1143,8 +1190,13 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                         }}
                       >
                         {citySearchQuery
-                          ? `🔍 ${filteredAndPaginatedCities.length} resultados`
-                          : `Mostrando ${Math.min(displayedCitiesCount, cities.length)} de ${cities.length}`}
+                          ? t('profile.personal_info.city_picker.results_count', {
+                              count: filteredAndPaginatedCities.length,
+                            })
+                          : t('profile.personal_info.city_picker.showing_count', {
+                              showing: Math.min(displayedCitiesCount, cities.length),
+                              total: cities.length,
+                            })}
                       </Text>
                     </View>
 
@@ -1195,7 +1247,9 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                                 onPress={loadMoreCities}
                               >
                                 <Text style={{ fontSize: 12, color: '#6366F1', fontWeight: '600' }}>
-                                  Cargar más ({cities.length - displayedCitiesCount} restantes)
+                                  {t('profile.personal_info.city_picker.load_more', {
+                                    remaining: cities.length - displayedCitiesCount,
+                                  })}
                                 </Text>
                               </TouchableOpacity>
                             </View>

@@ -569,11 +569,17 @@
       "save": "Guardar",
       "cancel": "Cancelar",
       "save_changes": "Guardar Cambios",
+      "continue": "Continuar",
+      "progress": "Progreso: {{percentage}}%",
+      "complete_basic_info": "Completa la información básica",
+      "complete_basic_info_description": "Necesitamos tu nombre, fecha de nacimiento y ubicación para personalizar tu experiencia.",
+      "profile_complete": "¡Perfil completo!",
+      "profile_complete_description": "Tu información básica está completa. Puedes agregar más detalles si lo deseas.",
       "basic_info": "Información Básica",
-      "full_name": "Nombre Completo",
+      "full_name": "Nombre Completo *",
       "full_name_required": "Nombre Completo *",
-      "full_name_placeholder": "Ingresa tu nombre completo",
-      "birth_date": "Fecha de Nacimiento",
+      "full_name_placeholder": "Tu nombre completo",
+      "birth_date": "Fecha de Nacimiento *",
       "birth_date_placeholder": "Seleccionar fecha",
       "age": "Edad",
       "age_years": "Edad: {{years}} años",
@@ -582,17 +588,17 @@
       "location": "Ubicación",
       "country": "País",
       "country_placeholder": "🌍 Seleccionar país",
-      "select_country_first": "🌍 Selecciona un país primero",
-      "loading_cities": "⏳ Cargando ciudades...",
-      "city_state": "Ciudad/Estado",
-      "city_state_placeholder": "🏙️ Seleccionar ciudad o estado",
-      "address": "Dirección",
-      "address_placeholder": "Dirección completa",
+      "select_country_first": "🌍 Selecciona país primero",
+      "loading_cities": "⏳ Cargando...",
+      "city_state": "Ciudad / Estado",
+      "city_state_placeholder": "🏙️ Seleccionar ciudad",
+      "address": "Dirección de residencia",
+      "address_placeholder": "Calle, número, etc.",
       "contact": "Contacto",
-      "mobile_phone": "Teléfono Móvil",
-      "mobile_phone_placeholder": "123 456 7890",
+      "mobile_phone": "Teléfono móvil",
+      "mobile_phone_placeholder": "123 456 789",
       "not_specified": "No especificado",
-      "genders": {
+      "gender_options": {
         "masculine": "Masculino",
         "feminine": "Femenino",
         "prefer_not_to_say": "Prefiero no decirlo"
@@ -600,32 +606,45 @@
       "date_picker": {
         "cancel": "Cancelar",
         "done": "Listo",
-        "title": "Fecha de Nacimiento"
+        "title": "Fecha de Nacimiento",
+        "select_date": "Seleccionar fecha"
       },
       "gender_picker": {
         "title": "Seleccionar Género"
       },
       "country_picker": {
-        "title": "Seleccionar País"
+        "title": "Seleccionar País",
+        "search_placeholder": "Buscar país...",
+        "no_results": "No se encontraron países"
       },
       "city_picker": {
         "title": "Seleccionar Ciudad",
         "search_placeholder": "Buscar ciudad...",
         "results_count": "🔍 {{count}} resultados",
-        "showing_count": "🏙️ Mostrando {{showing}} de {{total}} ciudades",
-        "no_cities": "No se encontraron ciudades para este país",
-        "load_more": "Cargar más ciudades ({{remaining}} restantes)",
-        "inhabitants": "habitantes"
+        "showing_count": "Mostrando {{showing}} de {{total}}",
+        "showing_results": "🔍 Mostrando resultados para \"{{query}}\"",
+        "no_cities_found": "No se encontraron ciudades para este país",
+        "no_results_query": "No se encontraron ciudades que coincidan con \"{{query}}\"",
+        "show_all": "Mostrar todas las ciudades",
+        "check_connection": "Verifica tu conexión a internet o intenta más tarde.",
+        "load_more": "Cargar más ({{remaining}} restantes)",
+        "inhabitants": "habitantes",
+        "loading_from_server": "🔄 Cargando ciudades desde el servidor...",
+        "api_data_available": "🌐 {{count}} ciudades disponibles desde el servidor",
+        "local_data": "📋 {{count}} ciudades principales (datos locales)",
+        "manual_entry_placeholder": "Escribe el nombre de tu ciudad",
+        "manual_entry_helper": "📝 No tenemos ciudades predefinidas para este país. Escribe manualmente el nombre de tu ciudad."
       },
       "errors": {
         "title": "Error",
         "full_name_required": "El nombre completo es obligatorio",
+        "birth_date_required": "La fecha de nacimiento es obligatoria",
         "load_failed": "No se pudieron cargar los datos del perfil",
         "save_failed": "Error al guardar la información"
       },
       "success": {
         "title": "Éxito",
-        "saved": "Tu información personal ha sido actualizada"
+        "saved": "¡Tu información personal se guardó correctamente!"
       }
     },
     "edit_modal": {

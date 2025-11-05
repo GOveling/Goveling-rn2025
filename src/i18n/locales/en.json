@@ -569,11 +569,17 @@
       "save": "Save",
       "cancel": "Cancel",
       "save_changes": "Save Changes",
+      "continue": "Continue",
+      "progress": "Progress: {{percentage}}%",
+      "complete_basic_info": "Complete basic information",
+      "complete_basic_info_description": "We need your name, birth date and location to personalize your experience.",
+      "profile_complete": "Profile complete!",
+      "profile_complete_description": "Your basic information is complete. You can add more details if you wish.",
       "basic_info": "Basic Information",
-      "full_name": "Full Name",
+      "full_name": "Full Name *",
       "full_name_required": "Full Name *",
       "full_name_placeholder": "Enter your full name",
-      "birth_date": "Birth Date",
+      "birth_date": "Birth Date *",
       "birth_date_placeholder": "Select date",
       "age": "Age",
       "age_years": "Age: {{years}} years",
@@ -583,16 +589,16 @@
       "country": "Country",
       "country_placeholder": "🌍 Select country",
       "select_country_first": "🌍 Select a country first",
-      "loading_cities": "⏳ Loading cities...",
-      "city_state": "City/State",
-      "city_state_placeholder": "🏙️ Select city or state",
-      "address": "Address",
-      "address_placeholder": "Full address",
+      "loading_cities": "⏳ Loading...",
+      "city_state": "City / State",
+      "city_state_placeholder": "🏙️ Select city",
+      "address": "Residential Address",
+      "address_placeholder": "Street, number, etc.",
       "contact": "Contact",
       "mobile_phone": "Mobile Phone",
-      "mobile_phone_placeholder": "123 456 7890",
+      "mobile_phone_placeholder": "123 456 789",
       "not_specified": "Not specified",
-      "genders": {
+      "gender_options": {
         "masculine": "Male",
         "feminine": "Female",
         "prefer_not_to_say": "Prefer not to say"
@@ -600,32 +606,45 @@
       "date_picker": {
         "cancel": "Cancel",
         "done": "Done",
-        "title": "Birth Date"
+        "title": "Birth Date",
+        "select_date": "Select date"
       },
       "gender_picker": {
         "title": "Select Gender"
       },
       "country_picker": {
-        "title": "Select Country"
+        "title": "Select Country",
+        "search_placeholder": "Search country...",
+        "no_results": "No countries found"
       },
       "city_picker": {
         "title": "Select City",
         "search_placeholder": "Search city...",
         "results_count": "🔍 {{count}} results",
-        "showing_count": "🏙️ Showing {{showing}} of {{total}} cities",
-        "no_cities": "No cities found for this country",
-        "load_more": "Load more cities ({{remaining}} remaining)",
-        "inhabitants": "inhabitants"
+        "showing_count": "Showing {{showing}} of {{total}}",
+        "showing_results": "🔍 Showing results for \"{{query}}\"",
+        "no_cities_found": "No cities found for this country",
+        "no_results_query": "No cities found matching \"{{query}}\"",
+        "show_all": "Show all cities",
+        "check_connection": "Check your internet connection or try again later.",
+        "load_more": "Load more ({{remaining}} remaining)",
+        "inhabitants": "inhabitants",
+        "loading_from_server": "🔄 Loading cities from server...",
+        "api_data_available": "🌐 {{count}} cities available from server",
+        "local_data": "📋 {{count}} main cities (local data)",
+        "manual_entry_placeholder": "Enter the name of your city",
+        "manual_entry_helper": "📝 We don't have predefined cities for this country. Manually enter the name of your city."
       },
       "errors": {
         "title": "Error",
         "full_name_required": "Full name is required",
+        "birth_date_required": "Birth date is required",
         "load_failed": "Could not load profile data",
         "save_failed": "Error saving information"
       },
       "success": {
         "title": "Success",
-        "saved": "Your personal information has been updated"
+        "saved": "Your personal information has been updated successfully!"
       }
     },
     "edit_modal": {
