@@ -26,6 +26,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS } from '~/constants/colors';
@@ -64,6 +65,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
   tripTitle,
   onUnreadCountChange,
 }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -108,14 +110,14 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Ahora';
-    if (diffMins < 60) return `hace ${diffMins}m`;
+    if (diffMins < 1) return t('chat.time.now');
+    if (diffMins < 60) return t('chat.time.minutes_ago', { count: diffMins });
 
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `hace ${diffHours}h`;
+    if (diffHours < 24) return t('chat.time.hours_ago', { count: diffHours });
 
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `hace ${diffDays}d`;
+    if (diffDays < 7) return t('chat.time.days_ago', { count: diffDays });
 
     return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
   };
@@ -141,7 +143,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
         data.forEach((msg: Message) => {
           if (msg.user_id && !profilesCache.current.has(msg.user_id)) {
             profilesCache.current.set(msg.user_id, {
-              full_name: msg.user_full_name || 'Usuario',
+              full_name: msg.user_full_name || t('chat.user_fallback'),
               email: msg.user_email || '',
               avatar_url: msg.user_avatar_url || null,
             });
@@ -161,7 +163,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
       }
     } catch (error: any) {
       console.error('Error loading messages:', error);
-      Alert.alert('Error', 'No se pudieron cargar los mensajes');
+      Alert.alert(t('chat.errors.title'), t('chat.errors.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -254,7 +256,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
 
       const user = await getCurrentUser();
       if (!user) {
-        Alert.alert('Error', 'No se pudo verificar la autenticación');
+        Alert.alert(t('chat.errors.title'), t('chat.errors.auth_failed'));
         return;
       }
 
@@ -282,7 +284,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
       });
     } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', error.message || 'No se pudo enviar el mensaje');
+      Alert.alert(t('chat.errors.title'), error.message || t('chat.errors.send_failed'));
     } finally {
       setSending(false);
     }
@@ -328,7 +330,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
 
             if (foundProfile) {
               userProfile = {
-                full_name: foundProfile.full_name || 'Usuario',
+                full_name: foundProfile.full_name || t('chat.user_fallback'),
                 email: foundProfile.email || '',
                 avatar_url: foundProfile.avatar_url || null,
               };
@@ -345,7 +347,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
             user_id: rawMessage.user_id,
             message: rawMessage.message,
             created_at: rawMessage.created_at,
-            user_full_name: userProfile?.full_name || 'Usuario',
+            user_full_name: userProfile?.full_name || t('chat.user_fallback'),
             user_email: userProfile?.email || '',
             user_avatar_url: userProfile?.avatar_url || null,
           };
@@ -443,7 +445,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
     }
 
     // Validación defensiva de datos del usuario
-    const userName = item.user_full_name || item.user_email || 'Usuario';
+    const userName = item.user_full_name || item.user_email || t('chat.user_fallback');
     const userEmail = item.user_email || '';
 
     return (
@@ -504,7 +506,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
             </TouchableOpacity>
 
             <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>Chat Grupal</Text>
+              <Text style={styles.headerTitle}>{t('chat.title')}</Text>
               <Text style={styles.headerSubtitle}>{tripTitle}</Text>
             </View>
           </View>
@@ -514,13 +516,13 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.primary.main} />
-            <Text style={styles.loadingText}>Cargando mensajes...</Text>
+            <Text style={styles.loadingText}>{t('chat.loading')}</Text>
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={64} color={COLORS.text.lightGray} />
-            <Text style={styles.emptyTitle}>Aún no hay mensajes</Text>
-            <Text style={styles.emptyText}>Sé el primero en iniciar la conversación</Text>
+            <Text style={styles.emptyTitle}>{t('chat.empty_title')}</Text>
+            <Text style={styles.emptyText}>{t('chat.empty_text')}</Text>
           </View>
         ) : (
           <FlatList
@@ -539,7 +541,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
               loadingMore ? (
                 <View style={styles.loadingMoreContainer}>
                   <ActivityIndicator size="small" color={COLORS.primary.main} />
-                  <Text style={styles.loadingMoreText}>Cargando más mensajes...</Text>
+                  <Text style={styles.loadingMoreText}>{t('chat.loading_more')}</Text>
                 </View>
               ) : null
             }
@@ -555,7 +557,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
             ref={inputRef}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Escribe un mensaje..."
+            placeholder={t('chat.input_placeholder')}
             placeholderTextColor={COLORS.text.lightGray}
             multiline={true}
             maxLength={1000}

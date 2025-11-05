@@ -370,7 +370,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "सोमवार",
+        "tuesday": "मंगलवार",
+        "wednesday": "बुधवार",
+        "thursday": "गुरुवार",
+        "friday": "शुक्रवार",
+        "saturday": "शनिवार",
+        "sunday": "रविवार"
+      }
     },
     "detail": {
       "loading": "यात्रा लोड हो रही है...",
@@ -635,6 +644,27 @@
         "description": "टेबल बुक करें"
       }
     }
+  },
+  "chat": {
+    "title": "ग्रुप चैट",
+    "loading": "संदेश लोड हो रहे हैं...",
+    "empty_title": "अभी तक कोई संदेश नहीं",
+    "empty_text": "बातचीत शुरू करने वाले पहले व्यक्ति बनें",
+    "loading_more": "और संदेश लोड हो रहे हैं...",
+    "input_placeholder": "एक संदेश लिखें...",
+    "time": {
+      "now": "अभी",
+      "minutes_ago": "{{count}} मिनट पहले",
+      "hours_ago": "{{count}} घंटे पहले",
+      "days_ago": "{{count}} दिन पहले"
+    },
+    "errors": {
+      "title": "त्रुटि",
+      "auth_failed": "प्रमाणीकरण सत्यापित नहीं किया जा सका",
+      "load_failed": "संदेश लोड नहीं किए जा सके",
+      "send_failed": "संदेश भेजा नहीं जा सका"
+    },
+    "user_fallback": "उपयोगकर्ता"
   },
   "tabs": {
     "home": "होम",

@@ -368,7 +368,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "lunes",
+        "tuesday": "martes",
+        "wednesday": "miércoles",
+        "thursday": "jueves",
+        "friday": "viernes",
+        "saturday": "sábado",
+        "sunday": "domingo"
+      }
     },
     "detail": {
       "loading": "Cargando viaje...",
@@ -759,6 +768,27 @@
         "description": "Reservar mesas"
       }
     }
+  },
+  "chat": {
+    "title": "Chat Grupal",
+    "loading": "Cargando mensajes...",
+    "empty_title": "Aún no hay mensajes",
+    "empty_text": "Sé el primero en iniciar la conversación",
+    "loading_more": "Cargando más mensajes...",
+    "input_placeholder": "Escribe un mensaje...",
+    "time": {
+      "now": "Ahora",
+      "minutes_ago": "hace {{count}}m",
+      "hours_ago": "hace {{count}}h",
+      "days_ago": "hace {{count}}d"
+    },
+    "errors": {
+      "title": "Error",
+      "auth_failed": "No se pudo verificar la autenticación",
+      "load_failed": "No se pudieron cargar los mensajes",
+      "send_failed": "No se pudo enviar el mensaje"
+    },
+    "user_fallback": "Usuario"
   },
   "tabs": {
     "home": "Inicio",

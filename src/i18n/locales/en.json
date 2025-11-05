@@ -368,7 +368,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
     },
     "detail": {
       "loading": "Loading trip...",
@@ -760,6 +769,27 @@
         "description": "Reserve tables"
       }
     }
+  },
+  "chat": {
+    "title": "Group Chat",
+    "loading": "Loading messages...",
+    "empty_title": "No messages yet",
+    "empty_text": "Be the first to start the conversation",
+    "loading_more": "Loading more messages...",
+    "input_placeholder": "Write a message...",
+    "time": {
+      "now": "Now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    },
+    "errors": {
+      "title": "Error",
+      "auth_failed": "Could not verify authentication",
+      "load_failed": "Could not load messages",
+      "send_failed": "Could not send message"
+    },
+    "user_fallback": "User"
   },
   "tabs": {
     "home": "Home",

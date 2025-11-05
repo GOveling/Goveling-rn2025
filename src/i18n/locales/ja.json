@@ -357,7 +357,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "月曜日",
+        "tuesday": "火曜日",
+        "wednesday": "水曜日",
+        "thursday": "木曜日",
+        "friday": "金曜日",
+        "saturday": "土曜日",
+        "sunday": "日曜日"
+      }
     },
     "detail": {
       "loading": "トリップを読み込み中...",
@@ -689,6 +698,27 @@
         "description": "テーブル予約"
       }
     }
+  },
+  "chat": {
+    "title": "グループチャット",
+    "loading": "メッセージを読み込み中...",
+    "empty_title": "まだメッセージがありません",
+    "empty_text": "最初に会話を始めましょう",
+    "loading_more": "さらにメッセージを読み込み中...",
+    "input_placeholder": "メッセージを入力...",
+    "time": {
+      "now": "今",
+      "minutes_ago": "{{count}}分前",
+      "hours_ago": "{{count}}時間前",
+      "days_ago": "{{count}}日前"
+    },
+    "errors": {
+      "title": "エラー",
+      "auth_failed": "認証を確認できませんでした",
+      "load_failed": "メッセージを読み込めませんでした",
+      "send_failed": "メッセージを送信できませんでした"
+    },
+    "user_fallback": "ユーザー"
   },
   "tabs": {
     "home": "ホーム",

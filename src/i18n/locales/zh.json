@@ -357,7 +357,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "星期一",
+        "tuesday": "星期二",
+        "wednesday": "星期三",
+        "thursday": "星期四",
+        "friday": "星期五",
+        "saturday": "星期六",
+        "sunday": "星期日"
+      }
     },
     "detail": {
       "loading": "正在加载旅行...",
@@ -689,6 +698,27 @@
         "description": "预订座位"
       }
     }
+  },
+  "chat": {
+    "title": "群聊",
+    "loading": "加载消息中...",
+    "empty_title": "还没有消息",
+    "empty_text": "成为第一个开始对话的人",
+    "loading_more": "加载更多消息...",
+    "input_placeholder": "写消息...",
+    "time": {
+      "now": "现在",
+      "minutes_ago": "{{count}}分钟前",
+      "hours_ago": "{{count}}小时前",
+      "days_ago": "{{count}}天前"
+    },
+    "errors": {
+      "title": "错误",
+      "auth_failed": "无法验证身份",
+      "load_failed": "无法加载消息",
+      "send_failed": "无法发送消息"
+    },
+    "user_fallback": "用户"
   },
   "tabs": {
     "home": "主页",

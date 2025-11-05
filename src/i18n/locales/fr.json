@@ -357,7 +357,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "lundi",
+        "tuesday": "mardi",
+        "wednesday": "mercredi",
+        "thursday": "jeudi",
+        "friday": "vendredi",
+        "saturday": "samedi",
+        "sunday": "dimanche"
+      }
     },
     "detail": {
       "loading": "Chargement du voyage...",
@@ -689,6 +698,27 @@
         "description": "Réserver des tables"
       }
     }
+  },
+  "chat": {
+    "title": "Chat de Groupe",
+    "loading": "Chargement des messages...",
+    "empty_title": "Pas encore de messages",
+    "empty_text": "Soyez le premier à démarrer la conversation",
+    "loading_more": "Chargement de plus de messages...",
+    "input_placeholder": "Écrivez un message...",
+    "time": {
+      "now": "Maintenant",
+      "minutes_ago": "il y a {{count}}m",
+      "hours_ago": "il y a {{count}}h",
+      "days_ago": "il y a {{count}}j"
+    },
+    "errors": {
+      "title": "Erreur",
+      "auth_failed": "Impossible de vérifier l'authentification",
+      "load_failed": "Impossible de charger les messages",
+      "send_failed": "Impossible d'envoyer le message"
+    },
+    "user_fallback": "Utilisateur"
   },
   "tabs": {
     "home": "Accueil",

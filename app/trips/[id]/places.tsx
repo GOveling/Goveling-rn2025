@@ -581,7 +581,13 @@ export default function TripPlacesScreen() {
                               color: '#10B981',
                             }}
                           >
-                            {['Gratis', '$', '$$', '$$$', '$$$$'][place.price_level] || ''}
+                            {[
+                              t('trips.places.price_free'),
+                              t('trips.places.price_1'),
+                              t('trips.places.price_2'),
+                              t('trips.places.price_3'),
+                              t('trips.places.price_4'),
+                            ][place.price_level] || ''}
                           </Text>
                         </View>
                       )}
@@ -651,7 +657,7 @@ export default function TripPlacesScreen() {
                           color: '#999999',
                         }}
                       >
-                        Guardado el {formatDate(place.added_at)}
+                        {t('trips.places.saved_on')} {formatDate(place.added_at)}
                       </Text>
 
                       <View
@@ -707,7 +713,7 @@ export default function TripPlacesScreen() {
                       color: '#007AFF',
                     }}
                   >
-                    Ver Detalles
+                    {t('trips.places.view_details')}
                   </Text>
                 </TouchableOpacity>
               </View>

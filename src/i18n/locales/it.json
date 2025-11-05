@@ -357,7 +357,16 @@
       "price_1": "$",
       "price_2": "$$",
       "price_3": "$$$",
-      "price_4": "$$$$"
+      "price_4": "$$$$",
+      "weekdays": {
+        "monday": "lunedì",
+        "tuesday": "martedì",
+        "wednesday": "mercoledì",
+        "thursday": "giovedì",
+        "friday": "venerdì",
+        "saturday": "sabato",
+        "sunday": "domenica"
+      }
     },
     "detail": {
       "loading": "Caricamento viaggio...",
@@ -689,6 +698,27 @@
         "description": "Prenota tavoli"
       }
     }
+  },
+  "chat": {
+    "title": "Chat di Gruppo",
+    "loading": "Caricamento messaggi...",
+    "empty_title": "Non ci sono ancora messaggi",
+    "empty_text": "Sii il primo ad avviare la conversazione",
+    "loading_more": "Caricamento altri messaggi...",
+    "input_placeholder": "Scrivi un messaggio...",
+    "time": {
+      "now": "Adesso",
+      "minutes_ago": "{{count}}m fa",
+      "hours_ago": "{{count}}h fa",
+      "days_ago": "{{count}}g fa"
+    },
+    "errors": {
+      "title": "Errore",
+      "auth_failed": "Impossibile verificare l'autenticazione",
+      "load_failed": "Impossibile caricare i messaggi",
+      "send_failed": "Impossibile inviare il messaggio"
+    },
+    "user_fallback": "Utente"
   },
   "tabs": {
     "home": "Home",
