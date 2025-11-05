@@ -22,6 +22,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 
 import ConditionalMapView from '~/components/ConditionalMapView';
 import HotelBookingModal from '~/components/HotelBookingModal';
@@ -51,49 +52,62 @@ interface Accommodation {
   };
 }
 
-const accommodationTypes = [
-  { type: 'hotel', label: 'Hoteles', icon: '🏨', color: '#FF6B6B' },
-  { type: 'airbnb', label: 'Airbnb/Casa Particular', icon: '🏠', color: '#4ECDC4' },
-  { type: 'resort', label: 'Resorts', icon: '🏖️', color: '#45B7D1' },
-  { type: 'hostel', label: 'Hostales', icon: '🏠', color: '#96CEB4' },
-  { type: 'cabin', label: 'Cabañas', icon: '🏘️', color: '#FFEAA7' },
-  { type: 'apartment', label: 'Apartamentos', icon: '🏢', color: '#DDA0DD' },
-];
-
-const quickBookingOptions = [
-  {
-    title: 'Buscar Hoteles',
-    subtitle: 'Encuentra y compara hoteles',
-    icon: '🏨',
-    color: '#FF6B6B',
-    action: 'hotels',
-  },
-  {
-    title: 'Booking.com',
-    subtitle: 'Hoteles y apartamentos',
-    icon: '🔗',
-    color: '#0071C2',
-    action: 'booking',
-  },
-  {
-    title: 'Airbnb',
-    subtitle: 'Casas y experiencias únicas',
-    icon: '🏠',
-    color: '#FF5A5F',
-    action: 'airbnb',
-  },
-  {
-    title: 'Dirección Específica',
-    subtitle: 'Agregar ubicación personalizada',
-    icon: '📍',
-    color: '#8B5CF6',
-    action: 'custom',
-  },
-];
-
 export default function AccommodationExplorer() {
   const { id: tripId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
+
+  // Accommodation types with translations
+  const accommodationTypes = [
+    { type: 'hotel', label: t('trips.accommodation.types.hotel'), icon: '🏨', color: '#FF6B6B' },
+    {
+      type: 'airbnb',
+      label: t('trips.accommodation.types.airbnb'),
+      icon: '🏠',
+      color: '#4ECDC4',
+    },
+    { type: 'resort', label: t('trips.accommodation.types.resort'), icon: '🏖️', color: '#45B7D1' },
+    { type: 'hostel', label: t('trips.accommodation.types.hostel'), icon: '🏠', color: '#96CEB4' },
+    { type: 'cabin', label: t('trips.accommodation.types.cabin'), icon: '🏘️', color: '#FFEAA7' },
+    {
+      type: 'apartment',
+      label: t('trips.accommodation.types.apartment'),
+      icon: '🏢',
+      color: '#DDA0DD',
+    },
+  ];
+
+  // Quick booking options with translations
+  const quickBookingOptions = [
+    {
+      title: t('trips.accommodation.quick_actions.search_hotels'),
+      subtitle: t('trips.accommodation.quick_actions.search_hotels_sub'),
+      icon: '🏨',
+      color: '#FF6B6B',
+      action: 'hotels',
+    },
+    {
+      title: t('trips.accommodation.quick_actions.booking_com'),
+      subtitle: t('trips.accommodation.quick_actions.booking_com_sub'),
+      icon: '🔗',
+      color: '#0071C2',
+      action: 'booking',
+    },
+    {
+      title: t('trips.accommodation.quick_actions.airbnb'),
+      subtitle: t('trips.accommodation.quick_actions.airbnb_sub'),
+      icon: '🏠',
+      color: '#FF5A5F',
+      action: 'airbnb',
+    },
+    {
+      title: t('trips.accommodation.quick_actions.custom_address'),
+      subtitle: t('trips.accommodation.quick_actions.custom_address_sub'),
+      icon: '📍',
+      color: '#8B5CF6',
+      action: 'custom',
+    },
+  ];
 
   // State
   const [activeTab, setActiveTab] = useState<'explore' | 'saved'>('explore');
@@ -195,7 +209,7 @@ export default function AccommodationExplorer() {
 
   const searchAccommodations = async () => {
     if (!searchQuery.trim()) {
-      Alert.alert('Error', 'Por favor ingresa una ciudad o dirección');
+      Alert.alert(t('common.error'), t('trips.accommodation.search_error'));
       return;
     }
 
@@ -250,7 +264,7 @@ export default function AccommodationExplorer() {
       setAccommodations(mockResults);
     } catch (error) {
       console.error('Error searching accommodations:', error);
-      Alert.alert('Error', 'No se pudieron cargar los alojamientos');
+      Alert.alert(t('common.error'), t('trips.accommodation.load_error'));
     } finally {
       setLoading(false);
     }
@@ -278,17 +292,17 @@ export default function AccommodationExplorer() {
 
       if (error) throw error;
 
-      Alert.alert('Éxito', 'Alojamiento guardado en tu viaje');
+      Alert.alert(t('common.ok'), t('trips.accommodation.save_success'));
       loadSavedAccommodations();
     } catch (error) {
       console.error('Error saving accommodation:', error);
-      Alert.alert('Error', 'No se pudo guardar el alojamiento');
+      Alert.alert(t('common.error'), t('trips.accommodation.save_error'));
     }
   };
 
   const addCustomAccommodation = async () => {
     if (!customAddress.name || !customAddress.address) {
-      Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
+      Alert.alert(t('common.error'), t('trips.accommodation.custom_modal.required_fields_error'));
       return;
     }
 
@@ -299,7 +313,7 @@ export default function AccommodationExplorer() {
       );
 
       if (geocodeResult.length === 0) {
-        Alert.alert('Error', 'No se pudo encontrar la dirección especificada');
+        Alert.alert(t('common.error'), t('trips.accommodation.custom_modal.geocode_error'));
         return;
       }
 
@@ -319,7 +333,7 @@ export default function AccommodationExplorer() {
       setCustomAddress({ name: '', address: '', city: '', country: '', type: 'airbnb' });
     } catch (error) {
       console.error('Error adding custom accommodation:', error);
-      Alert.alert('Error', 'No se pudo agregar el alojamiento personalizado');
+      Alert.alert(t('common.error'), t('trips.accommodation.custom_modal.add_error'));
     }
   };
 
@@ -331,13 +345,13 @@ export default function AccommodationExplorer() {
     } else if (contact_info?.phone) {
       Linking.openURL(`tel:${contact_info.phone}`);
     } else {
-      Alert.alert('Contacto', 'No hay información de contacto disponible');
+      Alert.alert(t('common.ok'), t('trips.accommodation.contact_unavailable'));
     }
   };
 
   const renderQuickActions = () => (
     <View style={styles.quickActionsContainer}>
-      <Text style={styles.sectionTitle}>Opciones de Búsqueda</Text>
+      <Text style={styles.sectionTitle}>{t('trips.accommodation.search_options')}</Text>
       <View style={styles.quickActionsGrid}>
         {quickBookingOptions.map((option, index) => (
           <TouchableOpacity
@@ -382,7 +396,10 @@ export default function AccommodationExplorer() {
         <Text style={styles.accommodationAddress}>{accommodation.address}</Text>
 
         {accommodation.price_per_night && (
-          <Text style={styles.price}>${accommodation.price_per_night}/noche</Text>
+          <Text style={styles.price}>
+            ${accommodation.price_per_night}
+            {t('trips.accommodation.per_night')}
+          </Text>
         )}
 
         {accommodation.amenities && accommodation.amenities.length > 0 && (
@@ -393,7 +410,9 @@ export default function AccommodationExplorer() {
               </View>
             ))}
             {accommodation.amenities.length > 3 && (
-              <Text style={styles.moreAmenities}>+{accommodation.amenities.length - 3} más</Text>
+              <Text style={styles.moreAmenities}>
+                +{accommodation.amenities.length - 3} {t('trips.accommodation.more_amenities')}
+              </Text>
             )}
           </View>
         )}
@@ -405,7 +424,7 @@ export default function AccommodationExplorer() {
               onPress={() => saveAccommodation(accommodation)}
             >
               <Ionicons name="heart-outline" size={20} color="#8B5CF6" />
-              <Text style={styles.saveButtonText}>Guardar</Text>
+              <Text style={styles.saveButtonText}>{t('trips.accommodation.save_button')}</Text>
             </TouchableOpacity>
           )}
 
@@ -414,7 +433,7 @@ export default function AccommodationExplorer() {
             onPress={() => openExternalBooking(accommodation)}
           >
             <Ionicons name="call-outline" size={20} color="white" />
-            <Text style={styles.contactButtonText}>Contactar</Text>
+            <Text style={styles.contactButtonText}>{t('trips.accommodation.contact_button')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -426,11 +445,11 @@ export default function AccommodationExplorer() {
       <View style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <TouchableOpacity onPress={() => setShowCustomAddressModal(false)}>
-            <Text style={styles.modalCancel}>Cancelar</Text>
+            <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Agregar Dirección Específica</Text>
+          <Text style={styles.modalTitle}>{t('trips.accommodation.custom_modal.title')}</Text>
           <TouchableOpacity onPress={addCustomAccommodation}>
-            <Text style={styles.modalSave}>Guardar</Text>
+            <Text style={styles.modalSave}>{t('common.save')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -440,18 +459,20 @@ export default function AccommodationExplorer() {
         >
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Información Básica</Text>
+              <Text style={styles.sectionTitle}>
+                {t('trips.accommodation.custom_modal.basic_info')}
+              </Text>
 
               <TextInput
                 style={styles.input}
-                placeholder="Nombre del alojamiento *"
+                placeholder={t('trips.accommodation.custom_modal.name_placeholder')}
                 value={customAddress.name}
                 onChangeText={(text) => setCustomAddress({ ...customAddress, name: text })}
               />
 
               <TextInput
                 style={styles.input}
-                placeholder="Dirección completa *"
+                placeholder={t('trips.accommodation.custom_modal.address_placeholder')}
                 value={customAddress.address}
                 onChangeText={(text) => setCustomAddress({ ...customAddress, address: text })}
                 multiline
@@ -459,21 +480,23 @@ export default function AccommodationExplorer() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Ciudad *"
+                placeholder={t('trips.accommodation.custom_modal.city_placeholder')}
                 value={customAddress.city}
                 onChangeText={(text) => setCustomAddress({ ...customAddress, city: text })}
               />
 
               <TextInput
                 style={styles.input}
-                placeholder="País *"
+                placeholder={t('trips.accommodation.custom_modal.country_placeholder')}
                 value={customAddress.country}
                 onChangeText={(text) => setCustomAddress({ ...customAddress, country: text })}
               />
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Tipo de Alojamiento</Text>
+              <Text style={styles.sectionTitle}>
+                {t('trips.accommodation.custom_modal.type_title')}
+              </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.typeSelector}>
                   {accommodationTypes.map((type) => (
@@ -520,7 +543,7 @@ export default function AccommodationExplorer() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Explorar Estadías</Text>
+          <Text style={styles.headerTitle}>{t('trips.accommodation.title')}</Text>
           <TouchableOpacity
             onPress={() => setShowFilters(!showFilters)}
             style={styles.filterButton}
@@ -536,7 +559,7 @@ export default function AccommodationExplorer() {
             onPress={() => setActiveTab('explore')}
           >
             <Text style={[styles.tabText, activeTab === 'explore' && styles.activeTabText]}>
-              Explorar
+              {t('trips.accommodation.explore_tab')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -544,7 +567,7 @@ export default function AccommodationExplorer() {
             onPress={() => setActiveTab('saved')}
           >
             <Text style={[styles.tabText, activeTab === 'saved' && styles.activeTabText]}>
-              Guardados ({savedAccommodations.length})
+              {t('trips.accommodation.saved_tab')} ({savedAccommodations.length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -559,12 +582,12 @@ export default function AccommodationExplorer() {
 
             {/* Search Section for Manual Search */}
             <View style={styles.searchContainer}>
-              <Text style={styles.sectionTitle}>Búsqueda Manual</Text>
+              <Text style={styles.sectionTitle}>{t('trips.accommodation.manual_search')}</Text>
               <View style={styles.searchBar}>
                 <Ionicons name="search-outline" size={20} color="#666" />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Buscar por ciudad o destino..."
+                  placeholder={t('trips.accommodation.search_placeholder')}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   onSubmitEditing={searchAccommodations}
@@ -573,7 +596,9 @@ export default function AccommodationExplorer() {
                   {loading ? (
                     <ActivityIndicator size="small" color="#8B5CF6" />
                   ) : (
-                    <Text style={styles.searchButton}>Buscar</Text>
+                    <Text style={styles.searchButton}>
+                      {t('trips.accommodation.search_button')}
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -593,7 +618,7 @@ export default function AccommodationExplorer() {
                 {/* Results List */}
                 <View style={styles.resultsContainer}>
                   <Text style={styles.resultsTitle}>
-                    {accommodations.length} alojamientos encontrados
+                    {accommodations.length} {t('trips.accommodation.results_found')}
                   </Text>
                   {accommodations.map((accommodation) => renderAccommodationCard(accommodation))}
                 </View>
@@ -603,10 +628,11 @@ export default function AccommodationExplorer() {
             {accommodations.length === 0 && !loading && (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateIcon}>🏨</Text>
-                <Text style={styles.emptyStateTitle}>Encuentra Tu Alojamiento Ideal</Text>
+                <Text style={styles.emptyStateTitle}>
+                  {t('trips.accommodation.empty_explore_title')}
+                </Text>
                 <Text style={styles.emptyStateText}>
-                  Utiliza las opciones de arriba para buscar hoteles, Airbnb y más opciones de
-                  estadía para tu viaje.
+                  {t('trips.accommodation.empty_explore_message')}
                 </Text>
               </View>
             )}
@@ -616,7 +642,7 @@ export default function AccommodationExplorer() {
             {/* Saved Accommodations */}
             {savedAccommodations.length > 0 ? (
               <View style={styles.savedContainer}>
-                <Text style={styles.savedTitle}>Alojamientos Guardados</Text>
+                <Text style={styles.savedTitle}>{t('trips.accommodation.saved_title')}</Text>
                 {savedAccommodations.map((accommodation) =>
                   renderAccommodationCard(accommodation, true)
                 )}
@@ -624,9 +650,11 @@ export default function AccommodationExplorer() {
             ) : (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateIcon}>❤️</Text>
-                <Text style={styles.emptyStateTitle}>Sin Alojamientos Guardados</Text>
+                <Text style={styles.emptyStateTitle}>
+                  {t('trips.accommodation.empty_saved_title')}
+                </Text>
                 <Text style={styles.emptyStateText}>
-                  Los alojamientos que guardes aparecerán aquí.
+                  {t('trips.accommodation.empty_saved_message')}
                 </Text>
               </View>
             )}

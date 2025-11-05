@@ -541,7 +541,7 @@ export default function TripsTab() {
             onRefresh={onRefresh}
             colors={['#8B5CF6', '#EC4899']} // Android - theme colors
             tintColor="#8B5CF6" // iOS
-            title="Actualizando viajes..." // iOS
+            title={t('trips.refreshing')} // iOS
             titleColor="#666" // iOS
           />
         }
@@ -549,13 +549,13 @@ export default function TripsTab() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('trips.title')}</Text>
-          <Text style={styles.subtitle}>Planifica, organiza y vive aventuras inolvidables</Text>
+          <Text style={styles.subtitle}>{t('trips.subtitle')}</Text>
         </View>
 
         {/* Vista de Mapa Button */}
         <TouchableOpacity onPress={() => setShowMapModal(true)} style={styles.mapButton}>
           <Text style={styles.mapButtonIcon}>🗺️</Text>
-          <Text style={styles.mapButtonText}>Vista de Mapa</Text>
+          <Text style={styles.mapButtonText}>{t('trips.view_map')}</Text>
         </TouchableOpacity>
 
         {/* Nuevo Viaje Button */}
@@ -566,7 +566,7 @@ export default function TripsTab() {
             end={{ x: 1, y: 0 }}
             style={styles.newTripGradient}
           >
-            <Text style={styles.newTripText}>+ Nuevo Viaje</Text>
+            <Text style={styles.newTripText}>{t('trips.new_trip')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -574,17 +574,17 @@ export default function TripsTab() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statValueBlue}>{stats.totalTrips}</Text>
-            <Text style={styles.statLabel}>Total de Viajes</Text>
+            <Text style={styles.statLabel}>{t('trips.total_trips')}</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statValueGreen}>{stats.upcomingTrips}</Text>
-            <Text style={styles.statLabel}>Próximos</Text>
+            <Text style={styles.statLabel}>{t('trips.upcoming')}</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statValueOrange}>{stats.groupTrips}</Text>
-            <Text style={styles.statLabel}>Viajes Grupales</Text>
+            <Text style={styles.statLabel}>{t('trips.group_trips')}</Text>
           </View>
         </View>
 
@@ -592,15 +592,13 @@ export default function TripsTab() {
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#8B5CF6" />
-            <Text style={styles.loadingText}>Cargando tus viajes...</Text>
+            <Text style={styles.loadingText}>{t('trips.loading')}</Text>
           </View>
         ) : trips.length === 0 ? (
           <View style={styles.centerContainer}>
             <Text style={styles.emptyEmoji}>🗺️</Text>
-            <Text style={styles.emptyTitle}>¡Aún no tienes viajes!</Text>
-            <Text style={styles.emptyMessage}>
-              Crea tu primer viaje y comienza a planificar tu aventura
-            </Text>
+            <Text style={styles.emptyTitle}>{t('trips.empty_title')}</Text>
+            <Text style={styles.emptyMessage}>{t('trips.empty_sub')}</Text>
             <TouchableOpacity
               onPress={() => setShowNewTripModal(true)}
               style={styles.emptyCreateButtonContainer}
@@ -611,7 +609,7 @@ export default function TripsTab() {
                 end={{ x: 1, y: 0 }}
                 style={styles.emptyCreateButtonGradient}
               >
-                <Text style={styles.emptyCreateButtonText}>+ Crear Mi Primer Viaje</Text>
+                <Text style={styles.emptyCreateButtonText}>{t('trips.create_first_trip')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -652,7 +650,7 @@ export default function TripsTab() {
           // Recargar la lista de trips y estadísticas
           loadTripStats();
           // Mostrar mensaje de éxito
-          Alert.alert('¡Éxito!', 'Tu viaje ha sido creado exitosamente');
+          Alert.alert(t('trips.success'), t('trips.trip_created'));
         }}
       />
 
