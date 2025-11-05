@@ -36,16 +36,30 @@ class BackgroundTravelManager {
   private errorCallback: ErrorCallback | null = null;
   private appState: AppStateStatus = 'active';
   private currentEnergyMode: EnergyMode = 'normal';
+  private isTravelModeActive = false; // NEW: Track if Travel Mode is explicitly active
 
-  // Interval configuration
-  private readonly INTERVALS = {
+  // Interval configuration for TRAVEL MODE (active tracking)
+  private readonly TRAVEL_MODE_INTERVALS = {
     native: {
-      min: 3000, // 3 seconds
+      min: 3000, // 3 seconds - frequent for heatmaps
       max: 30000, // 30 seconds
     },
     web: {
       min: 5000, // 5 seconds
       max: 45000, // 45 seconds
+    },
+  };
+
+  // NEW: Interval configuration for PASSIVE DETECTION (country/city changes only)
+  // Much less aggressive - country/city changes are rare events
+  private readonly PASSIVE_INTERVALS = {
+    native: {
+      min: 300000, // 5 minutes - country/city changes are rare
+      max: 900000, // 15 minutes
+    },
+    web: {
+      min: 600000, // 10 minutes
+      max: 1800000, // 30 minutes
     },
   };
 
@@ -101,8 +115,11 @@ class BackgroundTravelManager {
       energyMode: this.currentEnergyMode,
     };
 
+    // Choose interval configuration based on Travel Mode status
+    const intervals = this.isTravelModeActive ? this.TRAVEL_MODE_INTERVALS : this.PASSIVE_INTERVALS;
+
     // Start with base interval
-    let interval = this.INTERVALS[config.platform].min;
+    let interval = intervals[config.platform].min;
 
     // Apply background multiplier
     if (config.appState === 'background') {
@@ -113,11 +130,12 @@ class BackgroundTravelManager {
     interval *= this.ENERGY_MODE_MULTIPLIER[config.energyMode];
 
     // Clamp to max interval
-    const maxInterval = this.INTERVALS[config.platform].max;
+    const maxInterval = intervals[config.platform].max;
     interval = Math.min(interval, maxInterval);
 
+    const mode = this.isTravelModeActive ? 'TRAVEL_MODE' : 'PASSIVE';
     console.log(
-      `⏱️  Calculated interval: ${interval}ms (${config.platform}, ${config.appState}, ${config.energyMode})`
+      `⏱️  Calculated interval: ${interval}ms (${mode}, ${config.platform}, ${config.appState}, ${config.energyMode})`
     );
 
     return interval;
@@ -155,6 +173,32 @@ class BackgroundTravelManager {
     if (this.isTracking) {
       this.adjustTrackingInterval();
     }
+  }
+
+  /**
+   * NEW: Set Travel Mode status
+   * When Travel Mode is active, use frequent intervals for detailed tracking (heatmaps)
+   * When inactive (passive), use much longer intervals (5-15 min) for country/city detection only
+   */
+  public setTravelMode(isActive: boolean): void {
+    if (this.isTravelModeActive === isActive) {
+      return;
+    }
+
+    console.log(`🚗 Travel Mode changed: ${this.isTravelModeActive} -> ${isActive}`);
+    this.isTravelModeActive = isActive;
+
+    // Adjust interval if tracking
+    if (this.isTracking) {
+      this.adjustTrackingInterval();
+    }
+  }
+
+  /**
+   * Get current Travel Mode status
+   */
+  public isTravelMode(): boolean {
+    return this.isTravelModeActive;
   }
 
   /**

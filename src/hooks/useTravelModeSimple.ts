@@ -368,6 +368,10 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
         }
       }
 
+      // NEW: Activate Travel Mode for frequent tracking (heatmaps)
+      backgroundTravelManager.setTravelMode(true);
+      console.log('✅ Travel Mode ACTIVATED - Frequent tracking enabled');
+
       // Start background tracking
       const started = await backgroundTravelManager.startTracking(
         handleLocationUpdate,
@@ -470,6 +474,10 @@ export function useTravelModeSimple(): [TravelModeState, TravelModeActions] {
   const stopTravelMode = useCallback(async (): Promise<void> => {
     try {
       console.log('🛑 Stopping Travel Mode...');
+
+      // NEW: Deactivate Travel Mode (switch to passive detection)
+      backgroundTravelManager.setTravelMode(false);
+      console.log('✅ Travel Mode DEACTIVATED - Passive detection mode');
 
       // Stop background tracking
       await backgroundTravelManager.stopTracking();
