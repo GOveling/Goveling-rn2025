@@ -88,7 +88,7 @@ export default function TabLayout() {
                 key={`explore-${tabKeys.explore}`}
               />
             ),
-            headerShown: true,
+            headerShown: false,
           }}
           listeners={{
             tabPress: () => incrementTabKey('explore'),
