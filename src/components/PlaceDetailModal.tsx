@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
 import LottieView from 'lottie-react-native';
+import { useTranslation } from 'react-i18next';
 
 import AddToTripModal from './AddToTripModal';
 import MapModal from './MapModal';
@@ -65,6 +66,7 @@ export default function PlaceDetailModal({
   isAlreadyInTrip = false,
   onRemoveFromTrip,
 }: PlaceDetailModalProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
@@ -145,8 +147,8 @@ export default function PlaceDetailModal({
     } else {
       console.log('No valid coordinates found');
       Alert.alert(
-        'Ubicación no disponible',
-        'No hay coordenadas para mostrar este lugar en el mapa'
+        t('explore.modal.location_unavailable_title'),
+        t('explore.modal.location_unavailable_message')
       );
     }
   };
@@ -187,7 +189,7 @@ export default function PlaceDetailModal({
         console.error('Error opening in-app browser:', error);
         // Fallback a navegador externo si hay error
         Alert.alert(
-          'Error',
+          t('explore.modal.error_title'),
           'No se pudo abrir el navegador integrado. ¿Abrir en navegador externo?',
           [
             { text: 'Cancelar', style: 'cancel' },
@@ -199,7 +201,10 @@ export default function PlaceDetailModal({
         );
       }
     } else {
-      Alert.alert('Sitio web no disponible', 'No hay sitio web para este lugar');
+      Alert.alert(
+        t('explore.modal.website_unavailable_title'),
+        t('explore.modal.website_unavailable_message')
+      );
     }
   };
 
@@ -209,8 +214,8 @@ export default function PlaceDetailModal({
 
     // Mostrar notificación de funcionalidad próximamente
     Alert.alert(
-      'Funcionalidad próxima',
-      'Las direcciones paso a paso llegarán pronto a Goveling. Por ahora puedes usar tu app de mapas favorita.',
+      t('explore.modal.directions_coming_soon_title'),
+      t('explore.modal.directions_coming_soon_message'),
       [{ text: 'Entendido', style: 'default' }]
     );
 
@@ -219,7 +224,10 @@ export default function PlaceDetailModal({
     if (place.coordinates) {
       router.push(`/trips/directions?dest=${place.coordinates.lat},${place.coordinates.lng}&name=${encodeURIComponent(place.name)}`);
     } else {
-      Alert.alert('Ubicación no disponible', 'No se puede obtener direcciones para este lugar');
+      Alert.alert(
+        t('explore.modal.directions_unavailable_title'),
+        t('explore.modal.directions_unavailable_message')
+      );
     }
     */
   };
@@ -302,7 +310,7 @@ export default function PlaceDetailModal({
             { color: place.openNow ? COLORS.status.successDark : COLORS.status.errorDark },
           ]}
         >
-          {place.openNow ? 'Abierto' : 'Cerrado'}
+          {place.openNow ? t('explore.modal.open') : t('explore.modal.closed')}
         </Text>
       </View>
     );
@@ -313,7 +321,7 @@ export default function PlaceDetailModal({
       return (
         <View style={styles.placeholderImage}>
           <Text style={styles.placeholderText}>📷</Text>
-          <Text style={styles.photoLabel}>Sin fotos</Text>
+          <Text style={styles.photoLabel}>{t('explore.modal.no_photos')}</Text>
         </View>
       );
     }
@@ -342,7 +350,7 @@ export default function PlaceDetailModal({
             />
             {index === 0 && (
               <View style={styles.photoLabel}>
-                <Text style={styles.photoLabelText}>Principal</Text>
+                <Text style={styles.photoLabelText}>{t('explore.modal.main_photo')}</Text>
               </View>
             )}
             {selectedPhotoIndex === index && (
@@ -453,12 +461,12 @@ export default function PlaceDetailModal({
                         }[place.priceLevel] ?? null)
                       : place.priceLevel;
 
-                  const priceSymbols = ['Gratis', '$', '$$', '$$$', '$$$$'];
+                  const priceSymbols = [t('explore.modal.price.free'), '$', '$$', '$$$', '$$$$'];
                   const priceLabel = priceLevelNum !== null ? priceSymbols[priceLevelNum] : '';
 
                   return priceLabel ? (
                     <View style={styles.priceLevelRow}>
-                      <Text style={styles.priceLevelLabel}>Precio: </Text>
+                      <Text style={styles.priceLevelLabel}>{t('explore.modal.price.label')}</Text>
                       <Text style={styles.priceLevelValue}>{priceLabel}</Text>
                     </View>
                   ) : null;
@@ -468,7 +476,7 @@ export default function PlaceDetailModal({
             {/* Fotos adicionales */}
             {place.photos && place.photos.length > 1 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Fotos</Text>
+                <Text style={styles.sectionTitle}>{t('explore.modal.sections.photos')}</Text>
                 {renderPhotos()}
               </View>
             )}
@@ -478,7 +486,7 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>ℹ️</Text>
-                  <Text style={styles.sectionTitle}>About</Text>
+                  <Text style={styles.sectionTitle}>{t('explore.modal.sections.about')}</Text>
                 </View>
                 <Text style={styles.aboutText}>{place.description}</Text>
               </View>
@@ -489,7 +497,7 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>🕐</Text>
-                  <Text style={styles.sectionTitle}>Horarios</Text>
+                  <Text style={styles.sectionTitle}>{t('explore.modal.sections.hours')}</Text>
                 </View>
                 <View style={styles.hoursContainer}>
                   {place.openingHours.map((hour, index) => {
@@ -497,7 +505,7 @@ export default function PlaceDetailModal({
                     return (
                       <View key={index} style={styles.hourRow}>
                         <Text style={styles.hourDay}>{day}</Text>
-                        <Text style={styles.hourTime}>{time || 'Cerrado'}</Text>
+                        <Text style={styles.hourTime}>{time || t('explore.modal.closed')}</Text>
                       </View>
                     );
                   })}
@@ -510,7 +518,7 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>🏷️</Text>
-                  <Text style={styles.sectionTitle}>Tipo de Lugar</Text>
+                  <Text style={styles.sectionTitle}>{t('explore.modal.sections.place_type')}</Text>
                 </View>
                 <View style={styles.typeTag}>
                   <Text style={styles.typeTagText}>{place.primaryTypeDisplayName}</Text>
@@ -545,31 +553,41 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>♿</Text>
-                  <Text style={styles.sectionTitle}>Accesibilidad</Text>
+                  <Text style={styles.sectionTitle}>
+                    {t('explore.modal.sections.accessibility')}
+                  </Text>
                 </View>
                 <View style={styles.accessibilityContainer}>
                   {place.accessibilityOptions.wheelchairAccessibleEntrance && (
                     <View style={styles.accessibilityItem}>
                       <Text style={styles.accessibilityIcon}>✓</Text>
-                      <Text style={styles.accessibilityText}>Entrada accesible</Text>
+                      <Text style={styles.accessibilityText}>
+                        {t('explore.modal.accessibility.entrance')}
+                      </Text>
                     </View>
                   )}
                   {place.accessibilityOptions.wheelchairAccessibleParking && (
                     <View style={styles.accessibilityItem}>
                       <Text style={styles.accessibilityIcon}>✓</Text>
-                      <Text style={styles.accessibilityText}>Estacionamiento accesible</Text>
+                      <Text style={styles.accessibilityText}>
+                        {t('explore.modal.accessibility.parking')}
+                      </Text>
                     </View>
                   )}
                   {place.accessibilityOptions.wheelchairAccessibleRestroom && (
                     <View style={styles.accessibilityItem}>
                       <Text style={styles.accessibilityIcon}>✓</Text>
-                      <Text style={styles.accessibilityText}>Baños accesibles</Text>
+                      <Text style={styles.accessibilityText}>
+                        {t('explore.modal.accessibility.restroom')}
+                      </Text>
                     </View>
                   )}
                   {place.accessibilityOptions.wheelchairAccessibleSeating && (
                     <View style={styles.accessibilityItem}>
                       <Text style={styles.accessibilityIcon}>✓</Text>
-                      <Text style={styles.accessibilityText}>Asientos accesibles</Text>
+                      <Text style={styles.accessibilityText}>
+                        {t('explore.modal.accessibility.seating')}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -581,9 +599,9 @@ export default function PlaceDetailModal({
             {/* Información adicional */}
             {(place.category || place.types) && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Categorías</Text>
+                <Text style={styles.sectionTitle}>{t('explore.modal.sections.categories')}</Text>
                 <View style={styles.tagsContainer}>
-                  {processPlaceCategories(place.types || [], place.category, 4).map(
+                  {processPlaceCategories(place.types || [], place.category, 4, t).map(
                     (category, index) => (
                       <View key={index} style={styles.tag}>
                         <Text style={styles.tagText}>{category}</Text>
@@ -596,7 +614,7 @@ export default function PlaceDetailModal({
 
             {/* Acciones rápidas */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Acciones</Text>
+              <Text style={styles.sectionTitle}>{t('explore.modal.sections.actions')}</Text>
               <View style={styles.actionsGrid}>
                 <TouchableOpacity style={styles.actionButton} onPress={handleDirections}>
                   {renderActionIcon(
@@ -606,7 +624,7 @@ export default function PlaceDetailModal({
                     directionsLottieError,
                     setDirectionsLottieError
                   )}
-                  <Text style={styles.actionText}>Cómo llegar</Text>
+                  <Text style={styles.actionText}>{t('explore.modal.actions.directions')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -625,7 +643,7 @@ export default function PlaceDetailModal({
                   <Text
                     style={[styles.actionText, !place.coordinates && styles.actionTextDisabled]}
                   >
-                    Ubicación
+                    {t('explore.modal.actions.location')}
                   </Text>
                 </TouchableOpacity>
 
@@ -643,7 +661,7 @@ export default function PlaceDetailModal({
                     !place.website
                   )}
                   <Text style={[styles.actionText, !place.website && styles.actionTextDisabled]}>
-                    Sitio web
+                    {t('explore.modal.actions.website')}
                   </Text>
                 </TouchableOpacity>
 
@@ -665,7 +683,9 @@ export default function PlaceDetailModal({
                 >
                   <Text style={styles.floatingButtonIcon}>➕</Text>
                   <Text style={styles.floatingButtonText}>
-                    {tripId ? `Agregar a ${tripTitle || 'viaje'}` : 'Añadir al viaje'}
+                    {tripId
+                      ? t('explore.modal.add_to', { trip: tripTitle || t('explore.modal.trip') })
+                      : t('explore.modal.add_to_trip')}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -679,7 +699,7 @@ export default function PlaceDetailModal({
         visible={showMapModal}
         onClose={() => setShowMapModal(false)}
         places={[place]}
-        title={`Ubicación de ${place.name}`}
+        title={t('explore.modal.location_of', { name: place.name })}
       />
 
       {/* Mini mapa modal para mostrar ubicación específica */}

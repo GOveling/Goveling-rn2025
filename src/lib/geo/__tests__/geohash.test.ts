@@ -29,7 +29,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     });
 
     it('should encode Bogotá, Colombia accurately', () => {
-      const hash = encode(4.7110, -74.0721, 5);
+      const hash = encode(4.711, -74.0721, 5);
       expect(hash).toBe('d29y4');
     });
 
@@ -46,7 +46,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
 
   describe('North America', () => {
     it('should encode New York, USA accurately', () => {
-      const hash = encode(40.7128, -74.0060, 5);
+      const hash = encode(40.7128, -74.006, 5);
       expect(hash).toBe('dr5ru');
     });
 
@@ -83,7 +83,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     });
 
     it('should encode Berlin, Germany accurately', () => {
-      const hash = encode(52.5200, 13.4050, 5);
+      const hash = encode(52.52, 13.405, 5);
       expect(hash).toBe('u33db');
     });
 
@@ -125,7 +125,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     });
 
     it('should encode Seoul, South Korea accurately', () => {
-      const hash = encode(37.5665, 126.9780, 5);
+      const hash = encode(37.5665, 126.978, 5);
       expect(hash).toBe('wydm6');
     });
 
@@ -140,7 +140,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     });
 
     it('should encode Mumbai, India accurately', () => {
-      const hash = encode(19.0760, 72.8777, 5);
+      const hash = encode(19.076, 72.8777, 5);
       expect(hash).toBe('te7sv');
     });
 
@@ -210,7 +210,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     it('should decode New York hash back to approximate coordinates', () => {
       const { latitude, longitude } = decode('dr5ru');
       expect(latitude).toBeCloseTo(40.7128, 1);
-      expect(longitude).toBeCloseTo(-74.0060, 1);
+      expect(longitude).toBeCloseTo(-74.006, 1);
     });
   });
 
@@ -244,7 +244,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     it('should encode with different precision levels', () => {
       const lat = -33.4489;
       const lon = -70.6693;
-      
+
       const hash1 = encode(lat, lon, 1);
       const hash3 = encode(lat, lon, 3);
       const hash5 = encode(lat, lon, 5);
@@ -265,13 +265,13 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
   describe('Performance', () => {
     it('should encode 1000 locations in under 100ms', () => {
       const start = Date.now();
-      
+
       for (let i = 0; i < 1000; i++) {
-        const lat = (Math.random() * 180) - 90; // -90 to 90
-        const lon = (Math.random() * 360) - 180; // -180 to 180
+        const lat = Math.random() * 180 - 90; // -90 to 90
+        const lon = Math.random() * 360 - 180; // -180 to 180
         encode(lat, lon, 5);
       }
-      
+
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(100);
     });
@@ -279,15 +279,15 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
     it('should decode 1000 hashes in under 100ms', () => {
       const testHashes = [];
       for (let i = 0; i < 1000; i++) {
-        const lat = (Math.random() * 180) - 90;
-        const lon = (Math.random() * 360) - 180;
+        const lat = Math.random() * 180 - 90;
+        const lon = Math.random() * 360 - 180;
         testHashes.push(encode(lat, lon, 5));
       }
 
       const start = Date.now();
-      testHashes.forEach(hash => decode(hash));
+      testHashes.forEach((hash) => decode(hash));
       const duration = Date.now() - start;
-      
+
       expect(duration).toBeLessThan(100);
     });
   });
@@ -305,7 +305,7 @@ describe('Geohash Encoding/Decoding - Global Coverage', () => {
       it(`should maintain ${name} coordinates through encode/decode cycle`, () => {
         const hash = encode(lat, lon, 7); // Higher precision
         const decoded = decode(hash);
-        
+
         expect(decoded.latitude).toBeCloseTo(lat, 2); // ~1km accuracy
         expect(decoded.longitude).toBeCloseTo(lon, 2);
       });

@@ -3,6 +3,8 @@ import React from 'react';
 
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
+
 import { COLORS } from '../constants/colors';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
@@ -15,13 +17,14 @@ interface PlaceCardProps {
 }
 
 export default function PlaceCard({ place, onPress, style, compact = false }: PlaceCardProps) {
+  const { t } = useTranslation();
   const { isFavorite, toggleFavorite, loading } = useFavorites();
 
   const handleFavoritePress = async (e: any) => {
     e.stopPropagation();
     const success = await toggleFavorite(place);
     if (!success) {
-      Alert.alert('Error', 'No se pudo actualizar los favoritos');
+      Alert.alert(t('explore.modal.error_title'), t('explore.card.error_favorites'));
     }
   };
   const renderPhoto = () => {
@@ -68,7 +71,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
     if (priceLevelNum === null) return null;
 
     // Convertir nivel de precio (0-4) a símbolo de dólar
-    const priceSymbols = ['Gratis', '$', '$$', '$$$', '$$$$'];
+    const priceSymbols = [t('explore.card.free'), '$', '$$', '$$$', '$$$$'];
     const priceLabel = priceSymbols[priceLevelNum] || '';
 
     if (!priceLabel) return null;
@@ -98,7 +101,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
             { color: place.openNow ? COLORS.status.successDark : COLORS.status.errorDark },
           ]}
         >
-          {place.openNow ? 'Abierto' : 'Cerrado'}
+          {place.openNow ? t('explore.card.open') : t('explore.card.closed')}
         </Text>
       </View>
     );

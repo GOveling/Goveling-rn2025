@@ -36,7 +36,7 @@ import { supabase } from '../../src/lib/supabase';
 import { resolveCurrentUserRoleForTripId } from '../../src/lib/userUtils';
 
 export default function ExploreTab() {
-  const { t: _t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { tripId, returnTo } = useLocalSearchParams<{ tripId?: string; returnTo?: string }>();
 
@@ -67,7 +67,7 @@ export default function ExploreTab() {
   };
 
   const handleLocationError = (error: string) => {
-    Alert.alert('Error de ubicación', error);
+    Alert.alert(t('explore.location_error'), error);
   };
 
   // Removed inline definitions of categories and use centralized ones
@@ -165,14 +165,14 @@ export default function ExploreTab() {
   // Function to add place to trip
   const addPlaceToTrip = async (place: EnhancedPlace) => {
     if (!tripId) {
-      Alert.alert('Error', 'No se pudo identificar el viaje');
+      Alert.alert(t('explore.error_title'), t('explore.error_trip_not_found'));
       return;
     }
 
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) {
-        Alert.alert('Error', 'Usuario no autenticado');
+        Alert.alert(t('explore.error_title'), t('explore.error_not_authenticated'));
         return;
       }
 
@@ -180,15 +180,12 @@ export default function ExploreTab() {
       try {
         const role = await resolveCurrentUserRoleForTripId(tripId);
         if (!(role === 'owner' || role === 'editor')) {
-          Alert.alert(
-            'Sin permisos',
-            'No tienes permisos para agregar lugares a este viaje. Solo el propietario y editores pueden agregar.'
-          );
+          Alert.alert(t('explore.error_no_permissions'), t('explore.error_no_permissions_desc'));
           return;
         }
       } catch (e) {
         console.warn('[Explore] No se pudo resolver el rol del usuario, asumiendo sin permisos', e);
-        Alert.alert('Sin permisos', 'No fue posible verificar permisos para agregar al viaje');
+        Alert.alert(t('explore.error_no_permissions'), t('explore.error_no_permissions_verify'));
         return;
       }
 
@@ -201,7 +198,7 @@ export default function ExploreTab() {
         .maybeSingle();
 
       if (existingPlace) {
-        Alert.alert('Lugar ya agregado', 'Este lugar ya está en tu viaje');
+        Alert.alert(t('explore.place_already_added'), t('explore.place_already_in_trip'));
         return;
       }
 
@@ -249,41 +246,45 @@ export default function ExploreTab() {
 
       if (error) {
         console.error('Error adding place to trip:', error);
-        Alert.alert('Error', 'No se pudo agregar el lugar al viaje');
+        Alert.alert(t('explore.error_title'), t('explore.error_adding_place'));
         return;
       }
 
-      Alert.alert('Lugar agregado', `${place.name} ha sido agregado a ${tripTitle}`, [
-        {
-          text: 'Continuar explorando',
-          style: 'default',
-          onPress: () => {
-            // ✅ Navigate to explore without tripId to reset context
-            console.log('🔄 Explore: Resetting context - navigating to explore without tripId');
-            // Close the place detail modal before navigating
-            handleCloseModal();
-            router.replace('/(tabs)/explore');
+      Alert.alert(
+        t('explore.place_added'),
+        t('explore.place_added_to_trip', { place: place.name, trip: tripTitle }),
+        [
+          {
+            text: t('explore.continue_exploring'),
+            style: 'default',
+            onPress: () => {
+              // ✅ Navigate to explore without tripId to reset context
+              console.log('🔄 Explore: Resetting context - navigating to explore without tripId');
+              // Close the place detail modal before navigating
+              handleCloseModal();
+              router.replace('/(tabs)/explore');
+            },
           },
-        },
-        {
-          text: 'Ver lugares del viaje',
-          style: 'default',
-          onPress: () => {
-            console.log(
-              `🔄 Explore: Navigating to trip places - returnTo: ${returnTo}, tripId: ${tripId}`
-            );
-            // Close the place detail modal first
-            handleCloseModal();
-            // Navigate to trip places screen
-            router.push(`/trips/${tripId}/places`);
-            // Signal that context should be cleaned when returning to this screen
-            shouldClearContextRef.current = true;
+          {
+            text: t('explore.view_trip_places'),
+            style: 'default',
+            onPress: () => {
+              console.log(
+                `🔄 Explore: Navigating to trip places - returnTo: ${returnTo}, tripId: ${tripId}`
+              );
+              // Close the place detail modal first
+              handleCloseModal();
+              // Navigate to trip places screen
+              router.push(`/trips/${tripId}/places`);
+              // Signal that context should be cleaned when returning to this screen
+              shouldClearContextRef.current = true;
+            },
           },
-        },
-      ]);
+        ]
+      );
     } catch (error) {
       console.error('Error adding place to trip:', error);
-      Alert.alert('Error', 'Ocurrió un error inesperado');
+      Alert.alert(t('explore.error_title'), t('explore.error_unexpected'));
     }
   };
 
@@ -349,7 +350,7 @@ export default function ExploreTab() {
 
       if (resp?.status === 'ERROR') {
         console.error('[performSearch] API returned error:', resp.error);
-        Alert.alert('Error de búsqueda', resp.error || 'Error desconocido en la búsqueda');
+        Alert.alert(t('explore.error_search'), resp.error || t('explore.error_search_unknown'));
         setSearchResults([]);
       } else {
         setSearchResults(resp.predictions || []);
@@ -360,7 +361,10 @@ export default function ExploreTab() {
       console.error('[performSearch] Error during search:', error);
       console.error('[performSearch] Error stack:', error.stack);
       if (error.name !== 'AbortError') {
-        Alert.alert('Error', 'No se pudo completar la búsqueda: ' + error.message);
+        Alert.alert(
+          t('explore.error_title'),
+          t('explore.error_search_failed', { error: error.message })
+        );
       }
       setSearchResults([]);
       setHasSearched(true);
@@ -396,12 +400,12 @@ export default function ExploreTab() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>
-              {tripId ? 'Agregar Lugares' : 'Explorar Lugares'}
+              {tripId ? t('explore.add_places_title') : t('explore.explore_places_title')}
             </Text>
             <Text style={styles.headerSubtitle}>
               {tripId
-                ? `Agregando lugares a: ${tripTitle}`
-                : 'Descubre destinos de ensueño para tu próxima aventura'}
+                ? t('explore.adding_places_to', { tripTitle })
+                : t('explore.discover_subtitle')}
             </Text>
           </View>
 
@@ -422,7 +426,7 @@ export default function ExploreTab() {
                 activeOpacity={0.85}
               >
                 <Text style={styles.categoryIcon}>🧪{/* Icono funnel placeholder */}</Text>
-                <Text style={styles.categoryTitle}>Buscar Categorías</Text>
+                <Text style={styles.categoryTitle}>{t('explore.search_categories')}</Text>
               </TouchableOpacity>
 
               {selectedCategories.length > 0 && (
@@ -482,7 +486,7 @@ export default function ExploreTab() {
                     showsVerticalScrollIndicator={false}
                   >
                     {/* Sección General */}
-                    <Text style={styles.categorySectionTitle}>General</Text>
+                    <Text style={styles.categorySectionTitle}>{t('explore.general')}</Text>
                     {[...generalCategories].map((cat) => {
                       const isSelected = selectedCategories.includes(cat.name);
                       return (
@@ -513,7 +517,7 @@ export default function ExploreTab() {
                     })}
 
                     {/* Sección Lugares Específicos */}
-                    <Text style={styles.categorySectionTitle}>Lugares Específicos</Text>
+                    <Text style={styles.categorySectionTitle}>{t('explore.specific_places')}</Text>
                     {[...specificCategories].map((cat) => {
                       const isSelected = selectedCategories.includes(cat.name);
                       return (
@@ -588,18 +592,18 @@ export default function ExploreTab() {
             />
 
             <View style={styles.searchInputField}>
-              <Text style={styles.searchInputText}>Cerca de mi ubicación actual</Text>
+              <Text style={styles.searchInputText}>{t('explore.near_current_location')}</Text>
             </View>
 
             <TouchableOpacity onPress={() => setShowMap(true)} style={styles.searchLocationButton}>
-              <Text style={styles.searchLocationText}>🗺️ Ver Mapa</Text>
+              <Text style={styles.searchLocationText}>{t('explore.view_map')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Barra de búsqueda */}
           <View style={styles.searchContainer}>
             <TextInput
-              placeholder="Busca tu próximo destino..."
+              placeholder={t('explore.search_placeholder')}
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={performSearch}
@@ -624,7 +628,7 @@ export default function ExploreTab() {
                 <View style={styles.resultsHeaderContent}>
                   <View style={styles.resultsHeaderIcon} />
                   <Text style={styles.resultsHeaderTitle}>
-                    {searchResults.length} resultados encontrados
+                    {t('explore.results_found', { count: searchResults.length })}
                   </Text>
                 </View>
               </View>
@@ -633,22 +637,20 @@ export default function ExploreTab() {
 
               {searchResults.length === 0 && (
                 <View style={styles.resultsEmptyContainer}>
-                  <Text style={styles.resultsEmptyTitle}>No se encontraron resultados</Text>
-                  <Text style={styles.resultsEmptyText}>
-                    Intenta con otros términos de búsqueda o ajusta los filtros
-                  </Text>
+                  <Text style={styles.resultsEmptyTitle}>{t('explore.no_results_found')}</Text>
+                  <Text style={styles.resultsEmptyText}>{t('explore.no_results_try_other')}</Text>
                 </View>
               )}
             </View>
           )}
           {hasSearched && searchResults.length === 0 && !loading && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Sin resultados</Text>
+              <Text style={styles.emptyText}>{t('explore.empty_results')}</Text>
             </View>
           )}
           {loading && (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Buscando…</Text>
+              <Text style={styles.loadingText}>{t('explore.searching')}</Text>
             </View>
           )}
         </ScrollView>
@@ -679,7 +681,7 @@ export default function ExploreTab() {
               <TouchableOpacity onPress={() => setShowMap(false)} style={styles.mapHeaderButton}>
                 <Ionicons name="arrow-back" size={24} color="#333" />
               </TouchableOpacity>
-              <Text style={styles.mapHeaderTitle}>Mapa de Lugares</Text>
+              <Text style={styles.mapHeaderTitle}>{t('explore.map_title')}</Text>
               <View style={styles.mapHeaderSpacer} />
             </View>
             <AppMap

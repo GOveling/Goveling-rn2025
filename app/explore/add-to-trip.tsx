@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import TripSelectorModal from '../../src/components/TripSelectorModal';
@@ -21,6 +22,7 @@ import { EnhancedPlace } from '../../src/lib/placesSearch';
 import { supabase } from '../../src/lib/supabase';
 
 export default function AddToTripScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { placeId, name } = useLocalSearchParams<{ placeId?: string; name?: string }>();
@@ -34,16 +36,18 @@ export default function AddToTripScreen() {
     try {
       setLoading(true);
       if (!placeId) {
-        Alert.alert('Error', 'No se especificó un lugar');
+        Alert.alert(t('explore.error_title'), t('explore.add_to_trip_screen.error_no_place'));
         router.back();
         return;
       }
 
       // Crear un objeto básico con los datos disponibles desde los parámetros
-      const placeName = name ? decodeURIComponent(name) : 'Lugar desconocido';
+      const placeName = name
+        ? decodeURIComponent(name)
+        : t('explore.add_to_trip_screen.unknown_place');
       const basicPlace: EnhancedPlace = {
         id: placeId,
-        name: placeName.trim() || 'Lugar desconocido',
+        name: placeName.trim() || t('explore.add_to_trip_screen.unknown_place'),
         address: '',
         coordinates: { lat: 0, lng: 0 },
         types: [],
@@ -59,12 +63,12 @@ export default function AddToTripScreen() {
       setShowTripSelector(true);
     } catch (error) {
       console.error('Error loading place details:', error);
-      Alert.alert('Error', 'No se pudieron cargar los detalles del lugar');
+      Alert.alert(t('explore.error_title'), t('explore.add_to_trip_screen.error_loading'));
       router.back();
     } finally {
       setLoading(false);
     }
-  }, [placeId, name, router]);
+  }, [placeId, name, router, t]);
 
   useEffect(() => {
     loadPlaceDetails();
@@ -72,7 +76,7 @@ export default function AddToTripScreen() {
 
   const handleTripSelected = async (tripId: string, tripTitle: string) => {
     if (!place) {
-      Alert.alert('Error', 'No se pudo identificar el lugar');
+      Alert.alert(t('explore.error_title'), t('explore.add_to_trip_screen.error_identify_place'));
       return;
     }
 
@@ -81,7 +85,7 @@ export default function AddToTripScreen() {
       const { data: user } = await supabase.auth.getUser();
 
       if (!user?.user?.id) {
-        Alert.alert('Error', 'Usuario no autenticado');
+        Alert.alert(t('explore.error_title'), t('explore.error_not_authenticated'));
         return;
       }
 
@@ -94,16 +98,23 @@ export default function AddToTripScreen() {
         .maybeSingle();
 
       if (existingPlace) {
-        Alert.alert('Lugar ya agregado', `"${place.name}" ya está en tu viaje "${tripTitle}"`, [
-          {
-            text: 'Ver lugares del viaje',
-            onPress: () => router.push(`/trips/${tripId}/places`),
-          },
-          {
-            text: 'Continuar explorando',
-            onPress: () => router.push('/(tabs)/explore'),
-          },
-        ]);
+        Alert.alert(
+          t('explore.add_to_trip_screen.place_already_added_title'),
+          t('explore.add_to_trip_screen.place_already_in_trip', {
+            place: place.name,
+            trip: tripTitle,
+          }),
+          [
+            {
+              text: t('explore.add_to_trip_screen.view_trip_places'),
+              onPress: () => router.push(`/trips/${tripId}/places`),
+            },
+            {
+              text: t('explore.add_to_trip_screen.continue_exploring'),
+              onPress: () => router.push('/(tabs)/explore'),
+            },
+          ]
+        );
         return;
       }
 
@@ -151,17 +162,20 @@ export default function AddToTripScreen() {
 
       if (error) {
         console.error('Error adding place to trip:', error);
-        Alert.alert('Error', 'No se pudo agregar el lugar al viaje');
+        Alert.alert(
+          t('explore.add_to_trip_screen.error'),
+          t('explore.add_to_trip_screen.error_adding')
+        );
         return;
       }
 
       // Mostrar éxito y opciones de navegación
       Alert.alert(
-        '¡Lugar agregado!',
-        `"${place.name}" ha sido agregado exitosamente a "${tripTitle}"`,
+        t('explore.add_to_trip_screen.place_added_success'),
+        t('explore.add_to_trip_screen.place_added_message', { place: place.name, trip: tripTitle }),
         [
           {
-            text: 'Continuar explorando',
+            text: t('explore.add_to_trip_screen.continue_exploring'),
             style: 'default',
             onPress: () => {
               // ✅ Navigate to explore without tripId to reset context
@@ -170,7 +184,7 @@ export default function AddToTripScreen() {
             },
           },
           {
-            text: 'Ver lugares del viaje',
+            text: t('explore.add_to_trip_screen.view_trip_places'),
             style: 'default',
             onPress: () => router.push(`/trips/${tripId}/places`),
           },
@@ -178,7 +192,10 @@ export default function AddToTripScreen() {
       );
     } catch (error) {
       console.error('Error adding place to trip:', error);
-      Alert.alert('Error', 'Ocurrió un error inesperado');
+      Alert.alert(
+        t('explore.add_to_trip_screen.error'),
+        t('explore.add_to_trip_screen.error_unexpected')
+      );
     } finally {
       setAddingToTrip(false);
     }
@@ -194,7 +211,7 @@ export default function AddToTripScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8B5CF6" />
-          <Text style={styles.loadingText}>Cargando información del lugar...</Text>
+          <Text style={styles.loadingText}>{t('explore.add_to_trip_screen.loading')}</Text>
         </View>
       </View>
     );
@@ -208,7 +225,7 @@ export default function AddToTripScreen() {
           <Ionicons name="arrow-back" size={24} color="#374151" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Añadir a Viaje</Text>
+          <Text style={styles.headerTitle}>{t('explore.add_to_trip_screen.title')}</Text>
           {!!(place && (place.name ?? '').trim().length > 0) && (
             <Text style={styles.headerSubtitle} numberOfLines={1}>
               {place!.name}
@@ -222,7 +239,9 @@ export default function AddToTripScreen() {
         {!!place && (
           <View style={styles.placeInfo}>
             <View style={styles.placeHeader}>
-              <Text style={styles.placeName}>{place.name || 'Lugar sin nombre'}</Text>
+              <Text style={styles.placeName}>
+                {place.name || t('explore.add_to_trip_screen.unnamed_place')}
+              </Text>
               {(place.rating ?? 0) > 0 && (
                 <View style={styles.ratingContainer}>
                   <Ionicons name="star" size={16} color="#F59E0B" />
@@ -256,7 +275,9 @@ export default function AddToTripScreen() {
             ) : (
               <>
                 <Ionicons name="airplane" size={20} color="#FFFFFF" />
-                <Text style={styles.selectTripText}>Seleccionar Viaje</Text>
+                <Text style={styles.selectTripText}>
+                  {t('explore.add_to_trip_screen.select_trip')}
+                </Text>
               </>
             )}
           </LinearGradient>
