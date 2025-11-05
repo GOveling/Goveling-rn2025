@@ -2,13 +2,20 @@
  * BackgroundTravelManager - Singleton for managing background location tracking
  * Handles adaptive interval GPS tracking based on platform, app state, and energy mode
  * Optimized for native hardware (iOS/Android)
+ * Now includes background country/city change detection with push notifications
  */
 
 import { Platform, AppState, AppStateStatus } from 'react-native';
 
 import * as Location from 'expo-location';
 
+import { supabase } from '~/lib/supabase';
+import { logger } from '~/utils/logger';
+
+import { cityDetectionService } from './CityDetectionService';
+import { countryDetectionService } from './CountryDetectionService';
 import { Coordinates } from './geoUtils';
+import { locationChangeNotificationService } from './LocationChangeNotificationService';
 import { EnergyMode } from './UnifiedSpeedTracker';
 
 export interface LocationUpdate {
@@ -37,6 +44,11 @@ class BackgroundTravelManager {
   private appState: AppStateStatus = 'active';
   private currentEnergyMode: EnergyMode = 'normal';
   private isTravelModeActive = false; // NEW: Track if Travel Mode is explicitly active
+
+  // Background detection state
+  private lastDetectedCountry: string | null = null;
+  private lastDetectedCity: string | null = null;
+  private isDetectingChanges = false; // Prevent concurrent detections
 
   // Interval configuration for TRAVEL MODE (active tracking)
   private readonly TRAVEL_MODE_INTERVALS = {
@@ -304,10 +316,190 @@ class BackgroundTravelManager {
       heading: location.coords.heading || null,
     };
 
-    // Call registered callback
+    // Call registered callback (for heatmap tracking)
     if (this.locationCallback) {
       this.locationCallback(update);
     }
+
+    // Detect country/city changes in background (with notifications)
+    // Only if app is in background and not in Travel Mode
+    // Travel Mode uses its own real-time detection with useGeoDetection
+    if (this.appState !== 'active' && !this.isTravelModeActive) {
+      this.detectLocationChanges(update.coordinates, update.accuracy).catch((error) => {
+        logger.error('❌ Error detecting location changes:', error);
+      });
+    }
+  }
+
+  /**
+   * Detect country and city changes in background
+   * Sends push notifications if changes are detected
+   */
+  private async detectLocationChanges(coordinates: Coordinates, accuracy: number): Promise<void> {
+    // Skip if accuracy is too low (>100m)
+    if (accuracy > 100) {
+      logger.debug(`⏭️  Skipping background detection - low accuracy: ${accuracy.toFixed(0)}m`);
+      return;
+    }
+
+    // Skip if already detecting (prevent concurrent detections)
+    if (this.isDetectingChanges) {
+      logger.debug('⏭️  Background detection already in progress, skipping');
+      return;
+    }
+
+    try {
+      this.isDetectingChanges = true;
+
+      // 1. Detect country
+      const currentCountry = await countryDetectionService.detectCountry(coordinates);
+      if (!currentCountry) {
+        logger.debug('⏭️  Could not detect country from coordinates');
+        return;
+      }
+
+      // Check if country changed
+      if (this.lastDetectedCountry !== currentCountry.countryCode) {
+        logger.info(
+          `🌍 Country change detected in background: ${this.lastDetectedCountry || 'unknown'} → ${currentCountry.countryCode}`
+        );
+
+        // Get user ID
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check if this is a return visit
+        const { data: lastVisit } = await supabase
+          .from('country_visits')
+          .select('country_code, entry_date, latitude, longitude')
+          .eq('user_id', user.id)
+          .order('entry_date', { ascending: false })
+          .limit(1)
+          .single();
+
+        let isReturn = false;
+        if (lastVisit && lastVisit.country_code === currentCountry.countryCode) {
+          // Check distance and time
+          const distance = this.calculateDistance(
+            lastVisit.latitude,
+            lastVisit.longitude,
+            coordinates.latitude,
+            coordinates.longitude
+          );
+          const timeDiff = Date.now() - new Date(lastVisit.entry_date).getTime();
+          const THIRTY_MINUTES = 30 * 60 * 1000;
+
+          if (distance > 50000 && timeDiff > THIRTY_MINUTES) {
+            isReturn = true;
+          }
+        }
+
+        // Send notification (only if app is in background)
+        await locationChangeNotificationService.sendCountryChangeNotification({
+          countryName: currentCountry.countryName,
+          countryFlag: currentCountry.countryFlag,
+          countryCode: currentCountry.countryCode,
+          isReturn,
+          timestamp: Date.now(),
+        });
+
+        // Update last detected country
+        this.lastDetectedCountry = currentCountry.countryCode;
+      }
+
+      // 2. Detect city (only if country is stable for 1 minute)
+      // This prevents showing both notifications simultaneously
+      if (this.lastDetectedCountry === currentCountry.countryCode) {
+        const currentCity = await cityDetectionService.detectCity(coordinates);
+        if (!currentCity) {
+          logger.debug('⏭️  Could not detect city from coordinates');
+          return;
+        }
+
+        const cityIdentifier = `${currentCity.cityName}_${currentCity.stateName || ''}`;
+
+        // Check if city changed
+        if (this.lastDetectedCity !== cityIdentifier) {
+          logger.info(
+            `🏙️  City change detected in background: ${this.lastDetectedCity || 'unknown'} → ${cityIdentifier}`
+          );
+
+          // Get user ID
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Check if this is a return visit
+          const { data: lastCityVisit } = await supabase
+            .from('city_visits')
+            .select('city_name, region_name, entry_date, latitude, longitude')
+            .eq('user_id', user.id)
+            .order('entry_date', { ascending: false })
+            .limit(1)
+            .single();
+
+          let isCityReturn = false;
+          if (
+            lastCityVisit &&
+            lastCityVisit.city_name === currentCity.cityName &&
+            lastCityVisit.region_name === currentCity.stateName
+          ) {
+            // Check distance and time
+            const distance = this.calculateDistance(
+              lastCityVisit.latitude,
+              lastCityVisit.longitude,
+              coordinates.latitude,
+              coordinates.longitude
+            );
+            const timeDiff = Date.now() - new Date(lastCityVisit.entry_date).getTime();
+            const THIRTY_MINUTES = 30 * 60 * 1000;
+
+            if (distance > 50000 && timeDiff > THIRTY_MINUTES) {
+              isCityReturn = true;
+            }
+          }
+
+          // Send notification (only if app is in background)
+          await locationChangeNotificationService.sendCityChangeNotification({
+            cityName: currentCity.cityName,
+            regionName: currentCity.stateName,
+            countryName: currentCountry.countryName,
+            countryFlag: currentCountry.countryFlag,
+            isReturn: isCityReturn,
+            timestamp: Date.now(),
+          });
+
+          // Update last detected city
+          this.lastDetectedCity = cityIdentifier;
+        }
+      }
+    } catch (error) {
+      logger.error('❌ Error in background location change detection:', error);
+    } finally {
+      this.isDetectingChanges = false;
+    }
+  }
+
+  /**
+   * Calculate distance between two points (Haversine formula)
+   * @returns Distance in meters
+   */
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371000; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
   }
 
   /**
@@ -328,6 +520,9 @@ class BackgroundTravelManager {
       console.error('❌ Location permissions not granted');
       return false;
     }
+
+    // Request notification permissions for background detection
+    await locationChangeNotificationService.requestPermissions();
 
     this.locationCallback = onLocation;
     this.errorCallback = onError || null;
