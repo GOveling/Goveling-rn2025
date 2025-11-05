@@ -58,10 +58,10 @@ export default function ProfileTab() {
 
   const [profileData, setProfileData] = React.useState({
     fullName: '',
-    description: 'Travel Enthusiast',
+    description: t('profile.travel_enthusiast'),
     avatarUrl: '',
     initials: '',
-    level: 'Backpack Explorer',
+    level: t('profile.level_badge'),
     stats: {
       countriesVisited: 0,
       citiesExplored: 0,
@@ -76,7 +76,7 @@ export default function ProfileTab() {
       setProfileData((prev) => ({
         ...prev,
         fullName: profile.full_name || '',
-        description: profile.bio || 'Travel Enthusiast',
+        description: profile.bio || t('profile.travel_enthusiast'),
         avatarUrl: profile.avatar_url || '',
         initials: profile.full_name
           ? profile.full_name
@@ -88,7 +88,7 @@ export default function ProfileTab() {
           : '',
       }));
     }
-  }, [profile]);
+  }, [profile, t]);
 
   const [showPersonalModal, setShowPersonalModal] = React.useState(false);
   const [showProfileEditModal, setShowProfileEditModal] = React.useState(false);
@@ -243,7 +243,7 @@ export default function ProfileTab() {
       if (isWeb) {
         // Use web-compatible confirm dialog
         console.log('🚪 Showing web confirmation dialog...');
-        const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
+        const confirmed = window.confirm(t('profile.sign_out_confirmation'));
         console.log('🚪 User confirmation result:', confirmed);
 
         if (!confirmed) {
@@ -255,7 +255,7 @@ export default function ProfileTab() {
 
         if (!authSignOut) {
           console.error('🚪 ERROR: authSignOut function not available from AuthContext');
-          window.alert('No se pudo cerrar sesión. Función no disponible.');
+          window.alert(t('common.error'));
           return;
         }
 
@@ -270,14 +270,14 @@ export default function ProfileTab() {
       } else {
         // Use React Native Alert for mobile
         console.log('🚪 Showing mobile confirmation dialog...');
-        Alert.alert('Cerrar Sesión', '¿Estás seguro de que quieres cerrar sesión?', [
+        Alert.alert(t('profile.sign_out'), t('profile.sign_out_confirmation'), [
           {
-            text: 'Cancelar',
+            text: t('common.cancel'),
             style: 'cancel',
             onPress: () => console.log('🚪 Mobile - Sign out cancelled by user'),
           },
           {
-            text: 'Cerrar Sesión',
+            text: t('profile.sign_out'),
             style: 'destructive',
             onPress: async () => {
               try {
@@ -286,7 +286,7 @@ export default function ProfileTab() {
 
                 if (!authSignOut) {
                   console.error('🚪 ERROR: authSignOut function not available from AuthContext');
-                  Alert.alert('Error', 'No se pudo cerrar sesión. Función no disponible.');
+                  Alert.alert(t('common.error'), t('common.error'));
                   return;
                 }
 
@@ -300,10 +300,7 @@ export default function ProfileTab() {
                 }
               } catch (signOutError) {
                 console.error('🚪 ❌ Mobile - Error during sign out:', signOutError);
-                Alert.alert(
-                  'Error',
-                  'Hubo un problema al cerrar sesión. Por favor, intenta de nuevo.'
-                );
+                Alert.alert(t('common.error'), t('common.error'));
               }
             },
           },
@@ -313,9 +310,9 @@ export default function ProfileTab() {
       console.error('🚪 ❌ Unexpected error in handleSignOut:', error);
       // More user-friendly error message
       if (typeof window !== 'undefined' && window.alert) {
-        window.alert('No se pudo cerrar sesión. Inténtalo de nuevo.');
+        window.alert(t('common.error'));
       } else {
-        Alert.alert('Error', 'No se pudo cerrar sesión. Inténtalo de nuevo.');
+        Alert.alert(t('common.error'), t('common.error'));
       }
     }
   };
@@ -371,7 +368,7 @@ export default function ProfileTab() {
 
       {/* Estadísticas de Viaje */}
       <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>Estadísticas de Viaje</Text>
+        <Text style={styles.statsTitle}>{t('profile.travel_stats_title')}</Text>
 
         <View style={styles.statsGrid}>
           <TouchableOpacity
@@ -379,30 +376,32 @@ export default function ProfileTab() {
             onPress={() => setShowVisitedCountriesModal(true)}
           >
             <Text style={styles.statNumber}>{profileData.stats.countriesVisited}</Text>
-            <Text style={styles.statLabel}>Países Visitados</Text>
+            <Text style={styles.statLabel}>{t('profile.countries_visited')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedCitiesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.citiesExplored}</Text>
-            <Text style={styles.statLabel}>Ciudades Exploradas</Text>
+            <Text style={styles.statLabel}>{t('profile.cities_explored')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedPlacesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.placesVisited}</Text>
-            <Text style={styles.statLabel}>Lugares Visitados</Text>
+            <Text style={styles.statLabel}>{t('profile.places_visited')}</Text>
           </TouchableOpacity>
 
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{profileData.stats.achievementPoints}</Text>
-            <Text style={styles.statLabel}>Puntos de Logros</Text>
+            <Text style={styles.statLabel}>{t('profile.achievement_points')}</Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={styles.detailsButton}
-          onPress={() => Alert.alert('Logros', 'Funcionalidad de logros próximamente disponible')}
+          onPress={() =>
+            Alert.alert(t('profile.achievements'), t('profile.achievements_coming_soon'))
+          }
         >
-          <Text style={styles.detailsButtonText}>Ver detalles</Text>
+          <Text style={styles.detailsButtonText}>{t('profile.view_details')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -410,8 +409,8 @@ export default function ProfileTab() {
       <View style={styles.menuContainer}>
         <MenuSection
           icon="person"
-          title="Información Personal"
-          subtitle="Administra tus datos personales"
+          title={t('profile.menu.personal_info')}
+          subtitle={t('profile.menu.personal_info_desc')}
           iconColor="#00C853"
           onPress={() => {
             console.log('🔥 INFORMACIÓN PERSONAL BUTTON CLICKED');
@@ -425,26 +424,26 @@ export default function ProfileTab() {
         <MenuSection
           icon="document-text"
           iconLib="Ionicons"
-          title="Documentos de Viaje"
-          subtitle="Pasaportes, visas, boletos"
+          title={t('profile.menu.travel_documents')}
+          subtitle={t('profile.menu.travel_documents_desc')}
           iconColor="#2196F3"
-          onPress={() =>
-            Alert.alert('Documentos', 'Funcionalidad de documentos próximamente disponible')
-          }
+          onPress={() => Alert.alert(t('profile.documents'), t('profile.documents_coming_soon'))}
         />
 
         <MenuSection
           icon="chatbubble"
-          title="Mis Reseñas"
-          subtitle="Gestiona tus reseñas de lugares"
+          title={t('profile.menu.my_reviews')}
+          subtitle={t('profile.menu.my_reviews_desc')}
           iconColor="#673AB7"
-          onPress={() => Alert.alert('Reseñas', 'Funcionalidad de reseñas próximamente disponible')}
+          onPress={() =>
+            Alert.alert(t('profile.menu.my_reviews'), t('profile.reviews_coming_soon'))
+          }
         />
 
         <MenuSection
           icon="notifications"
-          title="Notificaciones"
-          subtitle="Gestionar alertas y actualizaciones"
+          title={t('profile.menu.notifications')}
+          subtitle={t('profile.menu.notifications_desc')}
           iconColor="#00C853"
           onPress={() => router.push('/settings')}
         />
@@ -452,25 +451,32 @@ export default function ProfileTab() {
         <MenuSection
           icon="trophy"
           iconLib="Ionicons"
-          title="Logros de Viaje"
-          subtitle={`Nivel 1 ${profileData.level} • ${profileData.stats.achievementPoints} puntos ganados`}
+          title={t('profile.menu.travel_achievements')}
+          subtitle={t('profile.menu.travel_achievements_desc', {
+            level: profileData.level,
+            points: profileData.stats.achievementPoints,
+          })}
           iconColor="#673AB7"
-          onPress={() => Alert.alert('Logros', 'Funcionalidad de logros próximamente disponible')}
+          onPress={() =>
+            Alert.alert(t('profile.achievements'), t('profile.achievements_coming_soon'))
+          }
         />
 
         <MenuSection
           icon="share"
           iconLib="Feather"
-          title="Compartir Perfil"
-          subtitle="Conectar con viajeros"
+          title={t('profile.menu.share_profile')}
+          subtitle={t('profile.menu.share_profile_desc')}
           iconColor="#FF8C42"
-          onPress={() => Alert.alert('Compartir', 'Función próximamente disponible')}
+          onPress={() =>
+            Alert.alert(t('profile.menu.share_profile'), t('profile.share_coming_soon'))
+          }
         />
 
         <MenuSection
           icon="settings"
-          title="Configuración"
-          subtitle="Preferencias de la app"
+          title={t('profile.menu.settings')}
+          subtitle={t('profile.menu.settings_desc')}
           iconColor="#666"
           onPress={() => setShowSettingsModal(true)}
         />
@@ -479,15 +485,15 @@ export default function ProfileTab() {
         {__DEV__ && (
           <MenuSection
             icon="trash-outline"
-            title="🔧 DEBUG: Limpiar Cache de Ciudades"
-            subtitle="Forzar nueva detección de ciudad"
+            title={t('profile.menu.debug_clear_city_cache')}
+            subtitle={t('profile.menu.debug_clear_city_cache_desc')}
             iconColor="#FF6B6B"
             onPress={async () => {
               const { cityDetectionService } = await import(
                 '~/services/travelMode/CityDetectionService'
               );
               await cityDetectionService.clearCache();
-              alert('✅ Cache de ciudades limpiado. Reinicia la app para detectar de nuevo.');
+              alert(t('profile.debug_cache_cleared'));
             }}
           />
         )}
@@ -507,7 +513,7 @@ export default function ProfileTab() {
         }}
       >
         <Feather name="log-out" size={20} color="#FF3B30" />
-        <Text style={styles.signOutText}>Cerrar Sesión</Text>
+        <Text style={styles.signOutText}>{t('profile.sign_out')}</Text>
       </Pressable>
 
       {/* Personal Info Modal */}

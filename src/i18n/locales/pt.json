@@ -516,7 +516,107 @@
   "profile": {
     "title": "Perfil",
     "documents": "Documentos de viagem",
-    "achievements": "Conquistas de viagem"
+    "achievements": "Conquistas de viagem",
+    "travel_enthusiast": "Entusiasta de Viagens",
+    "level_badge": "Explorador com Mochila",
+    "travel_stats_title": "Estatísticas de Viagem",
+    "countries_visited": "Países Visitados",
+    "cities_explored": "Cidades Exploradas",
+    "places_visited": "Lugares Visitados",
+    "achievement_points": "Pontos de Conquista",
+    "view_details": "Ver detalhes",
+    "menu": {
+      "personal_info": "Informações Pessoais",
+      "personal_info_desc": "Gerenciar seus dados pessoais",
+      "travel_documents": "Documentos de Viagem",
+      "travel_documents_desc": "Passaportes, vistos, passagens",
+      "my_reviews": "Minhas Avaliações",
+      "my_reviews_desc": "Gerenciar suas avaliações de lugares",
+      "notifications": "Notificações",
+      "notifications_desc": "Gerenciar alertas e atualizações",
+      "travel_achievements": "Conquistas de Viagem",
+      "travel_achievements_desc": "Nível 1 {{level}} • {{points}} pontos ganhos",
+      "share_profile": "Compartilhar Perfil",
+      "share_profile_desc": "Conectar com viajantes",
+      "settings": "Configurações",
+      "settings_desc": "Preferências do aplicativo",
+      "debug_clear_city_cache": "🔧 DEBUG: Limpar Cache de Cidades",
+      "debug_clear_city_cache_desc": "Forçar nova detecção de cidade"
+    },
+    "sign_out": "Sair",
+    "sign_out_confirmation": "Tem certeza de que deseja sair?",
+    "coming_soon": "Em Breve",
+    "documents_coming_soon": "Funcionalidade de documentos em breve disponível",
+    "reviews_coming_soon": "Funcionalidade de avaliações em breve disponível",
+    "achievements_coming_soon": "Funcionalidade de conquistas em breve disponível",
+    "share_coming_soon": "Função em breve disponível",
+    "debug_cache_cleared": "✅ Cache de cidades limpo. Reinicie o aplicativo para detectar novamente.",
+    "personal_info": {
+      "title": "Informações Pessoais",
+      "loading": "Carregando informações...",
+      "edit": "Editar",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "save_changes": "Salvar Alterações",
+      "basic_info": "Informações Básicas",
+      "full_name": "Nome Completo",
+      "full_name_required": "Nome Completo *",
+      "full_name_placeholder": "Digite seu nome completo",
+      "birth_date": "Data de Nascimento",
+      "birth_date_placeholder": "Selecionar data",
+      "age": "Idade",
+      "age_years": "Idade: {{years}} anos",
+      "gender": "Gênero",
+      "gender_placeholder": "👤 Selecionar gênero",
+      "location": "Localização",
+      "country": "País",
+      "country_placeholder": "🌍 Selecionar país",
+      "select_country_first": "🌍 Selecione um país primeiro",
+      "loading_cities": "⏳ Carregando cidades...",
+      "city_state": "Cidade/Estado",
+      "city_state_placeholder": "🏙️ Selecionar cidade ou estado",
+      "address": "Endereço",
+      "address_placeholder": "Endereço completo",
+      "contact": "Contato",
+      "mobile_phone": "Telefone Celular",
+      "mobile_phone_placeholder": "123 456 7890",
+      "not_specified": "Não especificado",
+      "genders": {
+        "masculine": "Masculino",
+        "feminine": "Feminino",
+        "prefer_not_to_say": "Prefiro não dizer"
+      },
+      "date_picker": {
+        "cancel": "Cancelar",
+        "done": "Pronto",
+        "title": "Data de Nascimento"
+      },
+      "gender_picker": {
+        "title": "Selecionar Gênero"
+      },
+      "country_picker": {
+        "title": "Selecionar País"
+      },
+      "city_picker": {
+        "title": "Selecionar Cidade",
+        "search_placeholder": "Pesquisar cidade...",
+        "results_count": "🔍 {{count}} resultados",
+        "showing_count": "🏙️ Mostrando {{showing}} de {{total}} cidades",
+        "no_cities": "Nenhuma cidade encontrada para este país",
+        "load_more": "Carregar mais cidades ({{remaining}} restantes)",
+        "inhabitants": "habitantes"
+      },
+      "errors": {
+        "title": "Erro",
+        "full_name_required": "O nome completo é obrigatório",
+        "load_failed": "Não foi possível carregar os dados do perfil",
+        "save_failed": "Erro ao salvar as informações"
+      },
+      "success": {
+        "title": "Sucesso",
+        "saved": "Suas informações pessoais foram atualizadas"
+      }
+    }
   },
   "notifications": {
     "pending_invitations": "Convites pendentes",

@@ -516,7 +516,107 @@
   "profile": {
     "title": "Profil",
     "documents": "Documents de voyage",
-    "achievements": "Succès de voyage"
+    "achievements": "Succès de voyage",
+    "travel_enthusiast": "Passionné de Voyage",
+    "level_badge": "Explorateur avec Sac à Dos",
+    "travel_stats_title": "Statistiques de Voyage",
+    "countries_visited": "Pays Visités",
+    "cities_explored": "Villes Explorées",
+    "places_visited": "Lieux Visités",
+    "achievement_points": "Points de Réussite",
+    "view_details": "Voir les détails",
+    "menu": {
+      "personal_info": "Informations Personnelles",
+      "personal_info_desc": "Gérer vos données personnelles",
+      "travel_documents": "Documents de Voyage",
+      "travel_documents_desc": "Passeports, visas, billets",
+      "my_reviews": "Mes Avis",
+      "my_reviews_desc": "Gérer vos avis sur les lieux",
+      "notifications": "Notifications",
+      "notifications_desc": "Gérer les alertes et mises à jour",
+      "travel_achievements": "Succès de Voyage",
+      "travel_achievements_desc": "Niveau 1 {{level}} • {{points}} points gagnés",
+      "share_profile": "Partager le Profil",
+      "share_profile_desc": "Se connecter avec des voyageurs",
+      "settings": "Paramètres",
+      "settings_desc": "Préférences de l'application",
+      "debug_clear_city_cache": "🔧 DEBUG: Vider le Cache des Villes",
+      "debug_clear_city_cache_desc": "Forcer une nouvelle détection de ville"
+    },
+    "sign_out": "Se Déconnecter",
+    "sign_out_confirmation": "Êtes-vous sûr de vouloir vous déconnecter?",
+    "coming_soon": "Prochainement",
+    "documents_coming_soon": "Fonctionnalité des documents prochainement disponible",
+    "reviews_coming_soon": "Fonctionnalité des avis prochainement disponible",
+    "achievements_coming_soon": "Fonctionnalité des succès prochainement disponible",
+    "share_coming_soon": "Fonction prochainement disponible",
+    "debug_cache_cleared": "✅ Cache des villes vidé. Redémarrez l'application pour détecter à nouveau.",
+    "personal_info": {
+      "title": "Informations Personnelles",
+      "loading": "Chargement des informations...",
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "save_changes": "Enregistrer les Modifications",
+      "basic_info": "Informations de Base",
+      "full_name": "Nom Complet",
+      "full_name_required": "Nom Complet *",
+      "full_name_placeholder": "Entrez votre nom complet",
+      "birth_date": "Date de Naissance",
+      "birth_date_placeholder": "Sélectionner la date",
+      "age": "Âge",
+      "age_years": "Âge: {{years}} ans",
+      "gender": "Genre",
+      "gender_placeholder": "👤 Sélectionner le genre",
+      "location": "Localisation",
+      "country": "Pays",
+      "country_placeholder": "🌍 Sélectionner le pays",
+      "select_country_first": "🌍 Sélectionnez d'abord un pays",
+      "loading_cities": "⏳ Chargement des villes...",
+      "city_state": "Ville/État",
+      "city_state_placeholder": "🏙️ Sélectionner la ville ou l'état",
+      "address": "Adresse",
+      "address_placeholder": "Adresse complète",
+      "contact": "Contact",
+      "mobile_phone": "Téléphone Mobile",
+      "mobile_phone_placeholder": "123 456 7890",
+      "not_specified": "Non spécifié",
+      "genders": {
+        "masculine": "Masculin",
+        "feminine": "Féminin",
+        "prefer_not_to_say": "Préfère ne pas dire"
+      },
+      "date_picker": {
+        "cancel": "Annuler",
+        "done": "Terminé",
+        "title": "Date de Naissance"
+      },
+      "gender_picker": {
+        "title": "Sélectionner le Genre"
+      },
+      "country_picker": {
+        "title": "Sélectionner le Pays"
+      },
+      "city_picker": {
+        "title": "Sélectionner la Ville",
+        "search_placeholder": "Rechercher une ville...",
+        "results_count": "🔍 {{count}} résultats",
+        "showing_count": "🏙️ Affichage de {{showing}} sur {{total}} villes",
+        "no_cities": "Aucune ville trouvée pour ce pays",
+        "load_more": "Charger plus de villes ({{remaining}} restantes)",
+        "inhabitants": "habitants"
+      },
+      "errors": {
+        "title": "Erreur",
+        "full_name_required": "Le nom complet est obligatoire",
+        "load_failed": "Impossible de charger les données du profil",
+        "save_failed": "Erreur lors de l'enregistrement des informations"
+      },
+      "success": {
+        "title": "Succès",
+        "saved": "Vos informations personnelles ont été mises à jour"
+      }
+    }
   },
   "notifications": {
     "pending_invitations": "Invitations en attente",

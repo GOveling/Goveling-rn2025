@@ -516,7 +516,107 @@
   "profile": {
     "title": "个人资料",
     "documents": "旅行文件",
-    "achievements": "旅行成就"
+    "achievements": "旅行成就",
+    "travel_enthusiast": "旅行爱好者",
+    "level_badge": "背包探险家",
+    "travel_stats_title": "旅行统计",
+    "countries_visited": "访问过的国家",
+    "cities_explored": "探索的城市",
+    "places_visited": "访问过的地点",
+    "achievement_points": "成就积分",
+    "view_details": "查看详情",
+    "menu": {
+      "personal_info": "个人信息",
+      "personal_info_desc": "管理您的个人数据",
+      "travel_documents": "旅行文件",
+      "travel_documents_desc": "护照、签证、机票",
+      "my_reviews": "我的评论",
+      "my_reviews_desc": "管理您的地点评论",
+      "notifications": "通知",
+      "notifications_desc": "管理提醒和更新",
+      "travel_achievements": "旅行成就",
+      "travel_achievements_desc": "等级1 {{level}} • 获得{{points}}积分",
+      "share_profile": "分享个人资料",
+      "share_profile_desc": "与旅行者联系",
+      "settings": "设置",
+      "settings_desc": "应用偏好设置",
+      "debug_clear_city_cache": "🔧 调试：清除城市缓存",
+      "debug_clear_city_cache_desc": "强制重新检测城市"
+    },
+    "sign_out": "退出登录",
+    "sign_out_confirmation": "您确定要退出登录吗？",
+    "coming_soon": "即将推出",
+    "documents_coming_soon": "文件功能即将推出",
+    "reviews_coming_soon": "评论功能即将推出",
+    "achievements_coming_soon": "成就功能即将推出",
+    "share_coming_soon": "分享功能即将推出",
+    "debug_cache_cleared": "✅ 城市缓存已清除。重新启动应用程序以再次检测。",
+    "personal_info": {
+      "title": "个人信息",
+      "loading": "正在加载信息...",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "save_changes": "保存更改",
+      "basic_info": "基本信息",
+      "full_name": "全名",
+      "full_name_required": "全名 *",
+      "full_name_placeholder": "输入您的全名",
+      "birth_date": "出生日期",
+      "birth_date_placeholder": "选择日期",
+      "age": "年龄",
+      "age_years": "年龄：{{years}}岁",
+      "gender": "性别",
+      "gender_placeholder": "👤 选择性别",
+      "location": "位置",
+      "country": "国家",
+      "country_placeholder": "🌍 选择国家",
+      "select_country_first": "🌍 请先选择国家",
+      "loading_cities": "⏳ 正在加载城市...",
+      "city_state": "城市/州",
+      "city_state_placeholder": "🏙️ 选择城市或州",
+      "address": "地址",
+      "address_placeholder": "完整地址",
+      "contact": "联系方式",
+      "mobile_phone": "手机号码",
+      "mobile_phone_placeholder": "123 456 7890",
+      "not_specified": "未指定",
+      "genders": {
+        "masculine": "男性",
+        "feminine": "女性",
+        "prefer_not_to_say": "不愿透露"
+      },
+      "date_picker": {
+        "cancel": "取消",
+        "done": "完成",
+        "title": "出生日期"
+      },
+      "gender_picker": {
+        "title": "选择性别"
+      },
+      "country_picker": {
+        "title": "选择国家"
+      },
+      "city_picker": {
+        "title": "选择城市",
+        "search_placeholder": "搜索城市...",
+        "results_count": "🔍 {{count}}个结果",
+        "showing_count": "🏙️ 显示{{showing}}个，共{{total}}个城市",
+        "no_cities": "该国家未找到城市",
+        "load_more": "加载更多城市（剩余{{remaining}}个）",
+        "inhabitants": "居民"
+      },
+      "errors": {
+        "title": "错误",
+        "full_name_required": "全名为必填项",
+        "load_failed": "无法加载个人资料数据",
+        "save_failed": "保存信息时出错"
+      },
+      "success": {
+        "title": "成功",
+        "saved": "您的个人信息已更新"
+      }
+    }
   },
   "notifications": {
     "pending_invitations": "待处理的邀请",

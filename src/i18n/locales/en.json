@@ -527,7 +527,107 @@
   "profile": {
     "title": "Profile",
     "documents": "Travel Documents",
-    "achievements": "Travel Achievements"
+    "achievements": "Travel Achievements",
+    "travel_enthusiast": "Travel Enthusiast",
+    "level_badge": "Backpack Explorer",
+    "travel_stats_title": "Travel Statistics",
+    "countries_visited": "Countries Visited",
+    "cities_explored": "Cities Explored",
+    "places_visited": "Places Visited",
+    "achievement_points": "Achievement Points",
+    "view_details": "View details",
+    "menu": {
+      "personal_info": "Personal Information",
+      "personal_info_desc": "Manage your personal data",
+      "travel_documents": "Travel Documents",
+      "travel_documents_desc": "Passports, visas, tickets",
+      "my_reviews": "My Reviews",
+      "my_reviews_desc": "Manage your place reviews",
+      "notifications": "Notifications",
+      "notifications_desc": "Manage alerts and updates",
+      "travel_achievements": "Travel Achievements",
+      "travel_achievements_desc": "Level 1 {{level}} • {{points}} points earned",
+      "share_profile": "Share Profile",
+      "share_profile_desc": "Connect with travelers",
+      "settings": "Settings",
+      "settings_desc": "App preferences",
+      "debug_clear_city_cache": "🔧 DEBUG: Clear City Cache",
+      "debug_clear_city_cache_desc": "Force new city detection"
+    },
+    "sign_out": "Sign Out",
+    "sign_out_confirmation": "Are you sure you want to sign out?",
+    "coming_soon": "Coming Soon",
+    "documents_coming_soon": "Documents functionality coming soon",
+    "reviews_coming_soon": "Reviews functionality coming soon",
+    "achievements_coming_soon": "Achievements functionality coming soon",
+    "share_coming_soon": "Share functionality coming soon",
+    "debug_cache_cleared": "✅ City cache cleared. Restart the app to detect again.",
+    "personal_info": {
+      "title": "Personal Information",
+      "loading": "Loading information...",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "save_changes": "Save Changes",
+      "basic_info": "Basic Information",
+      "full_name": "Full Name",
+      "full_name_required": "Full Name *",
+      "full_name_placeholder": "Enter your full name",
+      "birth_date": "Birth Date",
+      "birth_date_placeholder": "Select date",
+      "age": "Age",
+      "age_years": "Age: {{years}} years",
+      "gender": "Gender",
+      "gender_placeholder": "👤 Select gender",
+      "location": "Location",
+      "country": "Country",
+      "country_placeholder": "🌍 Select country",
+      "select_country_first": "🌍 Select a country first",
+      "loading_cities": "⏳ Loading cities...",
+      "city_state": "City/State",
+      "city_state_placeholder": "🏙️ Select city or state",
+      "address": "Address",
+      "address_placeholder": "Full address",
+      "contact": "Contact",
+      "mobile_phone": "Mobile Phone",
+      "mobile_phone_placeholder": "123 456 7890",
+      "not_specified": "Not specified",
+      "genders": {
+        "masculine": "Male",
+        "feminine": "Female",
+        "prefer_not_to_say": "Prefer not to say"
+      },
+      "date_picker": {
+        "cancel": "Cancel",
+        "done": "Done",
+        "title": "Birth Date"
+      },
+      "gender_picker": {
+        "title": "Select Gender"
+      },
+      "country_picker": {
+        "title": "Select Country"
+      },
+      "city_picker": {
+        "title": "Select City",
+        "search_placeholder": "Search city...",
+        "results_count": "🔍 {{count}} results",
+        "showing_count": "🏙️ Showing {{showing}} of {{total}} cities",
+        "no_cities": "No cities found for this country",
+        "load_more": "Load more cities ({{remaining}} remaining)",
+        "inhabitants": "inhabitants"
+      },
+      "errors": {
+        "title": "Error",
+        "full_name_required": "Full name is required",
+        "load_failed": "Could not load profile data",
+        "save_failed": "Error saving information"
+      },
+      "success": {
+        "title": "Success",
+        "saved": "Your personal information has been updated"
+      }
+    }
   },
   "auto": {
     "+ New Trip": "+ New Trip",

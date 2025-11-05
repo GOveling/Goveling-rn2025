@@ -516,7 +516,107 @@
   "profile": {
     "title": "Profilo",
     "documents": "Documenti di viaggio",
-    "achievements": "Obiettivi di viaggio"
+    "achievements": "Obiettivi di viaggio",
+    "travel_enthusiast": "Appassionato di Viaggi",
+    "level_badge": "Esploratore con Zaino",
+    "travel_stats_title": "Statistiche di Viaggio",
+    "countries_visited": "Paesi Visitati",
+    "cities_explored": "Città Esplorate",
+    "places_visited": "Luoghi Visitati",
+    "achievement_points": "Punti Obiettivo",
+    "view_details": "Vedi dettagli",
+    "menu": {
+      "personal_info": "Informazioni Personali",
+      "personal_info_desc": "Gestisci i tuoi dati personali",
+      "travel_documents": "Documenti di Viaggio",
+      "travel_documents_desc": "Passaporti, visti, biglietti",
+      "my_reviews": "Le Mie Recensioni",
+      "my_reviews_desc": "Gestisci le tue recensioni sui luoghi",
+      "notifications": "Notifiche",
+      "notifications_desc": "Gestisci avvisi e aggiornamenti",
+      "travel_achievements": "Obiettivi di Viaggio",
+      "travel_achievements_desc": "Livello 1 {{level}} • {{points}} punti guadagnati",
+      "share_profile": "Condividi Profilo",
+      "share_profile_desc": "Connettiti con i viaggiatori",
+      "settings": "Impostazioni",
+      "settings_desc": "Preferenze dell'app",
+      "debug_clear_city_cache": "🔧 DEBUG: Svuota Cache Città",
+      "debug_clear_city_cache_desc": "Forza nuova rilevazione della città"
+    },
+    "sign_out": "Disconnetti",
+    "sign_out_confirmation": "Sei sicuro di volerti disconnettere?",
+    "coming_soon": "Prossimamente",
+    "documents_coming_soon": "Funzionalità documenti prossimamente disponibile",
+    "reviews_coming_soon": "Funzionalità recensioni prossimamente disponibile",
+    "achievements_coming_soon": "Funzionalità obiettivi prossimamente disponibile",
+    "share_coming_soon": "Funzione prossimamente disponibile",
+    "debug_cache_cleared": "✅ Cache città svuotata. Riavvia l'app per rilevare di nuovo.",
+    "personal_info": {
+      "title": "Informazioni Personali",
+      "loading": "Caricamento informazioni...",
+      "edit": "Modifica",
+      "save": "Salva",
+      "cancel": "Annulla",
+      "save_changes": "Salva Modifiche",
+      "basic_info": "Informazioni di Base",
+      "full_name": "Nome Completo",
+      "full_name_required": "Nome Completo *",
+      "full_name_placeholder": "Inserisci il tuo nome completo",
+      "birth_date": "Data di Nascita",
+      "birth_date_placeholder": "Seleziona data",
+      "age": "Età",
+      "age_years": "Età: {{years}} anni",
+      "gender": "Genere",
+      "gender_placeholder": "👤 Seleziona genere",
+      "location": "Posizione",
+      "country": "Paese",
+      "country_placeholder": "🌍 Seleziona paese",
+      "select_country_first": "🌍 Seleziona prima un paese",
+      "loading_cities": "⏳ Caricamento città...",
+      "city_state": "Città/Stato",
+      "city_state_placeholder": "🏙️ Seleziona città o stato",
+      "address": "Indirizzo",
+      "address_placeholder": "Indirizzo completo",
+      "contact": "Contatto",
+      "mobile_phone": "Telefono Cellulare",
+      "mobile_phone_placeholder": "123 456 7890",
+      "not_specified": "Non specificato",
+      "genders": {
+        "masculine": "Maschile",
+        "feminine": "Femminile",
+        "prefer_not_to_say": "Preferisco non dirlo"
+      },
+      "date_picker": {
+        "cancel": "Annulla",
+        "done": "Fatto",
+        "title": "Data di Nascita"
+      },
+      "gender_picker": {
+        "title": "Seleziona Genere"
+      },
+      "country_picker": {
+        "title": "Seleziona Paese"
+      },
+      "city_picker": {
+        "title": "Seleziona Città",
+        "search_placeholder": "Cerca città...",
+        "results_count": "🔍 {{count}} risultati",
+        "showing_count": "🏙️ Visualizzazione di {{showing}} su {{total}} città",
+        "no_cities": "Nessuna città trovata per questo paese",
+        "load_more": "Carica più città ({{remaining}} rimanenti)",
+        "inhabitants": "abitanti"
+      },
+      "errors": {
+        "title": "Errore",
+        "full_name_required": "Il nome completo è obbligatorio",
+        "load_failed": "Impossibile caricare i dati del profilo",
+        "save_failed": "Errore nel salvataggio delle informazioni"
+      },
+      "success": {
+        "title": "Successo",
+        "saved": "Le tue informazioni personali sono state aggiornate"
+      }
+    }
   },
   "notifications": {
     "pending_invitations": "Inviti in sospeso",

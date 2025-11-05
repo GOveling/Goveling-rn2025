@@ -21,6 +21,7 @@ import { router } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useCitiesByCountry } from '../../src/hooks/useCitiesByCountry';
