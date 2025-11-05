@@ -558,6 +558,12 @@
       "save": "保存",
       "cancel": "キャンセル",
       "save_changes": "変更を保存",
+      "continue": "続行",
+      "progress": "進捗: {{percentage}}%",
+      "complete_basic_info": "基本情報を完成させてください",
+      "complete_basic_info_description": "お客様の体験をパーソナライズするため、氏名、生年月日、所在地が必要です。",
+      "profile_complete": "プロフィールが完成しました！",
+      "profile_complete_description": "基本情報は完成しています。必要に応じて詳細を追加できます。",
       "basic_info": "基本情報",
       "full_name": "フルネーム",
       "full_name_required": "フルネーム *",
@@ -586,10 +592,16 @@
         "feminine": "女性",
         "prefer_not_to_say": "回答しない"
       },
+      "gender_options": {
+        "masculine": "男性",
+        "feminine": "女性",
+        "prefer_not_to_say": "回答しない"
+      },
       "date_picker": {
         "cancel": "キャンセル",
         "done": "完了",
-        "title": "生年月日"
+        "title": "生年月日",
+        "select_date": "日付を選択"
       },
       "gender_picker": {
         "title": "性別を選択"
@@ -750,6 +762,7 @@
     "Invitar": "Invitar",
     "Logros": "Logros",
     "Manage Team": "Manage Team",
+    "Mark all as read": "すべて既読にする",
     "Marcar visitado": "Marcar visitado",
     "Modo Travel": "Modo Travel",
     "Mostrar minimapas": "Mostrar minimapas",

@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '~/contexts/AuthContext';
+import { translateDynamic } from '~/i18n';
 import { processPlaceCategories } from '~/lib/categoryProcessor';
 import { supabase } from '~/lib/supabase';
 import { resolveUserRoleForTrip } from '~/lib/userUtils';
@@ -38,7 +39,7 @@ export default function TripPlacesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [tripTitle, setTripTitle] = useState('');
@@ -46,6 +47,7 @@ export default function TripPlacesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
   const [tripData, setTripData] = useState<any>(null);
+  const [translatedDescriptions, setTranslatedDescriptions] = useState<Record<string, string>>({});
 
   // Verificar si el usuario puede editar (owner o editor)
   const canEdit = currentRole === 'owner' || currentRole === 'editor';
@@ -87,6 +89,39 @@ export default function TripPlacesScreen() {
       loadTripPlaces();
     }, [id])
   );
+
+  // Translate place descriptions dynamically when places or language change
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!places.length) {
+        setTranslatedDescriptions({});
+        return;
+      }
+      const entries = await Promise.all(
+        places.map(async (place) => {
+          const src = (place.editorial_summary || '').trim();
+          if (!src) return [place.id, ''] as [string, string];
+          try {
+            const tr = await translateDynamic(src, i18n.language);
+            return [place.id, tr] as [string, string];
+          } catch {
+            return [place.id, src] as [string, string];
+          }
+        })
+      );
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const [placeId, text] of entries) {
+        if (text) map[placeId] = text;
+      }
+      setTranslatedDescriptions(map);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [places, i18n.language]);
 
   const loadTripPlaces = async () => {
     try {
@@ -615,7 +650,7 @@ export default function TripPlacesScreen() {
                         }}
                         numberOfLines={2}
                       >
-                        {place.editorial_summary}
+                        {translatedDescriptions[place.id] ?? place.editorial_summary}
                       </Text>
                     )}
 

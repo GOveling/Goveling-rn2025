@@ -16,7 +16,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
+import { translateDynamic } from '~/i18n';
 import { supabase } from '~/lib/supabase';
 
 import NewTripModal from './NewTripModal';
@@ -61,6 +63,8 @@ export default function TripSelectorModal({
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewTripModal, setShowNewTripModal] = useState(false);
+  const { i18n } = useTranslation();
+  const [translated, setTranslated] = useState<Record<string, string>>({});
 
   // Cargar trips del usuario cuando se abre el modal
   useEffect(() => {
@@ -70,6 +74,39 @@ export default function TripSelectorModal({
       loadUserTrips();
     }
   }, [visible]);
+
+  // Translate trip descriptions dynamically when trips or language change
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!trips.length) {
+        setTranslated({});
+        return;
+      }
+      const entries = await Promise.all(
+        trips.map(async (trip) => {
+          const src = (trip.description || '').trim();
+          if (!src) return [trip.id, ''] as [string, string];
+          try {
+            const tr = await translateDynamic(src, i18n.language);
+            return [trip.id, tr] as [string, string];
+          } catch {
+            return [trip.id, src] as [string, string];
+          }
+        })
+      );
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const [id, text] of entries) {
+        if (text) map[id] = text;
+      }
+      setTranslated(map);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [trips, i18n.language]);
 
   const loadUserTrips = async () => {
     console.log('🔥 TripSelectorModal: loadUserTrips STARTED');
@@ -353,7 +390,7 @@ export default function TripSelectorModal({
 
                         {trip.description && (
                           <Text style={styles.tripDescription} numberOfLines={2}>
-                            {trip.description}
+                            {translated[trip.id] ?? trip.description}
                           </Text>
                         )}
 

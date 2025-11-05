@@ -566,6 +566,12 @@
       "save": "सहेजें",
       "cancel": "रद्द करें",
       "save_changes": "परिवर्तन सहेजें",
+      "continue": "जारी रखें",
+      "progress": "प्रगति: {{percentage}}%",
+      "complete_basic_info": "मूलभूत जानकारी पूरी करें",
+      "complete_basic_info_description": "आपके अनुभव को व्यक्तिगत बनाने के लिए हमें आपका नाम, जन्मतिथि और स्थान चाहिए।",
+      "profile_complete": "प्रोफ़ाइल पूरी हो गई!",
+      "profile_complete_description": "आपकी मूलभूत जानकारी पूर्ण है। आप चाहें तो और विवरण जोड़ सकते हैं।",
       "basic_info": "बुनियादी जानकारी",
       "full_name": "पूरा नाम",
       "full_name_required": "पूरा नाम *",
@@ -594,10 +600,16 @@
         "feminine": "महिला",
         "prefer_not_to_say": "नहीं बताना चाहते"
       },
+      "gender_options": {
+        "masculine": "पुरुष",
+        "feminine": "महिला",
+        "prefer_not_to_say": "नहीं बताना चाहते"
+      },
       "date_picker": {
         "cancel": "रद्द करें",
         "done": "हो गया",
-        "title": "जन्म तिथि"
+        "title": "जन्म तिथि",
+        "select_date": "तारीख चुनें"
       },
       "gender_picker": {
         "title": "लिंग चुनें"
@@ -801,6 +813,9 @@
       "send_failed": "संदेश भेजा नहीं जा सका"
     },
     "user_fallback": "उपयोगकर्ता"
+  },
+  "auto": {
+    "Mark all as read": "सभी को पढ़ा हुआ चिह्नित करें"
   },
   "tabs": {
     "home": "होम",

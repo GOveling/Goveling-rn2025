@@ -16,8 +16,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { COLORS } from '~/constants/colors';
+import { translateDynamic } from '~/i18n';
 import { EnhancedPlace } from '~/lib/placesSearch';
 import { supabase } from '~/lib/supabase';
 import { resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
@@ -53,6 +55,8 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   const [loading, setLoading] = useState(false);
   const [showNewTripModal, setShowNewTripModal] = useState(false);
   const [adding, setAdding] = useState(false);
+  const { i18n } = useTranslation();
+  const [translated, setTranslated] = useState<Record<string, string>>({});
 
   useEffect(() => {
     console.log('🎯 AddToTripModal useEffect triggered - visible:', visible);
@@ -61,6 +65,39 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
       loadTrips();
     }
   }, [visible]);
+
+  // Translate trip descriptions dynamically when trips or language change
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!trips.length) {
+        setTranslated({});
+        return;
+      }
+      const entries = await Promise.all(
+        trips.map(async (trip) => {
+          const src = (trip.description || '').trim();
+          if (!src) return [trip.id, ''] as [string, string];
+          try {
+            const tr = await translateDynamic(src, i18n.language);
+            return [trip.id, tr] as [string, string];
+          } catch {
+            return [trip.id, src] as [string, string];
+          }
+        })
+      );
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const [id, text] of entries) {
+        if (text) map[id] = text;
+      }
+      setTranslated(map);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [trips, i18n.language]);
 
   const loadTrips = async () => {
     try {
@@ -422,7 +459,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                       ) : null}
                       {!!(t.description && t.description.trim().length > 0) && (
                         <Text numberOfLines={2} style={styles.tripDesc}>
-                          {t.description}
+                          {translated[t.id] ?? t.description}
                         </Text>
                       )}
                     </View>

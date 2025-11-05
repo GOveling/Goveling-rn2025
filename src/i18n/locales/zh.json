@@ -558,6 +558,12 @@
       "save": "保存",
       "cancel": "取消",
       "save_changes": "保存更改",
+      "continue": "继续",
+      "progress": "进度：{{percentage}}%",
+      "complete_basic_info": "完善基本信息",
+      "complete_basic_info_description": "我们需要您的姓名、出生日期和位置，以便个性化您的体验。",
+      "profile_complete": "资料已完善！",
+      "profile_complete_description": "您的基本信息已完成。如需，可以添加更多详细信息。",
       "basic_info": "基本信息",
       "full_name": "全名",
       "full_name_required": "全名 *",
@@ -586,10 +592,16 @@
         "feminine": "女性",
         "prefer_not_to_say": "不愿透露"
       },
+      "gender_options": {
+        "masculine": "男性",
+        "feminine": "女性",
+        "prefer_not_to_say": "不愿透露"
+      },
       "date_picker": {
         "cancel": "取消",
         "done": "完成",
-        "title": "出生日期"
+        "title": "出生日期",
+        "select_date": "选择日期"
       },
       "gender_picker": {
         "title": "选择性别"
@@ -750,6 +762,7 @@
     "Invitar": "Invitar",
     "Logros": "Logros",
     "Manage Team": "Manage Team",
+    "Mark all as read": "全部标记为已读",
     "Marcar visitado": "Marcar visitado",
     "Modo Travel": "Modo Travel",
     "Mostrar minimapas": "Mostrar minimapas",

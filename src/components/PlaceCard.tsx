@@ -1,26 +1,59 @@
 // src/components/PlaceCard.tsx
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
+  type GestureResponderEvent,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { useTranslation } from 'react-i18next';
 
 import { COLORS } from '../constants/colors';
+import { translateDynamic } from '../i18n';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
 
 interface PlaceCardProps {
   place: EnhancedPlace;
   onPress: (place: EnhancedPlace) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   compact?: boolean;
 }
 
 export default function PlaceCard({ place, onPress, style, compact = false }: PlaceCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isFavorite, toggleFavorite, loading } = useFavorites();
+  const [aboutText, setAboutText] = React.useState<string | null>(null);
 
-  const handleFavoritePress = async (e: any) => {
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const src = (place.description || '').trim();
+      if (!src) {
+        setAboutText(null);
+        return;
+      }
+      try {
+        const tr = await translateDynamic(src, i18n.language);
+        if (!cancelled) setAboutText(tr);
+      } catch {
+        if (!cancelled) setAboutText(null);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [place.description, i18n.language]);
+
+  const handleFavoritePress = async (e: GestureResponderEvent) => {
     e.stopPropagation();
     const success = await toggleFavorite(place);
     if (!success) {
@@ -149,7 +182,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
         {/* Editorial Summary / About */}
         {place.description && !compact && (
           <Text style={styles.editorialText} numberOfLines={2}>
-            {place.description}
+            {aboutText ?? place.description}
           </Text>
         )}
 

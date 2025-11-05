@@ -16,10 +16,9 @@ import {
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
-import LottieView from 'lottie-react-native';
+import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { useTranslation } from 'react-i18next';
 
 import AddToTripModal from './AddToTripModal';
@@ -29,21 +28,12 @@ import cycleAnimation from '../../assets/animations/cycle.json';
 import globeAnimation from '../../assets/animations/globe.json';
 import locationCircleAnimation from '../../assets/animations/location-circle.json';
 import { COLORS } from '../constants/colors';
+import { translateDynamic } from '../i18n';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useFavorites } from '../lib/useFavorites';
 
-// Conditional BlurView import
-let BlurView: any = View;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  BlurView = require('expo-blur').BlurView;
-} catch (e) {
-  // Fallback to regular View if expo-blur is not available
-  console.log('expo-blur not available, using fallback');
-}
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface PlaceDetailModalProps {
   visible: boolean;
@@ -66,14 +56,14 @@ export default function PlaceDetailModal({
   isAlreadyInTrip = false,
   onRemoveFromTrip,
 }: PlaceDetailModalProps) {
-  const { t } = useTranslation();
-  const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
   const [showMapModal, setShowMapModal] = React.useState(false);
   const [showMiniMap, setShowMiniMap] = React.useState(false);
   const [tempHideMainModal, setTempHideMainModal] = React.useState(false);
   const [showAddToTrip, setShowAddToTrip] = React.useState(false);
+  const [aboutText, setAboutText] = React.useState<string | null>(null);
 
   // Estados para controlar errores de Lottie
   const [directionsLottieError, setDirectionsLottieError] = React.useState(false);
@@ -90,6 +80,28 @@ export default function PlaceDetailModal({
   React.useEffect(() => {
     setSelectedPhotoIndex(0);
   }, [place?.id]);
+
+  // Translate About/description dynamically when place or language changes
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const src = (place?.description || '').trim();
+      if (!src) {
+        setAboutText(null);
+        return;
+      }
+      try {
+        const tr = await translateDynamic(src, i18n.language);
+        if (!cancelled) setAboutText(tr);
+      } catch {
+        if (!cancelled) setAboutText(null);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [place?.description, i18n.language]);
 
   // Debug logging para showMiniMap
   React.useEffect(() => {
@@ -121,7 +133,7 @@ export default function PlaceDetailModal({
         scheduleLottieRef.current?.play();
       }, 300);
     }
-  }, [visible]);
+  }, [visible, place?.name, place?.description]);
 
   if (!place) return null;
 
@@ -260,13 +272,13 @@ export default function PlaceDetailModal({
   // Componente para renderizar icono Lottie centrado con fallback
   const renderActionIcon = (
     lottieRef: React.RefObject<LottieView>,
-    animationSource: any,
+    animationSource: string | AnimationObject | { uri: string },
     fallbackEmoji: string,
     errorState: boolean,
     setErrorState: (error: boolean) => void,
     disabled: boolean = false
   ) => {
-    const handleAnimationFailure = (error: any) => {
+    const handleAnimationFailure = (error: unknown) => {
       console.log('Lottie animation failed:', error);
       setErrorState(true);
     };
@@ -488,7 +500,7 @@ export default function PlaceDetailModal({
                   <Text style={styles.sectionIcon}>ℹ️</Text>
                   <Text style={styles.sectionTitle}>{t('explore.modal.sections.about')}</Text>
                 </View>
-                <Text style={styles.aboutText}>{place.description}</Text>
+                <Text style={styles.aboutText}>{aboutText ?? place.description}</Text>
               </View>
             )}
 

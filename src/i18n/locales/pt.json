@@ -558,6 +558,12 @@
       "save": "Salvar",
       "cancel": "Cancelar",
       "save_changes": "Salvar Alterações",
+      "continue": "Continuar",
+      "progress": "Progresso: {{percentage}}%",
+      "complete_basic_info": "Complete as informações básicas",
+      "complete_basic_info_description": "Precisamos do seu nome, data de nascimento e localização para personalizar sua experiência.",
+      "profile_complete": "Perfil completo!",
+      "profile_complete_description": "Suas informações básicas estão completas. Você pode adicionar mais detalhes se desejar.",
       "basic_info": "Informações Básicas",
       "full_name": "Nome Completo",
       "full_name_required": "Nome Completo *",
@@ -586,10 +592,16 @@
         "feminine": "Feminino",
         "prefer_not_to_say": "Prefiro não dizer"
       },
+      "gender_options": {
+        "masculine": "Masculino",
+        "feminine": "Feminino",
+        "prefer_not_to_say": "Prefiro não dizer"
+      },
       "date_picker": {
         "cancel": "Cancelar",
         "done": "Pronto",
-        "title": "Data de Nascimento"
+        "title": "Data de Nascimento",
+        "select_date": "Selecionar data"
       },
       "gender_picker": {
         "title": "Selecionar Gênero"
@@ -750,6 +762,7 @@
     "Invitar": "Invitar",
     "Logros": "Logros",
     "Manage Team": "Manage Team",
+    "Mark all as read": "Marcar tudo como lido",
     "Marcar visitado": "Marcar visitado",
     "Modo Travel": "Modo Travel",
     "Mostrar minimapas": "Mostrar minimapas",

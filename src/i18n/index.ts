@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/i18n/index.ts
 // Import polyfill for Intl.PluralRules if not available
 // Skip polyfill in Expo Go to avoid compatibility issues
@@ -96,9 +97,10 @@ getSavedLanguage()
 
 // AUTO_TRANSLATE: runtime fallback with tiny dictionaries + pseudo-localization.
 // If EXPO_PUBLIC_I18N_EDGE is set, it will try to call a Supabase Edge function to get real translations and cache them.
-import { NativeModules, Platform } from 'react-native';
+// (No React Native imports needed here)
 
-const miniDict: any = {
+type MiniDict = Record<string, Record<string, string>>;
+const miniDict: MiniDict = {
   es: {
     OK: 'OK',
     Cancel: 'Cancelar',
@@ -196,7 +198,7 @@ const miniDict: any = {
 
 function pseudo(str: string) {
   // simple pseudos: wrap + extend characters
-  const map: any = {
+  const map: Record<string, string> = {
     a: 'á',
     e: 'é',
     i: 'í',
@@ -267,5 +269,22 @@ i18n.t = function (key: string, opts?: any) {
   }
   return val;
 } as any;
+
+// Public helper to translate arbitrary dynamic text at runtime (best-effort)
+// Uses miniDict -> Edge function -> fallback to original text. Caches via callers if needed.
+export async function translateDynamic(text?: string | null, targetLang?: string): Promise<string> {
+  try {
+    const src = (text || '').trim();
+    if (!src) return '';
+    const lang = (targetLang || i18n.language || 'en') as string;
+    if (lang === 'en') return src;
+    const dict = miniDict[lang];
+    if (dict && dict[src]) return dict[src];
+    const tr = await edgeTranslate(src, lang);
+    return tr || src;
+  } catch {
+    return text || '';
+  }
+}
 
 export default i18n;
