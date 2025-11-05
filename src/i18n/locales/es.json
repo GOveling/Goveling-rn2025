@@ -386,6 +386,37 @@
     "select_language": "Seleccionar Idioma",
     "select_theme": "Seleccionar Tema"
   },
+  "bookingTab": {
+    "title": "Reservas",
+    "subtitle": "Reserva lo esencial para tu viaje",
+    "comingSoon": "Funcionalidad de {{service}} próximamente disponible",
+    "options": {
+      "flights": {
+        "title": "Vuelos",
+        "description": "Encuentra las mejores ofertas"
+      },
+      "hotels": {
+        "title": "Hoteles",
+        "description": "Estadías cómodas"
+      },
+      "transport": {
+        "title": "Transporte",
+        "description": "Múltiples opciones de viaje"
+      },
+      "tours": {
+        "title": "Tours y Actividades",
+        "description": "Experiencias guiadas"
+      },
+      "esim": {
+        "title": "eSIMs",
+        "description": "Mantente conectado"
+      },
+      "restaurants": {
+        "title": "Restaurantes",
+        "description": "Reservar mesas"
+      }
+    }
+  },
   "tabs": {
     "home": "Inicio",
     "explore": "Explorar",

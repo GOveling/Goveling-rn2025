@@ -245,6 +245,37 @@
     "shopping": "खरीदारी",
     "entertainment": "मनोरंजन"
   },
+  "bookingTab": {
+    "title": "बुकिंग",
+    "subtitle": "अपनी यात्रा के लिए आवश्यक चीजें बुक करें",
+    "comingSoon": "{{service}} सुविधा जल्द आ रही है",
+    "options": {
+      "flights": {
+        "title": "उड़ानें",
+        "description": "सर्वोत्तम सौदे खोजें"
+      },
+      "hotels": {
+        "title": "होटल",
+        "description": "आरामदायक ठहरने"
+      },
+      "transport": {
+        "title": "परिवहन",
+        "description": "कई यात्रा विकल्प"
+      },
+      "tours": {
+        "title": "टूर और गतिविधियां",
+        "description": "गाइडेड अनुभव"
+      },
+      "esim": {
+        "title": "eSIM",
+        "description": "जुड़े रहें"
+      },
+      "restaurants": {
+        "title": "रेस्तरां",
+        "description": "टेबल बुक करें"
+      }
+    }
+  },
   "tabs": {
     "home": "होम",
     "explore": "एक्सप्लोर",

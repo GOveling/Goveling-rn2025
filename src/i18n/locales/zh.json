@@ -279,6 +279,37 @@
     "✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.": "✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.",
     "🕒 Free time": "🕒 Free time"
   },
+  "bookingTab": {
+    "title": "预订",
+    "subtitle": "预订旅行必需品",
+    "comingSoon": "{{service}}功能即将推出",
+    "options": {
+      "flights": {
+        "title": "航班",
+        "description": "找到最优惠的价格"
+      },
+      "hotels": {
+        "title": "酒店",
+        "description": "舒适的住宿"
+      },
+      "transport": {
+        "title": "交通",
+        "description": "多种旅行选择"
+      },
+      "tours": {
+        "title": "旅游和活动",
+        "description": "导游体验"
+      },
+      "esim": {
+        "title": "eSIM卡",
+        "description": "保持连接"
+      },
+      "restaurants": {
+        "title": "餐厅",
+        "description": "预订座位"
+      }
+    }
+  },
   "tabs": {
     "home": "主页",
     "explore": "探索",

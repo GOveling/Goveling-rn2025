@@ -32,44 +32,44 @@ export default function BookingTab() {
 
   const bookingOptions: BookingOption[] = [
     {
-      title: 'Vuelos',
+      title: t('bookingTab.options.flights.title'),
       icon: '✈️',
-      description: 'Encuentra las mejores ofertas',
+      description: t('bookingTab.options.flights.description'),
       color: '#007AFF',
       route: '/booking/flights',
     },
     {
-      title: 'Hoteles',
+      title: t('bookingTab.options.hotels.title'),
       icon: '🏨',
-      description: 'Estadías cómodas',
+      description: t('bookingTab.options.hotels.description'),
       color: '#34C759',
       route: '/booking/hotels',
     },
     {
-      title: 'Transporte',
-      icon: '�',
-      description: 'Múltiples opciones de viaje',
+      title: t('bookingTab.options.transport.title'),
+      icon: '🚗',
+      description: t('bookingTab.options.transport.description'),
       color: '#8B5CF6',
       route: '/booking/transport',
     },
     {
-      title: 'Tours y Actividades',
+      title: t('bookingTab.options.tours.title'),
       icon: '📍',
-      description: 'Experiencias guiadas',
+      description: t('bookingTab.options.tours.description'),
       color: '#FF9500',
       route: '/booking/tours',
     },
     {
-      title: 'eSIMs',
+      title: t('bookingTab.options.esim.title'),
       icon: '📱',
-      description: 'Mantente conectado',
+      description: t('bookingTab.options.esim.description'),
       color: '#EC4899',
       route: '/booking/esim',
     },
     {
-      title: 'Restaurantes',
+      title: t('bookingTab.options.restaurants.title'),
       icon: '🍴',
-      description: 'Reservar mesas',
+      description: t('bookingTab.options.restaurants.description'),
       color: '#DC2626',
       route: '/booking/restaurants',
     },
@@ -77,11 +77,9 @@ export default function BookingTab() {
 
   const handleBookingPress = (option: BookingOption) => {
     // Show alert for now since booking sections are coming soon
-    Alert.alert(
-      option.title,
-      `Funcionalidad de ${option.title.toLowerCase()} próximamente disponible`,
-      [{ text: 'OK' }]
-    );
+    Alert.alert(option.title, t('bookingTab.comingSoon', { service: option.title.toLowerCase() }), [
+      { text: t('common.ok') },
+    ]);
   };
 
   return (
@@ -94,7 +92,7 @@ export default function BookingTab() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('bookingTab.title')}</Text>
-          <Text style={styles.headerSubtitle}>Reserva lo esencial para tu viaje</Text>
+          <Text style={styles.headerSubtitle}>{t('bookingTab.subtitle')}</Text>
         </View>
 
         {/* Booking Options Grid */}

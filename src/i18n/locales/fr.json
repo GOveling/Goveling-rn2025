@@ -279,6 +279,37 @@
     "✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.": "✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.",
     "🕒 Free time": "🕒 Free time"
   },
+  "bookingTab": {
+    "title": "Réservations",
+    "subtitle": "Réservez l'essentiel pour votre voyage",
+    "comingSoon": "Fonctionnalité {{service}} bientôt disponible",
+    "options": {
+      "flights": {
+        "title": "Vols",
+        "description": "Trouvez les meilleures offres"
+      },
+      "hotels": {
+        "title": "Hôtels",
+        "description": "Séjours confortables"
+      },
+      "transport": {
+        "title": "Transport",
+        "description": "Plusieurs options de voyage"
+      },
+      "tours": {
+        "title": "Tours et Activités",
+        "description": "Expériences guidées"
+      },
+      "esim": {
+        "title": "eSIMs",
+        "description": "Restez connecté"
+      },
+      "restaurants": {
+        "title": "Restaurants",
+        "description": "Réserver des tables"
+      }
+    }
+  },
   "tabs": {
     "home": "Accueil",
     "explore": "Explorer",

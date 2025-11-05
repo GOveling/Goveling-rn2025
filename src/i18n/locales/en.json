@@ -387,6 +387,37 @@
     "select_language": "Select Language",
     "select_theme": "Select Theme"
   },
+  "bookingTab": {
+    "title": "Bookings",
+    "subtitle": "Book the essentials for your trip",
+    "comingSoon": "{{service}} functionality coming soon",
+    "options": {
+      "flights": {
+        "title": "Flights",
+        "description": "Find the best deals"
+      },
+      "hotels": {
+        "title": "Hotels",
+        "description": "Comfortable stays"
+      },
+      "transport": {
+        "title": "Transport",
+        "description": "Multiple travel options"
+      },
+      "tours": {
+        "title": "Tours & Activities",
+        "description": "Guided experiences"
+      },
+      "esim": {
+        "title": "eSIMs",
+        "description": "Stay connected"
+      },
+      "restaurants": {
+        "title": "Restaurants",
+        "description": "Reserve tables"
+      }
+    }
+  },
   "tabs": {
     "home": "Home",
     "explore": "Explore",

@@ -279,6 +279,37 @@
     "✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.": "✅ Dentro de la ventana sugerida {eta? 'desde '+eta:''}{etd? ' hasta '+etd:''}.",
     "🕒 Free time": "🕒 Free time"
   },
+  "bookingTab": {
+    "title": "予約",
+    "subtitle": "旅行に必要なものを予約する",
+    "comingSoon": "{{service}}機能は近日公開",
+    "options": {
+      "flights": {
+        "title": "フライト",
+        "description": "最高のお得情報を見つける"
+      },
+      "hotels": {
+        "title": "ホテル",
+        "description": "快適な滞在"
+      },
+      "transport": {
+        "title": "交通",
+        "description": "複数の旅行オプション"
+      },
+      "tours": {
+        "title": "ツアー＆アクティビティ",
+        "description": "ガイド付き体験"
+      },
+      "esim": {
+        "title": "eSIM",
+        "description": "接続を維持"
+      },
+      "restaurants": {
+        "title": "レストラン",
+        "description": "テーブル予約"
+      }
+    }
+  },
   "tabs": {
     "home": "ホーム",
     "explore": "探索",
