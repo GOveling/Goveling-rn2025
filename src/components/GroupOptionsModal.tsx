@@ -4,6 +4,7 @@ import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { useTheme } from '~/lib/theme';
 
 import { DecisionsTab } from './DecisionsTab';
 import { ExpensesTab } from './ExpensesTab';
@@ -23,6 +24,7 @@ interface Collaborator {
 }
 
 export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, onClose, trip }) => {
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState<'expenses' | 'decisions'>('expenses');
   const [allParticipants, setAllParticipants] = useState<Collaborator[]>([]);
 
@@ -99,7 +101,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
         <View
           style={{
             flex: 1,
-            backgroundColor: '#FFFFFF',
+            backgroundColor: theme.colors.card,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             paddingTop: 16,
@@ -114,7 +116,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
               paddingHorizontal: 20,
               paddingBottom: 16,
               borderBottomWidth: 1,
-              borderBottomColor: '#F3F4F6',
+              borderBottomColor: theme.colors.border,
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -126,7 +128,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
                 style={{
                   fontSize: 20,
                   fontWeight: '800',
-                  color: '#1A1A1A',
+                  color: theme.colors.text,
                   marginBottom: 4,
                 }}
               >
@@ -135,7 +137,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
               <Text
                 style={{
                   fontSize: 14,
-                  color: '#6B7280',
+                  color: theme.colors.textMuted,
                   fontWeight: '500',
                 }}
               >
@@ -146,7 +148,9 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
 
             {/* Close button */}
             <TouchableOpacity onPress={onClose}>
-              <Text style={{ fontSize: 24, fontWeight: '600', color: '#6B7280' }}>✕</Text>
+              <Text style={{ fontSize: 24, fontWeight: '600', color: theme.colors.textMuted }}>
+                ✕
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -155,7 +159,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
             style={{
               flexDirection: 'row',
               borderBottomWidth: 1,
-              borderBottomColor: '#F3F4F6',
+              borderBottomColor: theme.colors.border,
               paddingHorizontal: 4,
             }}
           >
@@ -173,7 +177,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
                 style={{
                   fontSize: 14,
                   fontWeight: '600',
-                  color: activeTab === 'expenses' ? '#EA6123' : '#9CA3AF',
+                  color: activeTab === 'expenses' ? '#EA6123' : theme.colors.textMuted,
                 }}
               >
                 💰 Gastos
@@ -194,7 +198,7 @@ export const GroupOptionsModal: React.FC<GroupOptionsModalProps> = ({ visible, o
                 style={{
                   fontSize: 14,
                   fontWeight: '600',
-                  color: activeTab === 'decisions' ? '#EA6123' : '#9CA3AF',
+                  color: activeTab === 'decisions' ? '#EA6123' : theme.colors.textMuted,
                 }}
               >
                 🗳️ Decisiones

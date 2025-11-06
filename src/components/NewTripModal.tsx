@@ -22,8 +22,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 
 // Helper function to format date as YYYY-MM-DD in local timezone
@@ -91,6 +91,7 @@ export default function NewTripModal({
   onTripCreated,
   addPlaceContext,
 }: NewTripModalProps) {
+  const theme = useTheme();
   const [tripData, setTripData] = useState<TripData>({
     name: '',
     description: '',
@@ -330,15 +331,20 @@ export default function NewTripModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#666" />
+            <Ionicons name="close" size={24} color={theme.colors.textMuted} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
             {addPlaceContext && addPlaceContext.placeName
               ? `Crear Viaje para ${addPlaceContext.placeName}`
               : 'Nuevo Viaje'}
@@ -348,12 +354,20 @@ export default function NewTripModal({
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Nombre del viaje */}
           <View style={styles.section}>
-            <Text style={styles.label}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
               Nombre del Viaje <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
               placeholder="Ej: Vacaciones en el sur"
+              placeholderTextColor={theme.colors.textMuted}
               value={tripData.name}
               onChangeText={(text) => setTripData({ ...tripData, name: text })}
               autoFocus
@@ -365,10 +379,19 @@ export default function NewTripModal({
 
           {/* Descripción */}
           <View style={styles.section}>
-            <Text style={styles.label}>Descripción</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Descripción</Text>
             <TextInput
-              style={[styles.textInput, styles.textArea]}
+              style={[
+                styles.textInput,
+                styles.textArea,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
               placeholder="Agrega una breve descripción (opcional)"
+              placeholderTextColor={theme.colors.textMuted}
               value={tripData.description}
               onChangeText={(text) => setTripData({ ...tripData, description: text })}
               multiline
@@ -379,11 +402,12 @@ export default function NewTripModal({
 
           {/* Fechas del viaje */}
           <View style={styles.section}>
-            <Text style={styles.label}>Fechas del Viaje</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Fechas del Viaje</Text>
 
             <TouchableOpacity
               style={[
                 styles.uncertainButton,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
                 tripData.isDateUncertain && styles.uncertainButtonActive,
               ]}
               onPress={() =>
@@ -398,6 +422,7 @@ export default function NewTripModal({
               <Text
                 style={[
                   styles.uncertainButtonText,
+                  { color: theme.colors.textMuted },
                   tripData.isDateUncertain && styles.uncertainButtonTextActive,
                 ]}
               >
@@ -409,13 +434,17 @@ export default function NewTripModal({
               <View style={styles.dateContainer}>
                 <TouchableOpacity
                   onPress={() => setShowStartDatePicker(true)}
-                  style={styles.dateButton}
+                  style={[
+                    styles.dateButton,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                  ]}
                 >
                   <Ionicons name="calendar-outline" size={20} color="#007AFF" />
                   <Text
                     style={[
                       styles.dateButtonText,
-                      !tripData.startDate && { color: COLORS.text.lightGray },
+                      { color: theme.colors.text },
+                      !tripData.startDate && { color: theme.colors.textMuted },
                     ]}
                   >
                     {tripData.startDate ? formatDate(tripData.startDate) : 'Fecha inicio'}
@@ -424,13 +453,17 @@ export default function NewTripModal({
 
                 <TouchableOpacity
                   onPress={() => setShowEndDatePicker(true)}
-                  style={styles.dateButton}
+                  style={[
+                    styles.dateButton,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                  ]}
                 >
                   <Ionicons name="calendar-outline" size={20} color="#007AFF" />
                   <Text
                     style={[
                       styles.dateButtonText,
-                      !tripData.endDate && { color: COLORS.text.lightGray },
+                      { color: theme.colors.text },
+                      !tripData.endDate && { color: theme.colors.textMuted },
                     ]}
                   >
                     {tripData.endDate ? formatDate(tripData.endDate) : 'Fecha fin'}
@@ -442,55 +475,75 @@ export default function NewTripModal({
 
           {/* Presupuesto */}
           <View style={styles.section}>
-            <Text style={styles.label}>Presupuesto (opcional)</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Presupuesto (opcional)</Text>
             <TextInput
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
               value={tripData.budget}
               onChangeText={(text) => setTripData({ ...tripData, budget: text })}
               placeholder="Ej: 500000"
+              placeholderTextColor={theme.colors.textMuted}
               keyboardType="numeric"
             />
           </View>
 
           {/* Alojamiento */}
           <View style={styles.section}>
-            <Text style={styles.label}>Preferencias de Alojamiento</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              Preferencias de Alojamiento
+            </Text>
             <TouchableOpacity
-              style={styles.pickerButton}
+              style={[
+                styles.pickerButton,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+              ]}
               onPress={() => setShowAccommodationPicker(true)}
             >
               <Text
                 style={[
                   styles.pickerButtonText,
-                  tripData.accommodation && styles.pickerButtonTextSelected,
+                  { color: theme.colors.textMuted },
+                  tripData.accommodation && { color: theme.colors.text },
                 ]}
               >
                 {selectedAccommodation
                   ? `${selectedAccommodation.icon} ${selectedAccommodation.label}`
                   : 'Seleccionar tipo'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#999" />
+              <Ionicons name="chevron-down" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
 
           {/* Transporte */}
           <View style={styles.section}>
-            <Text style={styles.label}>Preferencias de Transporte</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              Preferencias de Transporte
+            </Text>
             <TouchableOpacity
-              style={styles.pickerButton}
+              style={[
+                styles.pickerButton,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+              ]}
               onPress={() => setShowTransportPicker(true)}
             >
               <Text
                 style={[
                   styles.pickerButtonText,
-                  tripData.transport && styles.pickerButtonTextSelected,
+                  { color: theme.colors.textMuted },
+                  tripData.transport && { color: theme.colors.text },
                 ]}
               >
                 {selectedTransport
                   ? `${selectedTransport.icon} ${selectedTransport.label}`
                   : 'Seleccionar tipo'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#999" />
+              <Ionicons name="chevron-down" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -514,17 +567,30 @@ export default function NewTripModal({
         {/* Date Pickers para iOS */}
         {Platform.OS === 'ios' && showStartDatePicker && (
           <Modal animationType="slide" transparent={false}>
-            <View style={styles.iosDatePickerContainer}>
-              <View style={styles.iosDatePickerHeader}>
+            <View
+              style={[styles.iosDatePickerContainer, { backgroundColor: theme.colors.background }]}
+            >
+              <View
+                style={[
+                  styles.iosDatePickerHeader,
+                  { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                ]}
+              >
                 <TouchableOpacity onPress={() => setShowStartDatePicker(false)}>
-                  <Text style={styles.datePickerCancel}>Cancelar</Text>
+                  <Text style={[styles.datePickerCancel, { color: theme.colors.textMuted }]}>
+                    Cancelar
+                  </Text>
                 </TouchableOpacity>
-                <Text style={styles.datePickerTitle}>Fecha de Inicio</Text>
+                <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
+                  Fecha de Inicio
+                </Text>
                 <TouchableOpacity onPress={() => setShowStartDatePicker(false)}>
-                  <Text style={styles.datePickerDone}>Listo</Text>
+                  <Text style={[styles.datePickerDone, { color: '#007AFF' }]}>Listo</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.datePickerContent}>
+              <View
+                style={[styles.datePickerContent, { backgroundColor: theme.colors.background }]}
+              >
                 <DateTimePicker
                   value={tripData.startDate || new Date()}
                   mode="date"
@@ -543,17 +609,30 @@ export default function NewTripModal({
 
         {Platform.OS === 'ios' && showEndDatePicker && (
           <Modal animationType="slide" transparent={false}>
-            <View style={styles.iosDatePickerContainer}>
-              <View style={styles.iosDatePickerHeader}>
+            <View
+              style={[styles.iosDatePickerContainer, { backgroundColor: theme.colors.background }]}
+            >
+              <View
+                style={[
+                  styles.iosDatePickerHeader,
+                  { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                ]}
+              >
                 <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
-                  <Text style={styles.datePickerCancel}>Cancelar</Text>
+                  <Text style={[styles.datePickerCancel, { color: theme.colors.textMuted }]}>
+                    Cancelar
+                  </Text>
                 </TouchableOpacity>
-                <Text style={styles.datePickerTitle}>Fecha de Fin</Text>
+                <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
+                  Fecha de Fin
+                </Text>
                 <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
-                  <Text style={styles.datePickerDone}>Listo</Text>
+                  <Text style={[styles.datePickerDone, { color: '#007AFF' }]}>Listo</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.datePickerContent}>
+              <View
+                style={[styles.datePickerContent, { backgroundColor: theme.colors.background }]}
+              >
                 <DateTimePicker
                   value={tripData.endDate || tripData.startDate || new Date()}
                   mode="date"
@@ -607,12 +686,21 @@ export default function NewTripModal({
           animationType="slide"
           presentationStyle="pageSheet"
         >
-          <View style={styles.pickerModal}>
-            <View style={styles.pickerHeader}>
+          <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+            <View
+              style={[
+                styles.pickerHeader,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <TouchableOpacity onPress={() => setShowAccommodationPicker(false)}>
-                <Text style={styles.pickerCancel}>Cancelar</Text>
+                <Text style={[styles.pickerCancel, { color: theme.colors.textMuted }]}>
+                  Cancelar
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.pickerTitle}>Tipo de Alojamiento</Text>
+              <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+                Tipo de Alojamiento
+              </Text>
               <View />
             </View>
             <ScrollView style={styles.pickerContent}>
@@ -621,6 +709,7 @@ export default function NewTripModal({
                   key={type.value}
                   style={[
                     styles.pickerOption,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
                     tripData.accommodation === type.value && styles.pickerOptionSelected,
                   ]}
                   onPress={() => {
@@ -632,6 +721,7 @@ export default function NewTripModal({
                   <Text
                     style={[
                       styles.pickerOptionText,
+                      { color: theme.colors.text },
                       tripData.accommodation === type.value && styles.pickerOptionTextSelected,
                     ]}
                   >
@@ -648,12 +738,21 @@ export default function NewTripModal({
 
         {/* Picker de Transporte */}
         <Modal visible={showTransportPicker} animationType="slide" presentationStyle="pageSheet">
-          <View style={styles.pickerModal}>
-            <View style={styles.pickerHeader}>
+          <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+            <View
+              style={[
+                styles.pickerHeader,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <TouchableOpacity onPress={() => setShowTransportPicker(false)}>
-                <Text style={styles.pickerCancel}>Cancelar</Text>
+                <Text style={[styles.pickerCancel, { color: theme.colors.textMuted }]}>
+                  Cancelar
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.pickerTitle}>Tipo de Transporte</Text>
+              <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+                Tipo de Transporte
+              </Text>
               <View />
             </View>
             <ScrollView style={styles.pickerContent}>
@@ -662,6 +761,7 @@ export default function NewTripModal({
                   key={type.value}
                   style={[
                     styles.pickerOption,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
                     tripData.transport === type.value && styles.pickerOptionSelected,
                   ]}
                   onPress={() => {
@@ -673,6 +773,7 @@ export default function NewTripModal({
                   <Text
                     style={[
                       styles.pickerOptionText,
+                      { color: theme.colors.text },
                       tripData.transport === type.value && styles.pickerOptionTextSelected,
                     ]}
                   >

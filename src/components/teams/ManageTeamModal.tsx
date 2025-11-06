@@ -25,6 +25,7 @@ import { ensureMultipleUserProfiles } from '~/lib/profileUtils';
 import { supabase } from '~/lib/supabase';
 import { inviteToTrip, removeCollaborator } from '~/lib/team';
 import { getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { useTheme } from '~/lib/theme';
 import { getTripCollaborators, resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 
 type Role = 'owner' | 'editor' | 'viewer';
@@ -90,6 +91,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   initialTab,
 }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [activeIndex, setActiveIndex] = useState(0); // 0: Members, 1: Invitations, 2: History
   const [loading, setLoading] = useState(true);
   const [ownerId, setOwnerId] = useState<string | null>(null);
@@ -484,65 +486,81 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
 
   const renderOwner = () =>
     ownerProfile || ownerId ? (
-      <View style={styles.ownerCard}>
+      <View
+        style={[
+          styles.ownerCard,
+          { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }, // Keep owner badge semantic colors
+        ]}
+      >
         <View style={styles.ownerCardRow}>
           {ownerProfile?.avatar_url ? (
             <Image source={{ uri: ownerProfile.avatar_url }} style={styles.ownerAvatar} />
           ) : (
-            <View style={styles.ownerInitials}>
-              <Text style={styles.ownerInitialsText}>
+            <View style={[styles.ownerInitials, { backgroundColor: '#F59E0B' }]}>
+              <Text style={[styles.ownerInitialsText, { color: '#FFFFFF' }]}>
                 {getInitials(ownerProfile?.full_name, ownerProfile?.email)}
               </Text>
             </View>
           )}
           <View style={styles.ownerInfoContainer}>
-            <Text style={styles.ownerName}>
+            <Text style={[styles.ownerName, { color: theme.colors.text }]}>
               {ownerProfile?.full_name || t('trips.owner', 'Owner')}{' '}
               {currentUserId === ownerId ? `(${t('trips.you', 'You')})` : ''}
             </Text>
-            {!!ownerProfile?.email && <Text style={styles.ownerEmail}>{ownerProfile.email}</Text>}
+            {!!ownerProfile?.email && (
+              <Text style={[styles.ownerEmail, { color: '#92400E' }]}>{ownerProfile.email}</Text>
+            )}
           </View>
-          <View style={styles.ownerBadge}>
-            <Text style={styles.ownerBadgeText}>{t('trips.owner', 'Owner')}</Text>
+          <View style={[styles.ownerBadge, { backgroundColor: '#F59E0B' }]}>
+            <Text style={[styles.ownerBadgeText, { color: '#FFFFFF' }]}>
+              {t('trips.owner', 'Owner')}
+            </Text>
           </View>
         </View>
       </View>
     ) : null;
 
   const renderMemberRow = (item: MemberItem) => (
-    <View style={styles.memberCard}>
+    <View
+      style={[
+        styles.memberCard,
+        { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+      ]}
+    >
       <View style={styles.memberCardRow}>
         {item.profile?.avatar_url ? (
           <Image source={{ uri: item.profile.avatar_url }} style={styles.memberAvatar} />
         ) : (
-          <View style={styles.memberInitials}>
-            <Text style={styles.memberInitialsText}>
+          <View style={[styles.memberInitials, { backgroundColor: theme.colors.border }]}>
+            <Text style={[styles.memberInitialsText, { color: theme.colors.text }]}>
               {getInitials(item.profile?.full_name, item.profile?.email)}
             </Text>
           </View>
         )}
         <View style={styles.memberInfoContainer}>
-          <Text style={styles.memberName}>
+          <Text style={[styles.memberName, { color: theme.colors.text }]}>
             {item.profile?.full_name || item.profile?.email || t('trips.member', 'Member')}{' '}
             {item.user_id === currentUserId ? `(${t('trips.you', 'You')})` : ''}
           </Text>
           {!!item.profile?.email && item.profile?.full_name && (
-            <Text style={styles.memberEmail}>{item.profile.email}</Text>
+            <Text style={[styles.memberEmail, { color: theme.colors.textMuted }]}>
+              {item.profile.email}
+            </Text>
           )}
         </View>
         {/* Role selector (owner only) */}
         {canManage ? (
           <TouchableOpacity
             onPress={() => onChangeRole(item, item.role === 'viewer' ? 'editor' : 'viewer')}
-            style={styles.roleButton}
+            style={[styles.roleButton, { backgroundColor: theme.colors.border }]}
           >
-            <Text style={styles.roleButtonText}>
+            <Text style={[styles.roleButtonText, { color: theme.colors.text }]}>
               {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')}
             </Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.roleButton}>
-            <Text style={styles.roleButtonText}>
+          <View style={[styles.roleButton, { backgroundColor: theme.colors.border }]}>
+            <Text style={[styles.roleButtonText, { color: theme.colors.text }]}>
               {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')}
             </Text>
           </View>
@@ -565,21 +583,26 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   );
 
   const renderInvitationRow = (item: InvitationItem) => (
-    <View style={styles.invitationCard}>
+    <View
+      style={[
+        styles.invitationCard,
+        { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+      ]}
+    >
       <View style={styles.invitationCardRow}>
-        <View style={styles.memberInitials}>
-          <Ionicons name="mail-outline" size={20} color="#1F2937" />
+        <View style={[styles.memberInitials, { backgroundColor: theme.colors.border }]}>
+          <Ionicons name="mail-outline" size={20} color={theme.colors.text} />
         </View>
         <View style={styles.invitationLeftContainer}>
-          <Text style={styles.invitationEmail}>{item.email}</Text>
-          <Text style={styles.invitationRoleText}>
+          <Text style={[styles.invitationEmail, { color: theme.colors.text }]}>{item.email}</Text>
+          <Text style={[styles.invitationRoleText, { color: theme.colors.textMuted }]}>
             {item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')} •{' '}
             {item.status || 'pending'}
           </Text>
         </View>
         {canManage && (
           <TouchableOpacity onPress={() => onCancelInvitation(item.id)}>
-            <Ionicons name="close-circle-outline" size={22} color="#9CA3AF" />
+            <Ionicons name="close-circle-outline" size={22} color={theme.colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -623,8 +646,8 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
             contentContainerStyle={styles.flatListPadding}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="people-outline" size={28} color="#9CA3AF" />
-                <Text style={styles.emptyText}>
+                <Ionicons name="people-outline" size={28} color={theme.colors.textMuted} />
+                <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
                   {t('trips.no_collaborators_yet', 'No collaborators yet')}
                 </Text>
               </View>
@@ -634,8 +657,8 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       </TouchableWithoutFeedback>
 
       {canInvite && (
-        <View style={styles.inviteFormContainer}>
-          <Text style={styles.inviteFormTitle}>
+        <View style={[styles.inviteFormContainer, { borderTopColor: theme.colors.border }]}>
+          <Text style={[styles.inviteFormTitle, { color: theme.colors.text }]}>
             {t('trips.invite_new_member', 'Invite a new member')}
           </Text>
           <View style={styles.inviteFormRow}>
@@ -644,6 +667,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 value={inviteEmail}
                 onChangeText={setInviteEmail}
                 placeholder={t('trips.email_placeholder', 'email@example.com')}
+                placeholderTextColor={theme.colors.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -652,7 +676,14 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 onSubmitEditing={() => {
                   // Keep keyboard open unless invite is valid and sent explicitly
                 }}
-                style={styles.inviteEmailInput}
+                style={[
+                  styles.inviteEmailInput,
+                  {
+                    borderColor: theme.colors.border,
+                    color: theme.colors.text,
+                    backgroundColor: theme.colors.background,
+                  },
+                ]}
               />
               {inviteEmail.length > 0 && !inviteValidation.valid && (
                 <Text style={styles.inviteErrorText}>
@@ -675,9 +706,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                 Keyboard.dismiss();
                 setInviteRole(inviteRole === 'viewer' ? 'editor' : 'viewer');
               }}
-              style={styles.inviteRoleButton}
+              style={[styles.inviteRoleButton, { backgroundColor: theme.colors.border }]}
             >
-              <Text style={styles.inviteRoleButtonText}>
+              <Text style={[styles.inviteRoleButtonText, { color: theme.colors.text }]}>
                 {inviteRole === 'viewer'
                   ? t('trips.viewer', 'Viewer')
                   : t('trips.editor', 'Editor')}
@@ -716,8 +747,10 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         renderItem={({ item }) => renderInvitationRow(item)}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="mail-open-outline" size={28} color="#9CA3AF" />
-            <Text style={styles.emptyText}>{t('trips.no_invitations', 'No invitations')}</Text>
+            <Ionicons name="mail-open-outline" size={28} color={theme.colors.textMuted} />
+            <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+              {t('trips.no_invitations', 'No invitations')}
+            </Text>
           </View>
         }
       />
@@ -731,14 +764,15 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
 
     let iconName: keyof typeof Ionicons.glyphMap;
     let status = '';
-    let bg = '#F3F4F6';
-    let bd = '#E5E7EB';
+    let bg = theme.colors.card;
+    let bd = theme.colors.border;
 
     if (isInvitation) {
       const accepted = (item.status || '') === 'accepted';
       const declined = (item.status || '') === 'declined';
-      bg = accepted ? '#DCFCE7' : declined ? '#FFE4E6' : '#F3F4F6';
-      bd = accepted ? '#16A34A' : declined ? '#EF4444' : '#E5E7EB';
+      // Keep semantic colors for status indicators
+      bg = accepted ? '#DCFCE7' : declined ? '#FFE4E6' : theme.colors.card;
+      bd = accepted ? '#16A34A' : declined ? '#EF4444' : theme.colors.border;
       iconName = accepted ? 'checkmark-circle' : 'close-circle';
       status = `${item.role === 'viewer' ? t('trips.viewer', 'Viewer') : t('trips.editor', 'Editor')} • ${accepted ? t('trips.accepted', 'Accepted') : t('trips.declined', 'Declined')}`;
     } else if (isRemoval) {
@@ -782,14 +816,19 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
     }
 
     return (
-      <View style={[styles.historyCard, { backgroundColor: bg, borderLeftColor: bd }]}>
+      <View
+        style={[
+          styles.historyCard,
+          { backgroundColor: bg, borderLeftColor: bd, borderColor: theme.colors.border },
+        ]}
+      >
         <View style={styles.historyCardRow}>
-          <View style={styles.memberInitials}>
+          <View style={[styles.memberInitials, { backgroundColor: bg }]}>
             <Ionicons name={iconName} size={22} color={bd} />
           </View>
           <View style={styles.historyLeftContainer}>
-            <Text style={styles.historyEmail}>{item.email}</Text>
-            <Text style={styles.historyStatus}>
+            <Text style={[styles.historyEmail, { color: theme.colors.text }]}>{item.email}</Text>
+            <Text style={[styles.historyStatus, { color: theme.colors.textMuted }]}>
               {status}
               {displayDate && ` • ${displayDate}`}
             </Text>
@@ -807,8 +846,10 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
         renderItem={({ item }) => renderHistoryRow(item)}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="time-outline" size={28} color="#9CA3AF" />
-            <Text style={styles.emptyText}>{t('trips.no_history', 'No history')}</Text>
+            <Ionicons name="time-outline" size={28} color={theme.colors.textMuted} />
+            <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+              {t('trips.no_history', 'No history')}
+            </Text>
           </View>
         }
       />
@@ -822,12 +863,19 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.modalContainer}>
+      <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('trips.manageTeam', 'Manage Team')}</Text>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            {t('trips.manageTeam', 'Manage Team')}
+          </Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#6B7280" />
+            <Ionicons name="close" size={24} color={theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
         {/* Tabs */}
@@ -848,7 +896,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                   : 0;
               setActiveIndex(idx);
             }}
-            backgroundColor="#F3F4F6"
+            backgroundColor={theme.colors.border}
             tintColor="#3B82F6"
             fontStyle={styles.segmentedControlFont}
             activeFontStyle={styles.segmentedControlActiveFont}
@@ -863,8 +911,10 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
           <View style={styles.contentContainer}>
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator />
-                <Text style={styles.loadingText}>{t('common.loading', 'Loading...')}</Text>
+                <ActivityIndicator color={theme.colors.primary} />
+                <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+                  {t('common.loading', 'Loading...')}
+                </Text>
               </View>
             ) : activeIndex === 0 ? (
               renderMembersTab()

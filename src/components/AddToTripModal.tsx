@@ -18,10 +18,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import { COLORS } from '~/constants/colors';
 import { translateDynamic } from '~/i18n';
 import { EnhancedPlace } from '~/lib/placesSearch';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
 
 import NewTripModal from './NewTripModal';
@@ -51,6 +51,7 @@ const parseLocalDate = (dateString: string): Date => {
 };
 
 const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place, onAdded }) => {
+  const theme = useTheme();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(false);
   const [showNewTripModal, setShowNewTripModal] = useState(false);
@@ -395,19 +396,21 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         onRequestClose={onClose}
       >
         <View style={styles.backdrop}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { backgroundColor: theme.colors.card }]}>
             {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Añadir a un viaje</Text>
+            <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>Añadir a un viaje</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <Ionicons name="close" size={22} color={COLORS.text.tertiary} />
+                <Ionicons name="close" size={22} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             {/* Place summary */}
             <View style={styles.placeRow}>
-              <Ionicons name="location" size={18} color={COLORS.text.tertiary} />
-              <Text style={styles.placeText}>{place.name || 'Lugar'}</Text>
+              <Ionicons name="location" size={18} color={theme.colors.textMuted} />
+              <Text style={[styles.placeText, { color: theme.colors.textMuted }]}>
+                {place.name || 'Lugar'}
+              </Text>
             </View>
 
             {/* Create new */}
@@ -418,38 +421,52 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                 end={{ x: 1, y: 0 }}
                 style={styles.newBtnBg}
               >
-                <Ionicons name="add" size={20} color={COLORS.utility.white} />
+                <Ionicons name="add" size={20} color="#FFFFFF" />
                 <Text style={styles.newBtnText}>Crear nuevo viaje</Text>
               </LinearGradient>
             </TouchableOpacity>
 
             {/* Trips list */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Tus viajes</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
+                Tus viajes
+              </Text>
             </View>
             {loading ? (
               <View style={styles.loadingBox}>
                 <ActivityIndicator size="small" color="#8B5CF6" />
-                <Text style={styles.loadingText}>Cargando...</Text>
+                <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+                  Cargando...
+                </Text>
               </View>
             ) : trips.length === 0 ? (
               <View style={styles.empty}>
-                <Ionicons name="airplane-outline" size={40} color={COLORS.text.lightGray} />
-                <Text style={styles.emptyText}>Aún no tienes viajes</Text>
+                <Ionicons name="airplane-outline" size={40} color={theme.colors.textMuted} />
+                <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+                  Aún no tienes viajes
+                </Text>
               </View>
             ) : (
               <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
                 {trips.map((t) => (
                   <TouchableOpacity
                     key={t.id}
-                    style={styles.tripItem}
+                    style={[
+                      styles.tripItem,
+                      {
+                        backgroundColor: theme.colors.background,
+                        borderBottomColor: theme.colors.border,
+                      },
+                    ]}
                     disabled={adding}
                     onPress={() => addPlaceToTrip(t.id, t.title)}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.tripTitle}>{t.title}</Text>
+                      <Text style={[styles.tripTitle, { color: theme.colors.text }]}>
+                        {t.title}
+                      </Text>
                       {t.start_date || t.end_date ? (
-                        <Text style={styles.tripDates}>
+                        <Text style={[styles.tripDates, { color: theme.colors.textMuted }]}>
                           {t.start_date && t.end_date
                             ? `${formatDate(t.start_date)} - ${formatDate(t.end_date)}`
                             : t.start_date
@@ -458,12 +475,15 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                         </Text>
                       ) : null}
                       {!!(t.description && t.description.trim().length > 0) && (
-                        <Text numberOfLines={2} style={styles.tripDesc}>
+                        <Text
+                          numberOfLines={2}
+                          style={[styles.tripDesc, { color: theme.colors.textMuted }]}
+                        >
                           {translated[t.id] ?? t.description}
                         </Text>
                       )}
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={COLORS.text.lightGray} />
+                    <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
                   </TouchableOpacity>
                 ))}
                 <View style={{ height: 24 }} />
@@ -501,13 +521,13 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: COLORS.background.blackOpacity.medium,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     flex: 1,
     justifyContent: 'flex-end',
   },
   closeBtn: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.gray,
+    backgroundColor: '#F0F0F0',
     borderRadius: 18,
     height: 36,
     justifyContent: 'center',
@@ -518,7 +538,6 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    color: COLORS.text.tertiary,
     marginTop: 8,
   },
   header: {
@@ -533,7 +552,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   loadingText: {
-    color: COLORS.text.tertiary,
     marginLeft: 8,
   },
   newBtn: {
@@ -548,7 +566,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   newBtnText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -559,7 +577,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   placeText: {
-    color: COLORS.text.mediumDarkGray,
     flexShrink: 1,
     fontSize: 14,
     marginLeft: 8,
@@ -568,12 +585,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    color: COLORS.text.tertiary,
     fontSize: 14,
     fontWeight: '600',
   },
   sheet: {
-    backgroundColor: COLORS.utility.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 20,
@@ -581,27 +596,22 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   title: {
-    color: COLORS.text.dark,
     fontSize: 18,
     fontWeight: '600',
   },
   tripDates: {
-    color: COLORS.text.tertiary,
     marginTop: 2,
   },
   tripDesc: {
-    color: COLORS.text.tertiary,
     marginTop: 4,
   },
   tripItem: {
     alignItems: 'center',
-    borderBottomColor: COLORS.border.dark,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     paddingVertical: 12,
   },
   tripTitle: {
-    color: COLORS.text.dark,
     fontSize: 16,
     fontWeight: '600',
   },

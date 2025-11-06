@@ -21,9 +21,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { useTheme } from '~/lib/theme';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 import { getTripStats, getCountryFlag, TripStats } from '~/lib/tripUtils';
 import {
@@ -114,6 +114,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   manageTeamTab = 'members',
 }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
@@ -459,10 +460,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const getStatusConfig = () => {
     const status = getTripStatus();
     const configs = {
-      completed: { bgColor: COLORS.status.successLight, textColor: COLORS.status.successDark },
-      upcoming: { bgColor: COLORS.background.purple.ultraLight, textColor: COLORS.status.infoDark },
-      planning: { bgColor: COLORS.background.purple.light, textColor: COLORS.primary.violet },
-      traveling: { bgColor: COLORS.background.amber.light, textColor: COLORS.secondary.amberDark },
+      completed: { bgColor: '#DCFCE7', textColor: '#166534' },
+      upcoming: { bgColor: '#DBEAFE', textColor: '#1E40AF' },
+      planning: { bgColor: '#F3E8FF', textColor: '#6B21A8' },
+      traveling: { bgColor: '#FED7AA', textColor: '#C2410C' },
     };
     return configs[status] || configs.planning;
   };
@@ -474,18 +475,18 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       { bgColor: string; textColor: string; label: string }
     > = {
       owner: {
-        bgColor: COLORS.background.amber.light,
-        textColor: COLORS.secondary.amberDark,
+        bgColor: '#FED7AA',
+        textColor: '#C2410C',
         label: t('trips.card.role.owner', 'Owner'),
       },
       editor: {
-        bgColor: COLORS.background.purple.ultraLight,
-        textColor: COLORS.status.infoDark,
+        bgColor: '#DBEAFE',
+        textColor: '#1E40AF',
         label: t('trips.card.role.editor', 'Editor'),
       },
       viewer: {
-        bgColor: COLORS.border.dark,
-        textColor: COLORS.text.mediumDarkGray,
+        bgColor: '#E5E7EB',
+        textColor: '#374151',
         label: t('trips.card.role.viewer', 'Viewer'),
       },
     };
@@ -564,10 +565,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Fechas */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="calendar-outline" size={20} color={COLORS.text.tertiary} />
-          <Text style={styles.sectionTitle}>{t('trips.detail_modal.overview.dates', 'Dates')}</Text>
+          <Ionicons name="calendar-outline" size={20} color={theme.colors.textMuted} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            {t('trips.detail_modal.overview.dates', 'Dates')}
+          </Text>
         </View>
-        <Text style={styles.sectionContent}>
+        <Text style={[styles.sectionContent, { color: theme.colors.textMuted }]}>
           {editableTrip.start_date && editableTrip.end_date
             ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
             : t('trips.detail_modal.overview.no_dates_set', 'No dates set')}
@@ -577,8 +580,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Viajeros + Invitaciones pendientes */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="people-outline" size={20} color={COLORS.text.tertiary} />
-          <Text style={styles.sectionTitle}>
+          <Ionicons name="people-outline" size={20} color={theme.colors.textMuted} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             {t('trips.detail_modal.overview.travelers', 'Travelers')}
           </Text>
           {pendingInvites > 0 && (
@@ -589,7 +592,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             </View>
           )}
         </View>
-        <Text style={styles.sectionContent}>
+        <Text style={[styles.sectionContent, { color: theme.colors.textMuted }]}>
           {tripData.collaboratorsCount}{' '}
           {tripData.collaboratorsCount === 1
             ? t('trips.detail_modal.overview.traveler', 'traveler')
@@ -642,14 +645,14 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Destino */}
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <Ionicons name="location-outline" size={20} color={COLORS.text.tertiary} />
+          <Ionicons name="location-outline" size={20} color={theme.colors.textMuted} />
           <Text
-            style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}
+            style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginLeft: 8 }}
           >
             {t('trips.detail_modal.overview.destination', 'Destination')}
           </Text>
         </View>
-        <Text style={{ fontSize: 16, color: COLORS.text.tertiary }}>
+        <Text style={{ fontSize: 16, color: theme.colors.textMuted }}>
           {tripData.countries.length > 0
             ? tripData.countries.join(', ')
             : t('trips.detail_modal.overview.to_be_defined', 'To be defined')}
@@ -659,14 +662,14 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Budget */}
       <View style={{ marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <Ionicons name="card-outline" size={20} color={COLORS.text.tertiary} />
+          <Ionicons name="card-outline" size={20} color={theme.colors.textMuted} />
           <Text
-            style={{ fontSize: 18, fontWeight: '600', color: COLORS.text.darkGray, marginLeft: 8 }}
+            style={{ fontSize: 18, fontWeight: '600', color: theme.colors.text, marginLeft: 8 }}
           >
             {t('trips.detail_modal.overview.budget', 'Budget')}
           </Text>
         </View>
-        <Text style={{ fontSize: 16, color: COLORS.text.tertiary }}>
+        <Text style={{ fontSize: 16, color: theme.colors.textMuted }}>
           {editableTrip.budget
             ? `$${editableTrip.budget.toLocaleString()}`
             : t('trips.detail_modal.overview.no_budget_set', 'No budget set')}
@@ -677,8 +680,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {editableTrip.accommodation_preference && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="bed-outline" size={20} color={COLORS.text.tertiary} />
-            <Text style={styles.sectionTitle}>
+            <Ionicons name="bed-outline" size={20} color={theme.colors.textMuted} />
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               {t('trips.detail_modal.overview.accommodation', 'Accommodation')}
             </Text>
           </View>
@@ -703,8 +706,8 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {editableTrip.transport_preference && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="car-outline" size={20} color={COLORS.text.tertiary} />
-            <Text style={styles.sectionTitle}>
+            <Ionicons name="car-outline" size={20} color={theme.colors.textMuted} />
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               {t('trips.detail_modal.overview.transport', 'Transport')}
             </Text>
           </View>
@@ -728,10 +731,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Descripción */}
       {editableTrip.description && (
         <View style={styles.section}>
-          <Text style={styles.descriptionTitle}>
+          <Text style={[styles.descriptionTitle, { color: theme.colors.text }]}>
             {t('trips.detail_modal.overview.description', 'Description')}
           </Text>
-          <Text style={styles.descriptionText}>{editableTrip.description}</Text>
+          <Text style={[styles.descriptionText, { color: theme.colors.textMuted }]}>
+            {editableTrip.description}
+          </Text>
         </View>
       )}
 
@@ -772,17 +777,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
       {hasMinimalProfiles && (
         <View style={styles.warningBanner}>
-          <Ionicons
-            name="warning-outline"
-            size={22}
-            color={COLORS.secondary.orangeDark}
-            style={styles.warningIcon}
-          />
+          <Ionicons name="warning-outline" size={22} color="#F59E0B" style={styles.warningIcon} />
           <View style={styles.warningContent}>
-            <Text style={styles.warningTitle}>
+            <Text style={[styles.warningTitle, { color: theme.colors.text }]}>
               {t('trips.detail_modal.team_tab.incomplete_profiles_title', 'Incomplete profiles')}
             </Text>
-            <Text style={styles.warningText}>
+            <Text style={[styles.warningText, { color: theme.colors.textMuted }]}>
               {t(
                 'trips.detail_modal.team_tab.incomplete_profiles_message',
                 'One or more collaborators have not completed their profile (no name or avatar). Invite them to update for a better experience.'
@@ -806,7 +806,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               </View>
             )}
             <View style={styles.memberDetails}>
-              <Text style={styles.memberName}>
+              <Text style={[styles.memberName, { color: theme.colors.text }]}>
                 {tripOwner.full_name ||
                   tripOwner.email ||
                   t('trips.detail_modal.team_tab.owner_label', 'Owner')}
@@ -814,7 +814,9 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                   ` ${t('trips.detail_modal.team_tab.you_label', '(You)')}`}
               </Text>
               {tripOwner.full_name && tripOwner.email && (
-                <Text style={styles.memberEmail}>{tripOwner.email}</Text>
+                <Text style={[styles.memberEmail, { color: theme.colors.textMuted }]}>
+                  {tripOwner.email}
+                </Text>
               )}
             </View>
             <View style={styles.ownerBadge}>
@@ -849,13 +851,15 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               </View>
             )}
             <View style={styles.memberDetails}>
-              <Text style={styles.memberName}>
+              <Text style={[styles.memberName, { color: theme.colors.text }]}>
                 {collaborator.full_name || collaborator.email || 'Collaborator'}
                 {currentUser?.id === collaborator.id &&
                   ` ${t('trips.detail_modal.team_tab.you_label', '(You)')}`}
               </Text>
               {collaborator.full_name && collaborator.email && (
-                <Text style={styles.memberEmail}>{collaborator.email}</Text>
+                <Text style={[styles.memberEmail, { color: theme.colors.textMuted }]}>
+                  {collaborator.email}
+                </Text>
               )}
             </View>
             <View style={styles.roleBadge}>
@@ -872,11 +876,11 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       {/* Mensaje si no hay colaboradores */}
       {collaborators.length === 0 && (
         <View style={styles.emptyState}>
-          <Ionicons name="people-outline" size={32} color={COLORS.text.lightGray} />
-          <Text style={styles.emptyStateTitle}>
+          <Ionicons name="people-outline" size={32} color={theme.colors.border} />
+          <Text style={[styles.emptyStateTitle, { color: theme.colors.text }]}>
             {t('trips.detail_modal.team_tab.no_collaborators_title', 'No collaborators yet')}
           </Text>
-          <Text style={styles.emptyStateText}>
+          <Text style={[styles.emptyStateText, { color: theme.colors.textMuted }]}>
             {t(
               'trips.detail_modal.team_tab.no_collaborators_message',
               'Invite friends to plan together'
@@ -916,7 +920,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                     position: 'absolute',
                     top: -8,
                     right: 40,
-                    backgroundColor: COLORS.status.error,
+                    backgroundColor: '#EF4444',
                     borderRadius: 10,
                     minWidth: 20,
                     height: 20,
@@ -924,12 +928,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                     justifyContent: 'center',
                     paddingHorizontal: 6,
                     borderWidth: 2,
-                    borderColor: COLORS.utility.white,
+                    borderColor: theme.colors.card,
                   }}
                 >
                   <Text
                     style={{
-                      color: COLORS.utility.white,
+                      color: '#FFFFFF',
                       fontSize: 11,
                       fontWeight: '700',
                     }}
@@ -963,11 +967,11 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
   const ItineraryTab = () => (
     <View style={styles.itineraryPlaceholder}>
-      <Ionicons name="map-outline" size={64} color={COLORS.border.gray} />
-      <Text style={styles.itineraryTitle}>
+      <Ionicons name="map-outline" size={64} color={theme.colors.border} />
+      <Text style={[styles.itineraryTitle, { color: theme.colors.text }]}>
         {t('trips.detail_modal.itinerary_tab.coming_soon_title', 'Itinerary Coming Soon')}
       </Text>
-      <Text style={styles.itineraryText}>
+      <Text style={[styles.itineraryText, { color: theme.colors.textMuted }]}>
         {t(
           'trips.detail_modal.itinerary_tab.coming_soon_message',
           'Plan your day-by-day activities and routes'
@@ -998,30 +1002,40 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     >
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
           <View style={styles.headerLeft}>
             <Text style={styles.headerIcon}>🌍</Text>
-            <Text style={styles.headerTitle}>{trip.title}</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{trip.title}</Text>
           </View>
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color={COLORS.text.tertiary} />
+            <Ionicons name="close" size={24} color={theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* Sub-header con información básica */}
-        <View style={styles.subHeader}>
+        <View
+          style={[
+            styles.subHeader,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
           <View style={styles.subHeaderRow}>
             <View style={styles.subHeaderItem}>
-              <Ionicons name="calendar-outline" size={16} color={COLORS.text.tertiary} />
-              <Text style={styles.subHeaderText}>
+              <Ionicons name="calendar-outline" size={16} color={theme.colors.textMuted} />
+              <Text style={[styles.subHeaderText, { color: theme.colors.textMuted }]}>
                 {editableTrip.start_date && editableTrip.end_date
                   ? `${formatDate(editableTrip.start_date)} - ${formatDate(editableTrip.end_date)}`
                   : t('trips.detail_modal.overview.no_dates_set', 'No dates set')}
               </Text>
             </View>
             <View style={styles.subHeaderItem}>
-              <Ionicons name="people-outline" size={16} color={COLORS.text.tertiary} />
-              <Text style={styles.subHeaderText}>
+              <Ionicons name="people-outline" size={16} color={theme.colors.textMuted} />
+              <Text style={[styles.subHeaderText, { color: theme.colors.textMuted }]}>
                 {tripData.collaboratorsCount}{' '}
                 {tripData.collaboratorsCount !== 1
                   ? t('trips.detail_modal.overview.travelers', 'travelers')
@@ -1032,7 +1046,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabContainer}>
+        <View
+          style={[
+            styles.tabContainer,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
           <TabButton tab="overview" title={t('trips.detail_modal.tabs.overview', 'Overview')} />
           <TabButton tab="itinerary" title={t('trips.detail_modal.tabs.itinerary', 'Itinerary')} />
           <TabButton tab="team" title={t('trips.detail_modal.tabs.team', 'Team')} />
@@ -1070,7 +1089,6 @@ const styles = StyleSheet.create({
   // Container styles
   container: {
     flex: 1,
-    backgroundColor: COLORS.utility.white,
   },
   scrollViewContainer: {
     flex: 1,
@@ -1086,7 +1104,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -1099,14 +1116,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text.darkGray,
   },
 
   // Sub-header styles
   subHeader: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: COLORS.background.tertiary,
   },
   subHeaderRow: {
     flexDirection: 'row',
@@ -1119,16 +1134,13 @@ const styles = StyleSheet.create({
   },
   subHeaderText: {
     fontSize: 14,
-    color: COLORS.text.tertiary,
     marginLeft: 4,
   },
 
   // Tab styles
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: COLORS.utility.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
   },
   tab: {
     flex: 1,
@@ -1137,18 +1149,17 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     borderBottomWidth: 2,
-    borderBottomColor: COLORS.status.info,
+    borderBottomColor: '#3B82F6',
   },
   tabText: {
     fontSize: 16,
   },
   tabTextActive: {
     fontWeight: '600',
-    color: COLORS.status.info,
+    color: '#3B82F6',
   },
   tabTextInactive: {
     fontWeight: '400',
-    color: COLORS.text.tertiary,
   },
 
   // Overview section styles
@@ -1164,7 +1175,6 @@ const styles = StyleSheet.create({
   overviewTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.text.darkGray,
     marginBottom: 8,
   },
   overviewButtonsRow: {
@@ -1177,19 +1187,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: COLORS.border.dark,
   },
   overviewButtonText: {
     fontSize: 14,
-    color: COLORS.text.tertiary,
   },
   editButton: {
-    backgroundColor: COLORS.status.info,
-    borderColor: COLORS.status.info,
     marginTop: 20,
   },
   editButtonText: {
-    color: COLORS.text.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1206,16 +1212,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text.darkGray,
     marginLeft: 8,
   },
   sectionContent: {
     fontSize: 16,
-    color: COLORS.text.tertiary,
   },
   sectionContentMultiline: {
     fontSize: 16,
-    color: COLORS.text.tertiary,
     lineHeight: 24,
   },
 
@@ -1231,7 +1234,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: COLORS.background.gray,
   },
   tagIcon: {
     fontSize: 16,
@@ -1239,7 +1241,6 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 14,
-    color: COLORS.text.mediumDarkGray,
     fontWeight: '500',
   },
 
@@ -1258,7 +1259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -1268,12 +1269,10 @@ const styles = StyleSheet.create({
   teamTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text.darkGray,
     marginBottom: 20,
   },
   teamWarning: {
     flexDirection: 'row',
-    backgroundColor: COLORS.background.amber.light,
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
@@ -1288,19 +1287,16 @@ const styles = StyleSheet.create({
   teamWarningTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.secondary.amberDark,
     marginBottom: 4,
   },
   teamWarningText: {
     fontSize: 13,
-    color: COLORS.secondary.amberDark,
     lineHeight: 18,
   },
 
   // Team member styles
   memberCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.background.tertiary,
     padding: 12,
     borderRadius: 8,
     marginBottom: 12,
@@ -1322,11 +1318,10 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.status.info,
     marginRight: 12,
   },
   memberInitialsText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -1336,27 +1331,23 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.text.darkGray,
   },
   memberEmail: {
     fontSize: 14,
-    color: COLORS.text.tertiary,
   },
   memberRole: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: COLORS.status.info,
   },
   memberRoleText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
 
   // Empty state styles
   emptyState: {
-    backgroundColor: COLORS.background.gray,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
@@ -1366,36 +1357,32 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.background.gray,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyStateTitle: {
     fontSize: 16,
-    color: COLORS.text.tertiary,
     marginTop: 8,
     textAlign: 'center',
   },
   emptyStateText: {
     fontSize: 14,
-    color: COLORS.text.lightGray,
     marginTop: 4,
     textAlign: 'center',
   },
   emptyStateSubtitle: {
     fontSize: 14,
-    color: COLORS.text.lightGray,
     marginTop: 4,
     textAlign: 'center',
   },
 
   // Warning banner styles
   warningBanner: {
-    backgroundColor: COLORS.background.amber.veryLight,
+    backgroundColor: '#FFFBEB',
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.secondary.amberLight,
+    borderColor: '#FDE68A',
     marginBottom: 20,
     flexDirection: 'row',
   },
@@ -1409,53 +1396,51 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.secondary.amberDark,
     marginBottom: 4,
   },
   warningText: {
     fontSize: 13,
-    color: COLORS.secondary.amberDark,
     lineHeight: 18,
   },
 
   // Owner card styles
   ownerCard: {
-    backgroundColor: COLORS.background.amber.light,
+    backgroundColor: '#FED7AA',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.secondary.amber,
+    borderColor: '#F59E0B',
   },
   ownerInitialsContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: COLORS.secondary.amber,
+    backgroundColor: '#F59E0B',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   ownerBadge: {
-    backgroundColor: COLORS.secondary.amber,
+    backgroundColor: '#F59E0B',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   ownerBadgeText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
   roleBadge: {
-    backgroundColor: COLORS.status.info,
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     marginLeft: 8,
   },
   roleBadgeText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1465,7 +1450,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: COLORS.text.tertiary,
+    backgroundColor: '#9CA3AF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -1486,13 +1471,11 @@ const styles = StyleSheet.create({
   itineraryTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text.tertiary,
     marginTop: 16,
     textAlign: 'center',
   },
   itineraryText: {
     fontSize: 14,
-    color: COLORS.text.lightGray,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -1501,25 +1484,23 @@ const styles = StyleSheet.create({
   descriptionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text.darkGray,
     marginBottom: 8,
   },
   descriptionText: {
     fontSize: 16,
-    color: COLORS.text.tertiary,
     lineHeight: 24,
   },
 
   // Pending badge
   pendingBadgeContainer: {
     marginLeft: 8,
-    backgroundColor: COLORS.secondary.amber,
+    backgroundColor: '#F59E0B',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
   },
   pendingBadgeText: {
-    color: COLORS.text.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1538,7 +1519,6 @@ const styles = StyleSheet.create({
   },
   teamLabel: {
     fontSize: 14,
-    color: COLORS.text.tertiary,
     fontWeight: '500',
     marginRight: 8,
   },
@@ -1558,12 +1538,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: '#8B5CF6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   teamAvatarInitials: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1571,14 +1551,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.background.purple.light,
+    backgroundColor: '#F3E8FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   teamAvatarMoreText: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.primary.main,
+    color: '#8B5CF6',
   },
 });
 

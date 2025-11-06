@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import {
   getCountryFlagByName,
   getCountryFlag,
@@ -74,6 +75,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
 
   // RTK Query: Get current user profile (IGUAL QUE PROFILE.TSX)
   const { data: currentUserProfile, isLoading, isError, error } = useGetProfileQuery();
@@ -628,7 +630,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         <Text
           style={{
             fontSize: 14,
-            color: '#666666',
+            color: theme.colors.textMuted,
             fontWeight: '500',
             marginRight: 8,
           }}
@@ -646,12 +648,13 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor:
+                  theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.9)',
                 borderRadius: 16,
                 paddingHorizontal: 10,
                 paddingVertical: 6,
                 borderWidth: 1,
-                borderColor: 'rgba(0, 0, 0, 0.08)',
+                borderColor: theme.colors.border,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.05,
@@ -663,7 +666,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               <Text
                 style={{
                   fontSize: 12,
-                  color: '#374151',
+                  color: theme.colors.text,
                   fontWeight: '600',
                   letterSpacing: 0.2,
                 }}
@@ -677,18 +680,19 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         {remainingCount > 0 && (
           <View
             style={{
-              backgroundColor: 'rgba(156, 163, 175, 0.15)',
+              backgroundColor:
+                theme.mode === 'dark' ? 'rgba(156, 163, 175, 0.2)' : 'rgba(156, 163, 175, 0.15)',
               borderRadius: 16,
               paddingHorizontal: 10,
               paddingVertical: 6,
               borderWidth: 1,
-              borderColor: 'rgba(156, 163, 175, 0.2)',
+              borderColor: theme.colors.border,
             }}
           >
             <Text
               style={{
                 fontSize: 12,
-                color: '#6B7280',
+                color: theme.colors.textMuted,
                 fontWeight: '600',
                 letterSpacing: 0.2,
               }}
@@ -709,7 +713,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   return (
     <View
       style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.colors.card,
         borderRadius: 24,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -825,7 +829,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               style={{
                 fontSize: 24,
                 fontWeight: '800',
-                color: '#1A1A1A',
+                color: theme.colors.text,
                 marginBottom: 4,
               }}
             >
@@ -967,7 +971,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           <Text
             style={{
               fontSize: 16,
-              color: '#1A1A1A',
+              color: theme.colors.text,
               fontWeight: '500',
             }}
           >
@@ -987,7 +991,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>👥</Text>
-            <Text style={{ fontSize: 16, color: '#1A1A1A', fontWeight: '500' }}>
+            <Text style={{ fontSize: 16, color: theme.colors.text, fontWeight: '500' }}>
               {tripData.collaboratorsCount}{' '}
               {tripData.collaboratorsCount === 1
                 ? t('trips.card.traveler')
@@ -1020,7 +1024,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             <Text
               style={{
                 fontSize: 16,
-                color: '#1A1A1A',
+                color: theme.colors.text,
                 fontWeight: '500',
               }}
             >
@@ -1049,7 +1053,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             <Text
               style={{
                 fontSize: 14,
-                color: '#666666',
+                color: theme.colors.textMuted,
                 fontWeight: '500',
                 marginRight: 8,
               }}
@@ -1117,7 +1121,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                   <Text
                     style={{
                       fontSize: 14,
-                      color: '#666666',
+                      color: theme.colors.textMuted,
                       marginLeft: 4,
                     }}
                   >
@@ -1258,14 +1262,14 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             style={{
               marginTop: 16,
               padding: 12,
-              backgroundColor: '#F8F9FA',
+              backgroundColor: theme.colors.background,
               borderRadius: 12,
             }}
           >
             <Text
               style={{
                 fontSize: 14,
-                color: '#666666',
+                color: theme.colors.textMuted,
                 lineHeight: 20,
               }}
             >

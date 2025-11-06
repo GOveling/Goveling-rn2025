@@ -17,6 +17,8 @@ import * as Location from 'expo-location';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { useTheme } from '~/lib/theme';
+
 import AppMap from './AppMap';
 import PlaceDetailModal from './PlaceDetailModal';
 import { EnhancedPlace } from '../lib/placesSearch';
@@ -96,6 +98,9 @@ export default function SavedPlacesMapModal({
   tripTitle,
   tripColor,
 }: SavedPlacesMapModalProps) {
+  // Theme
+  const theme = useTheme();
+
   // Estados
   const [savedPlaces, setSavedPlaces] = useState<SavedPlaceWithTrip[]>([]);
   const [filteredPlaces, setFilteredPlaces] = useState<SavedPlaceWithTrip[]>([]);
@@ -495,19 +500,31 @@ export default function SavedPlacesMapModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
           <TouchableOpacity onPress={onClose} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
+            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>{nearbyPlaces ? 'Lugares Cercanos' : 'Vista de Mapa'}</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            {nearbyPlaces ? 'Lugares Cercanos' : 'Vista de Mapa'}
+          </Text>
           <View style={styles.iconBtn} />
         </View>
 
         {/* Filtros de trips - solo en modo normal */}
         {!nearbyPlaces && trips.length > 1 && (
-          <View style={styles.filtersContainer}>
+          <View
+            style={[
+              styles.filtersContainer,
+              { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border },
+            ]}
+          >
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -541,13 +558,17 @@ export default function SavedPlacesMapModal({
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Cargando lugares...</Text>
+            <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+              Cargando lugares...
+            </Text>
           </View>
         ) : filteredPlaces.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>🗺️</Text>
-            <Text style={styles.emptyTitle}>Sin lugares guardados</Text>
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+              Sin lugares guardados
+            </Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
               {selectedTripFilter
                 ? 'No hay lugares guardados en este viaje'
                 : 'Explora lugares y agrégarlos a tus viajes para verlos aquí'}
@@ -566,20 +587,25 @@ export default function SavedPlacesMapModal({
             {/* Callout cuando se selecciona un lugar */}
             {selectedPlace && (
               <View style={styles.calloutOverlay}>
-                <View style={styles.callout}>
+                <View style={[styles.callout, { backgroundColor: theme.colors.card }]}>
                   <TouchableOpacity
-                    style={styles.calloutClose}
+                    style={[styles.calloutClose, { backgroundColor: theme.colors.background }]}
                     onPress={() => setSelectedPlace(null)}
                   >
-                    <Text style={styles.calloutCloseText}>✕</Text>
+                    <Text style={[styles.calloutCloseText, { color: theme.colors.textMuted }]}>
+                      ✕
+                    </Text>
                   </TouchableOpacity>
 
-                  <Text style={styles.calloutTitle} numberOfLines={2}>
+                  <Text
+                    style={[styles.calloutTitle, { color: theme.colors.text }]}
+                    numberOfLines={2}
+                  >
                     {selectedPlace.name}
                   </Text>
 
                   {calculateDistance(selectedPlace) && (
-                    <Text style={styles.calloutDistance}>
+                    <Text style={[styles.calloutDistance, { color: theme.colors.textMuted }]}>
                       📍 {calculateDistance(selectedPlace)}
                     </Text>
                   )}
@@ -591,8 +617,17 @@ export default function SavedPlacesMapModal({
               </View>
             )}
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
+            <View
+              style={[
+                styles.footer,
+                {
+                  backgroundColor:
+                    theme.mode === 'dark' ? 'rgba(28, 28, 33, 0.95)' : 'rgba(255,255,255,0.95)',
+                  borderTopColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.footerText, { color: theme.colors.textMuted }]}>
                 {filteredPlaces.length} lugar{filteredPlaces.length !== 1 ? 'es' : ''}
                 {selectedTripFilter &&
                   ` • ${trips.find((t) => t.id === selectedTripFilter)?.title}`}

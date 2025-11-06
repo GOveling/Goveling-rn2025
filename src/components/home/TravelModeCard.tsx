@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { COLORS } from '~/constants/colors';
+import { useTheme } from '~/lib/theme';
 
 interface TravelModeCardProps {
   travelModeEnabled: boolean;
@@ -19,26 +19,53 @@ interface TravelModeCardProps {
  */
 const TravelModeCard = React.memo<TravelModeCardProps>(
   function TravelModeCard({ travelModeEnabled, onToggleTravelMode, currentTrip }) {
+    const theme = useTheme();
+
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+        ]}
+      >
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Estado del Modo Travel</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            Estado del Modo Travel
+          </Text>
           <View style={styles.statusContainer}>
-            <View style={[styles.statusBadge, !travelModeEnabled ? styles.inactiveBadge : null]}>
+            <View
+              style={[
+                styles.statusBadge,
+                !travelModeEnabled && {
+                  backgroundColor: theme.mode === 'dark' ? 'rgba(156, 163, 175, 0.2)' : '#E5E7EB',
+                },
+              ]}
+            >
               <Text
                 style={[
                   styles.statusText,
-                  !travelModeEnabled ? styles.inactiveText : styles.dimmedText,
+                  !travelModeEnabled
+                    ? { color: theme.mode === 'dark' ? '#9CA3AF' : '#6B7280', fontWeight: '600' }
+                    : { color: theme.colors.textMuted, fontWeight: '400', opacity: 0.5 },
                 ]}
               >
                 Inactivo
               </Text>
             </View>
-            <View style={[styles.statusBadge, travelModeEnabled ? styles.activeBadge : null]}>
+            <View
+              style={[
+                styles.statusBadge,
+                travelModeEnabled && {
+                  backgroundColor: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5',
+                },
+              ]}
+            >
               <Text
                 style={[
                   styles.statusText,
-                  travelModeEnabled ? styles.activeText : styles.dimmedText,
+                  travelModeEnabled
+                    ? { color: theme.mode === 'dark' ? '#10B981' : '#065F46', fontWeight: '600' }
+                    : { color: theme.colors.textMuted, fontWeight: '400', opacity: 0.5 },
                 ]}
               >
                 Viajando
@@ -48,13 +75,16 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
         </View>
 
         <TouchableOpacity onPress={onToggleTravelMode}>
-          <LinearGradient colors={COLORS.gradients.green} style={styles.gradientButton}>
+          <LinearGradient colors={['#10B981', '#059669']} style={styles.gradientButton}>
             <Text style={styles.gradientButtonText}>✈️ Acceder al Modo Travel</Text>
           </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.detailsButton}
+          style={[
+            styles.detailsButton,
+            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
+          ]}
           onPress={() =>
             currentTrip &&
             Alert.alert(
@@ -63,7 +93,7 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
             )
           }
         >
-          <Text style={styles.detailsButtonText}>Ver Detalles</Text>
+          <Text style={[styles.detailsButtonText, { color: theme.colors.text }]}>Ver Detalles</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -71,7 +101,7 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
             currentTrip && Alert.alert('Route', 'Funcionalidad de rutas próximamente disponible')
           }
         >
-          <LinearGradient colors={COLORS.gradients.blueInfo} style={styles.routeButton}>
+          <LinearGradient colors={['#3B82F6', '#2563EB']} style={styles.routeButton}>
             <Text style={styles.gradientButtonText}>Ver Detalles de Ruta IA</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -90,10 +120,8 @@ const TravelModeCard = React.memo<TravelModeCardProps>(
 const styles = StyleSheet.create({
   // Main Container
   container: {
-    backgroundColor: COLORS.background.primary,
     borderRadius: 16,
     padding: 20,
-    shadowColor: COLORS.utility.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -110,7 +138,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.text.darkGray,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -123,26 +150,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  inactiveBadge: {
-    backgroundColor: COLORS.border.dark,
-  },
-  activeBadge: {
-    backgroundColor: COLORS.status.successLight,
-  },
   statusText: {
     fontSize: 12,
-  },
-  inactiveText: {
-    color: COLORS.text.tertiary,
-    fontWeight: '600',
-  },
-  activeText: {
-    color: COLORS.status.successDark,
-    fontWeight: '600',
-  },
-  dimmedText: {
-    color: COLORS.text.lightGray,
-    fontWeight: '400',
   },
 
   // Buttons
@@ -156,9 +165,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: COLORS.background.tertiary,
     borderWidth: 1,
-    borderColor: COLORS.border.dark,
     marginBottom: 12,
   },
   routeButton: {
@@ -169,12 +176,11 @@ const styles = StyleSheet.create({
 
   // Button Text
   gradientButtonText: {
-    color: COLORS.text.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
   detailsButtonText: {
-    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     fontWeight: '500',
   },

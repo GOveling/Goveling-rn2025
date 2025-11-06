@@ -14,6 +14,7 @@ import { isFeatureEnabled } from '~/config/featureFlags';
 import { useTravelMode } from '~/contexts/TravelModeContext';
 import { useGeoDetection } from '~/lib/geo';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { formatDistance } from '~/services/travelMode/geoUtils';
 
 import { CountryWelcomeModal } from './CountryWelcomeModal';
@@ -28,6 +29,7 @@ interface TravelModeModalProps {
 
 export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelModeModalProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { state, actions } = useTravelMode();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -305,31 +307,60 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
       onRequestClose={onClose}
       transparent={false}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>🚀 {t('home.travel_mode')}</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>×</Text>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            🚀 {t('home.travel_mode')}
+          </Text>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.closeButton, { backgroundColor: theme.colors.border }]}
+          >
+            <Text style={[styles.closeButtonText, { color: theme.colors.text }]}>×</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
           {/* Error Message */}
           {loadError && (
-            <View style={styles.errorCard}>
-              <Text style={styles.errorText}>⚠️ {loadError}</Text>
-              <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
-                <Text style={styles.retryButtonText}>{t('home.retry')}</Text>
+            <View
+              style={[
+                styles.errorCard,
+                { backgroundColor: theme.mode === 'dark' ? 'rgba(239, 68, 68, 0.1)' : '#FEE2E2' },
+              ]}
+            >
+              <Text
+                style={[styles.errorText, { color: theme.mode === 'dark' ? '#FCA5A5' : '#991B1B' }]}
+              >
+                ⚠️ {loadError}
+              </Text>
+              <TouchableOpacity
+                onPress={handleRetry}
+                style={[styles.retryButton, { backgroundColor: '#EF4444' }]}
+              >
+                <Text style={[styles.retryButtonText, { color: '#FFF' }]}>{t('home.retry')}</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* Trip Info */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t('home.current_trip')}</Text>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+            ]}
+          >
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+              {t('home.current_trip')}
+            </Text>
             <Text style={styles.tripName}>{tripName}</Text>
-            <Text style={styles.placesCount}>
+            <Text style={[styles.placesCount, { color: theme.colors.textMuted }]}>
               {t('home.saved_places_count', { count: state.savedPlaces.length })}
             </Text>
 
@@ -346,64 +377,102 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                   );
                 }
               }}
-              style={[styles.mapButton, !state.isActive && styles.mapButtonDisabled]}
+              style={[
+                styles.mapButton,
+                !state.isActive && styles.mapButtonDisabled,
+                { backgroundColor: '#3B82F6' },
+              ]}
             >
-              <Text style={[styles.mapButtonText, !state.isActive && styles.mapButtonTextDisabled]}>
+              <Text
+                style={[
+                  styles.mapButtonText,
+                  !state.isActive && styles.mapButtonTextDisabled,
+                  { color: '#FFF' },
+                ]}
+              >
                 🗺️ {t('home.view_map')}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Status Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t('home.status')}</Text>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+            ]}
+          >
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]}>{t('home.status')}</Text>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, state.isTracking && styles.statusDotActive]} />
-              <Text style={styles.statusText}>
+              <Text style={[styles.statusText, { color: theme.colors.text }]}>
                 {state.isTracking ? t('home.tracking_location') : t('home.inactive')}
               </Text>
             </View>
 
             {state.currentLocation && (
-              <View style={styles.locationInfo}>
-                <Text style={styles.locationText}>
+              <View style={[styles.locationInfo, { borderTopColor: theme.colors.border }]}>
+                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
                   📍 Lat: {state.currentLocation.coordinates.latitude.toFixed(6)}
                 </Text>
-                <Text style={styles.locationText}>
+                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
                   📍 Lng: {state.currentLocation.coordinates.longitude.toFixed(6)}
                 </Text>
-                <Text style={styles.locationText}>
+                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
                   🎯 Precisión: ±{Math.round(state.currentLocation.accuracy)}m
                 </Text>
               </View>
             )}
 
-            {state.energyMode && <Text style={styles.energyMode}>🔋 Modo: {state.energyMode}</Text>}
+            {state.energyMode && (
+              <Text style={[styles.energyMode, { color: theme.colors.textMuted }]}>
+                🔋 Modo: {state.energyMode}
+              </Text>
+            )}
           </View>
 
           {/* ✅ NUEVO: Precise Geo Detection Card */}
           {usePreciseGeo && state.isTracking && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>🎯 {t('home.precise_detection')}</Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+              ]}
+            >
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+                🎯 {t('home.precise_detection')}
+              </Text>
 
               {preciseGeo.currentCountry && (
                 <View style={styles.geoInfoRow}>
-                  <Text style={styles.geoLabel}>{t('home.country')}:</Text>
-                  <Text style={styles.geoValue}>{preciseGeo.currentCountry}</Text>
+                  <Text style={[styles.geoLabel, { color: theme.colors.textMuted }]}>
+                    {t('home.country')}:
+                  </Text>
+                  <Text style={[styles.geoValue, { color: theme.colors.text }]}>
+                    {preciseGeo.currentCountry}
+                  </Text>
                 </View>
               )}
 
               {preciseGeo.currentRegion && (
                 <View style={styles.geoInfoRow}>
-                  <Text style={styles.geoLabel}>{t('home.region')}:</Text>
-                  <Text style={styles.geoValue}>{preciseGeo.currentRegion}</Text>
+                  <Text style={[styles.geoLabel, { color: theme.colors.textMuted }]}>
+                    {t('home.region')}:
+                  </Text>
+                  <Text style={[styles.geoValue, { color: theme.colors.text }]}>
+                    {preciseGeo.currentRegion}
+                  </Text>
                 </View>
               )}
 
               {preciseGeo.accuracy && (
                 <View style={styles.geoInfoRow}>
-                  <Text style={styles.geoLabel}>{t('home.gps_accuracy')}:</Text>
-                  <Text style={styles.geoValue}>±{Math.round(preciseGeo.accuracy)}m</Text>
+                  <Text style={[styles.geoLabel, { color: theme.colors.textMuted }]}>
+                    {t('home.gps_accuracy')}:
+                  </Text>
+                  <Text style={[styles.geoValue, { color: theme.colors.text }]}>
+                    ±{Math.round(preciseGeo.accuracy)}m
+                  </Text>
                 </View>
               )}
 
@@ -475,8 +544,15 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
           {/* ✅ NUEVO: Transport Mode Card */}
           {state.transportMode && state.currentLocation && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('home.transport_mode')}</Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+              ]}
+            >
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+                {t('home.transport_mode')}
+              </Text>
               <View style={styles.transportRow}>
                 <Text style={styles.transportEmoji}>
                   {state.transportMode === 'stationary' && '🧍'}
@@ -486,7 +562,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                   {state.transportMode === 'driving' && '🚗'}
                 </Text>
                 <View style={styles.transportInfo}>
-                  <Text style={styles.transportMode}>
+                  <Text style={[styles.transportMode, { color: theme.colors.text }]}>
                     {state.transportMode === 'stationary' && t('home.stationary')}
                     {state.transportMode === 'walking' && t('home.walking')}
                     {state.transportMode === 'cycling' && t('home.cycling')}
@@ -494,7 +570,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                     {state.transportMode === 'driving' && t('home.driving')}
                   </Text>
                   {state.currentSpeed !== null && state.currentSpeed >= 0 && (
-                    <Text style={styles.speedText}>
+                    <Text style={[styles.speedText, { color: '#3B82F6' }]}>
                       {Math.max(0, state.currentSpeed).toFixed(1)} km/h
                     </Text>
                   )}
@@ -505,11 +581,21 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
           {/* Nearby Places */}
           {state.nearbyPlaces.length > 0 && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('home.nearby_places')}</Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+              ]}
+            >
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+                {t('home.nearby_places')}
+              </Text>
               {state.nearbyPlaces.slice(0, 5).map((place) => (
-                <View key={place.id} style={styles.placeItem}>
-                  <Text style={styles.placeName}>{place.name}</Text>
+                <View
+                  key={place.id}
+                  style={[styles.placeItem, { borderBottomColor: theme.colors.border }]}
+                >
+                  <Text style={[styles.placeName, { color: theme.colors.text }]}>{place.name}</Text>
                   <Text style={styles.placeDistance}>{formatDistance(place.distance)}</Text>
                 </View>
               ))}
@@ -521,29 +607,42 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             {!state.isTracking ? (
               <TouchableOpacity
                 onPress={handleStartTravelMode}
-                style={[styles.button, styles.primaryButton]}
+                style={[styles.button, { backgroundColor: '#3B82F6' }]}
                 disabled={isLoading}
               >
-                <Text style={styles.buttonText}>
+                <Text style={[styles.buttonText, { color: '#FFF' }]}>
                   {isLoading ? t('home.starting') : `🚀 ${t('home.start_travel_mode')}`}
                 </Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 onPress={handleStopTravelMode}
-                style={[styles.button, styles.dangerButton]}
+                style={[styles.button, { backgroundColor: '#EF4444' }]}
               >
-                <Text style={styles.buttonText}>🛑 {t('home.stop_travel_mode')}</Text>
+                <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                  🛑 {t('home.stop_travel_mode')}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Info Section */}
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>{t('home.how_it_works')}</Text>
-            <Text style={styles.infoText}>• {t('home.how_it_works_1')}</Text>
-            <Text style={styles.infoText}>• {t('home.how_it_works_2')}</Text>
-            <Text style={styles.infoText}>• {t('home.how_it_works_3')}</Text>
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.1)' : '#EEF2FF' },
+            ]}
+          >
+            <Text style={[styles.infoTitle, { color: '#3B82F6' }]}>{t('home.how_it_works')}</Text>
+            <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
+              • {t('home.how_it_works_1')}
+            </Text>
+            <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
+              • {t('home.how_it_works_2')}
+            </Text>
+            <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
+              • {t('home.how_it_works_3')}
+            </Text>
           </View>
         </ScrollView>
       </View>
@@ -609,7 +708,6 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7FA',
   },
   header: {
     flexDirection: 'row',
@@ -617,26 +715,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E5E5EA',
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#000',
     fontWeight: 'bold',
   },
   content: {
@@ -647,11 +740,9 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -660,7 +751,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 12,
   },
   tripName: {
@@ -671,7 +761,6 @@ const styles = StyleSheet.create({
   },
   placesCount: {
     fontSize: 14,
-    color: '#666',
   },
   statusRow: {
     flexDirection: 'row',
@@ -690,22 +779,18 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 16,
-    color: '#000',
   },
   locationInfo: {
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
   },
   locationText: {
     fontSize: 13,
-    color: '#666',
     marginBottom: 4,
   },
   energyMode: {
     fontSize: 14,
-    color: '#666',
     marginTop: 8,
   },
   placeItem: {
@@ -714,11 +799,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   placeName: {
     fontSize: 15,
-    color: '#000',
     flex: 1,
   },
   placeDistance: {
@@ -735,47 +818,34 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
   },
-  primaryButton: {
-    backgroundColor: '#3B82F6',
-  },
-  dangerButton: {
-    backgroundColor: '#EF4444',
-  },
   buttonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFF',
   },
   infoCard: {
-    backgroundColor: '#EEF2FF',
     borderRadius: 16,
     padding: 16,
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#3B82F6',
     marginBottom: 12,
   },
   infoText: {
     fontSize: 14,
-    color: '#4B5563',
     marginBottom: 8,
     lineHeight: 20,
   },
   errorCard: {
-    backgroundColor: '#FEE2E2',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
   errorText: {
     fontSize: 14,
-    color: '#991B1B',
     marginBottom: 12,
   },
   retryButton: {
-    backgroundColor: '#EF4444',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -784,10 +854,8 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFF',
   },
   mapButton: {
-    backgroundColor: '#3B82F6',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -800,7 +868,6 @@ const styles = StyleSheet.create({
   mapButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFF',
   },
   mapButtonTextDisabled: {
     opacity: 0.6,
@@ -820,13 +887,11 @@ const styles = StyleSheet.create({
   transportMode: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   speedText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#3B82F6',
   },
   // ✅ NUEVOS ESTILOS: Precise Geo Detection
   geoInfoRow: {
@@ -837,12 +902,10 @@ const styles = StyleSheet.create({
   },
   geoLabel: {
     fontSize: 14,
-    color: '#666',
     fontWeight: '500',
   },
   geoValue: {
     fontSize: 15,
-    color: '#000',
     fontWeight: '600',
   },
   borderWarning: {
