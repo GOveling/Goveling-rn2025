@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import LottieView, { type AnimationObject } from 'lottie-react-native';
 
 import { COLORS } from '~/constants/colors';
+import { useTheme } from '~/lib/theme';
 
 interface AnimatedTabIconProps {
   focused: boolean;
@@ -22,6 +23,19 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
   const animationRef = useRef<LottieView>(null);
   const [animationKey, setAnimationKey] = useState(0);
   const lastFocusTimeRef = useRef(0);
+  const theme = useTheme();
+
+  // Color filters para adaptar los Lottie al modo dark
+  // En dark mode: usamos colores claros, en light mode: colores oscuros originales
+  const colorFilters =
+    theme.mode === 'dark'
+      ? [
+          {
+            keypath: '*',
+            color: 'rgb(229, 231, 235)', // Color claro para líneas en dark mode (gray-200)
+          },
+        ]
+      : undefined; // En light mode no aplicamos filtros (usa colores originales)
 
   useEffect(() => {
     if (focused) {
@@ -56,10 +70,16 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
           autoPlay={false}
           speed={1}
           resizeMode="contain"
+          colorFilters={colorFilters}
         />
       </View>
       <Text
-        style={[styles.label, focused ? styles.labelFocused : styles.labelUnfocused]}
+        style={[
+          styles.label,
+          focused
+            ? { color: theme.mode === 'dark' ? '#60a5fa' : COLORS.border.indigo }
+            : { color: theme.mode === 'dark' ? 'rgba(229, 231, 235, 0.6)' : COLORS.text.tertiary },
+        ]}
         numberOfLines={1}
         ellipsizeMode="clip"
       >
@@ -74,8 +94,6 @@ const styles = StyleSheet.create<{
   animationContainer: ViewStyle;
   container: ViewStyle;
   label: TextStyle;
-  labelFocused: TextStyle;
-  labelUnfocused: TextStyle;
 }>({
   animation: {
     height: '100%',
@@ -98,12 +116,6 @@ const styles = StyleSheet.create<{
     // Force single line on all platforms
     lineHeight: 12,
     height: 12,
-  },
-  labelFocused: {
-    color: COLORS.border.indigo,
-  },
-  labelUnfocused: {
-    color: COLORS.text.tertiary,
   },
 });
 
