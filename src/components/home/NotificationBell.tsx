@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useNotifications } from '~/hooks/useNotifications';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { store } from '~/store';
 import { tripsApi } from '~/store/api/tripsApi';
 
@@ -53,6 +54,7 @@ function darkenHex(hex: string, factor = 0.12): string {
 
 const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const {
     loading,
     notifications,
@@ -666,7 +668,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
         <Pressable
           onPress={() => handleNotificationPress(n)}
           style={({ pressed }) => ({
-            backgroundColor: 'white',
+            backgroundColor: theme.colors.card,
             borderWidth: 1,
             borderColor: pressed ? darkenHex(iconMeta.border, 0.12) : iconMeta.border,
             borderRadius: 12,
@@ -693,21 +695,29 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
               <Text
                 style={{
                   fontWeight: n.is_read ? '500' : '700',
-                  color: n.is_read ? '#6B7280' : '#1F2937',
+                  color: n.is_read ? theme.colors.textMuted : theme.colors.text,
                 }}
               >
                 {formattedText.title}
               </Text>
               {formattedText.body ? (
-                <Text style={styles.notificationBodyText}>{formattedText.body}</Text>
+                <Text style={{ color: theme.colors.textMuted, marginTop: 2 }}>
+                  {formattedText.body}
+                </Text>
               ) : null}
               {n.created_at && (
-                <Text style={styles.notificationTimeText}>
+                <Text
+                  style={{
+                    color: theme.mode === 'dark' ? 'rgba(255,255,255,0.4)' : '#9CA3AF',
+                    fontSize: 12,
+                    marginTop: 4,
+                  }}
+                >
                   {new Date(n.created_at).toLocaleString()}
                 </Text>
               )}
             </View>
-            {!n.is_read && <View style={styles.unreadDot} />}
+            {!n.is_read && <View style={[styles.unreadDot, { backgroundColor: '#EF4444' }]} />}
           </View>
         </Pressable>
       </Animated.View>
@@ -775,20 +785,32 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
         presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
         onRequestClose={onClose}
       >
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>{t('home.inbox', 'Inbox')}</Text>
+          <View
+            style={[
+              styles.header,
+              { borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E7EB' },
+            ]}
+          >
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+              {t('home.inbox', 'Inbox')}
+            </Text>
             <View style={styles.headerActions}>
               {notifications.some((n) => !n.is_read) && (
                 <TouchableOpacity onPress={handleMarkAllAsRead}>
-                  <Text style={styles.markAllReadText}>
+                  <Text
+                    style={[
+                      styles.markAllReadText,
+                      { color: theme.mode === 'dark' ? '#60a5fa' : '#2563EB' },
+                    ]}
+                  >
                     {t('auto.Mark all as read', 'Mark all as read')}
                   </Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+                <Ionicons name="close" size={24} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
           </View>
@@ -801,13 +823,13 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
           >
             {loading ? (
               <View style={styles.centerMessage}>
-                <Text style={styles.centerMessageText}>
+                <Text style={{ color: theme.colors.textMuted }}>
                   {t('auto.Loading notifications...', 'Loading notifications...')}
                 </Text>
               </View>
             ) : pendingInv.length === 0 && historyInv.length === 0 && notifications.length === 0 ? (
               <View style={styles.centerMessage}>
-                <Text style={styles.centerMessageText}>
+                <Text style={{ color: theme.colors.textMuted }}>
                   {t('auto.No notifications', 'No notifications')}
                 </Text>
               </View>
@@ -816,20 +838,38 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                 {/* Pending Invitation Highlight */}
                 {pendingInv.length > 0 && (
                   <View style={styles.pendingSection}>
-                    <Text style={styles.sectionTitle}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                       {t('notifications.pending_invitations', 'Pending invitations')}
                     </Text>
                     {pendingInv.map((inv) => (
-                      <View key={inv.id} style={styles.invitationCard}>
+                      <View
+                        key={inv.id}
+                        style={[
+                          styles.invitationCard,
+                          {
+                            backgroundColor:
+                              theme.mode === 'dark' ? 'rgba(59,130,246,0.15)' : '#EFF6FF',
+                            borderColor: theme.mode === 'dark' ? 'rgba(59,130,246,0.3)' : '#E5E7EB',
+                          },
+                        ]}
+                      >
                         <View style={styles.invitationHeader}>
                           <View style={styles.invitationIconContainer}>
                             <Ionicons name="person-add" size={20} color="white" />
                           </View>
                           <View style={styles.invitationTextContainer}>
-                            <Text style={styles.invitationTitle}>
+                            <Text style={[styles.invitationTitle, { color: theme.colors.text }]}>
                               {t('notifications.trip_invitation', 'Trip invitation')}
                             </Text>
-                            <Text style={styles.invitationRole}>
+                            <Text
+                              style={[
+                                styles.invitationRole,
+                                {
+                                  color:
+                                    theme.mode === 'dark' ? 'rgba(255,255,255,0.8)' : '#374151',
+                                },
+                              ]}
+                            >
                               {t(
                                 'notifications.invited_as_role',
                                 'You have been invited as {{role}}',
@@ -842,7 +882,15 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                               )}
                             </Text>
                             {(inv.inviter_name || inv.trip_title) && (
-                              <Text style={styles.invitationDetails}>
+                              <Text
+                                style={[
+                                  styles.invitationDetails,
+                                  {
+                                    color:
+                                      theme.mode === 'dark' ? 'rgba(255,255,255,0.8)' : '#374151',
+                                  },
+                                ]}
+                              >
                                 {t(
                                   'notifications.invited_by_to_trip',
                                   'By {{inviter}} to {{trip}}',
@@ -855,7 +903,9 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                               </Text>
                             )}
                             {inv.created_at && (
-                              <Text style={styles.invitationTime}>
+                              <Text
+                                style={[styles.invitationTime, { color: theme.colors.textMuted }]}
+                              >
                                 {new Date(inv.created_at).toLocaleDateString()}
                               </Text>
                             )}
@@ -867,14 +917,16 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                             disabled={actionLoading === inv.id}
                             style={[
                               styles.invitationButton,
-                              styles.acceptButton,
-                              { opacity: actionLoading === inv.id ? 0.7 : 1 },
+                              {
+                                backgroundColor: '#10B981',
+                                opacity: actionLoading === inv.id ? 0.7 : 1,
+                              },
                             ]}
                           >
                             {actionLoading === inv.id ? (
                               <ActivityIndicator color="white" size="small" />
                             ) : (
-                              <Text style={styles.invitationButtonText}>
+                              <Text style={[styles.invitationButtonText, { color: 'white' }]}>
                                 {t('trips.accept', 'Accept')}
                               </Text>
                             )}
@@ -884,14 +936,16 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                             disabled={actionLoading === inv.id}
                             style={[
                               styles.invitationButton,
-                              styles.rejectButton,
-                              { opacity: actionLoading === inv.id ? 0.7 : 1 },
+                              {
+                                backgroundColor: '#EF4444',
+                                opacity: actionLoading === inv.id ? 0.7 : 1,
+                              },
                             ]}
                           >
                             {actionLoading === inv.id ? (
                               <ActivityIndicator color="white" size="small" />
                             ) : (
-                              <Text style={styles.invitationButtonText}>
+                              <Text style={[styles.invitationButtonText, { color: 'white' }]}>
                                 {t('trips.reject', 'Reject')}
                               </Text>
                             )}
@@ -910,7 +964,7 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                 {/* History of invitations (accepted/declined) */}
                 {historyInv.length > 0 && (
                   <View style={styles.historySection}>
-                    <Text style={styles.historyTitle}>
+                    <Text style={[styles.historyTitle, { color: theme.colors.textMuted }]}>
                       {t('notifications.history_title', 'Notification History')}
                     </Text>
                     {historyInv.map((inv) => (
@@ -918,13 +972,25 @@ const NotificationBell: React.FC<Props> = ({ iconColor = '#6B7280' }) => {
                         key={inv.id}
                         style={[
                           styles.historyCard,
-                          inv.status === 'accepted'
-                            ? styles.historyCardAccepted
-                            : styles.historyCardDeclined,
+                          {
+                            borderColor:
+                              theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
+                            backgroundColor:
+                              inv.status === 'accepted'
+                                ? theme.mode === 'dark'
+                                  ? 'rgba(16,185,129,0.15)'
+                                  : '#ECFDF5'
+                                : theme.mode === 'dark'
+                                  ? 'rgba(249,115,22,0.15)'
+                                  : '#FFF7ED',
+                            borderLeftColor: inv.status === 'accepted' ? '#10B981' : '#F97316',
+                          },
                         ]}
                       >
-                        <Text style={styles.historyEmail}>{inv.email}</Text>
-                        <Text style={styles.historyDetails}>
+                        <Text style={[styles.historyEmail, { color: theme.colors.text }]}>
+                          {inv.email}
+                        </Text>
+                        <Text style={{ color: theme.colors.textMuted }}>
                           {inv.role === 'viewer'
                             ? t('trips.viewer', 'Viewer')
                             : t('trips.editor', 'Editor')}{' '}
@@ -964,7 +1030,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: 'white',
     fontSize: 10,
     fontWeight: '700',
   },
@@ -972,7 +1037,6 @@ const styles = StyleSheet.create({
   // Modal Container
   modalContainer: {
     flex: 1,
-    backgroundColor: 'white',
   },
 
   // Header
@@ -984,12 +1048,10 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
   },
   headerActions: {
     flexDirection: 'row',
@@ -997,7 +1059,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   markAllReadText: {
-    color: '#2563EB',
     fontWeight: '600',
   },
 
@@ -1011,14 +1072,10 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
-  centerMessageText: {
-    color: '#6B7280',
-  },
 
   // Section Title
   sectionTitle: {
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 12,
     fontSize: 16,
   },
@@ -1039,19 +1096,9 @@ const styles = StyleSheet.create({
   notificationTextContainer: {
     flex: 1,
   },
-  notificationBodyText: {
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  notificationTimeText: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    marginTop: 4,
-  },
   unreadDot: {
     width: 8,
     height: 8,
-    backgroundColor: '#EF4444',
     borderRadius: 4,
   },
 
@@ -1060,13 +1107,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   invitationCard: {
-    backgroundColor: '#EFF6FF',
     borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     marginBottom: 12,
   },
   invitationHeader: {
@@ -1078,7 +1122,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -1088,19 +1131,15 @@ const styles = StyleSheet.create({
   },
   invitationTitle: {
     fontWeight: '700',
-    color: '#1F2937',
     fontSize: 16,
   },
   invitationRole: {
-    color: '#374151',
     marginTop: 2,
   },
   invitationDetails: {
-    color: '#374151',
     marginTop: 2,
   },
   invitationTime: {
-    color: '#6B7280',
     fontSize: 12,
     marginTop: 4,
   },
@@ -1115,14 +1154,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  acceptButton: {
-    backgroundColor: '#10B981',
-  },
-  rejectButton: {
-    backgroundColor: '#EF4444',
-  },
   invitationButtonText: {
-    color: 'white',
     fontWeight: '700',
   },
 
@@ -1131,7 +1163,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   historyTitle: {
-    color: '#6B7280',
     marginBottom: 8,
   },
   historyCard: {
@@ -1139,23 +1170,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     marginBottom: 8,
-  },
-  historyCardAccepted: {
-    backgroundColor: '#ECFDF5',
-    borderLeftColor: '#10B981',
-  },
-  historyCardDeclined: {
-    backgroundColor: '#FFF7ED',
-    borderLeftColor: '#F97316',
   },
   historyEmail: {
     fontWeight: '600',
-    color: '#111827',
-  },
-  historyDetails: {
-    color: '#6B7280',
   },
 });
 
