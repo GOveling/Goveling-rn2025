@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { usePopularPlacesV2, type PopularPlace } from '~/hooks/usePopularPlacesV2';
+import { useTheme } from '~/lib/theme';
 
 const AUTO_ROTATE_INTERVAL = 8000; // 8 seconds
 
@@ -21,6 +22,7 @@ export default function PopularPlacesCarousel({
   onPlacePress,
 }: Props) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { places, isLive, isLoading, refresh } = usePopularPlacesV2({
     userCountryCode,
     userContinent,
@@ -50,15 +52,30 @@ export default function PopularPlacesCarousel({
 
   if (isLoading) {
     return (
-      <View style={styles.card}>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.colors.card,
+            borderWidth: theme.mode === 'dark' ? 1 : 0,
+            borderColor: theme.mode === 'dark' ? '#60a5fa' : 'transparent',
+          },
+        ]}
+      >
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>{t('home.popular_places')}</Text>
-            <Text style={styles.titleLine2}>{t('home.globally')}</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {t('home.popular_places')}
+            </Text>
+            <Text style={[styles.titleLine2, { color: theme.colors.text }]}>
+              {t('home.globally')}
+            </Text>
           </View>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t('home.loading_popular_places')}</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+            {t('home.loading_popular_places')}
+          </Text>
         </View>
       </View>
     );
@@ -91,15 +108,28 @@ export default function PopularPlacesCarousel({
   };
 
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.card,
+          borderWidth: theme.mode === 'dark' ? 1 : 0,
+          borderColor: theme.mode === 'dark' ? '#60a5fa' : 'transparent',
+        },
+      ]}
+    >
       {/* Header */}
       <View style={styles.header}>
         <View>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{t('home.popular_places')}</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {t('home.popular_places')}
+            </Text>
           </View>
           <View style={styles.titleRow}>
-            <Text style={styles.titleLine2}>{t('home.globally')}</Text>
+            <Text style={[styles.titleLine2, { color: theme.colors.text }]}>
+              {t('home.globally')}
+            </Text>
             {isLive && (
               <View style={styles.liveBadge}>
                 <Text style={styles.liveText}>{t('home.live')}</Text>
@@ -109,7 +139,11 @@ export default function PopularPlacesCarousel({
         </View>
 
         <TouchableOpacity onPress={refresh} style={styles.refreshButton}>
-          <Text style={styles.refreshText}>{t('home.refresh')}</Text>
+          <Text
+            style={[styles.refreshText, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
+          >
+            {t('home.refresh')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -119,35 +153,63 @@ export default function PopularPlacesCarousel({
         onPress={() => onPlacePress?.(currentPlace)}
         onPressIn={() => setIsPaused(true)}
         onPressOut={() => setIsPaused(false)}
-        style={styles.placeCard}
+        style={[
+          styles.placeCard,
+          { backgroundColor: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F9FAFB' },
+        ]}
       >
         {/* Emoji/Photo */}
-        <View style={styles.placeImage}>
+        <View
+          style={[
+            styles.placeImage,
+            { backgroundColor: theme.mode === 'dark' ? 'rgba(254, 243, 199, 0.2)' : '#FEF3C7' },
+          ]}
+        >
           <Text style={styles.placeEmoji}>{currentPlace.emoji}</Text>
         </View>
 
         {/* Content */}
         <View style={styles.placeContent}>
           <View style={styles.placeTitleRow}>
-            <Text style={styles.placeName} numberOfLines={1}>
+            <Text style={[styles.placeName, { color: theme.colors.text }]} numberOfLines={1}>
               {currentPlace.name}
             </Text>
             {isLive && currentPlace.badge && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{currentPlace.badge}</Text>
+              <View
+                style={[
+                  styles.badge,
+                  {
+                    backgroundColor: theme.mode === 'dark' ? 'rgba(254, 226, 226, 0.2)' : '#FEE2E2',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: theme.mode === 'dark' ? '#fca5a5' : '#DC2626' },
+                  ]}
+                >
+                  {currentPlace.badge}
+                </Text>
               </View>
             )}
           </View>
 
-          <Text style={styles.placeLocation} numberOfLines={1}>
+          <Text style={[styles.placeLocation, { color: theme.colors.textMuted }]} numberOfLines={1}>
             📍 {currentPlace.location_display}
           </Text>
 
-          <Text style={styles.placeDescription} numberOfLines={2}>
+          <Text
+            style={[styles.placeDescription, { color: theme.colors.textMuted }]}
+            numberOfLines={2}
+          >
             {currentPlace.description || t('home.popular_place_fallback')}
           </Text>
 
-          <Text style={styles.placeStats} numberOfLines={1}>
+          <Text
+            style={[styles.placeStats, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
+            numberOfLines={1}
+          >
             ❤️ {getSavesText()}
           </Text>
         </View>
@@ -164,10 +226,25 @@ export default function PopularPlacesCarousel({
                 setIsPaused(true);
                 setTimeout(() => setIsPaused(false), 3000);
               }}
-              style={[styles.dot, index === currentIndex && styles.dotActive]}
+              style={[
+                styles.dot,
+                {
+                  backgroundColor:
+                    index === currentIndex
+                      ? theme.mode === 'dark'
+                        ? '#a78bfa'
+                        : '#8B5CF6'
+                      : theme.mode === 'dark'
+                        ? 'rgba(209, 213, 219, 0.3)'
+                        : '#D1D5DB',
+                },
+                index === currentIndex && styles.dotActive,
+              ]}
             />
           ))}
-          {places.length > 5 && <Text style={styles.moreIndicator}>...</Text>}
+          {places.length > 5 && (
+            <Text style={[styles.moreIndicator, { color: theme.colors.textMuted }]}>...</Text>
+          )}
         </View>
       )}
     </View>
@@ -176,7 +253,6 @@ export default function PopularPlacesCarousel({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -191,7 +267,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     textAlign: 'center',
-    color: '#6B7280',
     fontSize: 14,
   },
   header: {
@@ -203,7 +278,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
   },
   titleRow: {
     flexDirection: 'row',
@@ -213,7 +287,6 @@ const styles = StyleSheet.create({
   titleLine2: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
   },
   liveBadge: {
     backgroundColor: '#EF4444',
@@ -231,11 +304,9 @@ const styles = StyleSheet.create({
   },
   refreshText: {
     fontSize: 14,
-    color: '#8B5CF6',
   },
   placeCard: {
     flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     padding: 12,
     gap: 12,
@@ -243,7 +314,6 @@ const styles = StyleSheet.create({
   placeImage: {
     width: 60,
     height: 60,
-    backgroundColor: '#FEF3C7',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -264,10 +334,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
   },
   badge: {
-    backgroundColor: '#FEE2E2',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -275,20 +343,16 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#DC2626',
   },
   placeLocation: {
     fontSize: 12,
-    color: '#6B7280',
   },
   placeDescription: {
     fontSize: 12,
-    color: '#6B7280',
     lineHeight: 16,
   },
   placeStats: {
     fontSize: 11,
-    color: '#8B5CF6',
     fontWeight: '600',
   },
   pagination: {
@@ -302,15 +366,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#D1D5DB',
   },
   dotActive: {
     width: 20,
-    backgroundColor: '#8B5CF6',
   },
   moreIndicator: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginLeft: 2,
   },
 });
