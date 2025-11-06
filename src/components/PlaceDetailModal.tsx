@@ -285,7 +285,13 @@ export default function PlaceDetailModal({
     };
 
     return (
-      <View style={[styles.actionIcon, disabled && styles.actionIconDisabled]}>
+      <View
+        style={[
+          styles.actionIcon,
+          { backgroundColor: 'transparent' },
+          disabled && styles.actionIconDisabled,
+        ]}
+      >
         {!errorState ? (
           <LottieView
             ref={lottieRef}
@@ -672,7 +678,7 @@ export default function PlaceDetailModal({
                 <TouchableOpacity
                   style={[
                     styles.actionButton,
-                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    { backgroundColor: 'transparent', borderColor: 'transparent' },
                   ]}
                   onPress={handleDirections}
                 >
@@ -691,7 +697,7 @@ export default function PlaceDetailModal({
                 <TouchableOpacity
                   style={[
                     styles.actionButton,
-                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    { backgroundColor: 'transparent', borderColor: 'transparent' },
                   ]}
                   onPress={handleLocation}
                   disabled={!place.coordinates}
@@ -718,7 +724,7 @@ export default function PlaceDetailModal({
                 <TouchableOpacity
                   style={[
                     styles.actionButton,
-                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    { backgroundColor: 'transparent', borderColor: 'transparent' },
                   ]}
                   onPress={handleWebsite}
                   disabled={!place.website}
@@ -1038,7 +1044,6 @@ const styles = StyleSheet.create({
   },
   actionIcon: {
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
     borderRadius: 28,
     height: 56,
     justifyContent: 'center',
@@ -1046,7 +1051,6 @@ const styles = StyleSheet.create({
     width: 56,
   },
   actionIconDisabled: {
-    backgroundColor: '#F0F0F0',
     opacity: 0.5,
   },
   actionText: {
