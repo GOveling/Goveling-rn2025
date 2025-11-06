@@ -24,6 +24,7 @@ import {
   resolveCurrentUserRoleForTripId,
   resolveUserRoleForTrip,
 } from '~/lib/userUtils';
+import { createRealtimeHandler } from '~/utils/errorHandling';
 
 import { CountryImage } from './CountryImage';
 import GroupOptionsModal from './GroupOptionsModal';
@@ -268,6 +269,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   // Realtime subscription to reflect collaborator role & invitations changes promptly
   useEffect(() => {
+    const realtimeHandler = createRealtimeHandler('TripCard');
     let channel: any;
     (async () => {
       try {
@@ -327,7 +329,10 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               fetchPendingInvites();
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            // Silently handle channel status
+            realtimeHandler.handleChannelStatus(status, `tripcard-role-${trip.id}`);
+          });
       } catch (e) {
         console.warn('TripCard realtime subscription failed', e);
       }
@@ -343,6 +348,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
 
   // Realtime subscription específica para mensajes no leídos
   useEffect(() => {
+    const realtimeHandler = createRealtimeHandler('TripCard-Messages');
+
     console.log(`🔔 TripCard: Setting up messages channel for trip ${trip.id}`);
     const messagesChannel = supabase
       .channel(`tripcard-messages-${trip.id}`)
@@ -377,7 +384,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         }
       )
       .subscribe((status) => {
-        console.log(`🔔 TripCard: Messages channel status for trip ${trip.id}:`, status);
+        // Silently handle channel status - only log in development
+        realtimeHandler.handleChannelStatus(status, `tripcard-messages-${trip.id}`);
       });
 
     return () => {

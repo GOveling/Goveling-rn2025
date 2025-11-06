@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 
@@ -20,6 +20,7 @@ import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { TravelModeProvider } from '../src/contexts/TravelModeContext';
 import i18n from '../src/i18n';
 import { ThemeProvider } from '../src/lib/theme';
+import { setupGlobalErrorHandlers, setupProductionLogging } from '../src/utils/globalErrorConfig';
 
 // Error Boundary para capturar errores
 class ErrorBoundary extends React.Component<
@@ -109,6 +110,13 @@ function InlineAuthGuard() {
 export default function Root() {
   useFrameworkReady();
   logger.debug('🚀 Root Layout mounting...');
+
+  // Setup global error handlers on mount
+  useEffect(() => {
+    setupGlobalErrorHandlers();
+    setupProductionLogging();
+    logger.debug('✅ Global error handlers initialized');
+  }, []);
 
   // ✅ Listener para forzar re-mount cuando cambie el idioma
   const [i18nKey, setI18nKey] = React.useState(0);

@@ -16,6 +16,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Coordinates } from './geoUtils';
 import { reverseGeocode } from '../../lib/geocoding';
+import { createFetchHandler, createLogger } from '../../utils/errorHandling';
+
+// Initialize error handlers
+const logger = createLogger('CountryDetectionService');
+const fetchHandler = createFetchHandler('CountryDetectionService');
 
 // Currency mapping by country code
 const CURRENCY_MAP: Record<string, { code: string; symbol: string }> = {
@@ -1031,32 +1036,36 @@ class CountryDetectionService {
    * Fetch country photos from Pexels via Edge Function
    */
   private async fetchCountryPhotos(countryName: string, countryCode: string): Promise<string[]> {
-    try {
-      console.log(`📸 Fetching photos for ${countryName}...`);
+    logger.debug(`📸 Fetching photos for ${countryName}...`);
 
-      const { supabase } = await import('~/lib/supabase');
-      const { data, error } = await supabase.functions.invoke('pexels-country-photos', {
-        body: {
-          countryName,
-          countryCode,
-        },
-      });
+    const result = await fetchHandler.executeFetch(
+      async () => {
+        const { supabase } = await import('~/lib/supabase');
+        const { data, error } = await supabase.functions.invoke('pexels-country-photos', {
+          body: {
+            countryName,
+            countryCode,
+          },
+        });
 
-      if (error) {
-        console.error('❌ Error fetching country photos:', error);
+        if (error) {
+          throw error;
+        }
+
+        if (data?.photos && Array.isArray(data.photos)) {
+          logger.debug(`✅ Got ${data.photos.length} photos for ${countryName}`);
+          return data.photos;
+        }
+
         return [];
+      },
+      {
+        fallbackValue: [],
+        silent: true, // Don't show errors to user
       }
+    );
 
-      if (data?.photos && Array.isArray(data.photos)) {
-        console.log(`✅ Got ${data.photos.length} photos for ${countryName}`);
-        return data.photos;
-      }
-
-      return [];
-    } catch (error) {
-      console.error('❌ Exception fetching country photos:', error);
-      return [];
-    }
+    return result || [];
   }
 
   /**
