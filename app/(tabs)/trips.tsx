@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import type { Trip } from '~/lib/home';
 import { supabase } from '~/lib/supabase';
 import { getTripWithTeam, getTripWithTeamRPC } from '~/lib/teamHelpers';
+import { useTheme } from '~/lib/theme';
 import { logger } from '~/utils/logger';
 
 import NewTripModal from '../../src/components/NewTripModal';
@@ -48,6 +49,7 @@ interface TripsListItem {
 export default function TripsTab() {
   const { t } = useTranslation();
   const router = useRouter();
+  const theme = useTheme();
   const { openModal } = useLocalSearchParams();
 
   // RTK Query: Get cached trips breakdown (shared with HomeTab)
@@ -530,7 +532,7 @@ export default function TripsTab() {
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -542,20 +544,27 @@ export default function TripsTab() {
             colors={['#8B5CF6', '#EC4899']} // Android - theme colors
             tintColor="#8B5CF6" // iOS
             title={t('trips.refreshing')} // iOS
-            titleColor="#666" // iOS
+            titleColor={theme.colors.textMuted} // iOS
           />
         }
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{t('trips.title')}</Text>
-          <Text style={styles.subtitle}>{t('trips.subtitle')}</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{t('trips.title')}</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
+            {t('trips.subtitle')}
+          </Text>
         </View>
 
         {/* Vista de Mapa Button */}
-        <TouchableOpacity onPress={() => setShowMapModal(true)} style={styles.mapButton}>
+        <TouchableOpacity
+          onPress={() => setShowMapModal(true)}
+          style={[styles.mapButton, { backgroundColor: theme.colors.card }]}
+        >
           <Text style={styles.mapButtonIcon}>🗺️</Text>
-          <Text style={styles.mapButtonText}>{t('trips.view_map')}</Text>
+          <Text style={[styles.mapButtonText, { color: theme.colors.text }]}>
+            {t('trips.view_map')}
+          </Text>
         </TouchableOpacity>
 
         {/* Nuevo Viaje Button */}
@@ -572,19 +581,25 @@ export default function TripsTab() {
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: theme.colors.card }]}>
             <Text style={styles.statValueBlue}>{stats.totalTrips}</Text>
-            <Text style={styles.statLabel}>{t('trips.total_trips')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('trips.total_trips')}
+            </Text>
           </View>
 
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: theme.colors.card }]}>
             <Text style={styles.statValueGreen}>{stats.upcomingTrips}</Text>
-            <Text style={styles.statLabel}>{t('trips.upcoming')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('trips.upcoming')}
+            </Text>
           </View>
 
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: theme.colors.card }]}>
             <Text style={styles.statValueOrange}>{stats.groupTrips}</Text>
-            <Text style={styles.statLabel}>{t('trips.group_trips')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('trips.group_trips')}
+            </Text>
           </View>
         </View>
 
@@ -592,13 +607,19 @@ export default function TripsTab() {
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#8B5CF6" />
-            <Text style={styles.loadingText}>{t('trips.loading')}</Text>
+            <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+              {t('trips.loading')}
+            </Text>
           </View>
         ) : trips.length === 0 ? (
           <View style={styles.centerContainer}>
             <Text style={styles.emptyEmoji}>🗺️</Text>
-            <Text style={styles.emptyTitle}>{t('trips.empty_title')}</Text>
-            <Text style={styles.emptyMessage}>{t('trips.empty_sub')}</Text>
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+              {t('trips.empty_title')}
+            </Text>
+            <Text style={[styles.emptyMessage, { color: theme.colors.textMuted }]}>
+              {t('trips.empty_sub')}
+            </Text>
             <TouchableOpacity
               onPress={() => setShowNewTripModal(true)}
               style={styles.emptyCreateButtonContainer}

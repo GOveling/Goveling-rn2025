@@ -24,6 +24,7 @@ import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
 import SettingsModal from '~/components/SettingsModal';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
 import { VisitedCitiesModal } from '../../src/components/profile/VisitedCitiesModal';
@@ -36,6 +37,7 @@ const { width } = Dimensions.get('window');
 export default function ProfileTab() {
   const { t } = useTranslation();
   const { user, signOut: authSignOut } = useAuth();
+  const theme = useTheme();
 
   // RTK Query: Get cached profile (5min cache)
   const {
@@ -202,6 +204,9 @@ export default function ProfileTab() {
     onPress,
     iconColor = '#666',
     iconLib = 'Ionicons',
+    textColor,
+    subtitleColor,
+    borderColor,
   }) => {
     const IconComponent =
       iconLib === 'MaterialIcons'
@@ -213,17 +218,22 @@ export default function ProfileTab() {
             : Ionicons;
 
     return (
-      <TouchableOpacity style={styles.menuSection} onPress={onPress}>
+      <TouchableOpacity
+        style={[styles.menuSection, borderColor ? { borderBottomColor: borderColor } : null]}
+        onPress={onPress}
+      >
         <View style={styles.menuLeft}>
           <View style={[styles.menuIconContainer, { backgroundColor: iconColor + '20' }]}>
             <IconComponent name={icon} size={20} color={iconColor} />
           </View>
           <View style={styles.menuText}>
-            <Text style={styles.menuTitle}>{title}</Text>
-            <Text style={styles.menuSubtitle}>{subtitle}</Text>
+            <Text style={[styles.menuTitle, textColor ? { color: textColor } : null]}>{title}</Text>
+            <Text style={[styles.menuSubtitle, subtitleColor ? { color: subtitleColor } : null]}>
+              {subtitle}
+            </Text>
           </View>
         </View>
-        <Feather name="chevron-right" size={20} color="#666" />
+        <Feather name="chevron-right" size={20} color={subtitleColor || '#666'} />
       </TouchableOpacity>
     );
   };
@@ -319,12 +329,12 @@ export default function ProfileTab() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={{ paddingBottom: 100 }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header con Avatar y Info Personal */}
-      <View style={styles.headerSection}>
+      <View style={[styles.headerSection, { backgroundColor: theme.colors.card }]}>
         <View style={styles.avatarContainer}>
           {profileData.avatarUrl ? (
             <Image source={{ uri: profileData.avatarUrl }} style={styles.avatarImage} />
@@ -353,8 +363,10 @@ export default function ProfileTab() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.userName}>{profileData.fullName}</Text>
-        <Text style={styles.userDescription}>{profileData.description}</Text>
+        <Text style={[styles.userName, { color: theme.colors.text }]}>{profileData.fullName}</Text>
+        <Text style={[styles.userDescription, { color: theme.colors.textMuted }]}>
+          {profileData.description}
+        </Text>
 
         <LinearGradient
           colors={['#4F8EF7', '#FF8C42']}
@@ -367,8 +379,10 @@ export default function ProfileTab() {
       </View>
 
       {/* Estadísticas de Viaje */}
-      <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>{t('profile.travel_stats_title')}</Text>
+      <View style={[styles.statsCard, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.statsTitle, { color: theme.colors.text }]}>
+          {t('profile.travel_stats_title')}
+        </Text>
 
         <View style={styles.statsGrid}>
           <TouchableOpacity
@@ -376,22 +390,30 @@ export default function ProfileTab() {
             onPress={() => setShowVisitedCountriesModal(true)}
           >
             <Text style={styles.statNumber}>{profileData.stats.countriesVisited}</Text>
-            <Text style={styles.statLabel}>{t('profile.countries_visited')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('profile.countries_visited')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedCitiesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.citiesExplored}</Text>
-            <Text style={styles.statLabel}>{t('profile.cities_explored')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('profile.cities_explored')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statItem} onPress={() => setShowVisitedPlacesModal(true)}>
             <Text style={styles.statNumber}>{profileData.stats.placesVisited}</Text>
-            <Text style={styles.statLabel}>{t('profile.places_visited')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('profile.places_visited')}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{profileData.stats.achievementPoints}</Text>
-            <Text style={styles.statLabel}>{t('profile.achievement_points')}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+              {t('profile.achievement_points')}
+            </Text>
           </View>
         </View>
 
@@ -406,12 +428,15 @@ export default function ProfileTab() {
       </View>
 
       {/* Secciones del Menú */}
-      <View style={styles.menuContainer}>
+      <View style={[styles.menuContainer, { backgroundColor: theme.colors.card }]}>
         <MenuSection
           icon="person"
           title={t('profile.menu.personal_info')}
           subtitle={t('profile.menu.personal_info_desc')}
           iconColor="#00C853"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() => {
             console.log('🔥 INFORMACIÓN PERSONAL BUTTON CLICKED');
             console.log('🔥 Current showPersonalModal state:', showPersonalModal);
@@ -427,6 +452,9 @@ export default function ProfileTab() {
           title={t('profile.menu.travel_documents')}
           subtitle={t('profile.menu.travel_documents_desc')}
           iconColor="#2196F3"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() => Alert.alert(t('profile.documents'), t('profile.documents_coming_soon'))}
         />
 
@@ -435,6 +463,9 @@ export default function ProfileTab() {
           title={t('profile.menu.my_reviews')}
           subtitle={t('profile.menu.my_reviews_desc')}
           iconColor="#673AB7"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() =>
             Alert.alert(t('profile.menu.my_reviews'), t('profile.reviews_coming_soon'))
           }
@@ -445,6 +476,9 @@ export default function ProfileTab() {
           title={t('profile.menu.notifications')}
           subtitle={t('profile.menu.notifications_desc')}
           iconColor="#00C853"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() => router.push('/settings')}
         />
 
@@ -457,6 +491,9 @@ export default function ProfileTab() {
             points: profileData.stats.achievementPoints,
           })}
           iconColor="#673AB7"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() =>
             Alert.alert(t('profile.achievements'), t('profile.achievements_coming_soon'))
           }
@@ -468,6 +505,9 @@ export default function ProfileTab() {
           title={t('profile.menu.share_profile')}
           subtitle={t('profile.menu.share_profile_desc')}
           iconColor="#FF8C42"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() =>
             Alert.alert(t('profile.menu.share_profile'), t('profile.share_coming_soon'))
           }
@@ -478,6 +518,9 @@ export default function ProfileTab() {
           title={t('profile.menu.settings')}
           subtitle={t('profile.menu.settings_desc')}
           iconColor="#666"
+          textColor={theme.colors.text}
+          subtitleColor={theme.colors.textMuted}
+          borderColor={theme.colors.border}
           onPress={() => setShowSettingsModal(true)}
         />
 
@@ -488,6 +531,9 @@ export default function ProfileTab() {
             title={t('profile.menu.debug_clear_city_cache')}
             subtitle={t('profile.menu.debug_clear_city_cache_desc')}
             iconColor="#FF6B6B"
+            textColor={theme.colors.text}
+            subtitleColor={theme.colors.textMuted}
+            borderColor={theme.colors.border}
             onPress={async () => {
               const { cityDetectionService } = await import(
                 '~/services/travelMode/CityDetectionService'
@@ -503,6 +549,7 @@ export default function ProfileTab() {
       <Pressable
         style={({ pressed }) => [
           styles.signOutButton,
+          { backgroundColor: theme.colors.card },
           Platform.OS === 'web' && pressed && { opacity: 0.8 },
         ]}
         onPress={() => {

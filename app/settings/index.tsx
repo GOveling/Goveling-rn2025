@@ -1,20 +1,43 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity, Appearance, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { useTranslation } from 'react-i18next';
 
-import { COLORS } from '~/constants/colors';
+import { useAppSettings } from '~/contexts/AppSettingsContext';
 import i18n from '~/i18n';
 import { supabase } from '~/lib/supabase';
-
-import { setLanguage } from '../../src/i18n';
+import { useTheme, useThemeControl } from '~/lib/theme';
 
 export default function Settings() {
+  console.log('🚀 Settings Screen MOUNTED');
+
   const { t } = useTranslation();
+  const theme = useTheme();
+  const { setPreference: setThemeInProvider } = useThemeControl();
+  const { settings, setTheme: setThemeInSettings } = useAppSettings();
+
+  console.log('📊 Current theme from hook:', theme.mode);
+  console.log('📊 Current settings.theme:', settings.theme);
 
   const [lang, setLang] = React.useState(i18n.language);
-  const [dark, setDark] = React.useState(Appearance.getColorScheme() === 'dark');
+
+  // Función para cambiar tema en ambos lugares
+  const changeTheme = async (newTheme: 'light' | 'dark' | 'auto') => {
+    console.log('🌟 Changing theme to:', newTheme);
+    // 1. Actualizar ThemeProvider primero (cambio inmediato)
+    await setThemeInProvider(newTheme);
+    // 2. Actualizar AppSettingsContext (persistencia)
+    await setThemeInSettings(newTheme);
+    console.log('✅ Theme changed successfully');
+  };
+
+  // Debug: Log cuando cambia el tema
+  React.useEffect(() => {
+    console.log('🎨 Settings Screen - Theme mode:', theme.mode);
+    console.log('🎨 Settings Screen - Background:', theme.colors.background);
+    console.log('🎨 Settings Screen - Text:', theme.colors.text);
+  }, [theme.mode, theme.colors.background, theme.colors.text]);
 
   const save = async () => {
     i18n.changeLanguage(lang);
@@ -29,10 +52,10 @@ export default function Settings() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Configuración</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Text style={[styles.title, { color: theme.colors.text }]}>Configuración</Text>
 
-      <Text>Idioma</Text>
+      <Text style={{ color: theme.colors.text }}>Idioma</Text>
       <View style={styles.row}>
         {['en', 'es', 'pt', 'fr', 'it', 'zh', 'ja'].map((l) => (
           <TouchableOpacity
@@ -40,38 +63,97 @@ export default function Settings() {
             onPress={() => setLang(l)}
             style={[
               styles.optionButton,
-              lang === l ? styles.optionButtonActive : styles.optionButtonInactive,
+              {
+                borderColor: lang === l ? theme.colors.primary : theme.colors.border,
+                backgroundColor: lang === l ? theme.colors.chipBgActive : theme.colors.card,
+              },
             ]}
           >
-            <Text>{l.toUpperCase()}</Text>
+            <Text style={{ color: lang === l ? theme.colors.chipTextActive : theme.colors.text }}>
+              {l.toUpperCase()}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={styles.label}>Tema</Text>
-      <View style={styles.rowNoWrap}>
+      {/* Tema */}
+      <Text style={{ color: theme.colors.text }}>{t('settings.theme')}</Text>
+      <View style={styles.row}>
         <TouchableOpacity
-          onPress={() => setDark(false)}
           style={[
             styles.optionButton,
-            !dark ? styles.optionButtonActive : styles.optionButtonInactive,
+            {
+              borderColor: settings.theme === 'light' ? theme.colors.primary : theme.colors.border,
+              backgroundColor:
+                settings.theme === 'light' ? theme.colors.chipBgActive : theme.colors.card,
+            },
           ]}
+          onPress={() => {
+            console.log('☀️ Switching to LIGHT theme');
+            changeTheme('light');
+          }}
         >
-          <Text>Claro</Text>
+          <Text
+            style={{
+              color: settings.theme === 'light' ? theme.colors.chipTextActive : theme.colors.text,
+            }}
+          >
+            {t('settings.theme_light')}
+          </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          onPress={() => setDark(true)}
           style={[
             styles.optionButton,
-            dark ? styles.optionButtonActive : styles.optionButtonInactive,
+            {
+              borderColor: settings.theme === 'dark' ? theme.colors.primary : theme.colors.border,
+              backgroundColor:
+                settings.theme === 'dark' ? theme.colors.chipBgActive : theme.colors.card,
+            },
           ]}
+          onPress={() => {
+            console.log('🌙 Switching to DARK theme');
+            changeTheme('dark');
+          }}
         >
-          <Text>Oscuro</Text>
+          <Text
+            style={{
+              color: settings.theme === 'dark' ? theme.colors.chipTextActive : theme.colors.text,
+            }}
+          >
+            {t('settings.theme_dark')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.optionButton,
+            {
+              borderColor: settings.theme === 'auto' ? theme.colors.primary : theme.colors.border,
+              backgroundColor:
+                settings.theme === 'auto' ? theme.colors.chipBgActive : theme.colors.card,
+            },
+          ]}
+          onPress={() => {
+            console.log('🔄 Switching to AUTO theme');
+            changeTheme('auto');
+          }}
+        >
+          <Text
+            style={{
+              color: settings.theme === 'auto' ? theme.colors.chipTextActive : theme.colors.text,
+            }}
+          >
+            {t('settings.theme_auto')}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={save} style={styles.saveButton}>
-        <Text style={styles.saveButtonText}>Guardar</Text>
+      <TouchableOpacity
+        onPress={save}
+        style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
+      >
+        <Text style={[styles.saveButtonText, { color: theme.colors.primaryText }]}>Guardar</Text>
       </TouchableOpacity>
     </View>
   );
@@ -91,20 +173,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  // Labels
-  label: {
-    marginTop: 8,
-  },
-
   // Language/Theme Row
   row: {
     flexDirection: 'row',
     gap: 8,
     flexWrap: 'wrap',
-  },
-  rowNoWrap: {
-    flexDirection: 'row',
-    gap: 8,
   },
 
   // Option Button Base
@@ -114,31 +187,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
   },
-  optionButtonActive: {
-    borderColor: COLORS.border.blue,
-  },
-  optionButtonInactive: {
-    borderColor: COLORS.border.light,
-  },
 
   // Save Button
   saveButton: {
-    backgroundColor: COLORS.border.blue,
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
   },
   saveButtonText: {
-    color: COLORS.utility.white2,
     textAlign: 'center',
     fontWeight: '800',
   },
 });
-
-// v155 language picker
-const languages = ['en', 'es', 'pt', 'fr', 'it', 'zh', 'ja'];
-
-// v155: simple language buttons
-// <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8 }}>
-// {languages.map(l => <ThemedButton key={l} title={l.toUpperCase()} kind="tonal" onPress={()=> setLanguage(l)} />)}
-// </View>

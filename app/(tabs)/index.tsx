@@ -37,7 +37,7 @@ export const options = { headerShown: false };
 
 export default function HomeTab() {
   const { t } = useTranslation();
-  const { colors: _colors } = useTheme();
+  const theme = useTheme();
   const _router = useRouter();
   const { units, setUnits } = useSettingsStore();
 
@@ -381,9 +381,9 @@ export default function HomeTab() {
 
   return (
     <TripRefreshProvider>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'} />
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, { backgroundColor: theme.colors.background }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -391,7 +391,7 @@ export default function HomeTab() {
             colors={['#4A90E2', '#9B59B6']} // Android
             tintColor="#4A90E2" // iOS
             title={t('home.refreshing')} // iOS
-            titleColor="#666" // iOS
+            titleColor={theme.colors.textMuted} // iOS
           />
         }
       >

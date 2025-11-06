@@ -24,6 +24,7 @@ import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useAppSettings, Language, Theme, Units } from '~/contexts/AppSettingsContext';
+import { useTheme, useThemeControl } from '~/lib/theme';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -49,10 +50,12 @@ const THEMES = [
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const { setPreference: setThemeInProvider } = useThemeControl();
   const {
     settings,
     setLanguage,
-    setTheme,
+    setTheme: setThemeInSettings,
     setUnits,
     updateNotifications,
     updatePrivacy,
@@ -66,10 +69,8 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const handleLanguageChange = async (lang: Language) => {
     try {
-      console.log('🔄 Cambiando idioma a:', lang);
       setIsSaving(true);
       await setLanguage(lang);
-      console.log('✅ Idioma cambiado exitosamente a:', lang);
       setShowLanguageModal(false);
 
       // Show success message
@@ -89,10 +90,11 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
     }
   };
 
-  const handleThemeChange = async (theme: Theme) => {
+  const handleThemeChange = async (newTheme: Theme) => {
     try {
       setIsSaving(true);
-      await setTheme(theme);
+      await setThemeInSettings(newTheme);
+      setThemeInProvider(newTheme);
       setShowThemeModal(false);
     } catch (error) {
       Alert.alert('Error', 'No se pudo cambiar el tema');
@@ -145,7 +147,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header */}
         <LinearGradient
           colors={['#4F8EF7', '#7B61FF']}
@@ -167,45 +169,74 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* General Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('settings.general')}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
+              {t('settings.general')}
+            </Text>
 
             {/* Language */}
-            <TouchableOpacity style={styles.settingItem} onPress={() => setShowLanguageModal(true)}>
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+              onPress={() => setShowLanguageModal(true)}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#4F8EF720' }]}>
                   <Ionicons name="language" size={22} color="#4F8EF7" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{t('settings.language')}</Text>
-                  <Text style={styles.settingValue}>{getCurrentLanguageName()}</Text>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    {t('settings.language')}
+                  </Text>
+                  <Text style={[styles.settingValue, { color: theme.colors.textMuted }]}>
+                    {getCurrentLanguageName()}
+                  </Text>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color="#999" />
+              <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
 
             {/* Theme */}
-            <TouchableOpacity style={styles.settingItem} onPress={() => setShowThemeModal(true)}>
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+              onPress={() => setShowThemeModal(true)}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#7B61FF20' }]}>
                   <Ionicons name="color-palette" size={22} color="#7B61FF" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{t('settings.theme')}</Text>
-                  <Text style={styles.settingValue}>{getCurrentThemeName()}</Text>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    {t('settings.theme')}
+                  </Text>
+                  <Text style={[styles.settingValue, { color: theme.colors.textMuted }]}>
+                    {getCurrentThemeName()}
+                  </Text>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color="#999" />
+              <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
 
             {/* Units */}
-            <View style={styles.settingItem}>
+            <View
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#FF8C4220' }]}>
                   <MaterialIcons name="straighten" size={22} color="#FF8C42" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{t('settings.units')}</Text>
-                  <Text style={styles.settingValue}>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    {t('settings.units')}
+                  </Text>
+                  <Text style={[styles.settingValue, { color: theme.colors.textMuted }]}>
                     {settings.units === 'metric'
                       ? t('settings.units_metric')
                       : t('settings.units_imperial')}
@@ -225,16 +256,25 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
           {/* Notifications Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
+              {t('settings.notifications')}
+            </Text>
 
-            <View style={styles.settingItem}>
+            <View
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#00C85320' }]}>
                   <Ionicons name="notifications" size={22} color="#00C853" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>{t('settings.push_notifications')}</Text>
-                  <Text style={styles.settingSubtitle}>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    {t('settings.push_notifications')}
+                  </Text>
+                  <Text style={[styles.settingSubtitle, { color: theme.colors.textMuted }]}>
                     {t('settings.push_notifications_desc')}
                   </Text>
                 </View>
@@ -255,9 +295,17 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
             {settings.notifications.enabled && (
               <>
-                <View style={[styles.settingItem, styles.subItem]}>
+                <View
+                  style={[
+                    styles.settingItem,
+                    styles.subItem,
+                    { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                  ]}
+                >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingTitle}>Recordatorios de Viajes</Text>
+                    <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                      Recordatorios de Viajes
+                    </Text>
                   </View>
                   <Switch
                     value={settings.notifications.tripReminders}
@@ -267,9 +315,17 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   />
                 </View>
 
-                <View style={[styles.settingItem, styles.subItem]}>
+                <View
+                  style={[
+                    styles.settingItem,
+                    styles.subItem,
+                    { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                  ]}
+                >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingTitle}>Alertas de Lugares Cercanos</Text>
+                    <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                      Alertas de Lugares Cercanos
+                    </Text>
                   </View>
                   <Switch
                     value={settings.notifications.nearbyAlerts}
@@ -279,9 +335,17 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   />
                 </View>
 
-                <View style={[styles.settingItem, styles.subItem]}>
+                <View
+                  style={[
+                    styles.settingItem,
+                    styles.subItem,
+                    { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                  ]}
+                >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingTitle}>Actualizaciones del Equipo</Text>
+                    <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                      Actualizaciones del Equipo
+                    </Text>
                   </View>
                   <Switch
                     value={settings.notifications.teamUpdates}
@@ -291,9 +355,17 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   />
                 </View>
 
-                <View style={[styles.settingItem, styles.subItem]}>
+                <View
+                  style={[
+                    styles.settingItem,
+                    styles.subItem,
+                    { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                  ]}
+                >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingTitle}>Mensajes de Chat</Text>
+                    <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                      Mensajes de Chat
+                    </Text>
                   </View>
                   <Switch
                     value={settings.notifications.chatMessages}
@@ -308,16 +380,25 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
           {/* Privacy Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>PRIVACIDAD</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>PRIVACIDAD</Text>
 
-            <View style={styles.settingItem}>
+            <View
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#F4433620' }]}>
                   <Ionicons name="location" size={22} color="#F44336" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Compartir Ubicación</Text>
-                  <Text style={styles.settingSubtitle}>Con miembros del equipo</Text>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    Compartir Ubicación
+                  </Text>
+                  <Text style={[styles.settingSubtitle, { color: theme.colors.textMuted }]}>
+                    Con miembros del equipo
+                  </Text>
                 </View>
               </View>
               <Switch
@@ -328,14 +409,23 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               />
             </View>
 
-            <View style={styles.settingItem}>
+            <View
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#4CAF5020' }]}>
                   <Ionicons name="radio-button-on" size={22} color="#4CAF50" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Estado en Línea</Text>
-                  <Text style={styles.settingSubtitle}>Mostrar cuando estás activo</Text>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    Estado en Línea
+                  </Text>
+                  <Text style={[styles.settingSubtitle, { color: theme.colors.textMuted }]}>
+                    Mostrar cuando estás activo
+                  </Text>
                 </View>
               </View>
               <Switch
@@ -346,14 +436,23 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               />
             </View>
 
-            <View style={styles.settingItem}>
+            <View
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#2196F320' }]}>
                   <Ionicons name="globe" size={22} color="#2196F3" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Perfil Público</Text>
-                  <Text style={styles.settingSubtitle}>Visible para otros viajeros</Text>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    Perfil Público
+                  </Text>
+                  <Text style={[styles.settingSubtitle, { color: theme.colors.textMuted }]}>
+                    Visible para otros viajeros
+                  </Text>
                 </View>
               </View>
               <Switch
@@ -367,10 +466,13 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
           {/* Advanced Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>AVANZADO</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>AVANZADO</Text>
 
             <TouchableOpacity
-              style={styles.settingItem}
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
               onPress={() => Alert.alert('Cache', 'Funcionalidad próximamente')}
             >
               <View style={styles.settingLeft}>
@@ -378,14 +480,24 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <MaterialIcons name="cleaning-services" size={22} color="#FF5722" />
                 </View>
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Limpiar Caché</Text>
-                  <Text style={styles.settingSubtitle}>Liberar espacio de almacenamiento</Text>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
+                    Limpiar Caché
+                  </Text>
+                  <Text style={[styles.settingSubtitle, { color: theme.colors.textMuted }]}>
+                    Liberar espacio de almacenamiento
+                  </Text>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color="#999" />
+              <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.settingItem} onPress={handleResetSettings}>
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+              onPress={handleResetSettings}
+            >
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#F4433620' }]}>
                   <MaterialIcons name="restore" size={22} color="#F44336" />
@@ -394,17 +506,21 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Text style={[styles.settingTitle, { color: '#F44336' }]}>
                     Restablecer Configuración
                   </Text>
-                  <Text style={styles.settingSubtitle}>Volver a valores predeterminados</Text>
+                  <Text style={[styles.settingSubtitle, { color: theme.colors.textMuted }]}>
+                    Volver a valores predeterminados
+                  </Text>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color="#999" />
+              <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
 
           {/* App Info */}
           <View style={styles.appInfo}>
-            <Text style={styles.appInfoText}>Goveling v1.0.0</Text>
-            <Text style={styles.appInfoSubtext}>
+            <Text style={[styles.appInfoText, { color: theme.colors.textMuted }]}>
+              Goveling v1.0.0
+            </Text>
+            <Text style={[styles.appInfoSubtext, { color: theme.colors.textMuted }]}>
               © 2025 Goveling. Todos los derechos reservados.
             </Text>
           </View>
@@ -470,30 +586,30 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                 </TouchableOpacity>
               </View>
 
-              {THEMES.map((theme) => (
+              {THEMES.map((themeOption) => (
                 <TouchableOpacity
-                  key={theme.value}
+                  key={themeOption.value}
                   style={[
                     styles.themeOption,
-                    settings.theme === theme.value && styles.themeOptionSelected,
+                    settings.theme === themeOption.value && styles.themeOptionSelected,
                   ]}
-                  onPress={() => handleThemeChange(theme.value)}
+                  onPress={() => handleThemeChange(themeOption.value)}
                   disabled={isSaving}
                 >
                   <Ionicons
-                    name={theme.icon}
+                    name={themeOption.icon}
                     size={28}
-                    color={settings.theme === theme.value ? '#4F8EF7' : '#666'}
+                    color={settings.theme === themeOption.value ? '#4F8EF7' : '#666'}
                   />
                   <Text
                     style={[
                       styles.themeLabel,
-                      settings.theme === theme.value && styles.themeLabelSelected,
+                      settings.theme === themeOption.value && styles.themeLabelSelected,
                     ]}
                   >
-                    {t(`settings.${theme.label}`)}
+                    {t(`settings.${themeOption.label}`)}
                   </Text>
-                  {settings.theme === theme.value && (
+                  {settings.theme === themeOption.value && (
                     <Ionicons name="checkmark-circle" size={24} color="#4F8EF7" />
                   )}
                 </TouchableOpacity>

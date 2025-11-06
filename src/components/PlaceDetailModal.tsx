@@ -27,10 +27,10 @@ import MiniMapModal from './MiniMapModal';
 import cycleAnimation from '../../assets/animations/cycle.json';
 import globeAnimation from '../../assets/animations/globe.json';
 import locationCircleAnimation from '../../assets/animations/location-circle.json';
-import { COLORS } from '../constants/colors';
 import { translateDynamic } from '../i18n';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
+import { useTheme } from '../lib/theme';
 import { useFavorites } from '../lib/useFavorites';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -57,6 +57,7 @@ export default function PlaceDetailModal({
   onRemoveFromTrip,
 }: PlaceDetailModalProps) {
   const { t, i18n } = useTranslation();
+  const theme = useTheme();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
   const [showMapModal, setShowMapModal] = React.useState(false);
@@ -190,8 +191,8 @@ export default function PlaceDetailModal({
         await WebBrowser.openBrowserAsync(url, {
           // Opciones de configuración del navegador
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.OVER_FULL_SCREEN,
-          controlsColor: COLORS.primary.main, // Color de los controles del navegador
-          toolbarColor: COLORS.background.primary, // Color de la barra de herramientas
+          controlsColor: '#DE3D00', // Primary color
+          toolbarColor: theme.colors.card, // Toolbar adapts to theme
           // Mostrar título de la página
           showTitle: true,
           // Permitir navegación hacia atrás/adelante
@@ -307,21 +308,12 @@ export default function PlaceDetailModal({
   const renderStatusBadge = () => {
     if (place.openNow === undefined) return null;
 
+    const bgColor = place.openNow ? '#D1FAE5' : '#FEE2E2';
+    const textColor = place.openNow ? '#065F46' : '#991B1B';
+
     return (
-      <View
-        style={[
-          styles.statusBadge,
-          {
-            backgroundColor: place.openNow ? COLORS.status.successLight : COLORS.status.errorLight,
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.statusText,
-            { color: place.openNow ? COLORS.status.successDark : COLORS.status.errorDark },
-          ]}
-        >
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <Text style={[styles.statusText, { color: textColor }]}>
           {place.openNow ? t('explore.modal.open') : t('explore.modal.closed')}
         </Text>
       </View>
@@ -394,10 +386,7 @@ export default function PlaceDetailModal({
                 resizeMode="cover"
               />
             ) : (
-              <LinearGradient
-                colors={[COLORS.background.gray, COLORS.border.dark]}
-                style={styles.headerImage}
-              >
+              <LinearGradient colors={['#F5F5F5', '#E5E5E5']} style={styles.headerImage}>
                 <Text style={styles.headerPlaceholder}>📍</Text>
               </LinearGradient>
             )}
@@ -425,18 +414,24 @@ export default function PlaceDetailModal({
           </View>
 
           {/* Contenido principal */}
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
+          <ScrollView
+            style={[styles.content, { backgroundColor: theme.colors.background }]}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
             {/* Información básica */}
             <View style={styles.basicInfo}>
               <View style={styles.titleRow}>
-                <Text style={styles.placeName}>{place.name}</Text>
+                <Text style={[styles.placeName, { color: theme.colors.text }]}>{place.name}</Text>
                 {renderStatusBadge()}
               </View>
 
               {place.address && (
                 <View style={styles.addressRow}>
                   <Text style={styles.addressIcon}>📍</Text>
-                  <Text style={styles.addressText}>{place.address}</Text>
+                  <Text style={[styles.addressText, { color: theme.colors.textMuted }]}>
+                    {place.address}
+                  </Text>
                 </View>
               )}
 
@@ -444,14 +439,20 @@ export default function PlaceDetailModal({
               {place.rating && (
                 <View style={styles.ratingRow}>
                   <Text style={styles.starIcon}>⭐</Text>
-                  <Text style={styles.ratingText}>{place.rating}</Text>
+                  <Text style={[styles.ratingText, { color: theme.colors.text }]}>
+                    {place.rating}
+                  </Text>
                   {place.reviews_count && (
-                    <Text style={styles.reviewsText}>({place.reviews_count})</Text>
+                    <Text style={[styles.reviewsText, { color: theme.colors.textMuted }]}>
+                      ({place.reviews_count})
+                    </Text>
                   )}
                   {place.distance_km && (
                     <>
-                      <Text style={styles.separator}>•</Text>
-                      <Text style={styles.distanceText}>{place.distance_km.toFixed(2)} km</Text>
+                      <Text style={[styles.separator, { color: theme.colors.textMuted }]}>•</Text>
+                      <Text style={[styles.distanceText, { color: theme.colors.textMuted }]}>
+                        {place.distance_km.toFixed(2)} km
+                      </Text>
                     </>
                   )}
                 </View>
@@ -478,8 +479,12 @@ export default function PlaceDetailModal({
 
                   return priceLabel ? (
                     <View style={styles.priceLevelRow}>
-                      <Text style={styles.priceLevelLabel}>{t('explore.modal.price.label')}</Text>
-                      <Text style={styles.priceLevelValue}>{priceLabel}</Text>
+                      <Text style={[styles.priceLevelLabel, { color: theme.colors.textMuted }]}>
+                        {t('explore.modal.price.label')}
+                      </Text>
+                      <Text style={[styles.priceLevelValue, { color: '#10B981' }]}>
+                        {priceLabel}
+                      </Text>
                     </View>
                   ) : null;
                 })()}
@@ -488,7 +493,9 @@ export default function PlaceDetailModal({
             {/* Fotos adicionales */}
             {place.photos && place.photos.length > 1 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('explore.modal.sections.photos')}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  {t('explore.modal.sections.photos')}
+                </Text>
                 {renderPhotos()}
               </View>
             )}
@@ -498,9 +505,13 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>ℹ️</Text>
-                  <Text style={styles.sectionTitle}>{t('explore.modal.sections.about')}</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                    {t('explore.modal.sections.about')}
+                  </Text>
                 </View>
-                <Text style={styles.aboutText}>{aboutText ?? place.description}</Text>
+                <Text style={[styles.aboutText, { color: theme.colors.textMuted }]}>
+                  {aboutText ?? place.description}
+                </Text>
               </View>
             )}
 
@@ -509,15 +520,19 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>🕐</Text>
-                  <Text style={styles.sectionTitle}>{t('explore.modal.sections.hours')}</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                    {t('explore.modal.sections.hours')}
+                  </Text>
                 </View>
                 <View style={styles.hoursContainer}>
                   {place.openingHours.map((hour, index) => {
                     const [day, time] = hour.split(': ');
                     return (
                       <View key={index} style={styles.hourRow}>
-                        <Text style={styles.hourDay}>{day}</Text>
-                        <Text style={styles.hourTime}>{time || t('explore.modal.closed')}</Text>
+                        <Text style={[styles.hourDay, { color: theme.colors.text }]}>{day}</Text>
+                        <Text style={[styles.hourTime, { color: theme.colors.textMuted }]}>
+                          {time || t('explore.modal.closed')}
+                        </Text>
                       </View>
                     );
                   })}
@@ -530,10 +545,14 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>🏷️</Text>
-                  <Text style={styles.sectionTitle}>{t('explore.modal.sections.place_type')}</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                    {t('explore.modal.sections.place_type')}
+                  </Text>
                 </View>
                 <View style={styles.typeTag}>
-                  <Text style={styles.typeTagText}>{place.primaryTypeDisplayName}</Text>
+                  <Text style={[styles.typeTagText, { color: theme.colors.text }]}>
+                    {place.primaryTypeDisplayName}
+                  </Text>
                 </View>
               </View>
             )}
@@ -543,7 +562,9 @@ export default function PlaceDetailModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionIcon}>📋</Text>
-                  <Text style={styles.sectionTitle}>Información Adicional</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                    Información Adicional
+                  </Text>
                 </View>
                 {place.shortFormattedAddress && (
                   <View style={styles.infoRow}>
@@ -597,7 +618,7 @@ export default function PlaceDetailModal({
                   {place.accessibilityOptions.wheelchairAccessibleSeating && (
                     <View style={styles.accessibilityItem}>
                       <Text style={styles.accessibilityIcon}>✓</Text>
-                      <Text style={styles.accessibilityText}>
+                      <Text style={[styles.accessibilityText, { color: theme.colors.textMuted }]}>
                         {t('explore.modal.accessibility.seating')}
                       </Text>
                     </View>
@@ -611,12 +632,22 @@ export default function PlaceDetailModal({
             {/* Información adicional */}
             {(place.category || place.types) && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('explore.modal.sections.categories')}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  {t('explore.modal.sections.categories')}
+                </Text>
                 <View style={styles.tagsContainer}>
                   {processPlaceCategories(place.types || [], place.category, 4, t).map(
                     (category, index) => (
-                      <View key={index} style={styles.tag}>
-                        <Text style={styles.tagText}>{category}</Text>
+                      <View
+                        key={index}
+                        style={[
+                          styles.tag,
+                          { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                        ]}
+                      >
+                        <Text style={[styles.tagText, { color: theme.colors.text }]}>
+                          {category}
+                        </Text>
                       </View>
                     )
                   )}
@@ -626,9 +657,17 @@ export default function PlaceDetailModal({
 
             {/* Acciones rápidas */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('explore.modal.sections.actions')}</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                {t('explore.modal.sections.actions')}
+              </Text>
               <View style={styles.actionsGrid}>
-                <TouchableOpacity style={styles.actionButton} onPress={handleDirections}>
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                  ]}
+                  onPress={handleDirections}
+                >
                   {renderActionIcon(
                     directionsLottieRef,
                     cycleAnimation,
@@ -636,11 +675,16 @@ export default function PlaceDetailModal({
                     directionsLottieError,
                     setDirectionsLottieError
                   )}
-                  <Text style={styles.actionText}>{t('explore.modal.actions.directions')}</Text>
+                  <Text style={[styles.actionText, { color: theme.colors.text }]}>
+                    {t('explore.modal.actions.directions')}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[
+                    styles.actionButton,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                  ]}
                   onPress={handleLocation}
                   disabled={!place.coordinates}
                 >
@@ -653,14 +697,21 @@ export default function PlaceDetailModal({
                     !place.coordinates
                   )}
                   <Text
-                    style={[styles.actionText, !place.coordinates && styles.actionTextDisabled]}
+                    style={[
+                      styles.actionText,
+                      { color: !place.coordinates ? theme.colors.textMuted : theme.colors.text },
+                      !place.coordinates && styles.actionTextDisabled,
+                    ]}
                   >
                     {t('explore.modal.actions.location')}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[
+                    styles.actionButton,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                  ]}
                   onPress={handleWebsite}
                   disabled={!place.website}
                 >
@@ -672,7 +723,13 @@ export default function PlaceDetailModal({
                     setWebsiteLottieError,
                     !place.website
                   )}
-                  <Text style={[styles.actionText, !place.website && styles.actionTextDisabled]}>
+                  <Text
+                    style={[
+                      styles.actionText,
+                      { color: !place.website ? theme.colors.textMuted : theme.colors.text },
+                      !place.website && styles.actionTextDisabled,
+                    ]}
+                  >
                     {t('explore.modal.actions.website')}
                   </Text>
                 </TouchableOpacity>
@@ -690,7 +747,7 @@ export default function PlaceDetailModal({
             <View style={styles.floatingButtonContainer}>
               <TouchableOpacity style={styles.floatingButton} onPress={handleAddToTrip}>
                 <LinearGradient
-                  colors={[COLORS.primary.main, COLORS.primary.light]}
+                  colors={['#DE3D00', '#FF6B35']}
                   style={styles.floatingButtonGradient}
                 >
                   <Text style={styles.floatingButtonIcon}>➕</Text>
@@ -746,7 +803,7 @@ export default function PlaceDetailModal({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.background.secondary,
+    backgroundColor: '#F7F7FA',
     flex: 1,
   },
   header: {
@@ -760,7 +817,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerPlaceholder: {
-    color: COLORS.text.lightGray,
+    color: '#CCCCCC',
     fontSize: 48,
   },
   headerOverlay: {
@@ -781,7 +838,7 @@ const styles = StyleSheet.create({
   },
   closeButtonBlur: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.whiteOpacity.strong,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
@@ -790,7 +847,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   closeButtonText: {
-    color: COLORS.text.darkGray,
+    color: '#333333',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -800,7 +857,7 @@ const styles = StyleSheet.create({
   },
   saveButtonBlur: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.whiteOpacity.strong,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
@@ -812,14 +869,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   content: {
-    backgroundColor: COLORS.utility.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     flex: 1,
     marginTop: -24,
   },
   basicInfo: {
-    borderBottomColor: COLORS.background.gray,
+    borderBottomColor: '#E5E5E5',
     borderBottomWidth: 1,
     padding: 20,
   },
@@ -830,7 +886,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   placeName: {
-    color: COLORS.text.darkGray,
     flex: 1,
     fontSize: 24,
     fontWeight: '700',
@@ -855,7 +910,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   addressText: {
-    color: COLORS.text.tertiary,
     flex: 1,
     fontSize: 16,
     lineHeight: 22,
@@ -869,13 +923,11 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   ratingText: {
-    color: COLORS.text.darkGray,
     fontSize: 16,
     fontWeight: '600',
     marginRight: 4,
   },
   reviewsText: {
-    color: COLORS.text.tertiary,
     fontSize: 16,
     marginRight: 8,
   },
@@ -885,31 +937,27 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   priceLevelLabel: {
-    color: COLORS.text.tertiary,
     fontSize: 16,
     fontWeight: '600',
   },
   priceLevelValue: {
-    color: COLORS.status.success,
     fontSize: 16,
     fontWeight: '700',
   },
   separator: {
-    color: COLORS.border.gray,
+    color: '#CCCCCC',
     fontSize: 16,
     marginRight: 8,
   },
   distanceText: {
-    color: COLORS.text.tertiary,
     fontSize: 14,
   },
   section: {
-    borderBottomColor: COLORS.background.gray,
+    borderBottomColor: '#E5E5E5',
     borderBottomWidth: 1,
     padding: 20,
   },
   sectionTitle: {
-    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
@@ -931,18 +979,18 @@ const styles = StyleSheet.create({
   },
   placeholderImage: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.gray,
+    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     height: 80,
     justifyContent: 'center',
     width: 120,
   },
   placeholderText: {
-    color: COLORS.text.lightGray,
+    color: '#CCCCCC',
     fontSize: 24,
   },
   photoLabel: {
-    backgroundColor: COLORS.background.blackOpacity.strong,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 6,
     left: 6,
     paddingHorizontal: 6,
@@ -951,7 +999,7 @@ const styles = StyleSheet.create({
     top: 6,
   },
   photoLabelText: {
-    color: COLORS.text.white,
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '500',
   },
@@ -961,15 +1009,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: COLORS.background.purple.ultraLight,
-    borderColor: COLORS.border.purpleLight,
     borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   tagText: {
-    color: COLORS.primary.deepIndigo,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -985,7 +1030,7 @@ const styles = StyleSheet.create({
   },
   actionIcon: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.gray,
+    backgroundColor: '#F5F5F5',
     borderRadius: 28,
     height: 56,
     justifyContent: 'center',
@@ -993,17 +1038,16 @@ const styles = StyleSheet.create({
     width: 56,
   },
   actionIconDisabled: {
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: '#F0F0F0',
     opacity: 0.5,
   },
   actionText: {
-    color: COLORS.text.darkGray,
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
   },
   actionTextDisabled: {
-    color: COLORS.text.lightGray,
+    opacity: 0.5,
   },
   lottieIcon: {
     width: 40, // Aumentado para mayor presencia visual
@@ -1023,8 +1067,8 @@ const styles = StyleSheet.create({
     height: 100,
   },
   floatingButtonContainer: {
-    backgroundColor: COLORS.utility.white,
-    borderTopColor: COLORS.background.gray,
+    backgroundColor: '#FFFFFF',
+    borderTopColor: '#E5E5E5',
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
@@ -1052,18 +1096,18 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   floatingButtonText: {
-    color: COLORS.text.white,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
   // New styles for photo selection
   photoSelected: {
-    borderColor: COLORS.status.info,
+    borderColor: '#4F8EF7',
     borderWidth: 3,
   },
   photoSelectedOverlay: {
     alignItems: 'center',
-    backgroundColor: COLORS.status.info,
+    backgroundColor: '#4F8EF7',
     borderRadius: 12,
     height: 24,
     justifyContent: 'center',
@@ -1073,7 +1117,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   photoSelectedText: {
-    color: COLORS.text.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1088,13 +1132,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   aboutText: {
-    color: COLORS.text.slateGray,
     fontSize: 16,
     lineHeight: 24,
   },
   // Hours Section
   hoursContainer: {
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 12,
   },
@@ -1105,27 +1148,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   hourDay: {
-    color: COLORS.text.darkGray,
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
   },
   hourTime: {
-    color: COLORS.text.tertiary,
     fontSize: 15,
   },
   // Type Tag
   typeTag: {
     alignSelf: 'flex-start',
-    backgroundColor: COLORS.background.purple.ultraLight,
-    borderColor: COLORS.border.purpleLight,
+    backgroundColor: '#F0E6FF',
+    borderColor: '#C4B5FD',
     borderRadius: 20,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   typeTagText: {
-    color: COLORS.primary.deepIndigo,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -1134,25 +1174,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoLabel: {
-    color: COLORS.text.tertiary,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   infoValue: {
-    color: COLORS.text.darkGray,
     fontSize: 15,
     lineHeight: 22,
   },
   infoValueMono: {
-    color: COLORS.text.darkGray,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     fontSize: 15,
     lineHeight: 22,
   },
   // Accessibility
   accessibilityContainer: {
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 12,
   },
@@ -1162,12 +1199,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   accessibilityIcon: {
-    color: COLORS.status.success,
+    color: '#10B981',
     fontSize: 18,
     marginRight: 12,
   },
   accessibilityText: {
-    color: COLORS.text.darkGray,
     flex: 1,
     fontSize: 15,
   },

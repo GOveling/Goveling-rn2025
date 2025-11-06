@@ -29,8 +29,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { getCurrentUser } from '~/lib/userUtils';
 
 // ============================================================
@@ -66,6 +66,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
   onUnreadCountChange,
 }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -463,20 +464,35 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
         )}
 
         <View style={styles.messageContent}>
-          {!isMyMessage && <Text style={styles.senderName}>{userName}</Text>}
+          {!isMyMessage && (
+            <Text style={[styles.senderName, { color: theme.colors.textMuted }]}>{userName}</Text>
+          )}
 
           <View
             style={[
               styles.messageBubble,
-              isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
+              isMyMessage
+                ? styles.myMessageBubble
+                : [styles.theirMessageBubble, { backgroundColor: theme.colors.card }],
             ]}
           >
-            <Text style={[styles.messageText, isMyMessage && styles.myMessageText]}>
+            <Text
+              style={[
+                styles.messageText,
+                isMyMessage ? styles.myMessageText : { color: theme.colors.text },
+              ]}
+            >
               {item.message}
             </Text>
           </View>
 
-          <Text style={[styles.messageTime, isMyMessage && styles.messageTimeRight]}>
+          <Text
+            style={[
+              styles.messageTime,
+              isMyMessage && styles.messageTimeRight,
+              { color: theme.colors.textMuted },
+            ]}
+          >
             {formatMessageTime(item.created_at)}
           </Text>
         </View>
@@ -489,7 +505,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
   // ============================================================
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -497,7 +513,7 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
       >
         {/* Header */}
         <LinearGradient
-          colors={[COLORS.primary.main, COLORS.primary.blue]}
+          colors={['#4F8EF7', '#7B61FF']}
           style={[styles.header, { paddingTop: insets.top + 16 }]}
         >
           <View style={styles.headerContent}>
@@ -515,14 +531,20 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
         {/* Messages Area */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary.main} />
-            <Text style={styles.loadingText}>{t('chat.loading')}</Text>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+              {t('chat.loading')}
+            </Text>
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={64} color={COLORS.text.lightGray} />
-            <Text style={styles.emptyTitle}>{t('chat.empty_title')}</Text>
-            <Text style={styles.emptyText}>{t('chat.empty_text')}</Text>
+            <Ionicons name="chatbubbles-outline" size={64} color={theme.colors.textMuted} />
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+              {t('chat.empty_title')}
+            </Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+              {t('chat.empty_text')}
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -540,8 +562,10 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
             ListFooterComponent={
               loadingMore ? (
                 <View style={styles.loadingMoreContainer}>
-                  <ActivityIndicator size="small" color={COLORS.primary.main} />
-                  <Text style={styles.loadingMoreText}>{t('chat.loading_more')}</Text>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                  <Text style={[styles.loadingMoreText, { color: theme.colors.textMuted }]}>
+                    {t('chat.loading_more')}
+                  </Text>
                 </View>
               ) : null
             }
@@ -552,16 +576,21 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
         )}
 
         {/* Input Area */}
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            { backgroundColor: theme.colors.card, borderTopColor: theme.colors.border },
+          ]}
+        >
           <TextInput
             ref={inputRef}
             value={inputText}
             onChangeText={setInputText}
             placeholder={t('chat.input_placeholder')}
-            placeholderTextColor={COLORS.text.lightGray}
+            placeholderTextColor={theme.colors.textMuted}
             multiline={true}
             maxLength={1000}
-            style={styles.textInput}
+            style={[styles.textInput, { color: theme.colors.text }]}
             returnKeyType="default"
             blurOnSubmit={false}
             autoFocus={false}
@@ -603,7 +632,6 @@ const TripChatScreen: React.FC<TripChatScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -625,7 +653,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: 'white',
+    color: '#FFFFFF',
   },
   headerSubtitle: {
     fontSize: 14,
@@ -640,7 +668,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 15,
-    color: COLORS.text.tertiary,
   },
   loadingMoreContainer: {
     paddingVertical: 16,
@@ -649,7 +676,6 @@ const styles = StyleSheet.create({
   loadingMoreText: {
     marginTop: 8,
     fontSize: 13,
-    color: COLORS.text.tertiary,
   },
   emptyContainer: {
     flex: 1,
@@ -660,12 +686,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text.secondary,
     marginTop: 16,
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.text.tertiary,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -692,12 +716,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: '#4F8EF7',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -706,7 +730,6 @@ const styles = StyleSheet.create({
   },
   senderName: {
     fontSize: 12,
-    color: COLORS.text.tertiary,
     marginBottom: 4,
     marginLeft: 12,
   },
@@ -720,24 +743,21 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   myMessageBubble: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: '#4F8EF7',
     borderTopRightRadius: 4,
   },
   theirMessageBubble: {
-    backgroundColor: COLORS.utility.white,
     borderTopLeftRadius: 4,
   },
   messageText: {
     fontSize: 15,
     lineHeight: 20,
-    color: COLORS.text.primary,
   },
   myMessageText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
   },
   messageTime: {
     fontSize: 11,
-    color: COLORS.text.lightGray,
     marginTop: 4,
     marginLeft: 12,
   },
@@ -751,23 +771,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: Platform.OS === 'ios' ? 16 : 12,
-    backgroundColor: COLORS.utility.white,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border.light,
   },
   textInput: {
     flex: 1,
-    backgroundColor: COLORS.background.secondary,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
     maxHeight: 100,
-    color: COLORS.text.primary,
   },
   sendButton: {
     marginLeft: 8,
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: '#4F8EF7',
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -775,7 +791,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: COLORS.text.lightGray,
+    backgroundColor: '#CCCCCC',
   },
   sendButtonWrapper: {
     pointerEvents: 'box-only',

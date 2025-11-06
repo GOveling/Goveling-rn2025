@@ -13,9 +13,11 @@ import tripsAnimation from '../../assets/lottie/my-trips.json';
 import profileAnimation from '../../assets/lottie/profile.json';
 import { ProtectedRoute } from '../../src/components/ProtectedRoute';
 import { AnimatedTabIcon } from '../../src/components/ui/AnimatedTabIcon';
+import { useTheme } from '../../src/lib/theme';
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   // Estados para forzar re-render de cada animación
   const [tabKeys, setTabKeys] = useState({
@@ -43,14 +45,17 @@ export default function TabLayout() {
           tabBarStyle:
             Platform.OS === 'web'
               ? {
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme.colors.card,
                   borderTopWidth: 1,
-                  borderTopColor: '#e5e7eb',
+                  borderTopColor: theme.colors.border,
                   paddingBottom: 8,
                   paddingTop: 8,
                   height: 84, // Aumentamos la altura 20% más para evitar corte de iconos en dispositivos nativos
                 }
               : {
+                  backgroundColor: theme.colors.card,
+                  borderTopWidth: 1,
+                  borderTopColor: theme.colors.border,
                   paddingBottom: 8,
                   paddingTop: 8,
                   height: 84,

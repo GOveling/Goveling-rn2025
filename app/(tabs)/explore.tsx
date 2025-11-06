@@ -33,11 +33,13 @@ import {
 import { reverseGeocode } from '../../src/lib/geocoding';
 import { searchPlacesEnhanced, EnhancedPlace } from '../../src/lib/placesSearch';
 import { supabase } from '../../src/lib/supabase';
+import { useTheme } from '../../src/lib/theme';
 import { resolveCurrentUserRoleForTripId } from '../../src/lib/userUtils';
 
 export default function ExploreTab() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const theme = useTheme();
   const { tripId, returnTo } = useLocalSearchParams<{ tripId?: string; returnTo?: string }>();
 
   const shouldClearContextRef = React.useRef(false);
@@ -394,15 +396,15 @@ export default function ExploreTab() {
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.container}>
+      <StatusBar barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'} />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
               {tripId ? t('explore.add_places_title') : t('explore.explore_places_title')}
             </Text>
-            <Text style={styles.headerSubtitle}>
+            <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
               {tripId
                 ? t('explore.adding_places_to', { tripTitle })
                 : t('explore.discover_subtitle')}
@@ -601,14 +603,14 @@ export default function ExploreTab() {
           </View>
 
           {/* Barra de búsqueda */}
-          <View style={styles.searchContainer}>
+          <View style={[styles.searchContainer, { backgroundColor: theme.colors.card }]}>
             <TextInput
               placeholder={t('explore.search_placeholder')}
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={performSearch}
-              style={styles.searchInput}
-              placeholderTextColor="#9CA3AF"
+              style={[styles.searchInput, { color: theme.colors.text }]}
+              placeholderTextColor={theme.colors.textMuted}
             />
             <TouchableOpacity
               onPress={performSearch}
@@ -627,7 +629,7 @@ export default function ExploreTab() {
               <View style={styles.resultsHeader}>
                 <View style={styles.resultsHeaderContent}>
                   <View style={styles.resultsHeaderIcon} />
-                  <Text style={styles.resultsHeaderTitle}>
+                  <Text style={[styles.resultsHeaderTitle, { color: theme.colors.text }]}>
                     {t('explore.results_found', { count: searchResults.length })}
                   </Text>
                 </View>
@@ -637,20 +639,28 @@ export default function ExploreTab() {
 
               {searchResults.length === 0 && (
                 <View style={styles.resultsEmptyContainer}>
-                  <Text style={styles.resultsEmptyTitle}>{t('explore.no_results_found')}</Text>
-                  <Text style={styles.resultsEmptyText}>{t('explore.no_results_try_other')}</Text>
+                  <Text style={[styles.resultsEmptyTitle, { color: theme.colors.text }]}>
+                    {t('explore.no_results_found')}
+                  </Text>
+                  <Text style={[styles.resultsEmptyText, { color: theme.colors.textMuted }]}>
+                    {t('explore.no_results_try_other')}
+                  </Text>
                 </View>
               )}
             </View>
           )}
           {hasSearched && searchResults.length === 0 && !loading && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t('explore.empty_results')}</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+                {t('explore.empty_results')}
+              </Text>
             </View>
           )}
           {loading && (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>{t('explore.searching')}</Text>
+              <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+                {t('explore.searching')}
+              </Text>
             </View>
           )}
         </ScrollView>

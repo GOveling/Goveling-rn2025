@@ -19,8 +19,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { COLORS } from '~/constants/colors';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { triggerGlobalTripRefresh } from '~/lib/tripRefresh';
 import { tripsApi } from '~/store/api/tripsApi';
 import { useAppDispatch } from '~/store/hooks';
@@ -109,6 +109,7 @@ export default function EditTripModal({
   trip,
   onTripUpdated,
 }: EditTripModalProps) {
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const [tripData, setTripData] = useState<EditableTripData>({
     title: '',
@@ -405,19 +406,30 @@ export default function EditTripModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
           {/* Header */}
-          <View style={styles.header}>
+          <View
+            style={[
+              styles.header,
+              { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+            ]}
+          >
             <TouchableOpacity onPress={handleClose} style={styles.cancelButton}>
-              <Ionicons name="close" size={24} color="#666" />
+              <Ionicons name="close" size={24} color={theme.colors.textMuted} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Editar Viaje</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Editar Viaje</Text>
             <TouchableOpacity
               onPress={handleSave}
               disabled={loading}
               style={[styles.saveButton, loading && styles.saveButtonDisabled]}
             >
-              <Text style={[styles.saveButtonText, loading && styles.saveButtonTextDisabled]}>
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  { color: '#DE3D00' },
+                  loading && styles.saveButtonTextDisabled,
+                ]}
+              >
                 {loading ? 'Guardando...' : 'Guardar'}
               </Text>
             </TouchableOpacity>
@@ -426,10 +438,18 @@ export default function EditTripModal({
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {/* Título */}
             <View style={styles.section}>
-              <Text style={styles.label}>Título del Viaje</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Título del Viaje</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.border,
+                    color: theme.colors.text,
+                  },
+                ]}
                 placeholder="Ej: Viaje a París"
+                placeholderTextColor={theme.colors.textMuted}
                 value={tripData.title}
                 onChangeText={(text) => setTripData((prev) => ({ ...prev, title: text }))}
                 maxLength={100}
@@ -438,10 +458,21 @@ export default function EditTripModal({
 
             {/* Descripción */}
             <View style={styles.section}>
-              <Text style={styles.label}>Descripción (Opcional)</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                Descripción (Opcional)
+              </Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.border,
+                    color: theme.colors.text,
+                  },
+                ]}
                 placeholder="Describe tu viaje..."
+                placeholderTextColor={theme.colors.textMuted}
                 value={tripData.description}
                 onChangeText={(text) => setTripData((prev) => ({ ...prev, description: text }))}
                 multiline={true}
@@ -452,39 +483,63 @@ export default function EditTripModal({
 
             {/* Fechas */}
             <View style={styles.section}>
-              <Text style={styles.label}>Fechas del Viaje</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Fechas del Viaje</Text>
 
               {/* Opción "Sin fechas" */}
               <TouchableOpacity
-                style={[styles.checkboxContainer, tripData.hasNoDates && styles.checkboxSelected]}
+                style={[
+                  styles.checkboxContainer,
+                  tripData.hasNoDates && styles.checkboxSelected,
+                  { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                ]}
                 onPress={() => setTripData((prev) => ({ ...prev, hasNoDates: !prev.hasNoDates }))}
               >
-                <View style={[styles.checkbox, tripData.hasNoDates && styles.checkboxChecked]}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    tripData.hasNoDates && styles.checkboxChecked,
+                    { borderColor: theme.colors.border },
+                  ]}
+                >
                   {tripData.hasNoDates && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
                 </View>
-                <Text style={styles.checkboxText}>Aún no he decidido las fechas</Text>
+                <Text style={[styles.checkboxText, { color: theme.colors.text }]}>
+                  Aún no he decidido las fechas
+                </Text>
               </TouchableOpacity>
 
               {!tripData.hasNoDates && (
                 <View style={styles.dateContainer}>
                   <TouchableOpacity
-                    style={[styles.dateButton, styles.dateButtonStart]}
+                    style={[
+                      styles.dateButton,
+                      styles.dateButtonStart,
+                      { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    ]}
                     onPress={() => setShowStartDatePicker(true)}
                   >
-                    <Ionicons name="calendar-outline" size={20} color="#666" />
-                    <Text style={styles.dateButtonText}>{formatDate(tripData.startDate)}</Text>
+                    <Ionicons name="calendar-outline" size={20} color={theme.colors.textMuted} />
+                    <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
+                      {formatDate(tripData.startDate)}
+                    </Text>
                   </TouchableOpacity>
 
                   <View style={styles.dateSeparator}>
-                    <Ionicons name="arrow-forward" size={20} color="#666" />
+                    <Ionicons name="arrow-forward" size={20} color={theme.colors.textMuted} />
                   </View>
 
                   <TouchableOpacity
-                    style={[styles.dateButton, styles.dateButtonEnd]}
+                    style={[
+                      styles.dateButton,
+                      styles.dateButtonEnd,
+                      { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    ]}
                     onPress={() => setShowEndDatePicker(true)}
                   >
-                    <Ionicons name="calendar-outline" size={20} color="#666" />
-                    <Text style={styles.dateButtonText}>{formatDate(tripData.endDate)}</Text>
+                    <Ionicons name="calendar-outline" size={20} color={theme.colors.textMuted} />
+                    <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
+                      {formatDate(tripData.endDate)}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -492,12 +547,20 @@ export default function EditTripModal({
 
             {/* Presupuesto */}
             <View style={styles.section}>
-              <Text style={styles.label}>Presupuesto (Opcional)</Text>
-              <View style={styles.budgetContainer}>
-                <Text style={styles.currencySymbol}>$</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                Presupuesto (Opcional)
+              </Text>
+              <View
+                style={[
+                  styles.budgetContainer,
+                  { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                ]}
+              >
+                <Text style={[styles.currencySymbol, { color: theme.colors.textMuted }]}>$</Text>
                 <TextInput
-                  style={styles.budgetInput}
+                  style={[styles.budgetInput, { color: theme.colors.text }]}
                   placeholder="0"
+                  placeholderTextColor={theme.colors.textMuted}
                   value={tripData.budget}
                   onChangeText={(text) => {
                     const numericText = text.replace(/[^0-9.]/g, '');
@@ -510,24 +573,39 @@ export default function EditTripModal({
 
             {/* Alojamiento */}
             <View style={styles.section}>
-              <Text style={styles.label}>Tipo de Alojamiento Preferido</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                Tipo de Alojamiento Preferido
+              </Text>
               <TouchableOpacity
-                style={styles.picker}
+                style={[
+                  styles.picker,
+                  { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                ]}
                 onPress={() => setShowAccommodationPicker(true)}
               >
-                <Text style={styles.pickerText}>
+                <Text style={[styles.pickerText, { color: theme.colors.text }]}>
                   {getAccommodationLabel(tripData.accommodation)}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#666" />
+                <Ionicons name="chevron-down" size={20} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             {/* Transporte */}
             <View style={styles.section}>
-              <Text style={styles.label}>Tipo de Transporte Preferido</Text>
-              <TouchableOpacity style={styles.picker} onPress={() => setShowTransportPicker(true)}>
-                <Text style={styles.pickerText}>{getTransportLabel(tripData.transport)}</Text>
-                <Ionicons name="chevron-down" size={20} color="#666" />
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                Tipo de Transporte Preferido
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.picker,
+                  { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                ]}
+                onPress={() => setShowTransportPicker(true)}
+              >
+                <Text style={[styles.pickerText, { color: theme.colors.text }]}>
+                  {getTransportLabel(tripData.transport)}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -535,7 +613,12 @@ export default function EditTripModal({
           </ScrollView>
 
           {/* Botón Eliminar Viaje */}
-          <View style={styles.deleteSection}>
+          <View
+            style={[
+              styles.deleteSection,
+              { backgroundColor: theme.colors.card, borderTopColor: theme.colors.border },
+            ]}
+          >
             <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteTrip}>
               <Ionicons name="trash-outline" size={20} color="#DC2626" />
               <Text style={styles.deleteButtonText}>Eliminar Viaje</Text>
@@ -557,8 +640,8 @@ export default function EditTripModal({
             }}
             minimumDate={new Date()}
             // Mejorar contraste en iOS
-            textColor={Platform.OS === 'ios' ? COLORS.utility.black : undefined}
-            style={Platform.OS === 'ios' ? { backgroundColor: COLORS.utility.white } : undefined}
+            textColor={Platform.OS === 'ios' ? '#000000' : undefined}
+            style={Platform.OS === 'ios' ? { backgroundColor: '#FFFFFF' } : undefined}
           />
         )}
 
@@ -575,8 +658,8 @@ export default function EditTripModal({
             }}
             minimumDate={tripData.startDate || new Date()}
             // Mejorar contraste en iOS
-            textColor={Platform.OS === 'ios' ? COLORS.utility.black : undefined}
-            style={Platform.OS === 'ios' ? { backgroundColor: COLORS.utility.white } : undefined}
+            textColor={Platform.OS === 'ios' ? '#000000' : undefined}
+            style={Platform.OS === 'ios' ? { backgroundColor: '#FFFFFF' } : undefined}
           />
         )}
 
@@ -586,14 +669,23 @@ export default function EditTripModal({
           animationType="slide"
           presentationStyle="pageSheet"
         >
-          <View style={styles.pickerModal}>
-            <View style={styles.pickerHeader}>
+          <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+            <View
+              style={[
+                styles.pickerHeader,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <TouchableOpacity onPress={() => setShowAccommodationPicker(false)}>
-                <Text style={styles.pickerCancel}>Cancelar</Text>
+                <Text style={[styles.pickerCancel, { color: theme.colors.textMuted }]}>
+                  Cancelar
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.pickerTitle}>Tipo de Alojamiento</Text>
+              <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+                Tipo de Alojamiento
+              </Text>
               <TouchableOpacity onPress={() => setShowAccommodationPicker(false)}>
-                <Text style={styles.pickerDone}>Listo</Text>
+                <Text style={[styles.pickerDone, { color: '#DE3D00' }]}>Listo</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.pickerList}>
@@ -602,6 +694,7 @@ export default function EditTripModal({
                   key={accommodation.value}
                   style={[
                     styles.pickerItem,
+                    { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
                     tripData.accommodation.includes(accommodation.value) &&
                       styles.pickerItemSelected,
                   ]}
@@ -615,9 +708,11 @@ export default function EditTripModal({
                   }}
                 >
                   <Text style={styles.pickerItemIcon}>{accommodation.icon}</Text>
-                  <Text style={styles.pickerItemText}>{accommodation.label}</Text>
+                  <Text style={[styles.pickerItemText, { color: theme.colors.text }]}>
+                    {accommodation.label}
+                  </Text>
                   {tripData.accommodation.includes(accommodation.value) && (
-                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    <Ionicons name="checkmark" size={20} color="#DE3D00" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -627,14 +722,23 @@ export default function EditTripModal({
 
         {/* Transport Picker */}
         <Modal visible={showTransportPicker} animationType="slide" presentationStyle="pageSheet">
-          <View style={styles.pickerModal}>
-            <View style={styles.pickerHeader}>
+          <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+            <View
+              style={[
+                styles.pickerHeader,
+                { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+              ]}
+            >
               <TouchableOpacity onPress={() => setShowTransportPicker(false)}>
-                <Text style={styles.pickerCancel}>Cancelar</Text>
+                <Text style={[styles.pickerCancel, { color: theme.colors.textMuted }]}>
+                  Cancelar
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.pickerTitle}>Tipo de Transporte</Text>
+              <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+                Tipo de Transporte
+              </Text>
               <TouchableOpacity onPress={() => setShowTransportPicker(false)}>
-                <Text style={styles.pickerDone}>Listo</Text>
+                <Text style={[styles.pickerDone, { color: '#DE3D00' }]}>Listo</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.pickerList}>
@@ -643,6 +747,7 @@ export default function EditTripModal({
                   key={transport.value}
                   style={[
                     styles.pickerItem,
+                    { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
                     tripData.transport.includes(transport.value) && styles.pickerItemSelected,
                   ]}
                   onPress={() => {
@@ -655,9 +760,11 @@ export default function EditTripModal({
                   }}
                 >
                   <Text style={styles.pickerItemIcon}>{transport.icon}</Text>
-                  <Text style={styles.pickerItemText}>{transport.label}</Text>
+                  <Text style={[styles.pickerItemText, { color: theme.colors.text }]}>
+                    {transport.label}
+                  </Text>
                   {tripData.transport.includes(transport.value) && (
-                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    <Ionicons name="checkmark" size={20} color="#DE3D00" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -672,15 +779,12 @@ export default function EditTripModal({
 const styles = StyleSheet.create({
   budgetContainer: {
     alignItems: 'center',
-    backgroundColor: COLORS.utility.white,
-    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
     paddingHorizontal: 16,
   },
   budgetInput: {
-    color: COLORS.text.mediumDarkGray,
     flex: 1,
     fontSize: 16,
     paddingVertical: 14,
@@ -690,8 +794,7 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     alignItems: 'center',
-    backgroundColor: COLORS.utility.white,
-    borderColor: COLORS.border.gray,
+    backgroundColor: '#FFFFFF',
     borderRadius: 4,
     borderWidth: 2,
     height: 20,
@@ -700,13 +803,11 @@ const styles = StyleSheet.create({
     width: 20,
   },
   checkboxChecked: {
-    backgroundColor: COLORS.status.info,
-    borderColor: COLORS.status.info,
+    backgroundColor: '#4F8EF7',
+    borderColor: '#4F8EF7',
   },
   checkboxContainer: {
     alignItems: 'center',
-    backgroundColor: COLORS.utility.white,
-    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
@@ -715,16 +816,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   checkboxSelected: {
-    backgroundColor: COLORS.background.purple.ultraLight,
-    borderColor: COLORS.status.info,
+    backgroundColor: '#F0E6FF',
+    borderColor: '#4F8EF7',
   },
   checkboxText: {
-    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     fontWeight: '500',
   },
   container: {
-    backgroundColor: COLORS.utility.white,
     flex: 1,
   },
   content: {
@@ -732,15 +831,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   currencySymbol: {
-    color: COLORS.text.mediumDarkGray,
     fontSize: 18,
     fontWeight: '600',
     marginRight: 8,
   },
   dateButton: {
     alignItems: 'center',
-    backgroundColor: COLORS.utility.white,
-    borderColor: COLORS.border.gray,
     borderWidth: 1,
     flex: 1,
     flexDirection: 'row',
@@ -758,7 +854,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
   },
   dateButtonText: {
-    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     marginLeft: 8,
   },
@@ -767,17 +862,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dateSeparator: {
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: '#F5F5F5',
     borderBottomWidth: 1,
-    borderColor: COLORS.border.gray,
     borderTopWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 14,
   },
   deleteButton: {
     alignItems: 'center',
-    backgroundColor: COLORS.status.errorLight,
-    borderColor: COLORS.status.errorLight,
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FEE2E2',
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
@@ -786,20 +880,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   deleteButtonText: {
-    color: COLORS.status.errorDark,
+    color: '#DC2626',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   deleteSection: {
-    backgroundColor: COLORS.utility.white,
-    borderTopColor: COLORS.border.dark,
     borderTopWidth: 1,
     padding: 20,
   },
   header: {
     alignItems: 'center',
-    borderBottomColor: COLORS.border.dark,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -808,13 +899,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   headerTitle: {
-    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: COLORS.utility.white,
-    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     fontSize: 16,
@@ -822,15 +910,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   label: {
-    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   picker: {
     alignItems: 'center',
-    backgroundColor: COLORS.utility.white,
-    borderColor: COLORS.border.gray,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
@@ -839,17 +924,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   pickerCancel: {
-    color: COLORS.text.tertiary,
     fontSize: 16,
   },
   pickerDone: {
-    color: COLORS.status.info,
     fontSize: 16,
     fontWeight: '600',
   },
   pickerHeader: {
     alignItems: 'center',
-    borderBottomColor: COLORS.border.dark,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -859,7 +941,6 @@ const styles = StyleSheet.create({
   },
   pickerItem: {
     alignItems: 'center',
-    borderBottomColor: COLORS.background.gray,
     borderBottomWidth: 1,
     flexDirection: 'row',
     paddingVertical: 16,
@@ -869,10 +950,9 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   pickerItemSelected: {
-    backgroundColor: COLORS.background.purple.ultraLight,
+    backgroundColor: '#F0E6FF',
   },
   pickerItemText: {
-    color: COLORS.text.mediumDarkGray,
     flex: 1,
     fontSize: 16,
   },
@@ -881,34 +961,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   pickerModal: {
-    backgroundColor: COLORS.utility.white,
     flex: 1,
   },
   pickerText: {
-    color: COLORS.text.mediumDarkGray,
     fontSize: 16,
   },
   pickerTitle: {
-    color: COLORS.text.darkGray,
     fontSize: 18,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: COLORS.status.info,
+    backgroundColor: '#4F8EF7',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.border.gray,
+    backgroundColor: '#E5E5E5',
   },
   saveButtonText: {
-    color: COLORS.utility.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
   saveButtonTextDisabled: {
-    color: COLORS.text.lightGray,
+    color: '#999999',
   },
   section: {
     marginBottom: 24,

@@ -14,7 +14,6 @@ import { useRouter } from 'expo-router';
 
 import { useTranslation } from 'react-i18next';
 
-import { COLORS } from '~/constants/colors';
 import { useTheme } from '~/lib/theme';
 
 interface BookingOption {
@@ -27,7 +26,7 @@ interface BookingOption {
 
 export default function BookingTab() {
   const { t } = useTranslation();
-  const { colors: _colors, spacing: _spacing } = useTheme();
+  const theme = useTheme();
   const _router = useRouter();
 
   const bookingOptions: BookingOption[] = [
@@ -83,7 +82,7 @@ export default function BookingTab() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -91,8 +90,12 @@ export default function BookingTab() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('bookingTab.title')}</Text>
-          <Text style={styles.headerSubtitle}>{t('bookingTab.subtitle')}</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            {t('bookingTab.title')}
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
+            {t('bookingTab.subtitle')}
+          </Text>
         </View>
 
         {/* Booking Options Grid */}
@@ -101,7 +104,10 @@ export default function BookingTab() {
             <TouchableOpacity
               key={index}
               onPress={() => handleBookingPress(option)}
-              style={styles.card}
+              style={[
+                styles.card,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+              ]}
             >
               {/* Icon Circle */}
               <View
@@ -117,10 +123,12 @@ export default function BookingTab() {
               </View>
 
               {/* Title */}
-              <Text style={styles.cardTitle}>{option.title}</Text>
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>{option.title}</Text>
 
               {/* Description */}
-              <Text style={styles.cardDescription}>{option.description}</Text>
+              <Text style={[styles.cardDescription, { color: theme.colors.textMuted }]}>
+                {option.description}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -136,7 +144,6 @@ const styles = StyleSheet.create({
   // Main Container
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -153,12 +160,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: '900',
-    color: COLORS.text.primary,
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: COLORS.text.secondary,
     fontWeight: '500',
   },
 
@@ -173,19 +178,17 @@ const styles = StyleSheet.create({
   // Booking Card
   card: {
     width: '47%',
-    backgroundColor: COLORS.background.primary,
     borderRadius: 24,
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 160,
-    shadowColor: COLORS.utility.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
     borderWidth: 1,
-    borderColor: COLORS.border.opacity,
   },
 
   // Icon
@@ -203,20 +206,18 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 28,
-    color: COLORS.text.white,
+    color: '#FFFFFF',
   },
 
   // Card Text
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
   cardDescription: {
     fontSize: 14,
-    color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
   },

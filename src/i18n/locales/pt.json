@@ -872,6 +872,15 @@
     },
     "user_fallback": "Usuário"
   },
+  "settings": {
+    "title": "Configurações",
+    "general": "GERAL",
+    "language": "Idioma",
+    "theme": "Tema",
+    "theme_light": "Claro",
+    "theme_dark": "Escuro",
+    "theme_auto": "Automático"
+  },
   "tabs": {
     "home": "Início",
     "explore": "Explorar",

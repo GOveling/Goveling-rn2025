@@ -15,9 +15,9 @@ import {
 
 import { useTranslation } from 'react-i18next';
 
-import { COLORS } from '../constants/colors';
 import { translateDynamic } from '../i18n';
 import { EnhancedPlace } from '../lib/placesSearch';
+import { useTheme } from '../lib/theme';
 import { useFavorites } from '../lib/useFavorites';
 
 interface PlaceCardProps {
@@ -29,6 +29,7 @@ interface PlaceCardProps {
 
 export default function PlaceCard({ place, onPress, style, compact = false }: PlaceCardProps) {
   const { t, i18n } = useTranslation();
+  const theme = useTheme();
   const { isFavorite, toggleFavorite, loading } = useFavorites();
   const [aboutText, setAboutText] = React.useState<string | null>(null);
 
@@ -119,21 +120,12 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
   const renderStatus = () => {
     if (place.openNow === undefined) return null;
 
+    const bgColor = place.openNow ? '#D1FAE5' : '#FEE2E2';
+    const textColor = place.openNow ? '#065F46' : '#991B1B';
+
     return (
-      <View
-        style={[
-          styles.statusBadge,
-          {
-            backgroundColor: place.openNow ? COLORS.status.successLight : COLORS.status.errorLight,
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.statusText,
-            { color: place.openNow ? COLORS.status.successDark : COLORS.status.errorDark },
-          ]}
-        >
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <Text style={[styles.statusText, { color: textColor }]}>
           {place.openNow ? t('explore.card.open') : t('explore.card.closed')}
         </Text>
       </View>
@@ -142,7 +134,12 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
   return (
     <TouchableOpacity
-      style={[styles.container, compact && styles.containerCompact, style]}
+      style={[
+        styles.container,
+        compact && styles.containerCompact,
+        { backgroundColor: theme.colors.card },
+        style,
+      ]}
       onPress={() => onPress(place)}
       activeOpacity={0.7}
     >
@@ -153,7 +150,11 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text
-            style={[styles.placeName, compact && styles.placeNameCompact]}
+            style={[
+              styles.placeName,
+              compact && styles.placeNameCompact,
+              { color: theme.colors.text },
+            ]}
             numberOfLines={compact ? 1 : 2}
           >
             {place.name}
@@ -169,9 +170,13 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
         {place.address && (
           <View style={styles.addressRow}>
-            <Text style={styles.addressIcon}>📍</Text>
+            <Text style={[styles.addressIcon, { color: theme.colors.textMuted }]}>📍</Text>
             <Text
-              style={[styles.addressText, compact && styles.addressTextCompact]}
+              style={[
+                styles.addressText,
+                compact && styles.addressTextCompact,
+                { color: theme.colors.textMuted },
+              ]}
               numberOfLines={compact ? 1 : 2}
             >
               {place.address}
@@ -181,13 +186,19 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
         {/* Editorial Summary / About */}
         {place.description && !compact && (
-          <Text style={styles.editorialText} numberOfLines={2}>
+          <Text style={[styles.editorialText, { color: theme.colors.textMuted }]} numberOfLines={2}>
             {aboutText ?? place.description}
           </Text>
         )}
 
         {typeof place.distance_km === 'number' && (
-          <Text style={[styles.distanceText, compact && styles.distanceTextCompact]}>
+          <Text
+            style={[
+              styles.distanceText,
+              compact && styles.distanceTextCompact,
+              { color: theme.colors.textMuted },
+            ]}
+          >
             {place.distance_km.toFixed(2)} km
           </Text>
         )}
@@ -196,11 +207,23 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
           {place.rating && (
             <View style={styles.ratingContainer}>
               <Text style={styles.starIcon}>⭐</Text>
-              <Text style={[styles.ratingText, compact && styles.ratingTextCompact]}>
+              <Text
+                style={[
+                  styles.ratingText,
+                  compact && styles.ratingTextCompact,
+                  { color: theme.colors.text },
+                ]}
+              >
                 {place.rating}
               </Text>
               {place.reviews_count && (
-                <Text style={[styles.reviewsText, compact && styles.reviewsTextCompact]}>
+                <Text
+                  style={[
+                    styles.reviewsText,
+                    compact && styles.reviewsTextCompact,
+                    { color: theme.colors.textMuted },
+                  ]}
+                >
                   ({place.reviews_count})
                 </Text>
               )}
@@ -218,7 +241,6 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
 const styles = StyleSheet.create({
   addressIcon: {
-    color: COLORS.text.tertiary,
     fontSize: 14,
     marginRight: 4,
   },
@@ -228,7 +250,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   addressText: {
-    color: COLORS.text.tertiary,
     flex: 1,
     fontSize: 14,
   },
@@ -241,7 +262,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   container: {
-    backgroundColor: COLORS.utility.white,
     borderRadius: 16,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
@@ -257,7 +277,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   distanceText: {
-    color: COLORS.text.lightGray,
     fontSize: 12,
     marginBottom: 8,
   },
@@ -266,7 +285,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   editorialText: {
-    color: COLORS.text.secondary,
     fontSize: 13,
     fontStyle: 'italic',
     lineHeight: 18,
@@ -284,7 +302,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   photoContainer: {
-    backgroundColor: COLORS.background.gray,
+    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     height: 160,
     marginBottom: 10,
@@ -297,7 +315,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   placeName: {
-    color: COLORS.text.darkGray,
     flex: 1,
     fontSize: 18,
     fontWeight: '600',
@@ -307,7 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   placeholderIcon: {
-    color: COLORS.text.lightGray,
+    color: '#CCCCCC',
     fontSize: 32,
   },
   placeholderPhoto: {
@@ -319,7 +336,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   ratingText: {
-    color: COLORS.text.darkGray,
     fontSize: 14,
     fontWeight: '600',
     marginRight: 4,
@@ -328,27 +344,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   reviewsText: {
-    color: COLORS.text.tertiary,
     fontSize: 14,
   },
   reviewsTextCompact: {
     fontSize: 13,
   },
   starIcon: {
-    color: COLORS.secondary.amber,
+    color: '#F59E0B',
     fontSize: 14,
     marginRight: 2,
   },
   priceBadge: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.secondary,
+    backgroundColor: '#F3F4F6',
     borderRadius: 6,
     marginLeft: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   priceText: {
-    color: COLORS.status.success,
+    color: '#10B981',
     fontSize: 12,
     fontWeight: '700',
   },
