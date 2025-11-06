@@ -330,7 +330,7 @@ export default function Home() {
           {/* Lugares Populares Globalmente */}
           <View
             style={{
-              backgroundColor: 'white',
+              backgroundColor: colors.card,
               borderRadius: 16,
               padding: 20,
               boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
@@ -347,17 +347,19 @@ export default function Home() {
             >
               <View>
                 <Text
-                  style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}
+                  style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 4 }}
                 >
                   📈 Lugares Populares
                 </Text>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
                   Globalmente
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>Siguiente:</Text>
-                <Text style={{ fontSize: 12, color: '#6B7280' }}>4:52</Text>
+                <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 2 }}>
+                  Siguiente:
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textMuted }}>4:52</Text>
                 <TouchableOpacity style={{ marginTop: 4 }}>
                   <Text style={{ fontSize: 16, color: '#8B5CF6' }}>🔄 Actualizar</Text>
                 </TouchableOpacity>
@@ -368,7 +370,7 @@ export default function Home() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#F3E8FF',
+                backgroundColor: colors.background,
                 borderRadius: 12,
                 padding: 12,
               }}
@@ -391,19 +393,19 @@ export default function Home() {
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                   <Text
-                    style={{ fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 }}
+                    style={{ fontSize: 16, fontWeight: '600', color: colors.text, marginRight: 8 }}
                   >
                     Santorini Sunset Point
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>4.9</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>4.9</Text>
                   </View>
                 </View>
-                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
+                <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 4 }}>
                   📍 Santorini, Greece
                 </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
+                <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 16 }}>
                   One of the world's most photographed sunsets with breathtaking views over the
                   Aegean Sea...
                 </Text>

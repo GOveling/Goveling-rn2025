@@ -12,6 +12,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { translateDynamic } from '~/i18n';
 import { processPlaceCategories } from '~/lib/categoryProcessor';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 import { resolveUserRoleForTrip } from '~/lib/userUtils';
 
 import PlaceDetailModal from '../../../src/components/PlaceDetailModal';
@@ -40,6 +41,7 @@ export default function TripPlacesScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const theme = useTheme();
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [tripTitle, setTripTitle] = useState('');
@@ -372,7 +374,7 @@ export default function TripPlacesScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <LinearGradient
           colors={['#4A90E2', '#7B68EE']}
           start={{ x: 0, y: 0 }}
@@ -395,7 +397,7 @@ export default function TripPlacesScreen() {
 
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#8B5CF6" />
-          <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>
+          <Text style={{ marginTop: 16, fontSize: 16, color: theme.colors.textMuted }}>
             {t('trips.places.loading')}
           </Text>
         </View>
@@ -404,7 +406,7 @@ export default function TripPlacesScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       {/* Header */}
       <LinearGradient
         colors={['#4A90E2', '#7B68EE']}
@@ -433,7 +435,7 @@ export default function TripPlacesScreen() {
         {places.length === 0 ? (
           <View
             style={{
-              backgroundColor: 'white',
+              backgroundColor: theme.colors.card,
               borderRadius: 16,
               padding: 32,
               alignItems: 'center',
@@ -445,7 +447,7 @@ export default function TripPlacesScreen() {
               style={{
                 fontSize: 20,
                 fontWeight: '700',
-                color: '#1A1A1A',
+                color: theme.colors.text,
                 marginBottom: 8,
                 textAlign: 'center',
               }}
@@ -455,7 +457,7 @@ export default function TripPlacesScreen() {
             <Text
               style={{
                 fontSize: 16,
-                color: '#666666',
+                color: theme.colors.textMuted,
                 marginBottom: 24,
                 textAlign: 'center',
               }}
@@ -508,7 +510,7 @@ export default function TripPlacesScreen() {
                 style={{
                   fontSize: 16,
                   fontWeight: '600',
-                  color: '#666666',
+                  color: theme.colors.textMuted,
                 }}
               >
                 {places.length}{' '}
@@ -545,11 +547,11 @@ export default function TripPlacesScreen() {
               <View
                 key={place.id}
                 style={{
-                  backgroundColor: 'white',
+                  backgroundColor: theme.colors.card,
                   borderRadius: 16,
                   padding: 16,
                   marginBottom: 12,
-                  shadowColor: '#000',
+                  shadowColor: theme.colors.text,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
@@ -574,7 +576,7 @@ export default function TripPlacesScreen() {
                         style={{
                           fontSize: 18,
                           fontWeight: '700',
-                          color: '#1A1A1A',
+                          color: theme.colors.text,
                           flex: 1,
                         }}
                       >
@@ -589,11 +591,15 @@ export default function TripPlacesScreen() {
                           }}
                         >
                           <Text style={{ fontSize: 14, marginRight: 2 }}>⭐</Text>
-                          <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A' }}>
+                          <Text
+                            style={{ fontSize: 14, fontWeight: '600', color: theme.colors.text }}
+                          >
                             {place.google_rating}
                           </Text>
                           {place.reviews_count && (
-                            <Text style={{ fontSize: 12, color: '#999999', marginLeft: 4 }}>
+                            <Text
+                              style={{ fontSize: 12, color: theme.colors.textMuted, marginLeft: 4 }}
+                            >
                               ({place.reviews_count})
                             </Text>
                           )}
@@ -602,7 +608,8 @@ export default function TripPlacesScreen() {
                       {place.price_level !== undefined && place.price_level !== null && (
                         <View
                           style={{
-                            backgroundColor: '#F8F9FA',
+                            backgroundColor:
+                              theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : '#F8F9FA',
                             paddingHorizontal: 8,
                             paddingVertical: 4,
                             borderRadius: 6,
@@ -631,7 +638,7 @@ export default function TripPlacesScreen() {
                     <Text
                       style={{
                         fontSize: 14,
-                        color: '#666666',
+                        color: theme.colors.textMuted,
                         marginBottom: 8,
                       }}
                     >
@@ -643,7 +650,7 @@ export default function TripPlacesScreen() {
                       <Text
                         style={{
                           fontSize: 13,
-                          color: '#555555',
+                          color: theme.colors.textMuted,
                           lineHeight: 18,
                           marginBottom: 8,
                           fontStyle: 'italic',
@@ -662,13 +669,21 @@ export default function TripPlacesScreen() {
                             flexDirection: 'row',
                             alignItems: 'center',
                             marginBottom: 6,
+                            backgroundColor:
+                              theme.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.1)'
+                                : 'rgba(0, 0, 0, 0.05)',
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            alignSelf: 'flex-start',
                           }}
                         >
                           <Text style={{ fontSize: 12, marginRight: 4 }}>🕐</Text>
                           <Text
                             style={{
                               fontSize: 12,
-                              color: '#10B981',
+                              color: theme.colors.text,
                               fontWeight: '500',
                             }}
                             numberOfLines={1}
@@ -689,7 +704,7 @@ export default function TripPlacesScreen() {
                       <Text
                         style={{
                           fontSize: 12,
-                          color: '#999999',
+                          color: theme.colors.textMuted,
                         }}
                       >
                         {t('trips.places.saved_on')} {formatDate(place.added_at)}
@@ -697,7 +712,8 @@ export default function TripPlacesScreen() {
 
                       <View
                         style={{
-                          backgroundColor: '#EBF4FF',
+                          backgroundColor:
+                            theme.mode === 'dark' ? 'rgba(0, 122, 255, 0.2)' : '#EBF4FF',
                           paddingHorizontal: 8,
                           paddingVertical: 4,
                           borderRadius: 8,
@@ -722,7 +738,8 @@ export default function TripPlacesScreen() {
                       style={{
                         padding: 8,
                         borderRadius: 8,
-                        backgroundColor: '#FEF2F2',
+                        backgroundColor:
+                          theme.mode === 'dark' ? 'rgba(239, 68, 68, 0.2)' : '#FEF2F2',
                         marginLeft: 8,
                       }}
                     >
@@ -735,7 +752,7 @@ export default function TripPlacesScreen() {
                   onPress={() => handleShowPlaceDetails(place)}
                   style={{
                     marginTop: 12,
-                    backgroundColor: '#F8F9FA',
+                    backgroundColor: theme.mode === 'dark' ? 'rgba(0, 122, 255, 0.1)' : '#F8F9FA',
                     borderRadius: 12,
                     padding: 12,
                     alignItems: 'center',

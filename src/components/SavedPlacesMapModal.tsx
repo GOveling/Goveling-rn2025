@@ -587,7 +587,12 @@ export default function SavedPlacesMapModal({
             {/* Callout cuando se selecciona un lugar */}
             {selectedPlace && (
               <View style={styles.calloutOverlay}>
-                <View style={[styles.callout, { backgroundColor: theme.colors.card }]}>
+                <View
+                  style={[
+                    styles.callout,
+                    { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+                  ]}
+                >
                   <TouchableOpacity
                     style={[styles.calloutClose, { backgroundColor: theme.colors.background }]}
                     onPress={() => setSelectedPlace(null)}
@@ -656,7 +661,6 @@ export default function SavedPlacesMapModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -666,7 +670,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
   },
   iconBtn: {
     padding: 8,
@@ -675,14 +678,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
   },
   filtersContainer: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-    backgroundColor: '#f8f9fa',
   },
   filtersScrollContent: {
     paddingRight: 16,
@@ -715,7 +715,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
   },
   emptyContainer: {
     flex: 1,
@@ -730,13 +729,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -748,15 +745,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255,255,255,0.95)',
     padding: 12,
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
   },
   footerText: {
     fontSize: 14,
-    color: '#666',
     fontWeight: '500',
   },
   calloutOverlay: {
@@ -767,12 +761,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   callout: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -785,25 +777,21 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   calloutCloseText: {
     fontSize: 18,
-    color: '#666',
     fontWeight: '600',
   },
   calloutTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
     paddingRight: 32,
   },
   calloutDistance: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 12,
   },
   calloutButton: {

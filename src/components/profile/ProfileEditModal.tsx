@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 
 interface Props {
   visible: boolean;
@@ -42,6 +43,7 @@ interface ProfileData {
 export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -414,7 +416,7 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
           </View>
         </LinearGradient>
 
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={[styles.scrollView, { backgroundColor: theme.colors.background }]}>
           <View style={styles.contentContainer}>
             {/* Avatar Section */}
             <View style={styles.avatarSection}>
@@ -448,7 +450,12 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                 </View>
               </TouchableOpacity>
 
-              <Text style={styles.changePhotoText}>
+              <Text
+                style={[
+                  styles.changePhotoText,
+                  { color: theme.mode === 'dark' ? '#818cf8' : '#6366F1' },
+                ]}
+              >
                 {uploading
                   ? t('profile.edit_modal.avatar_section.uploading')
                   : t('profile.edit_modal.avatar_section.change_photo')}
@@ -457,19 +464,31 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
             {/* Nombre Completo */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>{t('profile.edit_modal.fields.full_name')}</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                {t('profile.edit_modal.fields.full_name')}
+              </Text>
               <TextInput
                 value={profileData.full_name}
                 onChangeText={(text) => setProfileData((prev) => ({ ...prev, full_name: text }))}
                 placeholder={t('profile.edit_modal.fields.full_name_placeholder')}
-                style={styles.textInput}
-                placeholderTextColor="#666"
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: theme.colors.card,
+                    color: theme.colors.text,
+                    borderColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  },
+                ]}
+                placeholderTextColor={theme.colors.textMuted}
               />
             </View>
 
             {/* Descripción */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>{t('profile.edit_modal.fields.description')}</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                {t('profile.edit_modal.fields.description')}
+              </Text>
               <TextInput
                 value={profileData.description}
                 onChangeText={(text) => {
@@ -480,10 +499,24 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
                 placeholder={t('profile.edit_modal.fields.description_placeholder')}
                 multiline
                 maxLength={70}
-                style={[styles.textInput, styles.textInputMultiline]}
-                placeholderTextColor="#666"
+                style={[
+                  styles.textInput,
+                  styles.textInputMultiline,
+                  {
+                    backgroundColor: theme.colors.card,
+                    color: theme.colors.text,
+                    borderColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  },
+                ]}
+                placeholderTextColor={theme.colors.textMuted}
               />
-              <Text style={styles.characterCount}>
+              <Text
+                style={[
+                  styles.characterCount,
+                  { color: theme.mode === 'dark' ? '#818cf8' : '#6366F1' },
+                ]}
+              >
                 {t('profile.edit_modal.fields.character_count', {
                   count: profileData.description.length,
                 })}
@@ -492,11 +525,23 @@ export const ProfileEditModal: React.FC<Props> = ({ visible, onClose, onSaved })
 
             {/* Email (solo lectura) */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>{t('profile.edit_modal.fields.email')}</Text>
-              <View style={styles.emailContainer}>
-                <Text style={styles.emailText}>{profileData.email}</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>
+                {t('profile.edit_modal.fields.email')}
+              </Text>
+              <View
+                style={[
+                  styles.emailContainer,
+                  {
+                    backgroundColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#F3F4F6',
+                    borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
+                  },
+                ]}
+              >
+                <Text style={[styles.emailText, { color: theme.colors.textMuted }]}>
+                  {profileData.email}
+                </Text>
               </View>
-              <Text style={styles.emailHelperText}>
+              <Text style={[styles.emailHelperText, { color: theme.colors.textMuted }]}>
                 {t('profile.edit_modal.fields.email_readonly')}
               </Text>
             </View>
@@ -549,7 +594,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
   },
   contentContainer: {
     padding: 20,
@@ -599,21 +643,9 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#fff',
   },
-  uploadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   changePhotoText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6366F1',
     fontWeight: '600',
   },
 
@@ -624,17 +656,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
   },
   textInputMultiline: {
     height: 100,
@@ -643,26 +672,21 @@ const styles = StyleSheet.create({
   characterCount: {
     marginTop: 6,
     fontSize: 12,
-    color: '#6366F1',
     textAlign: 'right',
   },
 
   // Email Field
   emailContainer: {
-    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   emailText: {
     fontSize: 16,
-    color: '#6B7280',
   },
   emailHelperText: {
     marginTop: 6,
     fontSize: 12,
-    color: '#6B7280',
   },
 });

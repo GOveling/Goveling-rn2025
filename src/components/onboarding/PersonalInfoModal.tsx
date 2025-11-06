@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { useCitiesByCountry } from '../../hooks/useCitiesByCountry';
 import { useCountries } from '../../hooks/useCountries';
 import { supabase } from '../../lib/supabase';
+import { useTheme } from '../../lib/theme';
 
 interface PersonalInfoModalProps {
   isOpen: boolean;
@@ -61,6 +62,9 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Theme
+  const theme = useTheme();
 
   // Hooks para países y ciudades
   const { countries, loading: countriesLoading, error: countriesError } = useCountries();
@@ -345,48 +349,79 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
           {/* Intro Banner */}
           {showIntro && (
-            <View style={styles.introBanner}>
+            <View
+              style={[
+                styles.introBanner,
+                {
+                  backgroundColor: theme.mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF',
+                  borderColor: theme.mode === 'dark' ? 'rgba(99, 102, 241, 0.4)' : '#C7D2FE',
+                },
+              ]}
+            >
               <View style={styles.introContent}>
                 <Ionicons name="flag" size={24} color="#6366F1" />
                 <View style={styles.introText}>
-                  <Text style={styles.introTitle}>
+                  <Text style={[styles.introTitle, { color: theme.colors.text }]}>
                     {t('profile.personal_info.complete_basic_info')}
                   </Text>
-                  <Text style={styles.introSubtitle}>
+                  <Text style={[styles.introSubtitle, { color: theme.colors.textMuted }]}>
                     {t('profile.personal_info.complete_basic_info_description')}
                   </Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => setShowIntro(false)} style={styles.introCloseButton}>
-                <Ionicons name="close" size={20} color="#6b7280" />
+                <Ionicons name="close" size={20} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
           )}
 
           {/* Form */}
-          <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
-            <View style={styles.formContainer}>
+          <ScrollView
+            style={[styles.form, { backgroundColor: theme.colors.background }]}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.formContainer, { backgroundColor: theme.colors.card }]}>
               {/* Required Fields Section */}
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>*</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>*</Text>
 
                 {/* Full Name */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.full_name')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.full_name')}
+                  </Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      {
+                        backgroundColor: theme.colors.card,
+                        color: theme.colors.text,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                    ]}
                     value={formData.full_name}
                     onChangeText={(text) => updateField('full_name', text)}
                     placeholder={t('profile.personal_info.full_name_placeholder')}
-                    placeholderTextColor="rgba(0,0,0,0.5)"
+                    placeholderTextColor={theme.colors.textMuted}
                   />
                 </View>
 
                 {/* Birth Date */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.birth_date')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.birth_date')}
+                  </Text>
                   <TouchableOpacity
-                    style={[styles.dateButton, formData.birth_date && styles.dateButtonSelected]}
+                    style={[
+                      styles.dateButton,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.birth_date && { borderColor: '#6366F1', borderWidth: 2 },
+                    ]}
                     onPress={() => setShowDatePicker(true)}
                   >
                     <Ionicons name="calendar" size={20} color="#6366F1" />
@@ -394,7 +429,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                       style={[
                         styles.dateButtonText,
                         {
-                          color: formData.birth_date ? '#1F2937' : 'rgba(0,0,0,0.5)',
+                          color: formData.birth_date ? theme.colors.text : theme.colors.textMuted,
                           fontWeight: formData.birth_date ? '600' : '400',
                         },
                       ]}
@@ -405,7 +440,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     </Text>
                   </TouchableOpacity>
                   {formData.birth_date && (
-                    <Text style={styles.ageText}>
+                    <Text style={[styles.ageText, { color: theme.colors.textMuted }]}>
                       {t('profile.personal_info.age_years', {
                         years: calculateAge(formData.birth_date),
                       })}
@@ -415,15 +450,25 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
                 {/* Gender */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.gender')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.gender')}
+                  </Text>
                   <TouchableOpacity
-                    style={[styles.pickerButton, formData.gender && styles.pickerButtonSelected]}
+                    style={[
+                      styles.pickerButton,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.gender && { borderColor: '#6366F1', borderWidth: 2 },
+                    ]}
                     onPress={() => setShowGenderPicker(true)}
                   >
                     <Text
                       style={[
                         styles.pickerButtonText,
-                        formData.gender && styles.pickerButtonTextSelected,
+                        { color: formData.gender ? theme.colors.text : theme.colors.textMuted },
                       ]}
                     >
                       {formData.gender
@@ -437,20 +482,31 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
               {/* Optional Fields Section */}
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}></Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}></Text>
 
                 {/* Country Selector */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.country')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.country')}
+                  </Text>
                   <TouchableOpacity
-                    style={[styles.pickerButton, formData.country && styles.pickerButtonSelected]}
+                    style={[
+                      styles.pickerButton,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.country && { borderColor: '#6366F1', borderWidth: 2 },
+                      countriesLoading && { opacity: 0.6 },
+                    ]}
                     onPress={() => setShowCountryPicker(true)}
                     disabled={countriesLoading}
                   >
                     <Text
                       style={[
                         styles.pickerButtonText,
-                        formData.country && styles.pickerButtonTextSelected,
+                        { color: formData.country ? theme.colors.text : theme.colors.textMuted },
                       ]}
                     >
                       {formData.country
@@ -464,7 +520,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     )}
                   </TouchableOpacity>
                   {countriesError && (
-                    <Text style={styles.errorText}>
+                    <Text style={[styles.errorText, { color: '#EF4444' }]}>
                       Error al cargar países. Usando lista básica.
                     </Text>
                   )}
@@ -472,12 +528,19 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
                 {/* City/State Selector */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.city_state')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.city_state')}
+                  </Text>
                   <TouchableOpacity
                     style={[
                       styles.pickerButton,
-                      formData.city_state && styles.pickerButtonSelected,
-                      (!formData.country || citiesLoading) && styles.pickerButtonDisabled,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.city_state && { borderColor: '#6366F1', borderWidth: 2 },
+                      (!formData.country || citiesLoading) && { opacity: 0.5 },
                     ]}
                     onPress={() => setShowCityPicker(true)}
                     disabled={!formData.country || citiesLoading}
@@ -485,8 +548,8 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     <Text
                       style={[
                         styles.pickerButtonText,
-                        formData.city_state && styles.pickerButtonTextSelected,
-                        (!formData.country || citiesLoading) && styles.pickerButtonTextDisabled,
+                        { color: formData.city_state ? theme.colors.text : theme.colors.textMuted },
+                        (!formData.country || citiesLoading) && { opacity: 0.6 },
                       ]}
                     >
                       {!formData.country
@@ -508,19 +571,32 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     )}
                   </TouchableOpacity>
                   {citiesError && (
-                    <Text style={styles.errorText}>Error al cargar ciudades para este país.</Text>
+                    <Text style={[styles.errorText, { color: '#EF4444' }]}>
+                      Error al cargar ciudades para este país.
+                    </Text>
                   )}
                 </View>
 
                 {/* Address */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.address')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.address')}
+                  </Text>
                   <TextInput
-                    style={[styles.textInput, styles.textArea]}
+                    style={[
+                      styles.textInput,
+                      styles.textArea,
+                      {
+                        backgroundColor: theme.colors.card,
+                        color: theme.colors.text,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                    ]}
                     value={formData.address}
                     onChangeText={(text) => updateField('address', text)}
                     placeholder={t('profile.personal_info.address_placeholder')}
-                    placeholderTextColor="rgba(0,0,0,0.5)"
+                    placeholderTextColor={theme.colors.textMuted}
                     multiline
                     numberOfLines={3}
                   />
@@ -528,19 +604,39 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
                 {/* Phone */}
                 <View style={styles.fieldContainer}>
-                  <Text style={styles.fieldLabel}>{t('profile.personal_info.mobile_phone')}</Text>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>
+                    {t('profile.personal_info.mobile_phone')}
+                  </Text>
                   <View style={styles.phoneContainer}>
                     <View style={styles.countryCodeContainer}>
                       <TextInput
-                        style={[styles.textInput, styles.countryCodeInput]}
+                        style={[
+                          styles.textInput,
+                          styles.countryCodeInput,
+                          {
+                            backgroundColor: theme.colors.card,
+                            color: theme.colors.text,
+                            borderColor:
+                              theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                          },
+                        ]}
                         value={formData.country_code}
                         placeholder="+XX"
-                        placeholderTextColor="rgba(0,0,0,0.5)"
+                        placeholderTextColor={theme.colors.textMuted}
                         editable={false}
                       />
                     </View>
                     <TextInput
-                      style={[styles.textInput, styles.phoneInput]}
+                      style={[
+                        styles.textInput,
+                        styles.phoneInput,
+                        {
+                          backgroundColor: theme.colors.card,
+                          color: theme.colors.text,
+                          borderColor:
+                            theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                        },
+                      ]}
                       value={formData.mobile_phone}
                       onChangeText={(text) => {
                         // Solo permitir números y espacios
@@ -548,13 +644,13 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                         updateField('mobile_phone', cleanText);
                       }}
                       placeholder={t('profile.personal_info.mobile_phone_placeholder')}
-                      placeholderTextColor="rgba(0,0,0,0.5)"
+                      placeholderTextColor={theme.colors.textMuted}
                       keyboardType="phone-pad"
                       editable={!!formData.country_code}
                     />
                   </View>
                   {!formData.country && (
-                    <Text style={styles.helperText}>
+                    <Text style={[styles.helperText, { color: theme.colors.textMuted }]}>
                       {t('profile.personal_info.select_country_first')}
                     </Text>
                   )}
@@ -564,9 +660,29 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
           </ScrollView>
 
           {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.skipButton} onPress={skipOnboarding} disabled={loading}>
-              <Text style={styles.skipButtonText}>Omitir por ahora</Text>
+          <View
+            style={[
+              styles.actionButtons,
+              {
+                backgroundColor: theme.colors.card,
+                borderTopColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={[
+                styles.skipButton,
+                {
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                },
+              ]}
+              onPress={skipOnboarding}
+              disabled={loading}
+            >
+              <Text style={[styles.skipButtonText, { color: theme.colors.textMuted }]}>
+                Omitir por ahora
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -590,8 +706,22 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
               presentationStyle="formSheet"
               transparent={false}
             >
-              <View style={styles.iosDatePickerContainer}>
-                <View style={styles.iosDatePickerHeader}>
+              <View
+                style={[
+                  styles.iosDatePickerContainer,
+                  { backgroundColor: theme.colors.background },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.iosDatePickerHeader,
+                    {
+                      backgroundColor: theme.colors.card,
+                      borderBottomColor:
+                        theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    },
+                  ]}
+                >
                   <TouchableOpacity
                     onPress={() => {
                       console.log('Date picker cancelled');
@@ -599,11 +729,11 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Text style={styles.datePickerCancel}>
+                    <Text style={[styles.datePickerCancel, { color: theme.colors.primary }]}>
                       {t('profile.personal_info.date_picker.cancel')}
                     </Text>
                   </TouchableOpacity>
-                  <Text style={styles.datePickerTitle}>
+                  <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
                     {t('profile.personal_info.date_picker.title')}
                   </Text>
                   <TouchableOpacity
@@ -613,12 +743,12 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Text style={styles.datePickerDone}>
+                    <Text style={[styles.datePickerDone, { color: theme.colors.primary }]}>
                       {t('profile.personal_info.date_picker.done')}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View style={styles.datePickerContent}>
+                <View style={[styles.datePickerContent, { backgroundColor: theme.colors.card }]}>
                   <DateTimePicker
                     value={formData.birth_date || new Date()}
                     mode="date"
@@ -628,9 +758,9 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     minimumDate={new Date(1900, 0, 1)}
                     locale="es-ES"
                     style={styles.iosDatePicker}
-                    textColor="#000000"
+                    textColor={theme.mode === 'dark' ? '#FFFFFF' : '#000000'}
                     accentColor="#6366F1"
-                    themeVariant="light"
+                    themeVariant={theme.mode === 'dark' ? 'dark' : 'light'}
                   />
                 </View>
               </View>
@@ -650,25 +780,44 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
           {/* Gender Picker Modal */}
           <Modal visible={showGenderPicker} animationType="slide" presentationStyle="pageSheet">
-            <View style={styles.pickerModal}>
-              <View style={styles.pickerHeader}>
+            <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+              <View
+                style={[
+                  styles.pickerHeader,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderBottomColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  },
+                ]}
+              >
                 <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
-                  <Text style={styles.pickerCancel}>
+                  <Text style={[styles.pickerCancel, { color: theme.colors.primary }]}>
                     {t('profile.personal_info.date_picker.cancel')}
                   </Text>
                 </TouchableOpacity>
-                <Text style={styles.pickerTitle}>
+                <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
                   {t('profile.personal_info.gender_picker.title')}
                 </Text>
                 <View style={{ width: 60 }} />
               </View>
-              <ScrollView style={styles.pickerContent}>
+              <ScrollView
+                style={[styles.pickerContent, { backgroundColor: theme.colors.background }]}
+              >
                 {genderOptions.slice(1).map((option) => (
                   <TouchableOpacity
                     key={option.value}
                     style={[
                       styles.pickerOption,
-                      formData.gender === option.value && styles.pickerOptionSelected,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.gender === option.value && {
+                        borderColor: '#6366F1',
+                        borderWidth: 2,
+                      },
                     ]}
                     onPress={() => {
                       updateField('gender', option.value);
@@ -676,12 +825,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     }}
                   >
                     <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
-                    <Text
-                      style={[
-                        styles.pickerOptionText,
-                        formData.gender === option.value && styles.pickerOptionTextSelected,
-                      ]}
-                    >
+                    <Text style={[styles.pickerOptionText, { color: theme.colors.text }]}>
                       {t(option.label)}
                     </Text>
                     {formData.gender === option.value && (
@@ -695,23 +839,42 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
           {/* Country Picker Modal */}
           <Modal visible={showCountryPicker} animationType="slide" presentationStyle="pageSheet">
-            <View style={styles.pickerModal}>
-              <View style={styles.pickerHeader}>
+            <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+              <View
+                style={[
+                  styles.pickerHeader,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderBottomColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  },
+                ]}
+              >
                 <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
-                  <Text style={styles.pickerCancel}>
+                  <Text style={[styles.pickerCancel, { color: theme.colors.primary }]}>
                     {t('profile.personal_info.date_picker.cancel')}
                   </Text>
                 </TouchableOpacity>
-                <Text style={styles.pickerTitle}>
+                <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
                   {t('profile.personal_info.country_picker.title')}
                 </Text>
                 <View style={{ width: 60 }} />
               </View>
-              <ScrollView style={styles.pickerContent}>
+              <ScrollView
+                style={[styles.pickerContent, { backgroundColor: theme.colors.background }]}
+              >
                 <TextInput
-                  style={styles.searchInput}
+                  style={[
+                    styles.searchInput,
+                    {
+                      backgroundColor: theme.colors.card,
+                      color: theme.colors.text,
+                      borderColor:
+                        theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    },
+                  ]}
                   placeholder={t('profile.personal_info.country_picker.search_placeholder')}
-                  placeholderTextColor="#6b7280"
+                  placeholderTextColor={theme.colors.textMuted}
                   onChangeText={(text) => {
                     // Implementar búsqueda local
                     // Por ahora mostramos todos los países
@@ -722,7 +885,15 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     key={country.country_code}
                     style={[
                       styles.pickerOption,
-                      formData.country === country.country_code && styles.pickerOptionSelected,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.country === country.country_code && {
+                        borderColor: '#6366F1',
+                        borderWidth: 2,
+                      },
                     ]}
                     onPress={() => {
                       updateField('country', country.country_code);
@@ -731,16 +902,12 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   >
                     <Text style={styles.pickerOptionIcon}>🌍</Text>
                     <View style={styles.countryOptionContent}>
-                      <Text
-                        style={[
-                          styles.pickerOptionText,
-                          formData.country === country.country_code &&
-                            styles.pickerOptionTextSelected,
-                        ]}
-                      >
+                      <Text style={[styles.pickerOptionText, { color: theme.colors.text }]}>
                         {country.country_name}
                       </Text>
-                      <Text style={styles.phoneCodeText}>{country.phone_code}</Text>
+                      <Text style={[styles.phoneCodeText, { color: theme.colors.textMuted }]}>
+                        {country.phone_code}
+                      </Text>
                     </View>
                     {formData.country === country.country_code && (
                       <Ionicons name="checkmark" size={20} color="#6366F1" />
@@ -753,23 +920,42 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
 
           {/* City Picker Modal */}
           <Modal visible={showCityPicker} animationType="slide" presentationStyle="pageSheet">
-            <View style={styles.pickerModal}>
-              <View style={styles.pickerHeader}>
+            <View style={[styles.pickerModal, { backgroundColor: theme.colors.background }]}>
+              <View
+                style={[
+                  styles.pickerHeader,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderBottomColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  },
+                ]}
+              >
                 <TouchableOpacity onPress={() => setShowCityPicker(false)}>
-                  <Text style={styles.pickerCancel}>
+                  <Text style={[styles.pickerCancel, { color: theme.colors.primary }]}>
                     {t('profile.personal_info.date_picker.cancel')}
                   </Text>
                 </TouchableOpacity>
-                <Text style={styles.pickerTitle}>
+                <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
                   {t('profile.personal_info.city_picker.title')}
                 </Text>
                 <View style={{ width: 60 }} />
               </View>
-              <ScrollView style={styles.pickerContent}>
+              <ScrollView
+                style={[styles.pickerContent, { backgroundColor: theme.colors.background }]}
+              >
                 <TextInput
-                  style={styles.searchInput}
+                  style={[
+                    styles.searchInput,
+                    {
+                      backgroundColor: theme.colors.card,
+                      color: theme.colors.text,
+                      borderColor:
+                        theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    },
+                  ]}
                   placeholder={t('profile.personal_info.city_picker.search_placeholder')}
-                  placeholderTextColor="#6b7280"
+                  placeholderTextColor={theme.colors.textMuted}
                   onChangeText={(text) => {
                     // Implementar búsqueda local
                     // Por ahora mostramos todas las ciudades
@@ -777,7 +963,7 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                 />
                 {cities.length === 0 && !citiesLoading && formData.country && (
                   <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>
+                    <Text style={[styles.emptyStateText, { color: theme.colors.textMuted }]}>
                       {t('profile.personal_info.city_picker.no_cities', {
                         defaultValue: t(
                           'profile.personal_info.city_picker.no_cities_found',
@@ -792,7 +978,15 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                     key={`${city.city}-${city.latitude}-${city.longitude}`}
                     style={[
                       styles.pickerOption,
-                      formData.city_state === city.city && styles.pickerOptionSelected,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      },
+                      formData.city_state === city.city && {
+                        borderColor: '#6366F1',
+                        borderWidth: 2,
+                      },
                     ]}
                     onPress={() => {
                       updateField('city_state', city.city);
@@ -801,15 +995,10 @@ export default function PersonalInfoModal({ isOpen, onClose, user }: PersonalInf
                   >
                     <Text style={styles.pickerOptionIcon}>🏙️</Text>
                     <View style={styles.cityOptionContent}>
-                      <Text
-                        style={[
-                          styles.pickerOptionText,
-                          formData.city_state === city.city && styles.pickerOptionTextSelected,
-                        ]}
-                      >
+                      <Text style={[styles.pickerOptionText, { color: theme.colors.text }]}>
                         {city.city}
                       </Text>
-                      <Text style={styles.populationText}>
+                      <Text style={[styles.populationText, { color: theme.colors.textMuted }]}>
                         {city.population.toLocaleString()}{' '}
                         {t('profile.personal_info.city_picker.inhabitants')}
                       </Text>

@@ -508,7 +508,12 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
       style={[styles.tab, activeTab === tab && styles.tabActive]}
     >
       <Text
-        style={[styles.tabText, activeTab === tab ? styles.tabTextActive : styles.tabTextInactive]}
+        style={[
+          styles.tabText,
+          activeTab === tab
+            ? styles.tabTextActive
+            : [styles.tabTextInactive, { color: theme.colors.textMuted }],
+        ]}
       >
         {title}
       </Text>

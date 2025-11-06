@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 
 import { processPlaceCategories } from '~/lib/categoryProcessor';
+import { useTheme } from '~/lib/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -45,6 +46,7 @@ export function PlaceVisitModal({
   onConfirm,
   onSkip,
 }: PlaceVisitModalProps) {
+  const theme = useTheme();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const confettiRef = useRef<LottieView>(null);
@@ -146,11 +148,26 @@ export function PlaceVisitModal({
             <Text style={styles.title}>¡Has Llegado!</Text>
 
             {/* Place Info Card */}
-            <View style={styles.placeCard}>
-              <Text style={styles.placeName} numberOfLines={2}>
+            <View
+              style={[
+                styles.placeCard,
+                {
+                  backgroundColor:
+                    theme.mode === 'dark' ? 'rgba(30, 30, 35, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                },
+              ]}
+            >
+              <Text style={[styles.placeName, { color: theme.colors.text }]} numberOfLines={2}>
                 {placeName}
               </Text>
-              <View style={styles.categoryBadge}>
+              <View
+                style={[
+                  styles.categoryBadge,
+                  {
+                    backgroundColor: theme.mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF',
+                  },
+                ]}
+              >
                 <Text style={styles.categoryText}>{getPlaceCategory()}</Text>
               </View>
 
@@ -158,16 +175,22 @@ export function PlaceVisitModal({
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Ionicons name="location" size={16} color="#6366F1" />
-                  <Text style={styles.statValue}>{distance.toFixed(0)}m</Text>
-                  <Text style={styles.statLabel}>Distancia</Text>
+                  <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                    {distance.toFixed(0)}m
+                  </Text>
+                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>
+                    Distancia
+                  </Text>
                 </View>
 
-                <View style={styles.statDivider} />
+                <View style={[styles.statDivider, { backgroundColor: theme.colors.border }]} />
 
                 <View style={styles.statItem}>
                   <Ionicons name="time" size={16} color="#6366F1" />
-                  <Text style={styles.statValue}>{Math.round(dwellingTime)}s</Text>
-                  <Text style={styles.statLabel}>Tiempo</Text>
+                  <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                    {Math.round(dwellingTime)}s
+                  </Text>
+                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Tiempo</Text>
                 </View>
               </View>
             </View>
@@ -276,7 +299,6 @@ const styles = StyleSheet.create({
   },
   placeCard: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -284,13 +306,11 @@ const styles = StyleSheet.create({
   placeName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
     textAlign: 'center',
     marginBottom: 12,
   },
   categoryBadge: {
     alignSelf: 'center',
-    backgroundColor: '#EEF2FF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -313,18 +333,15 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
     marginTop: 4,
   },
   statLabel: {
     fontSize: 11,
-    color: '#6B7280',
     marginTop: 2,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: '#E5E7EB',
   },
   subtitle: {
     fontSize: 16,

@@ -524,7 +524,15 @@ export default function PlaceDetailModal({
                     {t('explore.modal.sections.hours')}
                   </Text>
                 </View>
-                <View style={styles.hoursContainer}>
+                <View
+                  style={[
+                    styles.hoursContainer,
+                    {
+                      backgroundColor:
+                        theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#F5F5F5',
+                    },
+                  ]}
+                >
                   {place.openingHours.map((hour, index) => {
                     const [day, time] = hour.split(': ');
                     return (
@@ -1137,7 +1145,6 @@ const styles = StyleSheet.create({
   },
   // Hours Section
   hoursContainer: {
-    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 12,
   },

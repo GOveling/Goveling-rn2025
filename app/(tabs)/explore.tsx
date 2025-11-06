@@ -417,6 +417,10 @@ export default function ExploreTab() {
             <View
               style={[
                 styles.categoryFilterHeader,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.mode === 'dark' ? '#007AFF' : '#C6B4F5',
+                },
                 expandedCategories
                   ? styles.categoryFilterHeaderExpanded
                   : styles.categoryFilterHeaderCollapsed,
@@ -428,7 +432,9 @@ export default function ExploreTab() {
                 activeOpacity={0.85}
               >
                 <Text style={styles.categoryIcon}>🧪{/* Icono funnel placeholder */}</Text>
-                <Text style={styles.categoryTitle}>{t('explore.search_categories')}</Text>
+                <Text style={[styles.categoryTitle, { color: theme.colors.text }]}>
+                  {t('explore.search_categories')}
+                </Text>
               </TouchableOpacity>
 
               {selectedCategories.length > 0 && (
@@ -480,7 +486,15 @@ export default function ExploreTab() {
             {/* Panel expandido */}
             {expandedCategories && (
               <View style={styles.searchButtonContainer}>
-                <View style={styles.categoryPanel}>
+                <View
+                  style={[
+                    styles.categoryPanel,
+                    {
+                      backgroundColor: theme.colors.card,
+                      borderColor: theme.mode === 'dark' ? '#007AFF' : '#E5E7EB',
+                    },
+                  ]}
+                >
                   {/* Scroll interno solo para las categorías, manteniendo el header arriba fijo */}
                   <ScrollView
                     style={styles.resultsContainer}
@@ -488,7 +502,9 @@ export default function ExploreTab() {
                     showsVerticalScrollIndicator={false}
                   >
                     {/* Sección General */}
-                    <Text style={styles.categorySectionTitle}>{t('explore.general')}</Text>
+                    <Text style={[styles.categorySectionTitle, { color: theme.colors.text }]}>
+                      {t('explore.general')}
+                    </Text>
                     {[...generalCategories].map((cat) => {
                       const isSelected = selectedCategories.includes(cat.name);
                       return (
@@ -509,9 +525,24 @@ export default function ExploreTab() {
                               <Text style={styles.categoryItemTextSelected}>{cat.name}</Text>
                             </LinearGradient>
                           ) : (
-                            <View style={styles.categoryItemUnselected}>
+                            <View
+                              style={[
+                                styles.categoryItemUnselected,
+                                {
+                                  backgroundColor: theme.colors.card,
+                                  borderColor: theme.mode === 'dark' ? '#374151' : '#E5E7EB',
+                                },
+                              ]}
+                            >
                               <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
-                              <Text style={styles.categoryItemTextUnselected}>{cat.name}</Text>
+                              <Text
+                                style={[
+                                  styles.categoryItemTextUnselected,
+                                  { color: theme.colors.text },
+                                ]}
+                              >
+                                {cat.name}
+                              </Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -519,7 +550,9 @@ export default function ExploreTab() {
                     })}
 
                     {/* Sección Lugares Específicos */}
-                    <Text style={styles.categorySectionTitle}>{t('explore.specific_places')}</Text>
+                    <Text style={[styles.categorySectionTitle, { color: theme.colors.text }]}>
+                      {t('explore.specific_places')}
+                    </Text>
                     {[...specificCategories].map((cat) => {
                       const isSelected = selectedCategories.includes(cat.name);
                       return (
@@ -540,9 +573,24 @@ export default function ExploreTab() {
                               <Text style={styles.categoryItemTextSelected}>{cat.name}</Text>
                             </LinearGradient>
                           ) : (
-                            <View style={styles.categoryItemUnselected}>
+                            <View
+                              style={[
+                                styles.categoryItemUnselected,
+                                {
+                                  backgroundColor: theme.colors.card,
+                                  borderColor: theme.mode === 'dark' ? '#374151' : '#E5E7EB',
+                                },
+                              ]}
+                            >
                               <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
-                              <Text style={styles.categoryItemTextUnselected}>{cat.name}</Text>
+                              <Text
+                                style={[
+                                  styles.categoryItemTextUnselected,
+                                  { color: theme.colors.text },
+                                ]}
+                              >
+                                {cat.name}
+                              </Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -583,7 +631,15 @@ export default function ExploreTab() {
           </View>
 
           {/* Ubicación actual */}
-          <View style={styles.searchInputContainer}>
+          <View
+            style={[
+              styles.searchInputContainer,
+              {
+                backgroundColor: theme.colors.card,
+                borderColor: theme.mode === 'dark' ? '#007AFF' : '#E5E7EB',
+              },
+            ]}
+          >
             <Switch
               value={nearCurrentLocation}
               onValueChange={setNearCurrentLocation}
@@ -594,7 +650,9 @@ export default function ExploreTab() {
             />
 
             <View style={styles.searchInputField}>
-              <Text style={styles.searchInputText}>{t('explore.near_current_location')}</Text>
+              <Text style={[styles.searchInputText, { color: theme.colors.text }]}>
+                {t('explore.near_current_location')}
+              </Text>
             </View>
 
             <TouchableOpacity onPress={() => setShowMap(true)} style={styles.searchLocationButton}>
@@ -870,25 +928,18 @@ const styles = StyleSheet.create({
   // Category filter header styles
   categoryFilterHeader: {
     borderWidth: 1,
-    borderColor: '#C6B4F5',
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  categoryFilterHeaderExpanded: {
-    backgroundColor: 'white',
-  },
-  categoryFilterHeaderCollapsed: {
-    backgroundColor: '#FBF9FF',
-  },
+  categoryFilterHeaderExpanded: {},
+  categoryFilterHeaderCollapsed: {},
 
   // Category panel styles
   categoryPanel: {
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     borderTopWidth: 0,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
@@ -901,7 +952,6 @@ const styles = StyleSheet.create({
   categorySectionTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 10,
   },
   categoryItemButton: {
@@ -915,9 +965,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryItemUnselected: {
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -934,7 +982,6 @@ const styles = StyleSheet.create({
   categoryItemTextUnselected: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#111827',
   },
   categoryItemsScrollView: {
     marginTop: 4,
@@ -951,9 +998,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#F9FAFB',
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
   },
   searchInputRow: {
     flexDirection: 'row',

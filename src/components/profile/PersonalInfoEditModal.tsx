@@ -26,6 +26,7 @@ import { useCitiesByCountry } from '~/hooks/useCitiesByCountry';
 import { useCountries } from '~/hooks/useCountries';
 import { forwardGeocode } from '~/lib/geocoding';
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
 
 interface Props {
   visible: boolean;
@@ -68,6 +69,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
   onSaved,
 }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   console.log('🎯 PersonalInfoEditModal Component: Rendering with props:', {
     visible,
@@ -150,16 +152,27 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
   const CityItem = React.memo(
     ({ item, isSelected, onPress }: { item: any; isSelected: boolean; onPress: () => void }) => (
       <TouchableOpacity
-        style={[styles.option, isSelected && styles.optionSelected]}
+        style={[
+          styles.option,
+          {
+            backgroundColor: theme.colors.card,
+            borderColor: isSelected
+              ? '#6366F1'
+              : theme.mode === 'dark'
+                ? 'rgba(255,255,255,0.2)'
+                : '#E5E7EB',
+          },
+          isSelected && { borderWidth: 2 },
+        ]}
         onPress={onPress}
       >
         <Text style={styles.optionIcon}>🏙️</Text>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+          <Text style={[styles.optionText, { color: isSelected ? '#6366F1' : theme.colors.text }]}>
             {item.city}
           </Text>
           {item.population > 0 && (
-            <Text style={{ fontSize: 12, color: COLORS.text.tertiary, marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: theme.colors.textMuted, marginTop: 2 }}>
               {item.population.toLocaleString('es-ES')} hab.
             </Text>
           )}
@@ -576,14 +589,17 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           </View>
         </LinearGradient>
         <ScrollView
-          style={{ flex: 1, backgroundColor: COLORS.background.tertiary }}
+          style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
           contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
         >
           {/* Progress Message */}
           {initialLoaded && !isProfileComplete() && (
             <View
               style={{
-                backgroundColor: COLORS.background.amber.veryLight,
+                backgroundColor:
+                  theme.mode === 'dark'
+                    ? 'rgba(245, 158, 11, 0.2)'
+                    : COLORS.background.amber.veryLight,
                 borderRadius: 12,
                 padding: 16,
                 marginBottom: 20,
@@ -614,7 +630,8 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           {initialLoaded && isProfileComplete() && (
             <View
               style={{
-                backgroundColor: COLORS.status.successLight,
+                backgroundColor:
+                  theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.2)' : COLORS.status.successLight,
                 borderRadius: 12,
                 padding: 16,
                 marginBottom: 20,
@@ -627,7 +644,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 <Text
                   style={{
                     marginLeft: 8,
-                    color: COLORS.status.successDark,
+                    color: theme.mode === 'dark' ? '#10b981' : COLORS.status.successDark,
                     fontSize: 14,
                     fontWeight: '600',
                   }}
@@ -635,7 +652,13 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                   {t('profile.personal_info.profile_complete')}
                 </Text>
               </View>
-              <Text style={{ color: COLORS.status.successDark, fontSize: 12, marginTop: 4 }}>
+              <Text
+                style={{
+                  color: theme.mode === 'dark' ? '#10b981' : COLORS.status.successDark,
+                  fontSize: 12,
+                  marginTop: 4,
+                }}
+              >
                 {t('profile.personal_info.profile_complete_description')}
               </Text>
             </View>
@@ -647,16 +670,32 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               value={form.full_name}
               onChangeText={(t) => update('full_name', t)}
               placeholder={t('profile.personal_info.full_name_placeholder')}
-              style={styles.input}
-              placeholderTextColor="#666"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.card,
+                  color: theme.colors.text,
+                  borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                },
+              ]}
+              placeholderTextColor={theme.colors.textMuted}
             />
           </Field>
 
           {/* Fecha de Nacimiento + Edad */}
           <Field label={t('profile.personal_info.birth_date')}>
-            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.selectorButton}>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={[
+                styles.selectorButton,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                },
+              ]}
+            >
               <Ionicons name="calendar" size={18} color="#6366F1" />
-              <Text style={styles.selectorText}>
+              <Text style={[styles.selectorText, { color: theme.colors.text }]}>
                 {form.birth_date
                   ? form.birth_date.toLocaleDateString('es-ES', {
                       day: '2-digit',
@@ -667,7 +706,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               </Text>
             </TouchableOpacity>
             {age !== null && (
-              <Text style={styles.helperText}>
+              <Text style={[styles.helperText, { color: '#6366F1' }]}>
                 {t('profile.personal_info.age_years', { years: age })}
               </Text>
             )}
@@ -677,9 +716,15 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
           <Field label={t('profile.personal_info.gender')}>
             <TouchableOpacity
               onPress={() => setShowGenderPicker(true)}
-              style={styles.selectorButton}
+              style={[
+                styles.selectorButton,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                },
+              ]}
             >
-              <Text style={styles.selectorText}>
+              <Text style={[styles.selectorText, { color: theme.colors.text }]}>
                 {gender ? genderLabel(gender) : t('profile.personal_info.gender_placeholder')}
               </Text>
               <Ionicons name="chevron-down" size={18} color="#6366F1" />
@@ -696,9 +741,15 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 console.log('🌍 Currently selected country:', form.country);
                 setShowCountryPicker(true);
               }}
-              style={styles.selectorButton}
+              style={[
+                styles.selectorButton,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                },
+              ]}
             >
-              <Text style={styles.selectorText}>
+              <Text style={[styles.selectorText, { color: theme.colors.text }]}>
                 {form.country
                   ? countries.find((c) => c.country_code === form.country)?.country_name ||
                     form.country
@@ -721,10 +772,18 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                   value={form.city_state}
                   onChangeText={(t) => update('city_state', t)}
                   placeholder={t('profile.personal_info.city_picker.manual_entry_placeholder')}
-                  style={styles.input}
-                  placeholderTextColor="#666"
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.colors.card,
+                      color: theme.colors.text,
+                      borderColor:
+                        theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    },
+                  ]}
+                  placeholderTextColor={theme.colors.textMuted}
                 />
-                <Text style={[styles.helperText, { color: '#6b7280' }]}>
+                <Text style={[styles.helperText, { color: theme.colors.textMuted }]}>
                   {t('profile.personal_info.city_picker.manual_entry_helper')}
                 </Text>
               </View>
@@ -742,10 +801,15 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 }}
                 style={[
                   styles.selectorButton,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  },
                   (!form.country || citiesLoading) && { opacity: 0.6 },
                 ]}
               >
-                <Text style={styles.selectorText}>
+                <Text style={[styles.selectorText, { color: theme.colors.text }]}>
                   {form.city_state ||
                     (!form.country
                       ? t('profile.personal_info.select_country_first')
@@ -769,19 +833,29 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               !citiesLoading &&
               !citiesError &&
               !supportsManualEntry && (
-                <Text style={[styles.helperText, { color: '#6b7280' }]}>
+                <Text style={[styles.helperText, { color: theme.colors.textMuted }]}>
                   {t('profile.personal_info.city_picker.loading_from_server')}
                 </Text>
               )}
             {hasApiData && (
-              <Text style={[styles.helperText, { color: '#10B981' }]}>
+              <Text
+                style={[
+                  styles.helperText,
+                  { color: theme.mode === 'dark' ? '#10b981' : '#10B981' },
+                ]}
+              >
                 {t('profile.personal_info.city_picker.api_data_available', {
                   count: cities.length,
                 })}
               </Text>
             )}
             {!hasApiData && cities.length > 0 && (
-              <Text style={[styles.helperText, { color: '#F59E0B' }]}>
+              <Text
+                style={[
+                  styles.helperText,
+                  { color: theme.mode === 'dark' ? '#f59e0b' : '#F59E0B' },
+                ]}
+              >
                 {t('profile.personal_info.city_picker.local_data', { count: cities.length })}
               </Text>
             )}
@@ -793,12 +867,21 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               value={form.address}
               onChangeText={(t) => update('address', t)}
               placeholder={t('profile.personal_info.address_placeholder')}
-              style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.card,
+                  color: theme.colors.text,
+                  borderColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                  height: 90,
+                  textAlignVertical: 'top',
+                },
+              ]}
               multiline
-              placeholderTextColor="#666"
+              placeholderTextColor={theme.colors.textMuted}
             />
             {addressCoords && (
-              <Text style={styles.helperText}>
+              <Text style={[styles.helperText, { color: theme.colors.textMuted }]}>
                 Lat: {addressCoords.lat.toFixed(5)} Lng: {addressCoords.lng.toFixed(5)}
               </Text>
             )}
@@ -815,7 +898,8 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     maxWidth: 85,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backgroundColor: '#EEF2FF',
+                    backgroundColor: theme.mode === 'dark' ? 'rgba(99,102,241,0.2)' : '#EEF2FF',
+                    borderColor: theme.mode === 'dark' ? 'rgba(99,102,241,0.3)' : 'rgba(0,0,0,0.1)',
                     paddingHorizontal: 8,
                   },
                 ]}
@@ -824,7 +908,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                   style={{
                     fontSize: 14,
                     fontWeight: '600',
-                    color: form.country_code ? '#6366F1' : '#666',
+                    color: form.country_code ? '#6366F1' : theme.colors.textMuted,
                     textAlign: 'center',
                   }}
                 >
@@ -832,12 +916,21 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 </Text>
               </View>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.card,
+                    color: theme.colors.text,
+                    borderColor:
+                      theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    flex: 1,
+                  },
+                ]}
                 value={form.mobile_phone}
                 onChangeText={(t) => update('mobile_phone', t.replace(/[^0-9\s]/g, ''))}
                 placeholder={t('profile.personal_info.mobile_phone_placeholder')}
                 keyboardType="phone-pad"
-                placeholderTextColor="#666"
+                placeholderTextColor={theme.colors.textMuted}
                 editable={!!form.country_code}
               />
             </View>
@@ -937,12 +1030,19 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
         {/* Gender Picker */}
         {showGenderPicker && (
           <View style={styles.overlay}>
-            <View style={styles.pickerSheetLarge}>
-              <View style={styles.sheetHeader}>
+            <View style={[styles.pickerSheetLarge, { backgroundColor: theme.colors.card }]}>
+              <View
+                style={[
+                  styles.sheetHeader,
+                  {
+                    borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#E5E7EB',
+                  },
+                ]}
+              >
                 <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
                   <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>
+                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>
                   {t('profile.personal_info.gender_picker.title')}
                 </Text>
                 <View style={{ width: 60 }} />
@@ -951,7 +1051,19 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 {genderOptions.map((g) => (
                   <TouchableOpacity
                     key={g.value}
-                    style={[styles.option, gender === g.value && styles.optionSelected]}
+                    style={[
+                      styles.option,
+                      {
+                        backgroundColor: theme.colors.card,
+                        borderColor:
+                          gender === g.value
+                            ? '#6366F1'
+                            : theme.mode === 'dark'
+                              ? 'rgba(255,255,255,0.2)'
+                              : '#E5E7EB',
+                      },
+                      gender === g.value && { borderWidth: 2 },
+                    ]}
                     onPress={() => {
                       setGender(g.value);
                       setShowGenderPicker(false);
@@ -959,7 +1071,10 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                   >
                     <Text style={styles.optionIcon}>{g.icon}</Text>
                     <Text
-                      style={[styles.optionText, gender === g.value && styles.optionTextSelected]}
+                      style={[
+                        styles.optionText,
+                        { color: gender === g.value ? '#6366F1' : theme.colors.text },
+                      ]}
                     >
                       {t(g.label)}
                     </Text>
@@ -974,8 +1089,15 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
         {/* Country Picker */}
         {showCountryPicker && (
           <View style={styles.overlay}>
-            <View style={styles.pickerSheetLarge}>
-              <View style={styles.sheetHeader}>
+            <View style={[styles.pickerSheetLarge, { backgroundColor: theme.colors.card }]}>
+              <View
+                style={[
+                  styles.sheetHeader,
+                  {
+                    borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#E5E7EB',
+                  },
+                ]}
+              >
                 <TouchableOpacity
                   onPress={() => {
                     setShowCountryPicker(false);
@@ -984,7 +1106,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 >
                   <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>
+                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>
                   {t('profile.personal_info.country_picker.title')}
                 </Text>
                 <View style={{ width: 60 }} />
@@ -997,15 +1119,25 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                   paddingTop: 10,
                   paddingBottom: 10,
                   borderBottomWidth: 1,
-                  borderBottomColor: '#E5E7EB',
+                  borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#E5E7EB',
                 }}
               >
                 <TextInput
                   value={countrySearchQuery}
                   onChangeText={setCountrySearchQuery}
                   placeholder={t('profile.personal_info.country_picker.search_placeholder')}
-                  style={[styles.input, { marginBottom: 0, fontSize: 14 }]}
-                  placeholderTextColor="#666"
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.colors.card,
+                      color: theme.colors.text,
+                      borderColor:
+                        theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                      marginBottom: 0,
+                      fontSize: 14,
+                    },
+                  ]}
+                  placeholderTextColor={theme.colors.textMuted}
                   autoFocus={false}
                 />
               </View>
@@ -1013,7 +1145,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
               <ScrollView style={{ paddingHorizontal: 20 }}>
                 {filteredCountries.length === 0 ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                    <Text style={{ color: '#6b7280' }}>
+                    <Text style={{ color: theme.colors.textMuted }}>
                       {t('profile.personal_info.country_picker.no_results')}
                     </Text>
                   </View>
@@ -1023,7 +1155,16 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       key={c.country_code}
                       style={[
                         styles.option,
-                        form.country === c.country_code && styles.optionSelected,
+                        {
+                          backgroundColor: theme.colors.card,
+                          borderColor:
+                            form.country === c.country_code
+                              ? '#6366F1'
+                              : theme.mode === 'dark'
+                                ? 'rgba(255,255,255,0.2)'
+                                : '#E5E7EB',
+                        },
+                        form.country === c.country_code && { borderWidth: 2 },
                       ]}
                       onPress={() => {
                         console.log('🌍 Country selected:', c.country_name, c.country_code);
@@ -1047,12 +1188,17 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                         <Text
                           style={[
                             styles.optionText,
-                            form.country === c.country_code && styles.optionTextSelected,
+                            {
+                              color:
+                                form.country === c.country_code ? '#6366F1' : theme.colors.text,
+                            },
                           ]}
                         >
                           {c.country_name}
                         </Text>
-                        <Text style={{ fontSize: 12, color: '#6b7280' }}>{c.phone_code}</Text>
+                        <Text style={{ fontSize: 12, color: theme.colors.textMuted }}>
+                          {c.phone_code}
+                        </Text>
                       </View>
                       {form.country === c.country_code && (
                         <Ionicons name="checkmark" size={18} color="#6366F1" />
@@ -1068,8 +1214,15 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
         {/* City Picker */}
         {showCityPicker && (
           <View style={styles.overlay}>
-            <View style={styles.pickerSheetLarge}>
-              <View style={styles.sheetHeader}>
+            <View style={[styles.pickerSheetLarge, { backgroundColor: theme.colors.card }]}>
+              <View
+                style={[
+                  styles.sheetHeader,
+                  {
+                    borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#E5E7EB',
+                  },
+                ]}
+              >
                 <TouchableOpacity
                   onPress={() => {
                     setShowCityPicker(false);
@@ -1078,7 +1231,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 >
                   <Text style={styles.cancel}>{t('profile.personal_info.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.sheetTitle}>
+                <Text style={[styles.sheetTitle, { color: theme.colors.text }]}>
                   {t('profile.personal_info.city_picker.title')}
                 </Text>
                 <View style={{ width: 60 }} />
@@ -1092,7 +1245,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                     paddingTop: 10,
                     paddingBottom: 10,
                     borderBottomWidth: 1,
-                    borderBottomColor: '#E5E7EB',
+                    borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#E5E7EB',
                   }}
                 >
                   <TextInput
@@ -1102,12 +1255,24 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       searchCities(text);
                     }}
                     placeholder={t('profile.personal_info.city_picker.search_placeholder')}
-                    style={[styles.input, { marginBottom: 0, fontSize: 14 }]}
-                    placeholderTextColor="#666"
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: theme.colors.card,
+                        color: theme.colors.text,
+                        borderColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                        marginBottom: 0,
+                        fontSize: 14,
+                      },
+                    ]}
+                    placeholderTextColor={theme.colors.textMuted}
                     autoFocus={false}
                   />
                   {citySearchQuery.length > 0 && (
-                    <Text style={[styles.helperText, { marginTop: 4, color: '#6b7280' }]}>
+                    <Text
+                      style={[styles.helperText, { marginTop: 4, color: theme.colors.textMuted }]}
+                    >
                       {t('profile.personal_info.city_picker.showing_results', {
                         query: citySearchQuery,
                       })}
@@ -1120,15 +1285,24 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                 {citiesLoading ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#6366F1" />
-                    <Text style={{ color: '#6b7280', marginTop: 10 }}>
+                    <Text style={{ color: theme.colors.textMuted, marginTop: 10 }}>
                       {t('profile.personal_info.loading_cities')}
                     </Text>
                   </View>
                 ) : cities.length === 0 ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                    <Ionicons name="location-outline" size={48} color="#D1D5DB" />
+                    <Ionicons
+                      name="location-outline"
+                      size={48}
+                      color={theme.mode === 'dark' ? 'rgba(255,255,255,0.3)' : '#D1D5DB'}
+                    />
                     <Text
-                      style={{ color: '#6b7280', textAlign: 'center', marginTop: 12, fontSize: 16 }}
+                      style={{
+                        color: theme.colors.textMuted,
+                        textAlign: 'center',
+                        marginTop: 12,
+                        fontSize: 16,
+                      }}
                     >
                       {citySearchQuery.length > 0
                         ? t('profile.personal_info.city_picker.no_results_query', {
@@ -1142,7 +1316,8 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                           marginTop: 16,
                           paddingHorizontal: 20,
                           paddingVertical: 8,
-                          backgroundColor: '#F3F4F6',
+                          backgroundColor:
+                            theme.mode === 'dark' ? 'rgba(99,102,241,0.2)' : '#F3F4F6',
                           borderRadius: 8,
                         }}
                         onPress={() => {
@@ -1156,7 +1331,12 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       </TouchableOpacity>
                     )}
                     <Text
-                      style={{ color: '#9CA3AF', textAlign: 'center', marginTop: 8, fontSize: 12 }}
+                      style={{
+                        color: theme.mode === 'dark' ? 'rgba(255,255,255,0.4)' : '#9CA3AF',
+                        textAlign: 'center',
+                        marginTop: 8,
+                        fontSize: 12,
+                      }}
                     >
                       {t('profile.personal_info.city_picker.check_connection')}
                     </Text>
@@ -1168,11 +1348,14 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       style={{
                         paddingVertical: 12,
                         borderBottomWidth: 1,
-                        borderBottomColor: '#F3F4F6',
+                        borderBottomColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#F3F4F6',
                         marginBottom: 8,
                       }}
                     >
-                      <Text style={{ fontSize: 12, color: '#6b7280', textAlign: 'center' }}>
+                      <Text
+                        style={{ fontSize: 12, color: theme.colors.textMuted, textAlign: 'center' }}
+                      >
                         {hasApiData
                           ? t('profile.personal_info.city_picker.api_data_available', {
                               count: cities.length,
@@ -1184,7 +1367,7 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                       <Text
                         style={{
                           fontSize: 10,
-                          color: '#9CA3AF',
+                          color: theme.mode === 'dark' ? 'rgba(255,255,255,0.4)' : '#9CA3AF',
                           textAlign: 'center',
                           marginTop: 4,
                         }}
@@ -1237,12 +1420,14 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
                             <View style={{ padding: 16, alignItems: 'center' }}>
                               <TouchableOpacity
                                 style={{
-                                  backgroundColor: '#F3F4F6',
+                                  backgroundColor:
+                                    theme.mode === 'dark' ? 'rgba(99,102,241,0.2)' : '#F3F4F6',
                                   paddingHorizontal: 16,
                                   paddingVertical: 8,
                                   borderRadius: 6,
                                   borderWidth: 1,
-                                  borderColor: '#E5E7EB',
+                                  borderColor:
+                                    theme.mode === 'dark' ? 'rgba(99,102,241,0.3)' : '#E5E7EB',
                                 }}
                                 onPress={loadMoreCities}
                               >
@@ -1269,37 +1454,36 @@ export const PersonalInfoEditModal: React.FC<Props> = ({
   );
 };
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <View style={{ marginBottom: 24 }}>
-    <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
-      {label}
-    </Text>
-    {children}
-  </View>
-);
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => {
+  const theme = useTheme();
+  return (
+    <View style={{ marginBottom: 24 }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: theme.colors.text, marginBottom: 8 }}>
+        {label}
+      </Text>
+      {children}
+    </View>
+  );
+};
 
 const styles = {
   input: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
   },
   selectorButton: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
   },
-  selectorText: { flex: 1, marginLeft: 8, fontSize: 16, color: '#1f2937' },
-  helperText: { marginTop: 6, fontSize: 12, color: '#6366F1', fontWeight: '500' as const },
+  selectorText: { flex: 1, marginLeft: 8, fontSize: 16 },
+  helperText: { marginTop: 6, fontSize: 12, fontWeight: '500' as const },
   overlay: {
     position: 'absolute' as const,
     top: 0,
@@ -1309,9 +1493,8 @@ const styles = {
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end' as const,
   },
-  pickerSheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  pickerSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   pickerSheetLarge: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: 0.7 * 800,
@@ -1325,25 +1508,22 @@ const styles = {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  sheetTitle: { fontSize: 16, fontWeight: '600' as const, color: '#1f2937' },
-  cancel: { fontSize: 16, color: '#6366F1' },
-  done: { fontSize: 16, color: '#6366F1', fontWeight: '600' as const },
+  sheetTitle: { fontSize: 16, fontWeight: '600' as const },
+  cancel: { fontSize: 16 },
+  done: { fontSize: 16, fontWeight: '600' as const },
   option: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
-  optionSelected: { backgroundColor: '#F0F4FF', borderColor: '#6366F1' },
+  optionSelected: { borderWidth: 2 },
   optionIcon: { fontSize: 20, marginRight: 12 },
-  optionText: { flex: 1, fontSize: 16, color: '#1f2937' },
-  optionTextSelected: { color: '#6366F1', fontWeight: '600' as const },
+  optionText: { flex: 1, fontSize: 16 },
+  optionTextSelected: { fontWeight: '600' as const },
 };
 
 export default PersonalInfoEditModal;

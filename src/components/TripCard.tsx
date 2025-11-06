@@ -716,6 +716,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
         backgroundColor: theme.colors.card,
         borderRadius: 24,
         overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: '#007AFF',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
