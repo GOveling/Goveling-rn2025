@@ -168,10 +168,20 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* General Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
-              {t('settings.general')}
-            </Text>
+          <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+            <View
+              style={[
+                styles.sectionTitleContainer,
+                {
+                  backgroundColor:
+                    theme.mode === 'dark' ? 'rgba(96, 165, 250, 0.15)' : 'rgba(249, 250, 251, 1)',
+                },
+              ]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
+                {t('settings.general')}
+              </Text>
+            </View>
 
             {/* Language */}
             <TouchableOpacity
@@ -255,10 +265,20 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
           </View>
 
           {/* Notifications Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
-              {t('settings.notifications')}
-            </Text>
+          <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+            <View
+              style={[
+                styles.sectionTitleContainer,
+                {
+                  backgroundColor:
+                    theme.mode === 'dark' ? 'rgba(96, 165, 250, 0.15)' : 'rgba(249, 250, 251, 1)',
+                },
+              ]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
+                {t('settings.notifications')}
+              </Text>
+            </View>
 
             <View
               style={[
@@ -379,8 +399,20 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
           </View>
 
           {/* Privacy Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>PRIVACIDAD</Text>
+          <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+            <View
+              style={[
+                styles.sectionTitleContainer,
+                {
+                  backgroundColor:
+                    theme.mode === 'dark' ? 'rgba(96, 165, 250, 0.15)' : 'rgba(249, 250, 251, 1)',
+                },
+              ]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.textMuted }]}>
+                PRIVACIDAD
+              </Text>
+            </View>
 
             <View
               style={[
@@ -661,7 +693,6 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 24,
-    backgroundColor: '#fff',
     marginHorizontal: 20,
     borderRadius: 16,
     overflow: 'hidden',
@@ -677,13 +708,14 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  sectionTitleContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginBottom: 0,
+  },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
-    marginHorizontal: 20,
-    marginTop: 24,
-    marginBottom: 12,
     letterSpacing: 0.5,
   },
   settingItem: {
