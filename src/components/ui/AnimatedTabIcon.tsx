@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
@@ -6,6 +6,7 @@ import LottieView, { type AnimationObject } from 'lottie-react-native';
 
 import { COLORS } from '~/constants/colors';
 import { useTheme } from '~/lib/theme';
+import { colorizeLottie } from '~/utils/lottieColorizer';
 
 interface AnimatedTabIconProps {
   focused: boolean;
@@ -25,17 +26,17 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
   const lastFocusTimeRef = useRef(0);
   const theme = useTheme();
 
-  // Color filters para adaptar los Lottie al modo dark
-  // En dark mode: usamos colores claros, en light mode: colores oscuros originales
-  const colorFilters =
-    theme.mode === 'dark'
-      ? [
-          {
-            keypath: '*',
-            color: 'rgb(229, 231, 235)', // Color claro para líneas en dark mode (gray-200)
-          },
-        ]
-      : undefined; // En light mode no aplicamos filtros (usa colores originales)
+  // Colorizar la animación según el tema usando la utilidad
+  const themedSource = useMemo(() => {
+    // Si source es un AnimationObject, colorizarlo
+    if (typeof source === 'object' && 'v' in source) {
+      return colorizeLottie(
+        source as AnimationObject,
+        theme.mode === 'dark' ? '#E5E7EB' : '#000000'
+      );
+    }
+    return source;
+  }, [source, theme.mode]);
 
   useEffect(() => {
     if (focused) {
@@ -47,6 +48,11 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
       }
     }
   }, [focused]);
+
+  // Forzar re-render cuando cambia el tema
+  useEffect(() => {
+    setAnimationKey((prev) => prev + 1);
+  }, [theme.mode]);
 
   // Efecto separado para reproducir la animación cuando cambia el key
   useEffect(() => {
@@ -62,15 +68,14 @@ export const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
     <View style={styles.container}>
       <View style={[styles.animationContainer, { width: size, height: size }]}>
         <LottieView
-          key={animationKey}
+          key={`${animationKey}-${theme.mode}`}
           ref={animationRef}
-          source={source}
+          source={themedSource}
           style={styles.animation}
           loop={false}
           autoPlay={false}
           speed={1}
           resizeMode="contain"
-          colorFilters={colorFilters}
         />
       </View>
       <Text

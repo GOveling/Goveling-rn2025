@@ -32,6 +32,7 @@ import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useTheme } from '../lib/theme';
 import { useFavorites } from '../lib/useFavorites';
+import { colorizeLottie } from '../utils/lottieColorizer';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -76,6 +77,32 @@ export default function PlaceDetailModal({
   const locationLottieRef = React.useRef<LottieView>(null);
   const websiteLottieRef = React.useRef<LottieView>(null);
   const scheduleLottieRef = React.useRef<LottieView>(null);
+
+  // Colorizar las animaciones Lottie según el tema
+  const themedCycleAnimation = React.useMemo(
+    () =>
+      colorizeLottie(
+        cycleAnimation as AnimationObject,
+        theme.mode === 'dark' ? '#FFFFFF' : '#000000'
+      ),
+    [theme.mode]
+  );
+  const themedLocationAnimation = React.useMemo(
+    () =>
+      colorizeLottie(
+        locationCircleAnimation as AnimationObject,
+        theme.mode === 'dark' ? '#FFFFFF' : '#000000'
+      ),
+    [theme.mode]
+  );
+  const themedGlobeAnimation = React.useMemo(
+    () =>
+      colorizeLottie(
+        globeAnimation as AnimationObject,
+        theme.mode === 'dark' ? '#FFFFFF' : '#000000'
+      ),
+    [theme.mode]
+  );
 
   // Reset selected photo when place changes
   React.useEffect(() => {
@@ -684,7 +711,7 @@ export default function PlaceDetailModal({
                 >
                   {renderActionIcon(
                     directionsLottieRef,
-                    cycleAnimation,
+                    themedCycleAnimation,
                     '🚴‍♂️', // Emoji de fallback para direcciones
                     directionsLottieError,
                     setDirectionsLottieError
@@ -704,7 +731,7 @@ export default function PlaceDetailModal({
                 >
                   {renderActionIcon(
                     locationLottieRef,
-                    locationCircleAnimation,
+                    themedLocationAnimation,
                     '📍', // Emoji de fallback para ubicación
                     locationLottieError,
                     setLocationLottieError,
@@ -731,7 +758,7 @@ export default function PlaceDetailModal({
                 >
                   {renderActionIcon(
                     websiteLottieRef,
-                    globeAnimation,
+                    themedGlobeAnimation,
                     '🌐', // Emoji de fallback para sitio web
                     websiteLottieError,
                     setWebsiteLottieError,

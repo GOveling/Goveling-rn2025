@@ -1,8 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 
 import { TouchableOpacity, StyleSheet, View, Platform } from 'react-native';
 
-import LottieView from 'lottie-react-native';
+import LottieView, { AnimationObject } from 'lottie-react-native';
+
+import locationCircleAnimation from '../../assets/animations/location-circle.json';
+import { useTheme } from '../lib/theme';
+import { colorizeLottie } from '../utils/lottieColorizer';
 
 interface LocationButtonProps {
   onLocationPress: () => void;
@@ -17,6 +21,17 @@ export default function LocationButton({
 }: LocationButtonProps) {
   const animationRef = useRef<LottieView>(null);
   const [isPressed, setIsPressed] = useState(false);
+  const theme = useTheme();
+
+  // Colorizar la animación según el tema
+  const themedAnimation = useMemo(
+    () =>
+      colorizeLottie(
+        locationCircleAnimation as AnimationObject,
+        theme.mode === 'dark' ? '#FFFFFF' : '#000000'
+      ),
+    [theme.mode]
+  );
 
   const handlePress = () => {
     // Trigger animation
@@ -36,7 +51,7 @@ export default function LocationButton({
       <View style={[styles.button, isActive && styles.activeButton]}>
         <LottieView
           ref={animationRef}
-          source={require('../../assets/animations/location-circle.json')}
+          source={themedAnimation}
           style={styles.lottie}
           autoPlay={isActive}
           loop={isActive}
