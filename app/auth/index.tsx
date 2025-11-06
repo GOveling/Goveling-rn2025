@@ -380,7 +380,7 @@ export default function AuthScreen() {
                     isDark ? styles.switchTextDark : styles.switchTextLight,
                   ]}
                 >
-                  {mode === 'signup' ? 'Already have an account? ' : 'Don&apos;t have an account? '}
+                  {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
                 </Text>
                 <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
                   <Text style={[styles.switchLink, isDark ? styles.linkDark : styles.linkLight]}>

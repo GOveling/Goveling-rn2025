@@ -12,19 +12,13 @@
       "favicon": "./assets/icon.png"
     },
     "splash": {
-      "image": "./assets/branding-zeppeling.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#f5f5f5"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "scheme": "goveling",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "plugins": [
       "expo-router",
       "expo-localization",
@@ -44,11 +38,7 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "UIBackgroundModes": [
-          "location",
-          "fetch",
-          "remote-notification"
-        ],
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
         "NSLocationWhenInUseUsageDescription": "Esta app necesita acceso a tu ubicación para mostrar lugares cercanos y direcciones.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Esta app necesita acceso a tu ubicación para mostrar lugares cercanos y direcciones.",
         "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para tomar fotos.",

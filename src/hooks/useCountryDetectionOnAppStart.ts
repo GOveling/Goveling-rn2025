@@ -184,9 +184,17 @@ export function useCountryDetectionOnAppStart() {
     try {
       console.log('🚀 App launched - detecting country...');
 
+      // ✅ CHECK LOCATION PERMISSIONS FIRST
+      const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
+
+      if (foregroundStatus !== 'granted') {
+        console.log('📍 Location permission not granted yet, skipping detection');
+        setState((prev) => ({ ...prev, isDetecting: false }));
+        return;
+      }
+
       // Get location with 3 retry attempts
       let location: Location.LocationObject | null = null;
-      let lastError: Error | null = null;
 
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
@@ -217,39 +225,36 @@ export function useCountryDetectionOnAppStart() {
           break; // Success
         } catch (error1) {
           console.warn(`❌ Location attempt ${attempt} failed:`, error1);
-          lastError = error1;
 
           // Try again with lower accuracy
           if (attempt === 2) {
             try {
-              console.log('� Retrying with Balanced accuracy...');
+              console.log('🔄 Retrying with Balanced accuracy...');
               location = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.Balanced,
               });
               break;
             } catch (error2) {
               console.error('❌ Balanced accuracy also failed:', error2);
-              lastError = error2;
             }
           }
 
           if (attempt === 3) {
             try {
-              console.log('� Final attempt with Low accuracy...');
+              console.log('🔄 Final attempt with Low accuracy...');
               location = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.Low,
               });
               break;
             } catch (error3) {
               console.error('❌ All location attempts failed:', error3);
-              lastError = error3;
             }
           }
         }
       }
 
       if (!location) {
-        console.error('❌ Could not get location after 3 attempts. Last error:', lastError);
+        console.log('📍 Could not get location (likely permissions not granted yet)');
         setState((prev) => ({ ...prev, isDetecting: false }));
         return;
       }
