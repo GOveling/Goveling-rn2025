@@ -228,6 +228,13 @@ serve(async (req) => {
   try {
     const body = (await req.json()) as Payload;
 
+    console.log('📥 Request received:', {
+      origin: body.origin,
+      destination: body.destination,
+      mode: body.mode,
+      language: body.language,
+    });
+
     // Validar inputs
     if (
       !body.origin ||
@@ -235,10 +242,46 @@ serve(async (req) => {
       !Array.isArray(body.origin) ||
       !Array.isArray(body.destination)
     ) {
+      console.error('❌ Invalid input:', { body });
       return new Response(JSON.stringify({ ok: false, error: 'INVALID_INPUT' }), {
         status: 400,
         headers: corsHeaders,
       });
+    }
+
+    // Validar coordenadas numéricas válidas
+    const [originLng, originLat] = body.origin;
+    const [destLng, destLat] = body.destination;
+
+    if (
+      typeof originLng !== 'number' ||
+      typeof originLat !== 'number' ||
+      typeof destLng !== 'number' ||
+      typeof destLat !== 'number' ||
+      isNaN(originLng) ||
+      isNaN(originLat) ||
+      isNaN(destLng) ||
+      isNaN(destLat) ||
+      originLat < -90 ||
+      originLat > 90 ||
+      destLat < -90 ||
+      destLat > 90 ||
+      originLng < -180 ||
+      originLng > 180 ||
+      destLng < -180 ||
+      destLng > 180
+    ) {
+      console.error('❌ Invalid coordinates:', {
+        origin: [originLng, originLat],
+        destination: [destLng, destLat],
+      });
+      return new Response(
+        JSON.stringify({ ok: false, error: 'INVALID_COORDINATES', details: { body } }),
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
     }
 
     const mode = body.mode || 'walking';
@@ -299,18 +342,31 @@ serve(async (req) => {
       const detourFactor = routeDistance / straightDistance;
 
       console.log('📊 Route quality check:', {
+        mode,
         straight_km: straightDistance.toFixed(2),
         route_km: routeDistance.toFixed(2),
         detour_factor: detourFactor.toFixed(2),
       });
 
-      // Validar calidad de la ruta OSRM
-      // Para rutas MUY CORTAS (<1km), siempre usar OSRM (el detour factor puede ser engañoso)
-      // Para rutas medianas/largas, validar si el desvío es razonable
-      const needsBetterRoute =
-        routeDistance > 1 && // Solo validar si la ruta es >1km
-        ((straightDistance > 10 && detourFactor > 3) || // Ruta larga con desvío alto
-          detourFactor > 5); // Desvío extremo
+      // ===== POLÍTICA DE FALLBACK POR MODO =====
+      // WALKING & CYCLING: Solo usar ORS si OSRM falla completamente (más permisivo)
+      // DRIVING: Validar calidad y usar ORS si la ruta es mala (más restrictivo)
+
+      const isNonMotorized = mode === 'walking' || mode === 'cycling';
+      let needsBetterRoute = false;
+
+      if (isNonMotorized) {
+        // Para caminar/bicicleta: SIEMPRE usar OSRM si devuelve una ruta
+        // Solo caer a ORS si OSRM falla completamente
+        console.log('🚶‍♂️🚴 Non-motorized mode: Using OSRM route (restrictive ORS policy)');
+        needsBetterRoute = false;
+      } else {
+        // Para conducir: Validar calidad de la ruta
+        needsBetterRoute =
+          routeDistance > 1 && // Solo validar si la ruta es >1km
+          ((straightDistance > 10 && detourFactor > 3) || // Ruta larga con desvío alto
+            detourFactor > 5); // Desvío extremo
+      }
 
       if (needsBetterRoute) {
         console.log(
@@ -318,8 +374,8 @@ serve(async (req) => {
         );
         // NO hacer return aquí - continuar al fallback ORS abajo
       } else {
-        // OSRM es buena calidad (o muy corta), guardar en cache y retornar
-        console.log('✅ OSRM route quality is good, using it');
+        // OSRM es buena calidad (o modo no motorizado), guardar en cache y retornar
+        console.log('✅ OSRM route is acceptable, using it');
         cache.set(cacheKey, {
           data: osrmResult,
           timestamp: Date.now(),

@@ -1,5 +1,23 @@
 # Sistema de Ruteo Inteligente - Explicación Técnica
 
+## ⚡ Actualizaciones Recientes (7 nov 2025)
+
+### 🎯 Nueva Política de Fallback por Modo
+- **Walking & Cycling**: SIEMPRE usa OSRM (ORS solo si OSRM falla completamente)
+- **Driving**: Mantiene validación de calidad (detour factor)
+- **Objetivo**: Costo $0 para rutas a pie y bicicleta
+
+### 🔄 Recalculación Dinámica
+- Nueva función `recalculateRoute()` en cliente
+- Permite actualizar rutas mientras el usuario se mueve
+- Detección automática de desviación
+- Hook `useRouteNavigation` con navegación completa
+- 100% OSRM para walking/cycling = recalculaciones ilimitadas gratis
+
+Ver: `DYNAMIC_ROUTE_RECALCULATION.md` para detalles completos
+
+---
+
 ## Resumen Ejecutivo
 
 El sistema utiliza **OSRM (gratuito)** como motor principal y **OpenRouteService (ORS)** como fallback de calidad, con validación inteligente de rutas basada en el factor de desvío.

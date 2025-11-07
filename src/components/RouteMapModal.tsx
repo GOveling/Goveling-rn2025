@@ -1,5 +1,5 @@
 // src/components/RouteMapModal.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 import {
   View,
@@ -22,7 +22,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import MapView, { Polyline, Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 
+import { useRouteNavigation } from '../hooks/useRouteNavigation';
 import { useTheme } from '../lib/theme';
+import { RouteResult } from '../lib/useDirections';
 import { useDistanceUnit } from '../utils/units';
 
 const { height } = Dimensions.get('window');
@@ -44,27 +46,31 @@ interface RouteMapModalProps {
     name?: string;
   }>;
   destinationName: string;
+  destination?: { lat: number; lng: number }; // For route recalculation
+  source?: 'osrm' | 'ors'; // Routing engine used
 }
 
 export default function RouteMapModal({
   visible,
   onClose,
-  coordinates,
-  bbox,
-  distance_m,
-  duration_s,
+  coordinates: initialCoordinates,
+  bbox: initialBbox,
+  distance_m: initialDistance,
+  duration_s: initialDuration,
   mode,
-  steps,
+  steps: initialSteps,
   destinationName,
+  destination,
+  source: initialSource,
 }: RouteMapModalProps) {
   console.log(
     '🗺️🗺️🗺️ [RouteMapModal] RENDER - visible:',
     visible,
     'coordinates:',
-    coordinates?.length
+    initialCoordinates?.length
   );
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const distance = useDistanceUnit();
 
@@ -72,17 +78,113 @@ export default function RouteMapModal({
   const [showSteps, setShowSteps] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [userLocation, setUserLocation] = useState<{
-    latitude: number;
-    longitude: number;
-    heading: number;
-  } | null>(null);
   const [distanceToNextStep, setDistanceToNextStep] = useState<number | null>(null);
 
   const bottomSheetHeight = useRef(new Animated.Value(120)).current;
   const mapOpacity = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<MapView>(null);
-  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+
+  // ===== NAVEGACIÓN AUTOMÁTICA CON RECALCULACIÓN =====
+  const initialRoute: RouteResult = useMemo(
+    () => ({
+      mode: mode as 'walking' | 'cycling' | 'driving',
+      distance_m: initialDistance,
+      duration_s: initialDuration,
+      coords: initialCoordinates,
+      bbox: initialBbox,
+      steps: initialSteps,
+      source: initialSource,
+    }),
+    [
+      mode,
+      initialDistance,
+      initialDuration,
+      initialCoordinates,
+      initialBbox,
+      initialSteps,
+      initialSource,
+    ]
+  );
+
+  // Solo activar navegación si hay destino y está en modo navegación
+  const {
+    route: currentRoute,
+    userLocation: navUserLocation,
+    isRecalculating,
+    distanceToDestination,
+    isOffRoute,
+    recalculationCount,
+    forceRecalculation,
+  } = useRouteNavigation({
+    initialRoute,
+    destination: destination || {
+      lat: initialCoordinates[initialCoordinates.length - 1][1],
+      lng: initialCoordinates[initialCoordinates.length - 1][0],
+    },
+    mode: mode as 'walking' | 'cycling' | 'driving',
+    language: i18n.language,
+    onRouteUpdate: (newRoute) => {
+      console.log('✅ [RouteMapModal] Route updated:', {
+        oldDistance: `${(initialDistance / 1000).toFixed(2)}km`,
+        newDistance: `${(newRoute.distance_m / 1000).toFixed(2)}km`,
+        source: newRoute.source,
+      });
+
+      // Ajustar mapa a nueva ruta
+      if (mapRef.current && newRoute.bbox) {
+        const [minLng, minLat, maxLng, maxLat] = newRoute.bbox;
+        mapRef.current.fitToCoordinates(
+          [
+            { latitude: minLat, longitude: minLng },
+            { latitude: maxLat, longitude: maxLng },
+          ],
+          {
+            edgePadding: { top: 100, right: 50, bottom: 350, left: 50 },
+            animated: true,
+          }
+        );
+      }
+    },
+    onDeviation: (deviationDistance) => {
+      console.log('⚠️ [RouteMapModal] User off route:', {
+        deviation: `${deviationDistance.toFixed(1)}m`,
+      });
+
+      // Mostrar alerta solo la primera vez
+      if (!isOffRoute) {
+        Alert.alert(
+          t('route.off_route_title') || 'Fuera de ruta',
+          t('route.off_route_message') ||
+            `Te has desviado ${deviationDistance.toFixed(0)}m. Recalculando ruta...`,
+          [{ text: 'OK' }]
+        );
+      }
+    },
+    onArrival: () => {
+      console.log('🎉 [RouteMapModal] Arrived at destination');
+      Alert.alert(
+        t('route.arrived_title') || '¡Has llegado!',
+        t('route.arrived_message') || `Has alcanzado ${destinationName}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setIsNavigating(false);
+              onClose();
+            },
+          },
+        ]
+      );
+    },
+  });
+
+  // Usar ruta actual del hook (puede haber sido recalculada)
+  const coordinates = currentRoute.coords;
+  const bbox = currentRoute.bbox;
+  const distance_m = currentRoute.distance_m;
+  const duration_s = currentRoute.duration_s;
+  const steps = currentRoute.steps;
+  const routingSource = currentRoute.source;
 
   useEffect(() => {
     if (visible) {
@@ -243,77 +345,52 @@ export default function RouteMapModal({
         );
       }
 
-      // Iniciar tracking de ubicación en tiempo real
-      locationSubscription.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 1000, // Actualizar cada segundo
-          distanceInterval: 5, // O cada 5 metros
-        },
-        (location) => {
-          const { latitude, longitude, heading } = location.coords;
-
-          setUserLocation({
-            latitude,
-            longitude,
-            heading: heading || 0,
-          });
-
-          // Encontrar posición en la ruta
-          const closest = findClosestPointOnRoute(latitude, longitude);
-
-          // Determinar el paso actual basado en la posición
-          let accumulatedDistance = 0;
-          let stepIndex = 0;
-
-          for (let i = 0; i < steps.length; i++) {
-            accumulatedDistance += steps[i].distance_m;
-            // Si estamos cerca de esta parte de la ruta, es nuestro paso actual
-            if (closest.index * 10 < accumulatedDistance) {
-              stepIndex = i;
-              break;
-            }
-          }
-
-          setCurrentStepIndex(stepIndex);
-
-          // Calcular distancia al próximo paso
-          if (stepIndex < steps.length) {
-            let distToStep = 0;
-            for (let i = stepIndex; i < steps.length; i++) {
-              distToStep += steps[i].distance_m;
-            }
-            setDistanceToNextStep(distToStep - closest.distance);
-          }
-
-          // Animar la cámara para seguir al usuario con heading
-          if (mapRef.current) {
-            mapRef.current.animateCamera(
-              {
-                center: { latitude, longitude },
-                heading: heading || 0,
-                pitch: 60, // Vista 3D inclinada
-                altitude: 500, // Altura de la cámara en metros (más bajo = más zoom)
-              },
-              { duration: 500 }
-            );
-          }
-        }
-      );
+      // Nota: El tracking GPS está manejado por useRouteNavigation
+      // Solo necesitamos actualizar la cámara según la ubicación del hook
     } catch (error) {
       console.error('Error starting navigation:', error);
       Alert.alert(t('route.navigation_error'), t('route.navigation_error_message'));
     }
   };
 
+  // Actualizar cámara cuando cambie la ubicación del hook de navegación
+  useEffect(() => {
+    if (isNavigating && navUserLocation && mapRef.current) {
+      mapRef.current.animateCamera(
+        {
+          center: {
+            latitude: navUserLocation.lat,
+            longitude: navUserLocation.lng,
+          },
+          heading: 0,
+          pitch: 60, // Vista 3D inclinada
+          altitude: 500,
+        },
+        { duration: 500 }
+      );
+
+      // Encontrar paso actual basado en distancia restante
+      if (distanceToDestination) {
+        let accumulatedDistance = 0;
+        let stepIndex = 0;
+
+        for (let i = 0; i < steps.length; i++) {
+          accumulatedDistance += steps[i].distance_m;
+          if (accumulatedDistance >= distance_m - distanceToDestination) {
+            stepIndex = i;
+            break;
+          }
+        }
+
+        setCurrentStepIndex(stepIndex);
+        setDistanceToNextStep(distanceToDestination);
+      }
+    }
+  }, [navUserLocation, isNavigating, distanceToDestination, steps, distance_m]);
+
   // Detener navegación
   const stopNavigation = () => {
-    if (locationSubscription.current) {
-      locationSubscription.current.remove();
-      locationSubscription.current = null;
-    }
     setIsNavigating(false);
-    setUserLocation(null);
     setCurrentStepIndex(0);
     setDistanceToNextStep(null);
 
@@ -341,11 +418,8 @@ export default function RouteMapModal({
 
   // Limpiar al cerrar el modal
   useEffect(() => {
-    if (!visible && locationSubscription.current) {
-      locationSubscription.current.remove();
-      locationSubscription.current = null;
+    if (!visible) {
       setIsNavigating(false);
-      setUserLocation(null);
     }
   }, [visible]);
 
@@ -594,6 +668,33 @@ export default function RouteMapModal({
                     <Ionicons name="navigate" size={20} color="#FFFFFF" />
                   </TouchableOpacity>
 
+                  {/* Botón de recalculación manual */}
+                  {(mode === 'walking' || mode === 'cycling') && destination && (
+                    <TouchableOpacity
+                      onPress={forceRecalculation}
+                      disabled={isRecalculating}
+                      style={[
+                        styles.actionButtonSmall,
+                        {
+                          backgroundColor: isRecalculating
+                            ? theme.mode === 'dark'
+                              ? 'rgba(255,255,255,0.05)'
+                              : '#E5E7EB'
+                            : theme.mode === 'dark'
+                              ? 'rgba(255,255,255,0.1)'
+                              : '#F3F4F6',
+                          opacity: isRecalculating ? 0.5 : 1,
+                        },
+                      ]}
+                    >
+                      {isRecalculating ? (
+                        <Ionicons name="reload" size={20} color={getModeColor()} />
+                      ) : (
+                        <Ionicons name="refresh" size={20} color={theme.colors.text} />
+                      )}
+                    </TouchableOpacity>
+                  )}
+
                   <TouchableOpacity
                     onPress={toggleSteps}
                     style={[
@@ -612,14 +713,68 @@ export default function RouteMapModal({
                   </TouchableOpacity>
                 </>
               ) : (
-                <TouchableOpacity
-                  onPress={stopNavigation}
-                  style={[styles.actionButtonSmall, { backgroundColor: '#EF4444' }]}
-                >
-                  <Ionicons name="stop" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    onPress={stopNavigation}
+                    style={[styles.actionButtonSmall, { backgroundColor: '#EF4444' }]}
+                  >
+                    <Ionicons name="stop" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+
+                  {/* Indicador de desviación */}
+                  {isOffRoute && (
+                    <View
+                      style={[
+                        styles.actionButtonSmall,
+                        { backgroundColor: '#F59E0B', opacity: 0.9 },
+                      ]}
+                    >
+                      <Ionicons name="alert-circle" size={20} color="#FFFFFF" />
+                    </View>
+                  )}
+
+                  {/* Indicador de recalculación */}
+                  {isRecalculating && (
+                    <View
+                      style={[
+                        styles.actionButtonSmall,
+                        { backgroundColor: getModeColor(), opacity: 0.8 },
+                      ]}
+                    >
+                      <Ionicons name="sync" size={20} color="#FFFFFF" />
+                    </View>
+                  )}
+                </>
               )}
             </View>
+
+            {/* Banner de información de recalculación */}
+            {(recalculationCount > 0 || isOffRoute || isRecalculating) && (
+              <View
+                style={[
+                  styles.recalculationBanner,
+                  {
+                    backgroundColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#F9FAFB',
+                    borderTopColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={isRecalculating ? 'sync' : isOffRoute ? 'alert-circle' : 'checkmark-circle'}
+                  size={16}
+                  color={isRecalculating ? getModeColor() : isOffRoute ? '#F59E0B' : '#10B981'}
+                />
+                <Text style={[styles.recalculationText, { color: theme.colors.textMuted }]}>
+                  {isRecalculating
+                    ? t('route.recalculating') || 'Recalculando ruta...'
+                    : isOffRoute
+                      ? t('route.off_route') || 'Fuera de ruta'
+                      : recalculationCount > 0
+                        ? `${t('route.recalculations') || 'Recalculaciones'}: ${recalculationCount} (${routingSource === 'osrm' ? 'OSRM' : 'ORS'})`
+                        : `${t('route.using') || 'Usando'}: ${routingSource === 'osrm' ? 'OSRM (gratis)' : 'ORS'}`}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Lista de pasos */}
@@ -852,6 +1007,18 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  recalculationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+  },
+  recalculationText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   stepsContainer: {
     flex: 1,

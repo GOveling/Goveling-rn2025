@@ -186,3 +186,102 @@ export async function getRouteToPlace(
     source: data.source, // Routing engine: 'osrm' or 'ors'
   };
 }
+
+/**
+ * Recalculate route for walking/cycling modes during navigation
+ * Use this when:
+ * - User deviates from route (>50m off track)
+ * - User's location updates significantly (>100m moved)
+ * - Want to check for a better/shorter route
+ *
+ * OSRM-FIRST POLICY: Always tries OSRM for walking/cycling (free, no limits)
+ * ORS is only used if OSRM completely fails to return a route
+ *
+ * @param currentLocation User's current GPS location
+ * @param destination Final destination
+ * @param mode Transport mode (walking or cycling recommended)
+ * @param language Optional language for instructions
+ * @returns Updated route or null if recalculation fails
+ */
+export async function recalculateRoute(
+  currentLocation: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+  mode: TransportMode,
+  language?: string
+): Promise<RouteResult | null> {
+  try {
+    // Validar entrada
+    if (!currentLocation?.lat || !currentLocation?.lng || !destination?.lat || !destination?.lng) {
+      console.error('❌ [Route Recalculation] Invalid coordinates:', {
+        currentLocation,
+        destination,
+      });
+      return null;
+    }
+
+    console.log('🔄 [Route Recalculation] Starting...', {
+      mode,
+      currentLocation,
+      destination,
+    });
+
+    // Call Edge Function with current location as origin
+    const { data, error } = await supabase.functions.invoke('directions', {
+      body: {
+        origin: [currentLocation.lng, currentLocation.lat],
+        destination: [destination.lng, destination.lat],
+        mode,
+        language: language || 'en',
+      },
+    });
+
+    if (error) {
+      console.error('❌ [Route Recalculation] Supabase error:', error);
+      return null;
+    }
+
+    if (!data || !data.ok) {
+      console.error('❌ [Route Recalculation] API returned error:', {
+        data,
+        error: data?.error,
+        message: data?.message,
+      });
+      return null;
+    }
+
+    // Transit doesn't support recalculation
+    if (data.mode === 'transit') {
+      console.log('⚠️ [Route Recalculation] Transit mode not supported');
+      return null;
+    }
+
+    // Validate coords
+    if (!data.coords || !Array.isArray(data.coords)) {
+      console.error('❌ [Route Recalculation] No coords in response');
+      return null;
+    }
+
+    const recalculatedRoute: RouteResult = {
+      mode: data.mode,
+      distance_m: data.distance_m,
+      duration_s: data.duration_s,
+      coords: data.coords as [number, number][],
+      bbox: data.bbox,
+      steps: data.steps || [],
+      cached: data.cached,
+      source: data.source,
+    };
+
+    console.log('✅ [Route Recalculation] Success:', {
+      distance: `${(data.distance_m / 1000).toFixed(2)}km`,
+      duration: `${Math.round(data.duration_s / 60)}min`,
+      source: data.source,
+      cached: data.cached,
+    });
+
+    return recalculatedRoute;
+  } catch (err) {
+    console.error('❌ [Route Recalculation] Exception:', err);
+    return null;
+  }
+}

@@ -89,6 +89,7 @@ export default function PlaceDetailModal({
       type?: string;
       name?: string;
     }>;
+    source?: 'osrm' | 'ors';
   } | null>(null);
 
   // Estados para controlar errores de Lottie
@@ -992,7 +993,7 @@ export default function PlaceDetailModal({
       />
 
       {/* Route Map Modal */}
-      {routeData && (
+      {routeData && place && (
         <RouteMapModal
           visible={showRouteMap}
           onClose={() => {
@@ -1007,6 +1008,11 @@ export default function PlaceDetailModal({
           mode={routeData.mode}
           steps={routeData.steps}
           destinationName={place.name}
+          destination={{
+            lat: (place as any).lat || (place as any).geometry?.coordinates?.[1] || 0,
+            lng: (place as any).lng || (place as any).geometry?.coordinates?.[0] || 0,
+          }}
+          source={routeData.source}
           polyline=""
         />
       )}

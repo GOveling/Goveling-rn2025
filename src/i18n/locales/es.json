@@ -991,7 +991,15 @@
     "navigation_permission_title": "Permiso de Ubicación Requerido",
     "navigation_permission_message": "Para usar la navegación paso a paso, necesitamos acceso a tu ubicación en tiempo real.",
     "navigation_error": "Error de Navegación",
-    "navigation_error_message": "No se pudo iniciar la navegación. Por favor, verifica tu conexión y los permisos de ubicación."
+    "navigation_error_message": "No se pudo iniciar la navegación. Por favor, verifica tu conexión y los permisos de ubicación.",
+    "off_route_title": "Fuera de ruta",
+    "off_route_message": "Te has desviado {{distance}}m. Recalculando ruta...",
+    "off_route": "Fuera de ruta",
+    "arrived_title": "¡Has llegado!",
+    "arrived_message": "Has alcanzado {{place}}",
+    "recalculating": "Recalculando ruta...",
+    "recalculations": "Recalculaciones",
+    "using": "Usando"
   },
   "tabs": {
     "home": "Inicio",
