@@ -423,13 +423,7 @@ export default function EditTripModal({
               disabled={loading}
               style={[styles.saveButton, loading && styles.saveButtonDisabled]}
             >
-              <Text
-                style={[
-                  styles.saveButtonText,
-                  { color: '#DE3D00' },
-                  loading && styles.saveButtonTextDisabled,
-                ]}
-              >
+              <Text style={[styles.saveButtonText, loading && styles.saveButtonTextDisabled]}>
                 {loading ? 'Guardando...' : 'Guardar'}
               </Text>
             </TouchableOpacity>
@@ -862,9 +856,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dateSeparator: {
-    backgroundColor: '#F5F5F5',
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 8,
     paddingVertical: 14,
   },
