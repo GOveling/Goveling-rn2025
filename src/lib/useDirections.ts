@@ -2,8 +2,6 @@ import { useState, useCallback } from 'react';
 
 import * as Location from 'expo-location';
 
-import polyline from '@mapbox/polyline';
-
 import { supabase } from './supabase';
 
 // Types
@@ -84,14 +82,12 @@ export function useDirections() {
           return data as TransitResult;
         }
 
-        // Decode polyline for non-transit modes
-        if (!data.polyline) {
-          throw new Error('no_polyline_in_response');
+        // The Edge Function now returns coords directly (no need to decode polyline)
+        if (!data.coords || !Array.isArray(data.coords)) {
+          throw new Error('no_coords_in_response');
         }
 
-        const coords = polyline
-          .decode(data.polyline)
-          .map(([lat, lng]: [number, number]) => [lng, lat] as [number, number]);
+        const coords = data.coords as [number, number][];
 
         const routeResult: RouteResult = {
           mode: data.mode,
@@ -170,14 +166,12 @@ export async function getRouteToPlace(
     };
   }
 
-  // 5. Decode polyline
-  if (!data.polyline) {
-    throw new Error('no_polyline_in_response');
+  // 5. Coords already come decoded from Edge Function
+  if (!data.coords || !Array.isArray(data.coords)) {
+    throw new Error('no_coords_in_response');
   }
 
-  const coords = polyline
-    .decode(data.polyline)
-    .map(([lat, lng]: [number, number]) => [lng, lat] as [number, number]);
+  const coords = data.coords as [number, number][];
 
   return {
     mode: data.mode,

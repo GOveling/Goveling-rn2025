@@ -2,6 +2,9 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 const ORS_API_KEY = Deno.env.get('ORS_API_KEY');
 
+// OSRM public server (gratuito, sin límites)
+const OSRM_BASE_URL = 'https://router.project-osrm.org';
+
 type Payload = {
   origin: [number, number]; // [lng, lat]
   destination: [number, number]; // [lng, lat]
@@ -10,6 +13,7 @@ type Payload = {
 };
 
 type ORSProfile = 'driving-car' | 'cycling-regular' | 'foot-walking';
+type OSRMProfile = 'car' | 'bike' | 'foot';
 
 // Map mode to ORS profile
 function modeToProfile(mode: string): ORSProfile {
@@ -19,6 +23,16 @@ function modeToProfile(mode: string): ORSProfile {
     walking: 'foot-walking',
   };
   return map[mode] || 'foot-walking';
+}
+
+// Map mode to OSRM profile
+function modeToOSRMProfile(mode: string): OSRMProfile {
+  const map: Record<string, OSRMProfile> = {
+    driving: 'car',
+    cycling: 'bike',
+    walking: 'foot',
+  };
+  return map[mode] || 'foot';
 }
 
 // Encode polyline (ORS uses encoded polylines like Google)
@@ -55,9 +69,85 @@ function encodeValue(value: number): string {
   return encoded;
 }
 
+// Función para obtener ruta de OSRM (gratuito)
+async function getRouteFromOSRM(
+  origin: [number, number],
+  destination: [number, number],
+  mode: string
+) {
+  const profile = modeToOSRMProfile(mode);
+  const coords = `${origin[0]},${origin[1]};${destination[0]},${destination[1]}`;
+  const osrmUrl = `${OSRM_BASE_URL}/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=true&alternatives=false`;
+
+  console.log('🆓 Trying OSRM (free):', { profile, mode });
+
+  try {
+    const response = await fetch(osrmUrl, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      console.log('❌ OSRM failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      console.log('❌ OSRM no route found');
+      return null;
+    }
+
+    const route = data.routes[0];
+    const coordinates = route.geometry.coordinates;
+
+    // Calcular bbox
+    const allLngs = coordinates.map((c: number[]) => c[0]);
+    const allLats = coordinates.map((c: number[]) => c[1]);
+    const bbox: [number, number, number, number] = [
+      Math.min(...allLngs),
+      Math.min(...allLats),
+      Math.max(...allLngs),
+      Math.max(...allLats),
+    ];
+
+    // Extraer pasos (OSRM usa formato diferente a ORS)
+    const steps =
+      route.legs[0]?.steps?.map((step: any) => ({
+        instruction: step.maneuver?.instruction || step.name || 'Continue',
+        distance_m: step.distance || 0,
+        duration_s: step.duration || 0,
+        type: String(step.maneuver?.type || ''),
+        name: step.name || '',
+      })) || [];
+
+    console.log('✅ OSRM success:', {
+      distance_km: (route.distance / 1000).toFixed(2),
+      duration_min: (route.duration / 60).toFixed(1),
+      source: 'OSRM (free)',
+    });
+
+    return {
+      ok: true,
+      mode,
+      distance_m: route.distance,
+      duration_s: route.duration,
+      coords: coordinates, // OSRM ya devuelve coordenadas decodificadas
+      bbox,
+      steps,
+      cached: false,
+      source: 'osrm',
+    };
+  } catch (error) {
+    console.log('❌ OSRM error:', error);
+    return null;
+  }
+}
+
 // Cache simple usando Map (en producción podrías usar Supabase KV o Redis)
 const cache = new Map<string, any>();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
+const CACHE_TTL = 60 * 60 * 1000; // 1 hora - Las rutas no cambian frecuentemente
 
 serve(async (req) => {
   // CORS headers
@@ -74,15 +164,6 @@ serve(async (req) => {
   }
 
   try {
-    // Validar API key
-    if (!ORS_API_KEY) {
-      console.error('❌ ORS_API_KEY not configured');
-      return new Response(JSON.stringify({ ok: false, error: 'ORS_API_KEY_NOT_CONFIGURED' }), {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
     const body = (await req.json()) as Payload;
 
     // Validar inputs
@@ -127,6 +208,35 @@ serve(async (req) => {
       console.log('✅ Cache hit:', cacheKey);
       return new Response(JSON.stringify({ ...cached.data, cached: true }), {
         status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // ===== ESTRATEGIA: OSRM PRIMERO (GRATIS), ORS COMO FALLBACK =====
+
+    // 1. Intentar OSRM (gratuito, sin límites)
+    const osrmResult = await getRouteFromOSRM(body.origin, body.destination, mode);
+
+    if (osrmResult) {
+      // OSRM funcionó, guardar en cache y retornar
+      cache.set(cacheKey, {
+        data: osrmResult,
+        timestamp: Date.now(),
+      });
+
+      return new Response(JSON.stringify(osrmResult), {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // 2. Si OSRM falla, intentar ORS (con API key, tiene límites)
+    console.log('⚠️ OSRM failed, falling back to ORS...');
+
+    if (!ORS_API_KEY) {
+      console.error('❌ ORS_API_KEY not configured and OSRM failed');
+      return new Response(JSON.stringify({ ok: false, error: 'ROUTING_SERVICE_UNAVAILABLE' }), {
+        status: 503,
         headers: corsHeaders,
       });
     }
@@ -225,10 +335,11 @@ serve(async (req) => {
       mode,
       distance_m: summary.distance || 0,
       duration_s: summary.duration || 0,
-      polyline: polylineEncoded,
+      coords: coordinates, // Coordenadas decodificadas
       bbox,
       steps,
       cached: false,
+      source: 'ors', // Indicar que vino de ORS (fallback)
     };
 
     // Guardar en cache
@@ -237,10 +348,11 @@ serve(async (req) => {
       timestamp: Date.now(),
     });
 
-    console.log('✅ Route calculated:', {
+    console.log('✅ Route calculated from ORS (fallback):', {
       mode,
       distance_km: (summary.distance / 1000).toFixed(2),
       duration_min: (summary.duration / 60).toFixed(1),
+      source: 'ORS (paid)',
     });
 
     return new Response(JSON.stringify(result), { status: 200, headers: corsHeaders });

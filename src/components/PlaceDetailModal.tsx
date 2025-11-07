@@ -381,6 +381,8 @@ export default function PlaceDetailModal({
         message = t('explore.modal.directions_permission_denied');
       } else if (errorMessage === 'route_not_found' || errorMessage === 'ROUTE_NOT_FOUND') {
         message = t('explore.modal.directions_route_not_found');
+      } else if (errorMessage === 'no_coords_in_response') {
+        message = t('explore.modal.directions_route_not_found');
       }
 
       Alert.alert(title, message, [
