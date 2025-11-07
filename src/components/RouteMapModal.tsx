@@ -12,13 +12,15 @@ import {
   Animated,
   Platform,
   Linking,
+  Alert,
 } from 'react-native';
 
 import { BlurView } from 'expo-blur';
+import * as Location from 'expo-location';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import MapView, { Polyline, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Polyline, Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 
 import { useTheme } from '../lib/theme';
 import { useDistanceUnit } from '../utils/units';
@@ -68,9 +70,19 @@ export default function RouteMapModal({
 
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [showSteps, setShowSteps] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    heading: number;
+  } | null>(null);
+  const [distanceToNextStep, setDistanceToNextStep] = useState<number | null>(null);
 
   const bottomSheetHeight = useRef(new Animated.Value(120)).current;
   const mapOpacity = useRef(new Animated.Value(0)).current;
+  const mapRef = useRef<MapView>(null);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -151,6 +163,192 @@ export default function RouteMapModal({
     Linking.openURL(url);
   };
 
+  // Función para calcular distancia entre dos puntos (Haversine)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371e3; // Radio de la Tierra en metros
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distancia en metros
+  };
+
+  // Función para encontrar el punto más cercano en la ruta
+  const findClosestPointOnRoute = (
+    userLat: number,
+    userLon: number
+  ): { index: number; distance: number } => {
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    coordinates.forEach((coord, index) => {
+      const dist = calculateDistance(userLat, userLon, coord[1], coord[0]);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestIndex = index;
+      }
+    });
+
+    return { index: closestIndex, distance: minDistance };
+  };
+
+  // Iniciar navegación turn-by-turn
+  const startNavigation = async () => {
+    try {
+      // Solicitar permisos de ubicación
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          t('route.navigation_permission_title'),
+          t('route.navigation_permission_message')
+        );
+        return;
+      }
+
+      setIsNavigating(true);
+      setCurrentStepIndex(0);
+      setShowSteps(false);
+
+      // Contraer bottom sheet para modo navegación
+      Animated.spring(bottomSheetHeight, {
+        toValue: 180,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 8,
+      }).start();
+
+      // Obtener ubicación actual y hacer zoom inmediato
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.BestForNavigation,
+      });
+
+      const { latitude, longitude, heading } = currentLocation.coords;
+
+      // Zoom inmediato a la ubicación actual con vista de navegación
+      if (mapRef.current) {
+        mapRef.current.animateCamera(
+          {
+            center: { latitude, longitude },
+            heading: heading || 0,
+            pitch: 60,
+            zoom: 19, // Zoom muy cercano para navegación
+          },
+          { duration: 1000 }
+        );
+      }
+
+      // Iniciar tracking de ubicación en tiempo real
+      locationSubscription.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 1000, // Actualizar cada segundo
+          distanceInterval: 5, // O cada 5 metros
+        },
+        (location) => {
+          const { latitude, longitude, heading } = location.coords;
+
+          setUserLocation({
+            latitude,
+            longitude,
+            heading: heading || 0,
+          });
+
+          // Encontrar posición en la ruta
+          const closest = findClosestPointOnRoute(latitude, longitude);
+
+          // Determinar el paso actual basado en la posición
+          let accumulatedDistance = 0;
+          let stepIndex = 0;
+
+          for (let i = 0; i < steps.length; i++) {
+            accumulatedDistance += steps[i].distance_m;
+            // Si estamos cerca de esta parte de la ruta, es nuestro paso actual
+            if (closest.index * 10 < accumulatedDistance) {
+              stepIndex = i;
+              break;
+            }
+          }
+
+          setCurrentStepIndex(stepIndex);
+
+          // Calcular distancia al próximo paso
+          if (stepIndex < steps.length) {
+            let distToStep = 0;
+            for (let i = stepIndex; i < steps.length; i++) {
+              distToStep += steps[i].distance_m;
+            }
+            setDistanceToNextStep(distToStep - closest.distance);
+          }
+
+          // Animar la cámara para seguir al usuario con heading
+          if (mapRef.current) {
+            mapRef.current.animateCamera(
+              {
+                center: { latitude, longitude },
+                heading: heading || 0,
+                pitch: 60, // Vista 3D inclinada
+                zoom: 19, // Zoom muy cercano para navegación
+              },
+              { duration: 500 }
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error starting navigation:', error);
+      Alert.alert(t('route.navigation_error'), t('route.navigation_error_message'));
+    }
+  };
+
+  // Detener navegación
+  const stopNavigation = () => {
+    if (locationSubscription.current) {
+      locationSubscription.current.remove();
+      locationSubscription.current = null;
+    }
+    setIsNavigating(false);
+    setUserLocation(null);
+    setCurrentStepIndex(0);
+    setDistanceToNextStep(null);
+
+    // Restaurar vista del mapa
+    if (mapRef.current) {
+      mapRef.current.animateCamera(
+        {
+          center: { latitude: center[1], longitude: center[0] },
+          heading: 0,
+          pitch: 0,
+          zoom: 12,
+        },
+        { duration: 800 }
+      );
+    }
+
+    // Restaurar bottom sheet
+    Animated.spring(bottomSheetHeight, {
+      toValue: 120,
+      useNativeDriver: false,
+      tension: 50,
+      friction: 8,
+    }).start();
+  };
+
+  // Limpiar al cerrar el modal
+  useEffect(() => {
+    if (!visible && locationSubscription.current) {
+      locationSubscription.current.remove();
+      locationSubscription.current = null;
+      setIsNavigating(false);
+      setUserLocation(null);
+    }
+  }, [visible]);
+
   const getStepIcon = (type?: string) => {
     if (!type) return 'arrow-forward';
 
@@ -212,6 +410,7 @@ export default function RouteMapModal({
         {/* Mapa */}
         <Animated.View style={[styles.mapContainer, { opacity: mapOpacity }]}>
           <MapView
+            ref={mapRef}
             style={styles.map}
             provider={PROVIDER_DEFAULT}
             initialRegion={{
@@ -222,9 +421,10 @@ export default function RouteMapModal({
             }}
             showsUserLocation={true}
             showsMyLocationButton={false}
-            showsCompass={true}
+            showsCompass={!isNavigating}
             pitchEnabled={true}
             rotateEnabled={true}
+            followsUserLocation={isNavigating}
           >
             {/* Línea de ruta */}
             <Polyline
@@ -342,42 +542,83 @@ export default function RouteMapModal({
 
           {/* Resumen de ruta */}
           <View style={styles.summaryContainer}>
-            <View style={styles.summaryLeft}>
-              <View style={[styles.modeIconContainer, { backgroundColor: getModeColor() + '20' }]}>
-                <Ionicons name={getModeIcon()} size={24} color={getModeColor()} />
+            {!isNavigating ? (
+              <View style={styles.summaryLeft}>
+                <View
+                  style={[styles.modeIconContainer, { backgroundColor: getModeColor() + '20' }]}
+                >
+                  <Ionicons name={getModeIcon()} size={24} color={getModeColor()} />
+                </View>
+                <View style={styles.summaryText}>
+                  <Text style={[styles.summaryTitle, { color: theme.colors.text }]}>
+                    {distance.format(distance_m / 1000, 2)}
+                  </Text>
+                  <Text style={[styles.summarySubtitle, { color: theme.colors.textMuted }]}>
+                    {formatDuration(duration_s)} • {steps.length}{' '}
+                    {steps.length === 1 ? t('route.step') : t('route.steps')}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.summaryText}>
-                <Text style={[styles.summaryTitle, { color: theme.colors.text }]}>
-                  {distance.format(distance_m / 1000, 2)}
-                </Text>
-                <Text style={[styles.summarySubtitle, { color: theme.colors.textMuted }]}>
-                  {formatDuration(duration_s)} • {steps.length}{' '}
-                  {steps.length === 1 ? t('route.step') : t('route.steps')}
-                </Text>
+            ) : (
+              <View style={styles.navigationLeft}>
+                <View style={[styles.navigationIconContainer, { backgroundColor: getModeColor() }]}>
+                  <Ionicons
+                    name={getStepIcon(steps[currentStepIndex]?.type)}
+                    size={28}
+                    color="#FFFFFF"
+                  />
+                </View>
+                <View style={styles.navigationText}>
+                  <Text
+                    style={[styles.navigationInstruction, { color: theme.colors.text }]}
+                    numberOfLines={2}
+                  >
+                    {steps[currentStepIndex]?.instruction || t('route.continue')}
+                  </Text>
+                  {distanceToNextStep !== null && distanceToNextStep > 0 && (
+                    <Text style={[styles.navigationDistance, { color: theme.colors.textMuted }]}>
+                      {t('route.in')} {distance.format(distanceToNextStep / 1000, 1)}
+                    </Text>
+                  )}
+                </View>
               </View>
-            </View>
+            )}
 
             <View style={styles.summaryActions}>
-              <TouchableOpacity
-                onPress={handleOpenInMaps}
-                style={[styles.actionButtonSmall, { backgroundColor: getModeColor() }]}
-              >
-                <Ionicons name="navigate" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
+              {!isNavigating ? (
+                <>
+                  <TouchableOpacity
+                    onPress={startNavigation}
+                    style={[styles.actionButtonSmall, { backgroundColor: getModeColor() }]}
+                  >
+                    <Ionicons name="navigate" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={toggleSteps}
-                style={[
-                  styles.actionButtonSmall,
-                  { backgroundColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#F3F4F6' },
-                ]}
-              >
-                <Ionicons
-                  name={showSteps ? 'chevron-down' : 'list'}
-                  size={20}
-                  color={theme.colors.text}
-                />
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={toggleSteps}
+                    style={[
+                      styles.actionButtonSmall,
+                      {
+                        backgroundColor:
+                          theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#F3F4F6',
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={showSteps ? 'chevron-down' : 'list'}
+                      size={20}
+                      color={theme.colors.text}
+                    />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  onPress={stopNavigation}
+                  style={[styles.actionButtonSmall, { backgroundColor: '#EF4444' }]}
+                >
+                  <Ionicons name="stop" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -603,6 +844,7 @@ const styles = StyleSheet.create({
   summaryActions: {
     flexDirection: 'row',
     gap: 8,
+    flexShrink: 0,
   },
   actionButtonSmall: {
     width: 44,
@@ -674,5 +916,31 @@ const styles = StyleSheet.create({
   stepMetaText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  navigationLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  navigationIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  navigationText: {
+    flex: 1,
+  },
+  navigationInstruction: {
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  navigationDistance: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

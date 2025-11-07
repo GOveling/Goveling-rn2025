@@ -986,7 +986,13 @@
   "route": {
     "step": "step",
     "steps": "steps",
-    "arrive_at": "You will arrive at your destination"
+    "arrive_at": "You will arrive at your destination",
+    "continue": "Continue",
+    "in": "In",
+    "navigation_permission_title": "Location Permission Required",
+    "navigation_permission_message": "To use turn-by-turn navigation, we need access to your real-time location.",
+    "navigation_error": "Navigation Error",
+    "navigation_error_message": "Could not start navigation. Please check your connection and location permissions."
   },
   "tabs": {
     "home": "Home",
