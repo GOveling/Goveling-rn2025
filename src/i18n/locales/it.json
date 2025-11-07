@@ -924,7 +924,25 @@
     "navigation_permission_title": "Autorizzazione Posizione Richiesta",
     "navigation_permission_message": "Per utilizzare la navigazione passo dopo passo, abbiamo bisogno di accedere alla tua posizione in tempo reale.",
     "navigation_error": "Errore di Navigazione",
-    "navigation_error_message": "Impossibile avviare la navigazione. Controlla la connessione e i permessi di localizzazione."
+    "navigation_error_message": "Impossibile avviare la navigazione. Controlla la connessione e i permessi di localizzazione.",
+    "off_route_title": "Fuori percorso",
+    "off_route_message": "Hai deviato di {{distance}}m. Ricalcolo del percorso...",
+    "off_route": "Fuori percorso",
+    "arrived_title": "Sei arrivato!",
+    "arrived_message": "Hai raggiunto {{place}}",
+    "recalculating": "Ricalcolo del percorso...",
+    "recalculations": "Ricalcoli",
+    "using": "Utilizzando"
+  },
+  "transit": {
+    "select_map_app": "Apri in Mappe",
+    "directions_to": "Indicazioni per",
+    "apple_maps": "Apple Mappe",
+    "apple_maps_desc": "Predefinito su iOS",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "Con informazioni sul traffico in tempo reale",
+    "waze": "Waze",
+    "waze_desc": "Navigazione basata sulla community"
   },
   "tabs": {
     "home": "Home",

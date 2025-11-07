@@ -924,7 +924,25 @@
     "navigation_permission_title": "Permissão de Localização Necessária",
     "navigation_permission_message": "Para usar a navegação passo a passo, precisamos de acesso à sua localização em tempo real.",
     "navigation_error": "Erro de Navegação",
-    "navigation_error_message": "Não foi possível iniciar a navegação. Verifique sua conexão e permissões de localização."
+    "navigation_error_message": "Não foi possível iniciar a navegação. Verifique sua conexão e permissões de localização.",
+    "off_route_title": "Fora da rota",
+    "off_route_message": "Você desviou {{distance}}m. Recalculando rota...",
+    "off_route": "Fora da rota",
+    "arrived_title": "Você chegou!",
+    "arrived_message": "Você alcançou {{place}}",
+    "recalculating": "Recalculando rota...",
+    "recalculations": "Recalculações",
+    "using": "Usando"
+  },
+  "transit": {
+    "select_map_app": "Abrir em Mapas",
+    "directions_to": "Direções para",
+    "apple_maps": "Apple Maps",
+    "apple_maps_desc": "Padrão do iOS",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "Com informações de trânsito em tempo real",
+    "waze": "Waze",
+    "waze_desc": "Navegação e tráfego baseado na comunidade"
   },
   "tabs": {
     "home": "Início",

@@ -31,6 +31,7 @@ export type TransitResult = {
   deepLinks: {
     apple: string;
     google: string;
+    waze: string;
   };
 };
 

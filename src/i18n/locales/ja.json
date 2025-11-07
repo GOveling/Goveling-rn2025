@@ -924,7 +924,25 @@
     "navigation_permission_title": "位置情報の許可が必要です",
     "navigation_permission_message": "ターンバイターンナビゲーションを使用するには、リアルタイムの位置情報へのアクセスが必要です。",
     "navigation_error": "ナビゲーションエラー",
-    "navigation_error_message": "ナビゲーションを開始できませんでした。接続と位置情報の許可を確認してください。"
+    "navigation_error_message": "ナビゲーションを開始できませんでした。接続と位置情報の許可を確認してください。",
+    "off_route_title": "ルートから外れています",
+    "off_route_message": "{{distance}}m逸脱しました。ルートを再計算中...",
+    "off_route": "ルートから外れています",
+    "arrived_title": "到着しました！",
+    "arrived_message": "{{place}}に到着しました",
+    "recalculating": "ルートを再計算中...",
+    "recalculations": "再計算",
+    "using": "使用中"
+  },
+  "transit": {
+    "select_map_app": "マップで開く",
+    "directions_to": "への経路",
+    "apple_maps": "Appleマップ",
+    "apple_maps_desc": "iOSのデフォルト",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "リアルタイムの交通情報付き",
+    "waze": "Waze",
+    "waze_desc": "コミュニティベースのナビゲーション"
   },
   "tabs": {
     "home": "ホーム",

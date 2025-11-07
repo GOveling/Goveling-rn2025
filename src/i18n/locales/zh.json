@@ -924,7 +924,25 @@
     "navigation_permission_title": "需要位置权限",
     "navigation_permission_message": "要使用逐向导航，我们需要访问您的实时位置。",
     "navigation_error": "导航错误",
-    "navigation_error_message": "无法启动导航。请检查您的连接和位置权限。"
+    "navigation_error_message": "无法启动导航。请检查您的连接和位置权限。",
+    "off_route_title": "偏离路线",
+    "off_route_message": "您偏离了{{distance}}米。正在重新计算路线...",
+    "off_route": "偏离路线",
+    "arrived_title": "您已到达！",
+    "arrived_message": "您已到达{{place}}",
+    "recalculating": "正在重新计算路线...",
+    "recalculations": "重新计算",
+    "using": "使用中"
+  },
+  "transit": {
+    "select_map_app": "在地图中打开",
+    "directions_to": "前往",
+    "apple_maps": "Apple地图",
+    "apple_maps_desc": "iOS默认",
+    "google_maps": "Google地图",
+    "google_maps_desc": "实时交通信息",
+    "waze": "Waze",
+    "waze_desc": "社区导航"
   },
   "tabs": {
     "home": "主页",

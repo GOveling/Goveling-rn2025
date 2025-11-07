@@ -1001,6 +1001,16 @@
     "recalculations": "Recalculaciones",
     "using": "Usando"
   },
+  "transit": {
+    "select_map_app": "Abrir en Maps",
+    "directions_to": "Direcciones a",
+    "apple_maps": "Apple Maps",
+    "apple_maps_desc": "Predeterminado de iOS",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "Con información de tránsito en tiempo real",
+    "waze": "Waze",
+    "waze_desc": "Navegación comunitaria con alertas de tráfico"
+  },
   "tabs": {
     "home": "Inicio",
     "explore": "Explorar",

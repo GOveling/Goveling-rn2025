@@ -293,6 +293,7 @@ serve(async (req) => {
       const deepLinks = {
         apple: `http://maps.apple.com/?daddr=${destLat},${destLng}&dirflg=r`,
         google: `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=transit`,
+        waze: `https://waze.com/ul?ll=${destLat},${destLng}&navigate=yes`,
       };
 
       return new Response(

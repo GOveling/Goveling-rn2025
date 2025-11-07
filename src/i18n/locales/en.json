@@ -992,7 +992,25 @@
     "navigation_permission_title": "Location Permission Required",
     "navigation_permission_message": "To use turn-by-turn navigation, we need access to your real-time location.",
     "navigation_error": "Navigation Error",
-    "navigation_error_message": "Could not start navigation. Please check your connection and location permissions."
+    "navigation_error_message": "Could not start navigation. Please check your connection and location permissions.",
+    "off_route_title": "Off Route",
+    "off_route_message": "You deviated {{distance}}m. Recalculating route...",
+    "off_route": "Off route",
+    "arrived_title": "You've arrived!",
+    "arrived_message": "You've reached {{place}}",
+    "recalculating": "Recalculating route...",
+    "recalculations": "Recalculations",
+    "using": "Using"
+  },
+  "transit": {
+    "select_map_app": "Open in Maps",
+    "directions_to": "Directions to",
+    "apple_maps": "Apple Maps",
+    "apple_maps_desc": "iOS default",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "With real-time transit information",
+    "waze": "Waze",
+    "waze_desc": "Community-based traffic and navigation"
   },
   "tabs": {
     "home": "Home",

@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 
 import AddToTripModal from './AddToTripModal';
 import DirectionsModeSelector from './DirectionsModeSelector';
+import MapAppSelectorModal from './MapAppSelectorModal';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
 import RouteMapModal from './RouteMapModal';
@@ -76,6 +77,12 @@ export default function PlaceDetailModal({
   const [showDirectionsModeSelector, setShowDirectionsModeSelector] = React.useState(false);
   const [directionsLoading, setDirectionsLoading] = React.useState(false);
   const [showRouteMap, setShowRouteMap] = React.useState(false);
+  const [showMapAppSelector, setShowMapAppSelector] = React.useState(false);
+  const [transitDeepLinks, setTransitDeepLinks] = React.useState<{
+    apple: string;
+    google: string;
+    waze: string;
+  } | null>(null);
   const [routeData, setRouteData] = React.useState<{
     coordinates: [number, number][];
     bbox: [number, number, number, number];
@@ -328,10 +335,19 @@ export default function PlaceDetailModal({
       setShowDirectionsModeSelector(false);
       // NO restaurar tempHideMainModal aquí - lo haremos cuando se cierre RouteMapModal
 
-      // Si es transit, abrir directamente en Maps
+      // Si es transit, mostrar selector de apps en iOS o abrir Google Maps en Android
       if (result.mode === 'transit' && 'deepLinks' in result) {
-        const url = Platform.OS === 'ios' ? result.deepLinks.apple : result.deepLinks.google;
-        Linking.openURL(url);
+        console.log('🔗 [handleSelectTransportMode] Deep Links received:', result.deepLinks);
+        console.log('🔗 [handleSelectTransportMode] Apple URL:', result.deepLinks.apple);
+        console.log('🔗 [handleSelectTransportMode] Google URL:', result.deepLinks.google);
+        console.log('🔗 [handleSelectTransportMode] Waze URL:', result.deepLinks.waze);
+        setTransitDeepLinks(result.deepLinks);
+        if (Platform.OS === 'ios') {
+          setShowMapAppSelector(true);
+        } else {
+          // Android: abrir directamente Google Maps
+          Linking.openURL(result.deepLinks.google);
+        }
         return;
       }
 
@@ -1014,6 +1030,21 @@ export default function PlaceDetailModal({
           }}
           source={routeData.source}
           polyline=""
+        />
+      )}
+
+      {/* Map App Selector Modal for Transit */}
+      {transitDeepLinks && place && (
+        <MapAppSelectorModal
+          visible={showMapAppSelector}
+          onClose={() => {
+            setShowMapAppSelector(false);
+            setTempHideMainModal(false);
+          }}
+          appleUrl={transitDeepLinks.apple}
+          googleUrl={transitDeepLinks.google}
+          wazeUrl={transitDeepLinks.waze}
+          destinationName={place.name}
         />
       )}
     </>

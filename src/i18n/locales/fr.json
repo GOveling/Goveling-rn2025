@@ -924,7 +924,25 @@
     "navigation_permission_title": "Autorisation de Localisation Requise",
     "navigation_permission_message": "Pour utiliser la navigation étape par étape, nous avons besoin d'accéder à votre position en temps réel.",
     "navigation_error": "Erreur de Navigation",
-    "navigation_error_message": "Impossible de démarrer la navigation. Vérifiez votre connexion et les autorisations de localisation."
+    "navigation_error_message": "Impossible de démarrer la navigation. Vérifiez votre connexion et les autorisations de localisation.",
+    "off_route_title": "Hors itinéraire",
+    "off_route_message": "Vous avez dévié de {{distance}}m. Recalcul de l'itinéraire...",
+    "off_route": "Hors itinéraire",
+    "arrived_title": "Vous êtes arrivé!",
+    "arrived_message": "Vous avez atteint {{place}}",
+    "recalculating": "Recalcul de l'itinéraire...",
+    "recalculations": "Recalculs",
+    "using": "Utilisation"
+  },
+  "transit": {
+    "select_map_app": "Ouvrir dans Plans",
+    "directions_to": "Itinéraire vers",
+    "apple_maps": "Apple Plans",
+    "apple_maps_desc": "Par défaut sur iOS",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "Avec infos trafic en temps réel",
+    "waze": "Waze",
+    "waze_desc": "Navigation communautaire"
   },
   "tabs": {
     "home": "Accueil",

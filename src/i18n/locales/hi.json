@@ -871,6 +871,24 @@
     "navigation_permission_title": "स्थान अनुमति आवश्यक",
     "navigation_permission_message": "टर्न-बाय-टर्न नेविगेशन का उपयोग करने के लिए, हमें आपके वास्तविक समय के स्थान तक पहुंच की आवश्यकता है।",
     "navigation_error": "नेविगेशन त्रुटि",
-    "navigation_error_message": "नेविगेशन शुरू नहीं हो सका। कृपया अपना कनेक्शन और स्थान अनुमतियां जांचें।"
+    "navigation_error_message": "नेविगेशन शुरू नहीं हो सका। कृपया अपना कनेक्शन और स्थान अनुमतियां जांचें।",
+    "off_route_title": "मार्ग से हट गए",
+    "off_route_message": "आप {{distance}}मी भटक गए। मार्ग पुनर्गणना...",
+    "off_route": "मार्ग से हट गए",
+    "arrived_title": "आप पहुंच गए!",
+    "arrived_message": "आप {{place}} पहुंच गए",
+    "recalculating": "मार्ग पुनर्गणना...",
+    "recalculations": "पुनर्गणना",
+    "using": "उपयोग में"
+  },
+  "transit": {
+    "select_map_app": "मैप में खोलें",
+    "directions_to": "दिशा",
+    "apple_maps": "Apple मैप्स",
+    "apple_maps_desc": "iOS डिफ़ॉल्ट",
+    "google_maps": "Google Maps",
+    "google_maps_desc": "रीयल-टाइम ट्रैफिक जानकारी",
+    "waze": "Waze",
+    "waze_desc": "सामुदायिक नेविगेशन"
   }
 }
