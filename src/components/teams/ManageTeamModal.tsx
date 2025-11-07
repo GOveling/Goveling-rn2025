@@ -433,12 +433,21 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
     console.log('onRemoveMember called with:', member);
     console.log('canManage:', canManage, 'isOwner:', isOwner, 'currentRole:', currentRole);
 
+    const memberName =
+      member.profile?.full_name || member.profile?.email || t('trips.this_user', 'this user');
+
     Alert.alert(
-      t('trips.remove_collaborator', 'Remove collaborator'),
-      t('trips.remove_collaborator_confirm', 'Do you want to remove {{name}} from the trip?', {
-        name:
-          member.profile?.full_name || member.profile?.email || t('trips.this_user', 'this user'),
-      }),
+      t(
+        'trips.remove_collaborator_confirm_detailed',
+        'Are you sure you want to remove {{name}} from this trip?',
+        {
+          name: memberName,
+        }
+      ),
+      t(
+        'trips.remove_collaborator_warning',
+        "If you remove this member, they will no longer be able to view, edit, or interact with any part of this trip's planning. This action cannot be undone."
+      ),
       [
         { text: t('common.cancel', 'Cancel'), style: 'cancel' },
         {
@@ -467,21 +476,64 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
 
   const onChangeRole = async (member: MemberItem, newRole: Exclude<Role, 'owner'>) => {
     if (member.role === newRole) return;
-    try {
-      const { error } = await supabase
-        .from('trip_collaborators')
-        .update({ role: newRole })
-        .eq('trip_id', tripId)
-        .eq('user_id', member.user_id);
-      if (error) throw error;
-      await fetchMembers();
-      onChanged?.();
-    } catch (e: unknown) {
-      Alert.alert(
-        t('common.error', 'Error'),
-        (e as Error)?.message || t('trips.change_role_failed', 'Could not change role')
-      );
-    }
+
+    const memberName =
+      member.profile?.full_name || member.profile?.email || t('trips.this_user', 'this user');
+    const isChangingToEditor = newRole === 'editor';
+
+    const confirmMessage = isChangingToEditor
+      ? t(
+          'trips.change_role_to_editor',
+          "Are you sure you want to change {{name}}'s role to Editor?",
+          {
+            name: memberName,
+          }
+        )
+      : t(
+          'trips.change_role_to_viewer',
+          "Are you sure you want to change {{name}}'s role to Viewer?",
+          {
+            name: memberName,
+          }
+        );
+
+    const permissionsMessage = isChangingToEditor
+      ? t(
+          'trips.role_editor_permissions',
+          'This will allow them to add, edit, and delete places in the trip itinerary.'
+        )
+      : t(
+          'trips.role_viewer_permissions',
+          'This will restrict them to only viewing the trip. They will NOT be able to add, edit, or delete places.'
+        );
+
+    Alert.alert(
+      t('trips.change_role_confirm_title', 'Change role for {{name}}?', { name: memberName }),
+      `${confirmMessage}\n\n${permissionsMessage}`,
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('trips.change_role_button', 'Change Role'),
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('trip_collaborators')
+                .update({ role: newRole })
+                .eq('trip_id', tripId)
+                .eq('user_id', member.user_id);
+              if (error) throw error;
+              await fetchMembers();
+              onChanged?.();
+            } catch (e: unknown) {
+              Alert.alert(
+                t('common.error', 'Error'),
+                (e as Error)?.message || t('trips.change_role_failed', 'Could not change role')
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderOwner = () =>
