@@ -39,7 +39,7 @@ export default function HomeTab() {
   const { t } = useTranslation();
   const theme = useTheme();
   const _router = useRouter();
-  const { units, setUnits } = useSettingsStore();
+  const { units } = useSettingsStore();
 
   // Country detection on app start (runs first)
   const { pendingCountryVisit, dismissModal: dismissCountryModal } =
@@ -66,11 +66,6 @@ export default function HomeTab() {
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
-
-  // Memoized callbacks for child components
-  const toggleUnits = React.useCallback(() => {
-    setUnits(units === 'c' ? 'f' : 'c');
-  }, [units, setUnits]);
 
   const recomputeSavedPlaces = React.useCallback(async () => {
     logger.debug('🏠 HomeTab: recomputeSavedPlaces called');
@@ -396,7 +391,7 @@ export default function HomeTab() {
         }
       >
         {/* Header con gradiente - Memoized LocationWidget */}
-        <LocationWidget city={city} temp={temp} units={units} onToggleUnits={toggleUnits} />
+        <LocationWidget city={city} temp={temp} units={units} />
 
         <View style={styles.content}>
           {/* Cards de estadísticas - Memoized StatCards */}

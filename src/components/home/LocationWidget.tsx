@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -14,7 +14,6 @@ interface LocationWidgetProps {
   city: string;
   temp: number | undefined;
   units: 'c' | 'f'; // Keep for backwards compatibility but will be ignored
-  onToggleUnits: () => void;
 }
 
 /**
@@ -23,7 +22,7 @@ interface LocationWidgetProps {
  * Prevents unnecessary re-renders from parent state changes
  */
 const LocationWidget = React.memo<LocationWidgetProps>(
-  function LocationWidget({ city, temp, onToggleUnits }) {
+  function LocationWidget({ city, temp }) {
     const { i18n } = useTranslation();
     const temperature = useTemperatureUnit();
 
@@ -57,15 +56,12 @@ const LocationWidget = React.memo<LocationWidgetProps>(
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity
-              onPress={onToggleUnits}
-              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}
-            >
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
               <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
               <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
                 {typeof temp === 'number' ? temperature.format(temp) : '—'}
               </Text>
-            </TouchableOpacity>
+            </View>
 
             <NotificationBell iconColor="#fff" />
           </View>
@@ -77,7 +73,6 @@ const LocationWidget = React.memo<LocationWidgetProps>(
   (prevProps, nextProps) => {
     return (
       prevProps.city === nextProps.city && prevProps.temp === nextProps.temp
-      // onToggleUnits is stable (useCallback), so we don't compare it
       // units prop is now ignored - we use AppSettingsContext via hook
     );
   }
