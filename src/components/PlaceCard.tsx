@@ -19,6 +19,7 @@ import { translateDynamic } from '../i18n';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useTheme } from '../lib/theme';
 import { useFavorites } from '../lib/useFavorites';
+import { useDistanceUnit } from '../utils/units';
 
 interface PlaceCardProps {
   place: EnhancedPlace;
@@ -31,6 +32,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { isFavorite, toggleFavorite, loading } = useFavorites();
+  const distance = useDistanceUnit();
   const [aboutText, setAboutText] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -199,7 +201,7 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
               { color: theme.colors.textMuted },
             ]}
           >
-            {place.distance_km.toFixed(2)} km
+            {distance.format(place.distance_km, 2)}
           </Text>
         )}
 

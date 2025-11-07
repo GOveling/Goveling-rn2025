@@ -1,3 +1,9 @@
+/**
+ * DEPRECATED: This store is being migrated to AppSettingsContext
+ * For new features, use AppSettingsContext instead
+ * This file is kept for backward compatibility with existing components
+ */
+
 import { useState, useEffect } from 'react';
 
 type Units = 'c' | 'f';
@@ -52,6 +58,7 @@ class SettingsStore {
       } else if (isNative()) {
         // React Native environment
         try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const AsyncStorage = require('@react-native-async-storage/async-storage').default;
           const stored = await AsyncStorage.getItem('goveling-settings');
           if (stored) {
@@ -77,6 +84,7 @@ class SettingsStore {
         localStorage.setItem('goveling-settings', stateToSave);
       } else if (isNative()) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const AsyncStorage = require('@react-native-async-storage/async-storage').default;
           await AsyncStorage.setItem('goveling-settings', stateToSave);
         } catch (e) {

@@ -33,6 +33,7 @@ import { EnhancedPlace } from '../lib/placesSearch';
 import { useTheme } from '../lib/theme';
 import { useFavorites } from '../lib/useFavorites';
 import { colorizeLottie } from '../utils/lottieColorizer';
+import { useDistanceUnit } from '../utils/units';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -60,6 +61,7 @@ export default function PlaceDetailModal({
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
+  const distance = useDistanceUnit();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
   const [showMapModal, setShowMapModal] = React.useState(false);
   const [showMiniMap, setShowMiniMap] = React.useState(false);
@@ -484,7 +486,7 @@ export default function PlaceDetailModal({
                     <>
                       <Text style={[styles.separator, { color: theme.colors.textMuted }]}>•</Text>
                       <Text style={[styles.distanceText, { color: theme.colors.textMuted }]}>
-                        {place.distance_km.toFixed(2)} km
+                        {distance.format(place.distance_km, 2)}
                       </Text>
                     </>
                   )}

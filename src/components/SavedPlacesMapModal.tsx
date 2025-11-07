@@ -18,6 +18,7 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '~/lib/theme';
+import { useDistanceUnit } from '~/utils/units';
 
 import AppMap from './AppMap';
 import PlaceDetailModal from './PlaceDetailModal';
@@ -100,6 +101,7 @@ export default function SavedPlacesMapModal({
 }: SavedPlacesMapModalProps) {
   // Theme
   const theme = useTheme();
+  const distance = useDistanceUnit();
 
   // Estados
   const [savedPlaces, setSavedPlaces] = useState<SavedPlaceWithTrip[]>([]);
@@ -422,14 +424,11 @@ export default function SavedPlacesMapModal({
           Math.sin(dLon / 2) *
           Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c * 1000; // en metros
+      const distanceInMeters = R * c * 1000; // en metros
 
-      if (distance >= 1000) {
-        return `${(distance / 1000).toFixed(1)} km`;
-      }
-      return `${Math.round(distance)} m`;
+      return distance.formatMeters(distanceInMeters);
     },
-    [userLocation]
+    [userLocation, distance]
   );
 
   // Convertir SavedPlaceWithTrip a EnhancedPlace

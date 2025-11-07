@@ -334,9 +334,10 @@ export function usePopularPlacesV2(options: UsePopularPlacesOptions = {}) {
         const startTime = Date.now();
 
         const { data, error: rpcError } = await supabase.rpc('get_popular_places_v2', {
-          user_country: userCountryCode || null,
+          user_country_code: userCountryCode || null,
           user_continent: userContinent || null,
           max_results: maxResults,
+          exclude_place_ids: [],
         });
 
         const responseTime = Date.now() - startTime;

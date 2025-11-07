@@ -11,6 +11,7 @@ import { useTravelMode } from '~/contexts/TravelModeContext';
 import { getCurrentPosition, getTripPlaces, getSavedPlaces, haversine } from '~/lib/home';
 import { sendPush } from '~/lib/push_send';
 import { supabase } from '~/lib/supabase';
+import { useDistanceUnit } from '~/utils/units';
 
 // Color constants for styling
 const PLACE_ITEM_BG = 'rgba(255, 255, 255, 0.6)';
@@ -33,15 +34,13 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
   const { t } = useTranslation();
   const { state } = useTravelMode();
   const enabled = state.isActive;
+  const distance = useDistanceUnit();
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [list, setList] = React.useState<Place[]>([]);
 
-  // Format distance: >= 1km as "1.0 Km", < 1km as "900m"
+  // Format distance using user's preferred units
   const formatDistance = (distanceInMeters: number): string => {
-    if (distanceInMeters >= 1000) {
-      return `${(distanceInMeters / 1000).toFixed(1)} Km`;
-    }
-    return `${Math.round(distanceInMeters)}m`;
+    return distance.formatMeters(distanceInMeters);
   };
 
   React.useEffect(() => {

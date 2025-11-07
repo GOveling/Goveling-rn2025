@@ -16,6 +16,7 @@ import { useGeoDetection } from '~/lib/geo';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
 import { formatDistance } from '~/services/travelMode/geoUtils';
+import { useSpeedUnit } from '~/utils/units';
 
 import { CountryWelcomeModal } from './CountryWelcomeModal';
 import { PlaceVisitModal } from './PlaceVisitModal';
@@ -31,6 +32,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
   const { t } = useTranslation();
   const theme = useTheme();
   const { state, actions } = useTravelMode();
+  const speed = useSpeedUnit();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mapModalVisible, setMapModalVisible] = useState(false);
@@ -571,7 +573,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                   </Text>
                   {state.currentSpeed !== null && state.currentSpeed >= 0 && (
                     <Text style={[styles.speedText, { color: '#3B82F6' }]}>
-                      {Math.max(0, state.currentSpeed).toFixed(1)} km/h
+                      {speed.format(Math.max(0, state.currentSpeed))}
                     </Text>
                   )}
                 </View>

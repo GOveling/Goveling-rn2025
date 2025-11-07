@@ -22,6 +22,7 @@ async function debugPopularPlaces() {
       user_country_code: null,
       user_continent: null,
       max_results: 8,
+      exclude_place_ids: [],
     });
 
     if (error) {
