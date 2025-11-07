@@ -918,7 +918,13 @@
   "route": {
     "step": "步骤",
     "steps": "步骤",
-    "arrive_at": "您将到达目的地"
+    "arrive_at": "您将到达目的地",
+    "continue": "继续",
+    "in": "在",
+    "navigation_permission_title": "需要位置权限",
+    "navigation_permission_message": "要使用逐向导航，我们需要访问您的实时位置。",
+    "navigation_error": "导航错误",
+    "navigation_error_message": "无法启动导航。请检查您的连接和位置权限。"
   },
   "tabs": {
     "home": "主页",

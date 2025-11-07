@@ -237,7 +237,7 @@ export default function RouteMapModal({
             center: { latitude, longitude },
             heading: heading || 0,
             pitch: 60,
-            zoom: 19, // Zoom muy cercano para navegación
+            altitude: 500, // Altura de la cámara en metros (más bajo = más zoom)
           },
           { duration: 1000 }
         );
@@ -293,7 +293,7 @@ export default function RouteMapModal({
                 center: { latitude, longitude },
                 heading: heading || 0,
                 pitch: 60, // Vista 3D inclinada
-                zoom: 19, // Zoom muy cercano para navegación
+                altitude: 500, // Altura de la cámara en metros (más bajo = más zoom)
               },
               { duration: 500 }
             );
@@ -324,7 +324,7 @@ export default function RouteMapModal({
           center: { latitude: center[1], longitude: center[0] },
           heading: 0,
           pitch: 0,
-          zoom: 12,
+          altitude: 5000, // Vista más alejada para ver toda la ruta
         },
         { duration: 800 }
       );

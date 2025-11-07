@@ -918,7 +918,13 @@
   "route": {
     "step": "passo",
     "steps": "passos",
-    "arrive_at": "Você chegará ao seu destino"
+    "arrive_at": "Você chegará ao seu destino",
+    "continue": "Continue",
+    "in": "Em",
+    "navigation_permission_title": "Permissão de Localização Necessária",
+    "navigation_permission_message": "Para usar a navegação passo a passo, precisamos de acesso à sua localização em tempo real.",
+    "navigation_error": "Erro de Navegação",
+    "navigation_error_message": "Não foi possível iniciar a navegação. Verifique sua conexão e permissões de localização."
   },
   "tabs": {
     "home": "Início",

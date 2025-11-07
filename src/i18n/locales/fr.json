@@ -918,7 +918,13 @@
   "route": {
     "step": "étape",
     "steps": "étapes",
-    "arrive_at": "Vous arriverez à destination"
+    "arrive_at": "Vous arriverez à destination",
+    "continue": "Continuez",
+    "in": "Dans",
+    "navigation_permission_title": "Autorisation de Localisation Requise",
+    "navigation_permission_message": "Pour utiliser la navigation étape par étape, nous avons besoin d'accéder à votre position en temps réel.",
+    "navigation_error": "Erreur de Navigation",
+    "navigation_error_message": "Impossible de démarrer la navigation. Vérifiez votre connexion et les autorisations de localisation."
   },
   "tabs": {
     "home": "Accueil",

@@ -918,7 +918,13 @@
   "route": {
     "step": "ステップ",
     "steps": "ステップ",
-    "arrive_at": "目的地に到着します"
+    "arrive_at": "目的地に到着します",
+    "continue": "続ける",
+    "in": "あと",
+    "navigation_permission_title": "位置情報の許可が必要です",
+    "navigation_permission_message": "ターンバイターンナビゲーションを使用するには、リアルタイムの位置情報へのアクセスが必要です。",
+    "navigation_error": "ナビゲーションエラー",
+    "navigation_error_message": "ナビゲーションを開始できませんでした。接続と位置情報の許可を確認してください。"
   },
   "tabs": {
     "home": "ホーム",
