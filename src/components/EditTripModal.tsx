@@ -620,42 +620,109 @@ export default function EditTripModal({
           </View>
         </View>
 
-        {/* Date Pickers */}
-        {showStartDatePicker && (
-          <DateTimePicker
-            value={tripData.startDate || new Date()}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={(event, selectedDate) => {
-              setShowStartDatePicker(false);
-              if (selectedDate) {
-                setTripData((prev) => ({ ...prev, startDate: selectedDate }));
-              }
-            }}
-            minimumDate={new Date()}
-            // Mejorar contraste en iOS
-            textColor={Platform.OS === 'ios' ? '#000000' : undefined}
-            style={Platform.OS === 'ios' ? { backgroundColor: '#FFFFFF' } : undefined}
-          />
-        )}
+        {/* Start Date Picker Modal */}
+        <Modal
+          visible={showStartDatePicker}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowStartDatePicker(false)}
+        >
+          <View style={styles.datePickerOverlay}>
+            <View
+              style={[styles.datePickerModalContent, { backgroundColor: theme.colors.background }]}
+            >
+              <View
+                style={[
+                  styles.datePickerHeader,
+                  { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                ]}
+              >
+                <TouchableOpacity onPress={() => setShowStartDatePicker(false)}>
+                  <Text style={[styles.pickerCancel, { color: theme.colors.textMuted }]}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+                <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+                  Fecha de Inicio
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowStartDatePicker(false);
+                  }}
+                >
+                  <Text style={[styles.pickerDone, { color: '#4F8EF7' }]}>Listo</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={tripData.startDate || new Date()}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) {
+                      setTripData((prev) => ({ ...prev, startDate: selectedDate }));
+                    }
+                  }}
+                  minimumDate={new Date()}
+                  textColor={theme.colors.text}
+                  style={styles.datePickerSpinner}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
 
-        {showEndDatePicker && (
-          <DateTimePicker
-            value={tripData.endDate || new Date()}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={(event, selectedDate) => {
-              setShowEndDatePicker(false);
-              if (selectedDate) {
-                setTripData((prev) => ({ ...prev, endDate: selectedDate }));
-              }
-            }}
-            minimumDate={tripData.startDate || new Date()}
-            // Mejorar contraste en iOS
-            textColor={Platform.OS === 'ios' ? '#000000' : undefined}
-            style={Platform.OS === 'ios' ? { backgroundColor: '#FFFFFF' } : undefined}
-          />
-        )}
+        {/* End Date Picker Modal */}
+        <Modal
+          visible={showEndDatePicker}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowEndDatePicker(false)}
+        >
+          <View style={styles.datePickerOverlay}>
+            <View
+              style={[styles.datePickerModalContent, { backgroundColor: theme.colors.background }]}
+            >
+              <View
+                style={[
+                  styles.datePickerHeader,
+                  { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+                ]}
+              >
+                <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
+                  <Text style={[styles.pickerCancel, { color: theme.colors.textMuted }]}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+                <Text style={[styles.pickerTitle, { color: theme.colors.text }]}>
+                  Fecha de Término
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowEndDatePicker(false);
+                  }}
+                >
+                  <Text style={[styles.pickerDone, { color: '#4F8EF7' }]}>Listo</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={tripData.endDate || new Date()}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) {
+                      setTripData((prev) => ({ ...prev, endDate: selectedDate }));
+                    }
+                  }}
+                  minimumDate={tripData.startDate || new Date()}
+                  textColor={theme.colors.text}
+                  style={styles.datePickerSpinner}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Accommodation Picker */}
         <Modal
@@ -986,5 +1053,36 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  datePickerOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  datePickerModalContent: {
+    borderRadius: 16,
+    maxWidth: 500,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  datePickerHeader: {
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  datePickerContainer: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+    paddingBottom: 10,
+  },
+  datePickerSpinner: {
+    width: '100%',
   },
 });
