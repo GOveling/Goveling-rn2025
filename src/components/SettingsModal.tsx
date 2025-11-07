@@ -253,14 +253,27 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   </Text>
                 </View>
               </View>
-              <Switch
-                value={settings.units === 'metric'}
-                onValueChange={(value) => setUnits(value ? 'metric' : 'imperial')}
-                trackColor={{ false: '#ccc', true: '#4F8EF7' }}
-                thumbColor={
-                  Platform.OS === 'ios' ? '#fff' : settings.units === 'metric' ? '#fff' : '#f4f3f4'
-                }
-              />
+              <View
+                style={{
+                  borderRadius: 16,
+                  borderWidth: 1.5,
+                  borderColor: settings.units === 'metric' ? '#4F8EF7' : '#60A5FA',
+                  padding: 1,
+                }}
+              >
+                <Switch
+                  value={settings.units === 'metric'}
+                  onValueChange={(value) => setUnits(value ? 'metric' : 'imperial')}
+                  trackColor={{ false: '#E5E7EB', true: '#4F8EF7' }}
+                  thumbColor={
+                    Platform.OS === 'ios'
+                      ? '#fff'
+                      : settings.units === 'metric'
+                        ? '#fff'
+                        : '#9CA3AF'
+                  }
+                />
+              </View>
             </View>
           </View>
 
@@ -302,13 +315,13 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               <Switch
                 value={settings.notifications.enabled}
                 onValueChange={(value) => updateNotifications({ enabled: value })}
-                trackColor={{ false: '#ccc', true: '#00C853' }}
+                trackColor={{ false: '#E5E7EB', true: '#00C853' }}
                 thumbColor={
                   Platform.OS === 'ios'
                     ? '#fff'
                     : settings.notifications.enabled
                       ? '#fff'
-                      : '#f4f3f4'
+                      : '#9CA3AF'
                 }
               />
             </View>
@@ -330,8 +343,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Switch
                     value={settings.notifications.tripReminders}
                     onValueChange={(value) => updateNotifications({ tripReminders: value })}
-                    trackColor={{ false: '#ccc', true: '#4F8EF7' }}
-                    thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                    trackColor={{ false: '#E5E7EB', true: '#4F8EF7' }}
+                    thumbColor={
+                      Platform.OS === 'ios'
+                        ? '#fff'
+                        : settings.notifications.tripReminders
+                          ? '#fff'
+                          : '#9CA3AF'
+                    }
                   />
                 </View>
 
@@ -350,8 +369,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Switch
                     value={settings.notifications.nearbyAlerts}
                     onValueChange={(value) => updateNotifications({ nearbyAlerts: value })}
-                    trackColor={{ false: '#ccc', true: '#4F8EF7' }}
-                    thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                    trackColor={{ false: '#E5E7EB', true: '#4F8EF7' }}
+                    thumbColor={
+                      Platform.OS === 'ios'
+                        ? '#fff'
+                        : settings.notifications.nearbyAlerts
+                          ? '#fff'
+                          : '#9CA3AF'
+                    }
                   />
                 </View>
 
@@ -370,8 +395,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Switch
                     value={settings.notifications.teamUpdates}
                     onValueChange={(value) => updateNotifications({ teamUpdates: value })}
-                    trackColor={{ false: '#ccc', true: '#4F8EF7' }}
-                    thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                    trackColor={{ false: '#E5E7EB', true: '#4F8EF7' }}
+                    thumbColor={
+                      Platform.OS === 'ios'
+                        ? '#fff'
+                        : settings.notifications.teamUpdates
+                          ? '#fff'
+                          : '#9CA3AF'
+                    }
                   />
                 </View>
 
@@ -390,8 +421,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   <Switch
                     value={settings.notifications.chatMessages}
                     onValueChange={(value) => updateNotifications({ chatMessages: value })}
-                    trackColor={{ false: '#ccc', true: '#4F8EF7' }}
-                    thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                    trackColor={{ false: '#E5E7EB', true: '#4F8EF7' }}
+                    thumbColor={
+                      Platform.OS === 'ios'
+                        ? '#fff'
+                        : settings.notifications.chatMessages
+                          ? '#fff'
+                          : '#9CA3AF'
+                    }
                   />
                 </View>
               </>
@@ -436,8 +473,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               <Switch
                 value={settings.privacy.shareLocation}
                 onValueChange={(value) => updatePrivacy({ shareLocation: value })}
-                trackColor={{ false: '#ccc', true: '#F44336' }}
-                thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                trackColor={{ false: '#E5E7EB', true: '#F44336' }}
+                thumbColor={
+                  Platform.OS === 'ios'
+                    ? '#fff'
+                    : settings.privacy.shareLocation
+                      ? '#fff'
+                      : '#9CA3AF'
+                }
               />
             </View>
 
@@ -463,8 +506,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               <Switch
                 value={settings.privacy.showOnlineStatus}
                 onValueChange={(value) => updatePrivacy({ showOnlineStatus: value })}
-                trackColor={{ false: '#ccc', true: '#4CAF50' }}
-                thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                trackColor={{ false: '#E5E7EB', true: '#4CAF50' }}
+                thumbColor={
+                  Platform.OS === 'ios'
+                    ? '#fff'
+                    : settings.privacy.showOnlineStatus
+                      ? '#fff'
+                      : '#9CA3AF'
+                }
               />
             </View>
 
@@ -490,8 +539,14 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               <Switch
                 value={settings.privacy.publicProfile}
                 onValueChange={(value) => updatePrivacy({ publicProfile: value })}
-                trackColor={{ false: '#ccc', true: '#2196F3' }}
-                thumbColor={Platform.OS === 'ios' ? '#fff' : '#fff'}
+                trackColor={{ false: '#E5E7EB', true: '#2196F3' }}
+                thumbColor={
+                  Platform.OS === 'ios'
+                    ? '#fff'
+                    : settings.privacy.publicProfile
+                      ? '#fff'
+                      : '#9CA3AF'
+                }
               />
             </View>
           </View>

@@ -46,6 +46,7 @@ function toRadians(degrees: number): number {
  * Format distance in human-readable format
  * @param meters Distance in meters
  * @returns Formatted string (e.g., "1.5 km", "500 m")
+ * @deprecated Use useDistanceUnit().formatMeters() instead for unit conversion support
  */
 export function formatDistance(meters: number): string {
   if (meters >= 1000) {

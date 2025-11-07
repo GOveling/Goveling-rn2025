@@ -15,8 +15,7 @@ import { useTravelMode } from '~/contexts/TravelModeContext';
 import { useGeoDetection } from '~/lib/geo';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
-import { formatDistance } from '~/services/travelMode/geoUtils';
-import { useSpeedUnit } from '~/utils/units';
+import { useSpeedUnit, useDistanceUnit } from '~/utils/units';
 
 import { CountryWelcomeModal } from './CountryWelcomeModal';
 import { PlaceVisitModal } from './PlaceVisitModal';
@@ -33,6 +32,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
   const theme = useTheme();
   const { state, actions } = useTravelMode();
   const speed = useSpeedUnit();
+  const distance = useDistanceUnit();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mapModalVisible, setMapModalVisible] = useState(false);
@@ -598,7 +598,7 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                   style={[styles.placeItem, { borderBottomColor: theme.colors.border }]}
                 >
                   <Text style={[styles.placeName, { color: theme.colors.text }]}>{place.name}</Text>
-                  <Text style={styles.placeDistance}>{formatDistance(place.distance)}</Text>
+                  <Text style={styles.placeDistance}>{distance.formatMeters(place.distance)}</Text>
                 </View>
               ))}
             </View>

@@ -6,23 +6,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTranslation } from 'react-i18next';
 
+import { useTemperatureUnit } from '~/utils/units';
+
 import NotificationBell from './NotificationBell';
 
 interface LocationWidgetProps {
   city: string;
   temp: number | undefined;
-  units: 'c' | 'f';
+  units: 'c' | 'f'; // Keep for backwards compatibility but will be ignored
   onToggleUnits: () => void;
 }
 
 /**
  * Memoized LocationWidget component
- * Only re-renders when city, temp, or units change
+ * Only re-renders when city or temp change
  * Prevents unnecessary re-renders from parent state changes
  */
 const LocationWidget = React.memo<LocationWidgetProps>(
-  function LocationWidget({ city, temp, units, onToggleUnits }) {
+  function LocationWidget({ city, temp, onToggleUnits }) {
     const { i18n } = useTranslation();
+    const temperature = useTemperatureUnit();
 
     // Use current language for date formatting
     const currentDate = new Date().toLocaleDateString(i18n.language, {
@@ -60,8 +63,7 @@ const LocationWidget = React.memo<LocationWidgetProps>(
             >
               <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
               <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
-                {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°
-                {units === 'c' ? 'C' : 'F'}
+                {typeof temp === 'number' ? temperature.format(temp) : '—'}
               </Text>
             </TouchableOpacity>
 
@@ -74,10 +76,9 @@ const LocationWidget = React.memo<LocationWidgetProps>(
   // Custom comparison function for better memoization
   (prevProps, nextProps) => {
     return (
-      prevProps.city === nextProps.city &&
-      prevProps.temp === nextProps.temp &&
-      prevProps.units === nextProps.units
+      prevProps.city === nextProps.city && prevProps.temp === nextProps.temp
       // onToggleUnits is stable (useCallback), so we don't compare it
+      // units prop is now ignored - we use AppSettingsContext via hook
     );
   }
 );
