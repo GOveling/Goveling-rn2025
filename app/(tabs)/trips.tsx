@@ -101,16 +101,24 @@ export default function TripsTab() {
   const loadTripStats = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Force refetch breakdown to ensure we have latest data with created_at
+      logger.debug('🧪 TripsTab: Force refetching breakdown to get latest data');
+      const refetchResult = await refetchTrips();
+
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user?.id) return;
 
       logger.debug('🧪 TripsTab: Current user ID:', user.user.id);
 
-      // Use RTK Query breakdown as base (leverages cache from HomeTab)
-      const baseTrips: Trip[] = breakdown?.all || [];
-      logger.debug('🧪 TripsTab: Using RTK Query cache, base trips count:', baseTrips.length);
+      // Use the freshly refetched data (not cached breakdown)
+      const baseTrips: Trip[] = refetchResult.data?.all || [];
+      logger.debug(
+        '🧪 TripsTab: Using freshly refetched data, base trips count:',
+        baseTrips.length
+      );
       baseTrips.forEach((trip) => {
-        logger.debug(`  - Base trip: "${trip.name}" (${trip.id})`);
+        logger.debug(`  - Base trip: "${trip.name}" (${trip.id}) created_at: ${trip.created_at}`);
       });
 
       // Also check for collaborator trips not in breakdown
@@ -137,7 +145,7 @@ export default function TripsTab() {
           end_date: t.end_date ?? null,
           // Fallbacks for required TripCard props when not available in breakdown
           user_id: '',
-          created_at: new Date(0).toISOString(),
+          created_at: t.created_at ?? new Date(0).toISOString(),
         };
         baseTripsMap.set(t.id, mapped);
       });
@@ -171,6 +179,17 @@ export default function TripsTab() {
 
       logger.debug('🧪 TripsTab Debug: unifiedTrip IDs:', Array.from(baseTripsMap.keys()));
       const unifiedTrips: TripsListItem[] = Array.from(baseTripsMap.values());
+
+      // DEBUG: Log trips BEFORE sorting
+      logger.debug(
+        '🔍 BEFORE SORTING - Unified trips data:',
+        unifiedTrips.map((t) => ({
+          title: t.title,
+          start_date: t.start_date,
+          end_date: t.end_date,
+          created_at: t.created_at,
+        }))
+      );
 
       // Obtener team data para cada trip (owner, colaboradores, count) en paralelo.
       // Intentar RPC (tipado, rápido); si falla por cualquier motivo, hacer fallback al método estándar.
@@ -210,70 +229,116 @@ export default function TripsTab() {
       );
 
       // Sort trips according to business logic:
-      // 1. Completed trips go to the end (oldest completed last)
-      // 2. Active trips (planning, upcoming, traveling):
-      //    - With start_date: sort by closest start_date first
-      //    - Without start_date: sort by created_at (newest first)
+      // 1. Active trips (currently happening) come FIRST
+      // 2. Upcoming trips (future dates) - ordered by closest start_date
+      // 3. Planning trips (no dates) - ordered by creation date (newest first)
+      // 4. Completed trips at the END - ordered by end_date (newest first)
+
+      // Helper function to parse date as local time instead of UTC
+      const parseLocalDate = (dateString: string): Date => {
+        // If the date string is just YYYY-MM-DD, we want to treat it as local time, not UTC
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+          // Parse as local time by appending local time zone
+          return new Date(dateString + 'T00:00:00');
+        }
+        // If it already has time/timezone info, use as is
+        return new Date(dateString);
+      };
+
       const sortedTrips = tripsWithTeam.sort((a, b) => {
+        const now = new Date();
+
         // Helper function to determine if trip is completed
         const isCompleted = (trip: TripsListItem) => {
           if (!trip.start_date || !trip.end_date) return false;
-          const now = new Date();
-          const endDate = new Date(trip.end_date);
+          const endDate = parseLocalDate(trip.end_date);
           return now > endDate;
+        };
+
+        // Helper function to determine if trip is active (currently traveling)
+        const isActive = (trip: TripsListItem) => {
+          if (!trip.start_date || !trip.end_date) return false;
+          const startDate = parseLocalDate(trip.start_date);
+          const endDate = parseLocalDate(trip.end_date);
+          return now >= startDate && now <= endDate;
         };
 
         const aCompleted = isCompleted(a);
         const bCompleted = isCompleted(b);
+        const aActive = isActive(a);
+        const bActive = isActive(b);
 
-        // If one is completed and the other is not, non-completed comes first
+        // 1. Completed trips always go to the end
         if (aCompleted && !bCompleted) return 1;
         if (!aCompleted && bCompleted) return -1;
 
-        // Both are completed - sort by end_date (oldest last)
+        // Both are completed - newer completed first
         if (aCompleted && bCompleted) {
-          const aEndDate = new Date(a.end_date || '1970-01-01');
-          const bEndDate = new Date(b.end_date || '1970-01-01');
-          // Newer completed trips first (so older ones sink to the bottom)
+          const aEndDate = parseLocalDate(a.end_date || '1970-01-01');
+          const bEndDate = parseLocalDate(b.end_date || '1970-01-01');
           return bEndDate.getTime() - aEndDate.getTime();
         }
 
-        // Both are active - apply original sorting logic
+        // 2. Active trips (currently traveling) always come first among non-completed
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+
+        // Both are active - sort by closest end_date (ending soon first)
+        if (aActive && bActive) {
+          const aEndDate = parseLocalDate(a.end_date || '2099-12-31');
+          const bEndDate = parseLocalDate(b.end_date || '2099-12-31');
+          return aEndDate.getTime() - bEndDate.getTime();
+        }
+
+        // 3. Now handle upcoming/planning trips (neither is completed nor active)
         const aHasDate = a.start_date && a.start_date.trim() !== '';
         const bHasDate = b.start_date && b.start_date.trim() !== '';
 
-        // Both have dates - sort by closest start_date (earliest first)
+        // Both have future dates - sort by closest start_date
         if (aHasDate && bHasDate) {
-          const aStartDate = new Date(a.start_date);
-          const bStartDate = new Date(b.start_date);
+          const aStartDate = parseLocalDate(a.start_date);
+          const bStartDate = parseLocalDate(b.start_date);
           return aStartDate.getTime() - bStartDate.getTime();
         }
 
-        // Only A has date - A comes first
-        if (aHasDate && !bHasDate) {
-          return -1;
-        }
+        // One has date, one doesn't - trips with dates come first
+        if (aHasDate && !bHasDate) return -1;
+        if (!aHasDate && bHasDate) return 1;
 
-        // Only B has date - B comes first
-        if (!aHasDate && bHasDate) {
-          return 1;
-        }
-
-        // Neither has date - sort by created_at (newest first)
-        const aCreatedDate = new Date(a.created_at || '1970-01-01');
-        const bCreatedDate = new Date(b.created_at || '1970-01-01');
+        // 4. Neither has date (planning trips) - newest created first
+        const aCreatedDate = parseLocalDate(a.created_at || '1970-01-01');
+        const bCreatedDate = parseLocalDate(b.created_at || '1970-01-01');
         return bCreatedDate.getTime() - aCreatedDate.getTime();
       });
 
+      // Enhanced debugging for trip sorting
+      const now = new Date();
       logger.debug(
-        '🧪 TripsTab: Sorted trips order (Active first, Completed at end):',
-        sortedTrips.map((t) => ({
-          title: t.title,
-          start_date: t.start_date,
-          end_date: t.end_date,
-          created_at: t.created_at,
-          isCompleted: t.end_date && new Date() > new Date(t.end_date),
-        }))
+        '🧪 TripsTab: Sorted trips order with classification:',
+        sortedTrips.map((t) => {
+          const isCompleted = t.end_date && now > parseLocalDate(t.end_date);
+          const isActive =
+            t.start_date &&
+            t.end_date &&
+            now >= parseLocalDate(t.start_date) &&
+            now <= parseLocalDate(t.end_date);
+          const isUpcoming = t.start_date && now < parseLocalDate(t.start_date);
+          const isPlanning = !t.start_date || !t.end_date;
+
+          let category = '';
+          if (isCompleted) category = '✅ COMPLETED';
+          else if (isActive) category = '🏃 ACTIVE';
+          else if (isUpcoming) category = '📅 UPCOMING';
+          else if (isPlanning) category = '📝 PLANNING';
+
+          return {
+            category,
+            title: t.title,
+            start_date: t.start_date,
+            end_date: t.end_date,
+            created_at: t.created_at,
+          };
+        })
       );
 
       logger.debug('🔍🔍🔍 CRITICAL: About to setTrips with length:', sortedTrips.length);
@@ -368,7 +433,7 @@ export default function TripsTab() {
     } finally {
       setLoading(false);
     }
-  }, [breakdown]);
+  }, [refetchTrips]);
 
   const onRefresh = React.useCallback(async () => {
     logger.debug('🔄 TripsTab: Pull-to-refresh triggered');

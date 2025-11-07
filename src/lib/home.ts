@@ -11,6 +11,7 @@ export type Trip = {
   start_date?: string | null;
   end_date?: string | null;
   cover_emoji?: string | null;
+  created_at?: string | null;
 };
 
 // Helper function to parse date as local time instead of UTC
@@ -82,12 +83,12 @@ export async function getUserTripsBreakdown(): Promise<TripsBreakdown> {
   const [ownResult, ownByOwnerIdResult, collabIdsResult] = await Promise.all([
     supabase
       .from('trips')
-      .select('id,title,start_date,end_date')
+      .select('id,title,start_date,end_date,created_at')
       .eq('user_id', uid)
       .neq('status', 'cancelled'),
     supabase
       .from('trips')
-      .select('id,title,start_date,end_date')
+      .select('id,title,start_date,end_date,created_at')
       .eq('owner_id', uid)
       .neq('status', 'cancelled'),
     supabase.from('trip_collaborators').select('trip_id').eq('user_id', uid),
@@ -100,7 +101,7 @@ export async function getUserTripsBreakdown(): Promise<TripsBreakdown> {
     tripIds.length > 0
       ? await supabase
           .from('trips')
-          .select('id,title,start_date,end_date')
+          .select('id,title,start_date,end_date,created_at')
           .in('id', tripIds)
           .neq('status', 'cancelled')
       : { data: [] };
@@ -130,6 +131,7 @@ export async function getUserTripsBreakdown(): Promise<TripsBreakdown> {
         name: t.title,
         start_date: t.start_date,
         end_date: t.end_date,
+        created_at: t.created_at,
       });
     }
   });
@@ -141,7 +143,6 @@ export async function getUserTripsBreakdown(): Promise<TripsBreakdown> {
   );
 
   // Classify trips once
-  const now = new Date();
   const planning: Trip[] = [];
   const upcoming: Trip[] = [];
   let active: Trip | null = null;
