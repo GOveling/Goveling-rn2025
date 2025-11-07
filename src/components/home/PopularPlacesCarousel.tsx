@@ -165,7 +165,11 @@ export default function PopularPlacesCarousel({
             { backgroundColor: theme.mode === 'dark' ? 'rgba(254, 243, 199, 0.2)' : '#FEF3C7' },
           ]}
         >
-          <Text style={styles.placeEmoji}>{currentPlace.emoji}</Text>
+          {currentPlace.emoji ? (
+            <Text style={styles.placeEmoji}>{currentPlace.emoji}</Text>
+          ) : (
+            <Text style={styles.placeEmoji}>📍</Text>
+          )}
         </View>
 
         {/* Content */}
