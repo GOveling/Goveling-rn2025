@@ -314,6 +314,15 @@ export default function PlaceDetailModal({
       console.log('✅ [handleSelectTransportMode] Route result received:', result);
       console.log('📊 [handleSelectTransportMode] Result keys:', Object.keys(result));
 
+      // Log del motor de ruteo utilizado
+      if ('source' in result) {
+        const routingEngine = result.source === 'osrm' ? 'OSRM (gratis)' : 'ORS (fallback)';
+        console.log(`🚗 [Routing Engine] Used: ${routingEngine}`);
+        if ('cached' in result && result.cached) {
+          console.log('⚡ [Cache] Route served from cache');
+        }
+      }
+
       setDirectionsLoading(false);
       setShowDirectionsModeSelector(false);
       // NO restaurar tempHideMainModal aquí - lo haremos cuando se cierre RouteMapModal
@@ -333,6 +342,8 @@ export default function PlaceDetailModal({
           distance: result.distance_m,
           duration: result.duration_s,
           mode: mode,
+          source: result.source || 'unknown',
+          cached: result.cached || false,
         });
 
         // coords ya vienen decodificadas del Edge Function como [lng, lat][]

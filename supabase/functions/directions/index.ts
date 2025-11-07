@@ -77,9 +77,17 @@ async function getRouteFromOSRM(
 ) {
   const profile = modeToOSRMProfile(mode);
   const coords = `${origin[0]},${origin[1]};${destination[0]},${destination[1]}`;
-  const osrmUrl = `${OSRM_BASE_URL}/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=true&alternatives=false`;
 
-  console.log('🆓 Trying OSRM (free):', { profile, mode });
+  // Parámetros optimizados para mejor calidad:
+  // - overview=full: geometría completa (mejor precisión)
+  // - geometries=geojson: formato GeoJSON nativo
+  // - steps=true: instrucciones turn-by-turn
+  // - alternatives=true: obtener rutas alternativas
+  // - continue_straight=default: permitir giros naturales
+  // - annotations=true: datos adicionales de velocidad/duración
+  const osrmUrl = `${OSRM_BASE_URL}/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=true&alternatives=true&continue_straight=default&annotations=true`;
+
+  console.log('🆓 Trying OSRM (free):', { profile, mode, url: osrmUrl });
 
   try {
     const response = await fetch(osrmUrl, {
@@ -88,18 +96,39 @@ async function getRouteFromOSRM(
     });
 
     if (!response.ok) {
-      console.log('❌ OSRM failed:', response.status);
+      console.log('❌ OSRM HTTP error:', response.status, response.statusText);
       return null;
     }
 
     const data = await response.json();
+    console.log('📦 OSRM response:', {
+      code: data.code,
+      hasRoutes: !!data.routes,
+      routesCount: data.routes?.length || 0,
+    });
 
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-      console.log('❌ OSRM no route found');
+      console.log('❌ OSRM no route found - code:', data.code, 'message:', data.message);
       return null;
     }
 
-    const route = data.routes[0];
+    // Seleccionar la mejor ruta entre las alternativas
+    // Prioridad: menor duración con distancia razonable
+    const route = data.routes.reduce((best: any, current: any) => {
+      if (!best) return current;
+
+      // Preferir ruta con mejor balance duración/distancia
+      const currentScore = current.duration + current.distance / 100; // menor es mejor
+      const bestScore = best.duration + best.distance / 100;
+
+      return currentScore < bestScore ? current : best;
+    }, null);
+
+    if (!route) {
+      console.log('❌ OSRM no valid route found');
+      return null;
+    }
+
     const coordinates = route.geometry.coordinates;
 
     // Calcular bbox
@@ -112,12 +141,44 @@ async function getRouteFromOSRM(
       Math.max(...allLats),
     ];
 
-    // Extraer pasos (OSRM usa formato diferente a ORS)
+    // Función helper para generar instrucciones más claras en español
+    const generateInstruction = (step: any): string => {
+      const maneuver = step.maneuver;
+      const name = step.name || '';
+      const modifier = maneuver?.modifier || '';
+      const type = maneuver?.type || '';
+
+      // Mapeo de tipos de maniobra a instrucciones claras
+      const instructions: { [key: string]: string } = {
+        'turn-sharp-right': `Gira bruscamente a la derecha${name ? ` hacia ${name}` : ''}`,
+        'turn-right': `Gira a la derecha${name ? ` hacia ${name}` : ''}`,
+        'turn-slight-right': `Gira ligeramente a la derecha${name ? ` hacia ${name}` : ''}`,
+        'turn-sharp-left': `Gira bruscamente a la izquierda${name ? ` hacia ${name}` : ''}`,
+        'turn-left': `Gira a la izquierda${name ? ` hacia ${name}` : ''}`,
+        'turn-slight-left': `Gira ligeramente a la izquierda${name ? ` hacia ${name}` : ''}`,
+        uturn: 'Da la vuelta en U',
+        arrive: 'Has llegado a tu destino',
+        depart: `Dirígete${name ? ` por ${name}` : ''}`,
+        continue: `Continúa${name ? ` por ${name}` : ''}`,
+        roundabout: `Toma la rotonda${name ? ` y sal hacia ${name}` : ''}`,
+        merge: `Incorpórate${name ? ` a ${name}` : ''}`,
+        fork: `Mantente${modifier.includes('right') ? ' a la derecha' : ' a la izquierda'}${name ? ` hacia ${name}` : ''}`,
+      };
+
+      // Construir clave de búsqueda
+      const key = modifier ? `${type}-${modifier}` : type;
+
+      return (
+        instructions[key] || instructions[type] || step.maneuver?.instruction || name || 'Continúa'
+      );
+    };
+
+    // Extraer pasos con instrucciones mejoradas
     const steps =
       route.legs[0]?.steps?.map((step: any) => ({
-        instruction: step.maneuver?.instruction || step.name || 'Continue',
-        distance_m: step.distance || 0,
-        duration_s: step.duration || 0,
+        instruction: generateInstruction(step),
+        distance_m: Math.round(step.distance || 0),
+        duration_s: Math.round(step.duration || 0),
         type: String(step.maneuver?.type || ''),
         name: step.name || '',
       })) || [];
@@ -125,7 +186,8 @@ async function getRouteFromOSRM(
     console.log('✅ OSRM success:', {
       distance_km: (route.distance / 1000).toFixed(2),
       duration_min: (route.duration / 60).toFixed(1),
-      source: 'OSRM (free)',
+      steps_count: steps.length,
+      source: 'OSRM (free, optimized)',
     });
 
     return {
@@ -212,26 +274,68 @@ serve(async (req) => {
       });
     }
 
-    // ===== ESTRATEGIA: OSRM PRIMERO (GRATIS), ORS COMO FALLBACK =====
+    // ===== ESTRATEGIA: OSRM PRIMERO (GRATIS), ORS COMO FALLBACK INTELIGENTE =====
+
+    // Calcular distancia directa (haversine) para decidir estrategia
+    const R = 6371; // Radio de la Tierra en km
+    const lat1 = body.origin[1] * (Math.PI / 180);
+    const lat2 = body.destination[1] * (Math.PI / 180);
+    const deltaLat = (body.destination[1] - body.origin[1]) * (Math.PI / 180);
+    const deltaLon = (body.destination[0] - body.origin[0]) * (Math.PI / 180);
+
+    const a =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const straightDistance = R * c; // distancia en km
+
+    console.log('📏 Straight-line distance:', straightDistance.toFixed(2), 'km');
 
     // 1. Intentar OSRM (gratuito, sin límites)
     const osrmResult = await getRouteFromOSRM(body.origin, body.destination, mode);
 
     if (osrmResult) {
-      // OSRM funcionó, guardar en cache y retornar
-      cache.set(cacheKey, {
-        data: osrmResult,
-        timestamp: Date.now(),
+      const routeDistance = osrmResult.distance_m / 1000; // convertir a km
+      const detourFactor = routeDistance / straightDistance;
+
+      console.log('📊 Route quality check:', {
+        straight_km: straightDistance.toFixed(2),
+        route_km: routeDistance.toFixed(2),
+        detour_factor: detourFactor.toFixed(2),
       });
 
-      return new Response(JSON.stringify(osrmResult), {
-        status: 200,
-        headers: corsHeaders,
-      });
+      // Validar calidad de la ruta OSRM
+      // Para rutas MUY CORTAS (<1km), siempre usar OSRM (el detour factor puede ser engañoso)
+      // Para rutas medianas/largas, validar si el desvío es razonable
+      const needsBetterRoute =
+        routeDistance > 1 && // Solo validar si la ruta es >1km
+        ((straightDistance > 10 && detourFactor > 3) || // Ruta larga con desvío alto
+          detourFactor > 5); // Desvío extremo
+
+      if (needsBetterRoute) {
+        console.log(
+          '⚠️ OSRM route quality questionable (detour factor too high), trying ORS for better accuracy...'
+        );
+        // NO hacer return aquí - continuar al fallback ORS abajo
+      } else {
+        // OSRM es buena calidad (o muy corta), guardar en cache y retornar
+        console.log('✅ OSRM route quality is good, using it');
+        cache.set(cacheKey, {
+          data: osrmResult,
+          timestamp: Date.now(),
+        });
+
+        return new Response(JSON.stringify(osrmResult), {
+          status: 200,
+          headers: corsHeaders,
+        });
+      }
+    } else {
+      console.log('⚠️ OSRM failed to return a route');
     }
 
-    // 2. Si OSRM falla, intentar ORS (con API key, tiene límites)
-    console.log('⚠️ OSRM failed, falling back to ORS...');
+    // 2. Si OSRM falla o la calidad no es buena, intentar ORS (con API key, tiene límites)
+    console.log('⚠️ Falling back to ORS for better route quality...');
 
     if (!ORS_API_KEY) {
       console.error('❌ ORS_API_KEY not configured and OSRM failed');

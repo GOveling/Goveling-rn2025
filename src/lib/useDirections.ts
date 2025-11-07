@@ -23,6 +23,7 @@ export type RouteResult = {
   bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
   steps: RouteStep[];
   cached?: boolean;
+  source?: 'osrm' | 'ors'; // Routing engine used
 };
 
 export type TransitResult = {
@@ -97,6 +98,7 @@ export function useDirections() {
           bbox: data.bbox,
           steps: data.steps || [],
           cached: data.cached,
+          source: data.source, // Routing engine: 'osrm' or 'ors'
         };
 
         setResult(routeResult);
@@ -181,5 +183,6 @@ export async function getRouteToPlace(
     bbox: data.bbox,
     steps: data.steps || [],
     cached: data.cached,
+    source: data.source, // Routing engine: 'osrm' or 'ors'
   };
 }
