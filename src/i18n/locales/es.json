@@ -190,6 +190,32 @@
       "directions_unavailable_message": "No se puede obtener direcciones para este lugar",
       "directions_coming_soon_title": "Funcionalidad próxima",
       "directions_coming_soon_message": "Las direcciones paso a paso estarán disponibles pronto",
+      "directions_mode_selector_title": "Selecciona tu modo de transporte",
+      "directions_mode_selector_subtitle": "Elige cómo quieres llegar",
+      "directions_calculating": "Calculando ruta...",
+      "directions_error": "No se pudo calcular la ruta",
+      "directions_permission_denied": "Permiso de ubicación denegado",
+      "directions_route_not_found": "No se encontró ruta disponible",
+      "directions_retry": "Reintentar",
+      "directions_open_in_maps": "Abrir en Mapas",
+      "transport_mode": {
+        "walking": "Caminando",
+        "walking_desc": "Ruta a pie",
+        "cycling": "En bicicleta",
+        "cycling_desc": "Ruta para ciclistas",
+        "driving": "En auto",
+        "driving_desc": "Ruta en automóvil",
+        "transit": "Transporte público",
+        "transit_desc": "Ver en Google/Apple Maps"
+      },
+      "route_info": {
+        "distance": "Distancia",
+        "duration": "Duración",
+        "steps": "Instrucciones",
+        "show_steps": "Ver instrucciones",
+        "hide_steps": "Ocultar instrucciones",
+        "cached": "Ruta guardada en caché"
+      },
       "error_title": "Error",
       "no_photos": "Sin fotos",
       "main_photo": "Principal",
@@ -955,6 +981,11 @@
       "send_failed": "No se pudo enviar el mensaje"
     },
     "user_fallback": "Usuario"
+  },
+  "route": {
+    "step": "paso",
+    "steps": "pasos",
+    "arrive_at": "Llegarás a tu destino"
   },
   "tabs": {
     "home": "Inicio",

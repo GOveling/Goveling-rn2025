@@ -183,6 +183,32 @@
       "directions_unavailable_message": "इस स्थान के लिए दिशा-निर्देश प्राप्त नहीं हो सकते",
       "directions_coming_soon_title": "सुविधा जल्द आ रही है",
       "directions_coming_soon_message": "चरण-दर-चरण दिशा-निर्देश जल्द ही उपलब्ध होंगे",
+      "directions_mode_selector_title": "अपना परिवहन मोड चुनें",
+      "directions_mode_selector_subtitle": "चुनें कि आप कैसे पहुंचना चाहते हैं",
+      "directions_calculating": "मार्ग की गणना हो रही है...",
+      "directions_error": "मार्ग की गणना नहीं हो सकी",
+      "directions_permission_denied": "स्थान अनुमति अस्वीकृत",
+      "directions_route_not_found": "कोई मार्ग उपलब्ध नहीं",
+      "directions_retry": "पुनः प्रयास करें",
+      "directions_open_in_maps": "मानचित्र में खोलें",
+      "transport_mode": {
+        "walking": "पैदल",
+        "walking_desc": "पैदल मार्ग",
+        "cycling": "साइकिल",
+        "cycling_desc": "साइकिल मार्ग",
+        "driving": "गाड़ी",
+        "driving_desc": "गाड़ी से मार्ग",
+        "transit": "सार्वजनिक परिवहन",
+        "transit_desc": "Google/Apple Maps में देखें"
+      },
+      "route_info": {
+        "distance": "दूरी",
+        "duration": "अवधि",
+        "steps": "निर्देश",
+        "show_steps": "निर्देश दिखाएं",
+        "hide_steps": "निर्देश छुपाएं",
+        "cached": "कैश किया गया मार्ग"
+      },
       "error_title": "त्रुटि",
       "no_photos": "कोई फोटो नहीं",
       "main_photo": "मुख्य",
@@ -835,5 +861,10 @@
     "trips": "यात्राएं",
     "booking": "बुकिंग",
     "profile": "प्रोफाइल"
+  },
+  "route": {
+    "step": "कदम",
+    "steps": "कदम",
+    "arrive_at": "आप अपने गंतव्य पर पहुंचेंगे"
   }
 }

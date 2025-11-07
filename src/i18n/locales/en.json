@@ -190,6 +190,32 @@
       "directions_unavailable_message": "Cannot get directions for this place",
       "directions_coming_soon_title": "Feature coming soon",
       "directions_coming_soon_message": "Step-by-step directions will be available soon",
+      "directions_mode_selector_title": "Select your transport mode",
+      "directions_mode_selector_subtitle": "Choose how you want to get there",
+      "directions_calculating": "Calculating route...",
+      "directions_error": "Could not calculate route",
+      "directions_permission_denied": "Location permission denied",
+      "directions_route_not_found": "No route available",
+      "directions_retry": "Retry",
+      "directions_open_in_maps": "Open in Maps",
+      "transport_mode": {
+        "walking": "Walking",
+        "walking_desc": "Walking route",
+        "cycling": "Cycling",
+        "cycling_desc": "Cycling route",
+        "driving": "Driving",
+        "driving_desc": "Driving route",
+        "transit": "Public transit",
+        "transit_desc": "View in Google/Apple Maps"
+      },
+      "route_info": {
+        "distance": "Distance",
+        "duration": "Duration",
+        "steps": "Instructions",
+        "show_steps": "Show instructions",
+        "hide_steps": "Hide instructions",
+        "cached": "Cached route"
+      },
       "error_title": "Error",
       "no_photos": "No photos",
       "main_photo": "Main",
@@ -956,6 +982,11 @@
       "send_failed": "Could not send message"
     },
     "user_fallback": "User"
+  },
+  "route": {
+    "step": "step",
+    "steps": "steps",
+    "arrive_at": "You will arrive at your destination"
   },
   "tabs": {
     "home": "Home",

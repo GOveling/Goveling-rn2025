@@ -177,8 +177,34 @@
       "website_unavailable_message": "この場所のウェブサイトはありません",
       "directions_unavailable_title": "位置情報が利用できません",
       "directions_unavailable_message": "この場所への道順を取得できません",
-      "directions_coming_soon_title": "機能近日公開",
+      "directions_coming_soon_title": "近日公開予定の機能",
       "directions_coming_soon_message": "ステップバイステップの道順は近日公開予定です",
+      "directions_mode_selector_title": "交通手段を選択",
+      "directions_mode_selector_subtitle": "移動方法を選んでください",
+      "directions_calculating": "ルートを計算中...",
+      "directions_error": "ルートを計算できませんでした",
+      "directions_permission_denied": "位置情報の許可が拒否されました",
+      "directions_route_not_found": "利用可能なルートがありません",
+      "directions_retry": "再試行",
+      "directions_open_in_maps": "マップで開く",
+      "transport_mode": {
+        "walking": "徒歩",
+        "walking_desc": "徒歩ルート",
+        "cycling": "自転車",
+        "cycling_desc": "自転車ルート",
+        "driving": "車",
+        "driving_desc": "車でのルート",
+        "transit": "公共交通機関",
+        "transit_desc": "Google/Apple Mapsで表示"
+      },
+      "route_info": {
+        "distance": "距離",
+        "duration": "所要時間",
+        "steps": "手順",
+        "show_steps": "手順を表示",
+        "hide_steps": "手順を非表示",
+        "cached": "キャッシュされたルート"
+      },
       "error_title": "エラー",
       "no_photos": "写真なし",
       "main_photo": "メイン",
@@ -888,6 +914,11 @@
     "theme_light": "ライト",
     "theme_dark": "ダーク",
     "theme_auto": "自動"
+  },
+  "route": {
+    "step": "ステップ",
+    "steps": "ステップ",
+    "arrive_at": "目的地に到着します"
   },
   "tabs": {
     "home": "ホーム",

@@ -45,6 +45,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^4.6.3",
     "@lottiefiles/dotlottie-react": "^0.17.4",
+    "@mapbox/polyline": "1.2.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",

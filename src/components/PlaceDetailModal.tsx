@@ -22,8 +22,10 @@ import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { useTranslation } from 'react-i18next';
 
 import AddToTripModal from './AddToTripModal';
+import DirectionsModeSelector from './DirectionsModeSelector';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
+import RouteMapModal from './RouteMapModal';
 import cycleAnimation from '../../assets/animations/cycle.json';
 import globeAnimation from '../../assets/animations/globe.json';
 import locationCircleAnimation from '../../assets/animations/location-circle.json';
@@ -31,6 +33,7 @@ import { translateDynamic } from '../i18n';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
 import { useTheme } from '../lib/theme';
+import { getRouteToPlace, type TransportMode } from '../lib/useDirections';
 import { useFavorites } from '../lib/useFavorites';
 import { colorizeLottie } from '../utils/lottieColorizer';
 import { useDistanceUnit } from '../utils/units';
@@ -68,6 +71,25 @@ export default function PlaceDetailModal({
   const [tempHideMainModal, setTempHideMainModal] = React.useState(false);
   const [showAddToTrip, setShowAddToTrip] = React.useState(false);
   const [aboutText, setAboutText] = React.useState<string | null>(null);
+
+  // Estados para direcciones
+  const [showDirectionsModeSelector, setShowDirectionsModeSelector] = React.useState(false);
+  const [directionsLoading, setDirectionsLoading] = React.useState(false);
+  const [showRouteMap, setShowRouteMap] = React.useState(false);
+  const [routeData, setRouteData] = React.useState<{
+    coordinates: [number, number][];
+    bbox: [number, number, number, number];
+    distance_m: number;
+    duration_s: number;
+    mode: 'walking' | 'cycling' | 'driving';
+    steps: Array<{
+      instruction: string;
+      distance_m: number;
+      duration_s: number;
+      type?: string;
+      name?: string;
+    }>;
+  } | null>(null);
 
   // Estados para controlar errores de Lottie
   const [directionsLottieError, setDirectionsLottieError] = React.useState(false);
@@ -251,27 +273,130 @@ export default function PlaceDetailModal({
   };
 
   const handleDirections = () => {
+    console.log('🗺️ [handleDirections] CLICKED - Place:', place.name);
+    console.log('🗺️ [handleDirections] Coordinates:', place.coordinates);
+
     // Reproducir animación al hacer clic
     directionsLottieRef.current?.play();
 
-    // Mostrar notificación de funcionalidad próximamente
-    Alert.alert(
-      t('explore.modal.directions_coming_soon_title'),
-      t('explore.modal.directions_coming_soon_message'),
-      [{ text: 'Entendido', style: 'default' }]
-    );
-
-    // Código original comentado para futuro uso
-    /*
-    if (place.coordinates) {
-      router.push(`/trips/directions?dest=${place.coordinates.lat},${place.coordinates.lng}&name=${encodeURIComponent(place.name)}`);
-    } else {
+    // Verificar que haya coordenadas
+    if (!place.coordinates) {
+      console.log('❌ [handleDirections] NO COORDINATES - showing alert');
       Alert.alert(
         t('explore.modal.directions_unavailable_title'),
         t('explore.modal.directions_unavailable_message')
       );
+      return;
     }
-    */
+
+    // Ocultar modal principal temporalmente y abrir selector de modo de transporte
+    console.log('✅ [handleDirections] Setting tempHideMainModal to TRUE');
+    setTempHideMainModal(true);
+    console.log('✅ [handleDirections] Setting showDirectionsModeSelector to TRUE');
+    setShowDirectionsModeSelector(true);
+  };
+
+  const handleSelectTransportMode = async (mode: TransportMode) => {
+    setDirectionsLoading(true);
+
+    try {
+      console.log('🚀 [handleSelectTransportMode] Starting route calculation for mode:', mode);
+
+      const result = await getRouteToPlace(
+        {
+          lat: place.coordinates!.lat,
+          lng: place.coordinates!.lng,
+        },
+        mode,
+        i18n.language
+      );
+
+      console.log('✅ [handleSelectTransportMode] Route result received:', result);
+      console.log('📊 [handleSelectTransportMode] Result keys:', Object.keys(result));
+
+      setDirectionsLoading(false);
+      setShowDirectionsModeSelector(false);
+      // NO restaurar tempHideMainModal aquí - lo haremos cuando se cierre RouteMapModal
+
+      // Si es transit, abrir directamente en Maps
+      if (result.mode === 'transit' && 'deepLinks' in result) {
+        const url = Platform.OS === 'ios' ? result.deepLinks.apple : result.deepLinks.google;
+        Linking.openURL(url);
+        return;
+      }
+
+      // Para otros modos, mostrar el mapa con la ruta dibujada
+      if ('distance_m' in result && 'duration_s' in result && 'coords' in result) {
+        console.log('🗺️ [RouteMapModal] Route result received:', {
+          has_coords: !!result.coords,
+          has_bbox: !!result.bbox,
+          distance: result.distance_m,
+          duration: result.duration_s,
+          mode: mode,
+        });
+
+        // coords ya vienen decodificadas del Edge Function como [lng, lat][]
+        const coordinates: [number, number][] = result.coords;
+        console.log('🗺️ [RouteMapModal] Coordinates ready, points:', coordinates.length);
+
+        const routeDataToSet = {
+          coordinates,
+          bbox: result.bbox,
+          distance_m: result.distance_m,
+          duration_s: result.duration_s,
+          mode: mode as 'walking' | 'cycling' | 'driving',
+          steps: result.steps,
+        };
+
+        console.log('🗺️ [RouteMapModal] Setting routeData:', {
+          coordinates_count: coordinates.length,
+          mode: routeDataToSet.mode,
+        });
+        setRouteData(routeDataToSet);
+
+        console.log('🗺️ [RouteMapModal] Setting showRouteMap to TRUE');
+        setShowRouteMap(true);
+        // NO restaurar tempHideMainModal aquí - mantener el modal principal oculto
+        // mientras RouteMapModal esté abierto
+      } else {
+        console.log('❌ [RouteMapModal] Result does NOT have required fields:', {
+          has_distance_m: 'distance_m' in result,
+          has_duration_s: 'duration_s' in result,
+          has_coords: 'coords' in result,
+          result_keys: Object.keys(result),
+        });
+      }
+    } catch (error) {
+      setDirectionsLoading(false);
+      setShowDirectionsModeSelector(false);
+      setTempHideMainModal(false); // Restaurar modal principal
+
+      const errorMessage = (error as Error).message;
+
+      let title = t('explore.modal.directions_error');
+      let message = errorMessage;
+
+      if (errorMessage === 'location_permission_denied') {
+        title = t('explore.modal.directions_permission_denied');
+        message = t('explore.modal.directions_permission_denied');
+      } else if (errorMessage === 'route_not_found' || errorMessage === 'ROUTE_NOT_FOUND') {
+        message = t('explore.modal.directions_route_not_found');
+      }
+
+      Alert.alert(title, message, [
+        {
+          text: t('explore.modal.directions_retry'),
+          onPress: () => {
+            setTempHideMainModal(true);
+            setShowDirectionsModeSelector(true);
+          },
+        },
+        {
+          text: 'OK',
+          style: 'cancel',
+        },
+      ]);
+    }
   };
 
   const handleSavePlace = async () => {
@@ -840,6 +965,38 @@ export default function PlaceDetailModal({
           setTempHideMainModal(false);
         }}
       />
+
+      {/* Directions Mode Selector */}
+      <DirectionsModeSelector
+        visible={showDirectionsModeSelector}
+        onClose={() => {
+          console.log('🚦 [DirectionsModeSelector] CLOSED without selection');
+          setShowDirectionsModeSelector(false);
+          setTempHideMainModal(false); // Restaurar modal principal
+        }}
+        onSelectMode={handleSelectTransportMode}
+        loading={directionsLoading}
+      />
+
+      {/* Route Map Modal */}
+      {routeData && (
+        <RouteMapModal
+          visible={showRouteMap}
+          onClose={() => {
+            console.log('🗺️ [RouteMapModal] CLOSED - Restoring main modal');
+            setShowRouteMap(false);
+            setTempHideMainModal(false); // Restaurar modal principal cuando se cierra el mapa
+          }}
+          coordinates={routeData.coordinates}
+          bbox={routeData.bbox}
+          distance_m={routeData.distance_m}
+          duration_s={routeData.duration_s}
+          mode={routeData.mode}
+          steps={routeData.steps}
+          destinationName={place.name}
+          polyline=""
+        />
+      )}
     </>
   );
 }

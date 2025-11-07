@@ -177,8 +177,34 @@
       "website_unavailable_message": "此地点没有网站",
       "directions_unavailable_title": "位置不可用",
       "directions_unavailable_message": "无法获取此地点的路线",
-      "directions_coming_soon_title": "功能即将推出",
+      "directions_coming_soon_title": "即将推出的功能",
       "directions_coming_soon_message": "逐步路线指引即将推出",
+      "directions_mode_selector_title": "选择交通方式",
+      "directions_mode_selector_subtitle": "选择您想要的出行方式",
+      "directions_calculating": "正在计算路线...",
+      "directions_error": "无法计算路线",
+      "directions_permission_denied": "位置权限被拒绝",
+      "directions_route_not_found": "没有可用路线",
+      "directions_retry": "重试",
+      "directions_open_in_maps": "在地图中打开",
+      "transport_mode": {
+        "walking": "步行",
+        "walking_desc": "步行路线",
+        "cycling": "骑行",
+        "cycling_desc": "骑行路线",
+        "driving": "驾车",
+        "driving_desc": "驾车路线",
+        "transit": "公共交通",
+        "transit_desc": "在Google/Apple Maps中查看"
+      },
+      "route_info": {
+        "distance": "距离",
+        "duration": "时长",
+        "steps": "说明",
+        "show_steps": "显示说明",
+        "hide_steps": "隐藏说明",
+        "cached": "缓存路线"
+      },
       "error_title": "错误",
       "no_photos": "无照片",
       "main_photo": "主要",
@@ -888,6 +914,11 @@
     "theme_light": "浅色",
     "theme_dark": "深色",
     "theme_auto": "自动"
+  },
+  "route": {
+    "step": "步骤",
+    "steps": "步骤",
+    "arrive_at": "您将到达目的地"
   },
   "tabs": {
     "home": "主页",

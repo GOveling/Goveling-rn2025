@@ -179,6 +179,32 @@
       "directions_unavailable_message": "Impossible d'obtenir des directions pour ce lieu",
       "directions_coming_soon_title": "Fonctionnalité à venir",
       "directions_coming_soon_message": "Les directions étape par étape seront bientôt disponibles",
+      "directions_mode_selector_title": "Sélectionnez votre mode de transport",
+      "directions_mode_selector_subtitle": "Choisissez comment vous voulez y aller",
+      "directions_calculating": "Calcul de l'itinéraire...",
+      "directions_error": "Impossible de calculer l'itinéraire",
+      "directions_permission_denied": "Permission de localisation refusée",
+      "directions_route_not_found": "Aucun itinéraire disponible",
+      "directions_retry": "Réessayer",
+      "directions_open_in_maps": "Ouvrir dans Maps",
+      "transport_mode": {
+        "walking": "À pied",
+        "walking_desc": "Itinéraire à pied",
+        "cycling": "À vélo",
+        "cycling_desc": "Itinéraire cyclable",
+        "driving": "En voiture",
+        "driving_desc": "Itinéraire en voiture",
+        "transit": "Transports publics",
+        "transit_desc": "Voir dans Google/Apple Maps"
+      },
+      "route_info": {
+        "distance": "Distance",
+        "duration": "Durée",
+        "steps": "Instructions",
+        "show_steps": "Afficher les instructions",
+        "hide_steps": "Masquer les instructions",
+        "cached": "Itinéraire en cache"
+      },
       "error_title": "Erreur",
       "no_photos": "Pas de photos",
       "main_photo": "Principale",
@@ -888,6 +914,11 @@
     "theme_light": "Clair",
     "theme_dark": "Sombre",
     "theme_auto": "Automatique"
+  },
+  "route": {
+    "step": "étape",
+    "steps": "étapes",
+    "arrive_at": "Vous arriverez à destination"
   },
   "tabs": {
     "home": "Accueil",

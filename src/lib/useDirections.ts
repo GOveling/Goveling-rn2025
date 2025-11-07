@@ -1,59 +1,116 @@
 import { useState, useCallback } from 'react';
 
-type LatLng = { lat: number; lng: number };
-export type Step = {
-  travel_mode: string;
-  instruction?: string;
-  distance_m?: number;
-  duration_s?: number;
-  polyline?: number[][]; // [lng,lat][]
-  transit?: {
-    line?: { short_name?: string; name?: string; color?: string; agency?: string };
-    headsign?: string;
-    num_stops?: number;
-    departure_stop?: string;
-    arrival_stop?: string;
-  } | null;
-};
-export type DirResult = {
-  summary?: string;
-  distance_m?: number;
-  duration_s?: number;
-  arrival_time?: string;
-  departure_time?: string;
-  overview_polyline?: number[][];
-  steps: Step[];
-} | null;
+import * as Location from 'expo-location';
 
+import polyline from '@mapbox/polyline';
+
+import { supabase } from './supabase';
+
+// Types
+export type TransportMode = 'walking' | 'cycling' | 'driving' | 'transit';
+
+export type RouteStep = {
+  instruction: string;
+  distance_m: number;
+  duration_s: number;
+  type?: string;
+  name?: string;
+};
+
+export type RouteResult = {
+  mode: TransportMode;
+  distance_m: number;
+  duration_s: number;
+  coords: [number, number][]; // [lng, lat][]
+  bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
+  steps: RouteStep[];
+  cached?: boolean;
+};
+
+export type TransitResult = {
+  mode: 'transit';
+  deepLinks: {
+    apple: string;
+    google: string;
+  };
+};
+
+export type DirectionsResult = RouteResult | TransitResult;
+
+// Hook for directions
 export function useDirections() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<DirResult>(null);
-  const [cached, setCached] = useState<boolean>(false);
+  const [result, setResult] = useState<DirectionsResult | null>(null);
 
   const fetchDirections = useCallback(
     async (
-      origin: LatLng,
-      destination: LatLng,
-      mode: 'walking' | 'driving' | 'bicycling' | 'transit',
-      departure_time?: number
+      origin: { lat: number; lng: number },
+      destination: { lat: number; lng: number },
+      mode: TransportMode,
+      language?: string
     ) => {
       setLoading(true);
       setError(null);
+      setResult(null);
+
       try {
-        const base = process.env.EXPO_PUBLIC_SUPABASE_URL;
-        const r = await fetch(`${base}/functions/v1/google-directions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ origin, destination, mode, departure_time }),
+        // Call Edge Function
+        const { data, error: invokeError } = await supabase.functions.invoke('directions', {
+          body: {
+            origin: [origin.lng, origin.lat], // ORS uses [lng, lat]
+            destination: [destination.lng, destination.lat],
+            mode,
+            language: language || 'en',
+          },
         });
-        const j = await r.json();
-        if (!r.ok || !j?.ok) throw new Error(j?.error || 'directions_failed');
-        setResult(j.result);
-        setCached(!!j.cached);
-      } catch (e: any) {
-        setError(e.message || 'error');
+
+        if (invokeError) {
+          console.error('❌ Directions invoke error:', invokeError);
+          throw new Error(invokeError.message || 'directions_failed');
+        }
+
+        if (!data || !data.ok) {
+          console.error('❌ Directions response error:', data);
+          throw new Error(data?.error || 'route_not_found');
+        }
+
+        // Handle transit (deep links)
+        if (data.mode === 'transit') {
+          setResult({
+            mode: 'transit',
+            deepLinks: data.deepLinks,
+          });
+          return data as TransitResult;
+        }
+
+        // Decode polyline for non-transit modes
+        if (!data.polyline) {
+          throw new Error('no_polyline_in_response');
+        }
+
+        const coords = polyline
+          .decode(data.polyline)
+          .map(([lat, lng]: [number, number]) => [lng, lat] as [number, number]);
+
+        const routeResult: RouteResult = {
+          mode: data.mode,
+          distance_m: data.distance_m,
+          duration_s: data.duration_s,
+          coords,
+          bbox: data.bbox,
+          steps: data.steps || [],
+          cached: data.cached,
+        };
+
+        setResult(routeResult);
+        return routeResult;
+      } catch (e) {
+        console.error('❌ Error fetching directions:', e);
+        const errorMessage = (e as Error).message || 'error_fetching_directions';
+        setError(errorMessage);
         setResult(null);
+        throw e;
       } finally {
         setLoading(false);
       }
@@ -61,43 +118,74 @@ export function useDirections() {
     []
   );
 
-  return { loading, error, result, cached, fetchDirections };
+  return { loading, error, result, fetchDirections };
 }
 
-export async function fetchBestMode(
-  origin: { lat: number; lng: number },
-  destination: { lat: number; lng: number },
-  preferred: ('walking' | 'driving' | 'bicycling' | 'transit')[] = [
-    'transit',
-    'walking',
-    'bicycling',
-    'driving',
-  ]
-) {
-  const base = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
-  let best: any = null;
-  let bestMode: any = null;
-  for (const m of preferred) {
-    try {
-      const r = await fetch(`${base}/functions/v1/google-directions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          origin,
-          destination,
-          mode: m,
-          departure_time: m === 'transit' ? Math.floor(Date.now() / 1000) : undefined,
-        }),
-      });
-      const j = await r.json();
-      if (!r.ok || !j?.ok) continue;
-      const dur = j.result?.duration_s ?? 1e12;
-      if (!best || dur < (best.result?.duration_s ?? 1e12)) {
-        best = j;
-        bestMode = m;
-      }
-    } catch (e) {}
+// Helper function to get route from current location to place
+export async function getRouteToPlace(
+  place: { lat: number; lng: number },
+  mode: TransportMode,
+  language?: string
+): Promise<DirectionsResult> {
+  // 1. Request location permissions
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== 'granted') {
+    throw new Error('location_permission_denied');
   }
-  if (!best) throw new Error('no_route_any_mode');
-  return { mode: bestMode, result: best.result };
+
+  // 2. Get current location
+  const current = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.High,
+  });
+
+  const origin = {
+    lat: current.coords.latitude,
+    lng: current.coords.longitude,
+  };
+
+  const destination = {
+    lat: place.lat,
+    lng: place.lng,
+  };
+
+  // 3. Call Edge Function
+  const { data, error } = await supabase.functions.invoke('directions', {
+    body: {
+      origin: [origin.lng, origin.lat],
+      destination: [destination.lng, destination.lat],
+      mode,
+      language: language || 'en',
+    },
+  });
+
+  if (error || !data || !data.ok) {
+    throw new Error(data?.error || error?.message || 'route_failed');
+  }
+
+  // 4. Handle transit
+  if (data.mode === 'transit') {
+    return {
+      mode: 'transit',
+      deepLinks: data.deepLinks,
+    };
+  }
+
+  // 5. Decode polyline
+  if (!data.polyline) {
+    throw new Error('no_polyline_in_response');
+  }
+
+  const coords = polyline
+    .decode(data.polyline)
+    .map(([lat, lng]: [number, number]) => [lng, lat] as [number, number]);
+
+  return {
+    mode: data.mode,
+    distance_m: data.distance_m,
+    duration_s: data.duration_s,
+    coords,
+    bbox: data.bbox,
+    steps: data.steps || [],
+    cached: data.cached,
+  };
 }
