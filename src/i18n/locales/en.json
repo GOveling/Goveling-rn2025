@@ -1018,5 +1018,17 @@
     "trips": "Trips",
     "booking": "Booking",
     "profile": "Profile"
+  },
+  "placeSurvey": {
+    "title": "How interested are you?",
+    "interestLevel": "Interest level",
+    "note": "Personal note",
+    "optional": "optional",
+    "notePlaceholder": "Why do you want to visit this place?",
+    "levels": {
+      "must_see": "Must-see",
+      "maybe": "Maybe",
+      "just_in_case": "Just in case"
+    }
   }
 }

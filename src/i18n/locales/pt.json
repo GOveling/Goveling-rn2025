@@ -950,5 +950,17 @@
     "trips": "Viagens",
     "booking": "Reservas",
     "profile": "Perfil"
+  },
+  "placeSurvey": {
+    "title": "Quanto você está interessado?",
+    "interestLevel": "Nível de interesse",
+    "note": "Nota pessoal",
+    "optional": "opcional",
+    "notePlaceholder": "Por que você quer visitar este lugar?",
+    "levels": {
+      "must_see": "Imperdível",
+      "maybe": "Talvez",
+      "just_in_case": "Por precaução"
+    }
   }
 }

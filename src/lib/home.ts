@@ -539,10 +539,21 @@ export async function getActiveTrips(): Promise<Trip[]> {
 export async function getTripPlaces(trip_id: string) {
   const { data, error } = await supabase
     .from('trip_places')
-    .select('id, place_id, name, lat, lng, address, country_code, category')
+    .select(
+      'id, place_id, name, lat, lng, address, country_code, category, interest_level, user_note, photo_url'
+    )
     .eq('trip_id', trip_id);
   if (error) return [];
-  return data || [];
+
+  // Sort by interest_level: must_see (1), maybe (2), just_in_case (3)
+  const sortOrder: Record<string, number> = { must_see: 1, maybe: 2, just_in_case: 3 };
+  const sorted = (data || []).sort((a, b) => {
+    const orderA = sortOrder[a.interest_level || 'maybe'] || 2;
+    const orderB = sortOrder[b.interest_level || 'maybe'] || 2;
+    return orderA - orderB;
+  });
+
+  return sorted;
 }
 
 export async function getSavedPlaces() {
@@ -664,7 +675,7 @@ export async function getSavedPlaces() {
   logger.debug('🏠 getSavedPlaces: Fetching places for trips...');
   const { data, error } = await supabase
     .from('trip_places')
-    .select('id, place_id, name, lat, lng, address, trip_id')
+    .select('id, place_id, name, lat, lng, address, trip_id, interest_level, user_note, photo_url')
     .in('trip_id', uniqueTripIds);
 
   logger.debug('🏠 getSavedPlaces: Places query result:');
@@ -692,8 +703,16 @@ export async function getSavedPlaces() {
     return [];
   }
 
-  logger.debug('🏠 getSavedPlaces: Returning', (data || []).length, 'places');
-  return data || [];
+  // Sort by interest_level: must_see (1), maybe (2), just_in_case (3)
+  const sortOrder: Record<string, number> = { must_see: 1, maybe: 2, just_in_case: 3 };
+  const sorted = (data || []).sort((a, b) => {
+    const orderA = sortOrder[a.interest_level || 'maybe'] || 2;
+    const orderB = sortOrder[b.interest_level || 'maybe'] || 2;
+    return orderA - orderB;
+  });
+
+  logger.debug('🏠 getSavedPlaces: Returning', sorted.length, 'places (sorted by interest level)');
+  return sorted;
 }
 
 export function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {

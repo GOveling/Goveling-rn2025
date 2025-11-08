@@ -15,6 +15,7 @@ import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
 import { resolveUserRoleForTrip } from '~/lib/userUtils';
 
+import InterestLevelBadge from '../../../src/components/InterestLevelBadge';
 import PlaceDetailModal from '../../../src/components/PlaceDetailModal';
 
 interface Place {
@@ -34,6 +35,8 @@ interface Place {
   opening_hours?: { weekdayDescriptions?: string[] } | null;
   website?: string;
   phone?: string;
+  interest_level?: 'must_see' | 'maybe' | 'just_in_case';
+  user_note?: string;
 }
 
 export default function TripPlacesScreen() {
@@ -149,7 +152,15 @@ export default function TripPlacesScreen() {
         return;
       }
 
-      setPlaces(tripPlaces || []);
+      // Sort by interest_level: must_see (1), maybe (2), just_in_case (3)
+      const sortOrder: Record<string, number> = { must_see: 1, maybe: 2, just_in_case: 3 };
+      const sorted = (tripPlaces || []).sort((a, b) => {
+        const orderA = sortOrder[a.interest_level || 'maybe'] || 2;
+        const orderB = sortOrder[b.interest_level || 'maybe'] || 2;
+        return orderA - orderB;
+      });
+
+      setPlaces(sorted);
     } catch (error) {
       console.error('Error:', error);
       Alert.alert('Error', 'Ocurrió un error inesperado');
@@ -572,16 +583,35 @@ export default function TripPlacesScreen() {
                         marginBottom: 4,
                       }}
                     >
-                      <Text
-                        style={{
-                          fontSize: 18,
-                          fontWeight: '700',
-                          color: theme.colors.text,
-                          flex: 1,
-                        }}
-                      >
-                        {place.name}
-                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 18,
+                            fontWeight: '700',
+                            color: theme.colors.text,
+                          }}
+                        >
+                          {place.name}
+                        </Text>
+                        {place.interest_level && (
+                          <View style={{ marginTop: 6 }}>
+                            <InterestLevelBadge level={place.interest_level} size="small" />
+                          </View>
+                        )}
+                        {place.user_note && (
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontStyle: 'italic',
+                              color: theme.colors.textMuted,
+                              marginTop: 6,
+                            }}
+                            numberOfLines={2}
+                          >
+                            💭 {place.user_note}
+                          </Text>
+                        )}
+                      </View>
                       {place.google_rating && (
                         <View
                           style={{

@@ -890,5 +890,17 @@
     "google_maps_desc": "रीयल-टाइम ट्रैफिक जानकारी",
     "waze": "Waze",
     "waze_desc": "सामुदायिक नेविगेशन"
+  },
+  "placeSurvey": {
+    "title": "आप कितने रुचि रखते हैं?",
+    "interestLevel": "रुचि का स्तर",
+    "note": "व्यक्तिगत नोट",
+    "optional": "वैकल्पिक",
+    "notePlaceholder": "आप इस जगह पर क्यों जाना चाहते हैं?",
+    "levels": {
+      "must_see": "अवश्य देखें",
+      "maybe": "शायद",
+      "just_in_case": "सुरक्षा के लिए"
+    }
   }
 }

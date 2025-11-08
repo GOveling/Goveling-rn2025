@@ -23,8 +23,10 @@ import { EnhancedPlace } from '~/lib/placesSearch';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
 import { resolveCurrentUserRoleForTripId } from '~/lib/userUtils';
+import { PlaceSurveyData } from '~/types/place';
 
 import NewTripModal from './NewTripModal';
+import PlaceSurveyModal from './PlaceSurveyModal';
 
 interface AddToTripModalProps {
   visible: boolean;
@@ -55,6 +57,11 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(false);
   const [showNewTripModal, setShowNewTripModal] = useState(false);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
+  const [selectedTripForSurvey, setSelectedTripForSurvey] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const [adding, setAdding] = useState(false);
   const { i18n } = useTranslation();
   const [translated, setTranslated] = useState<Record<string, string>>({});
@@ -241,7 +248,31 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
     }
   };
 
-  const addPlaceToTrip = async (tripId: string, tripTitle: string) => {
+  const handleTripSelected = (tripId: string, tripTitle: string) => {
+    console.log('🎯 handleTripSelected called:', { tripId, tripTitle });
+    // Store trip info and show survey modal
+    setSelectedTripForSurvey({ id: tripId, title: tripTitle });
+    setShowSurveyModal(true);
+    console.log('📝 Survey modal should be visible now');
+  };
+
+  const handleSurveySubmit = async (surveyData: PlaceSurveyData) => {
+    setShowSurveyModal(false);
+    if (selectedTripForSurvey) {
+      await addPlaceToTrip(selectedTripForSurvey.id, selectedTripForSurvey.title, surveyData);
+    }
+  };
+
+  const handleSurveyCancel = () => {
+    setShowSurveyModal(false);
+    setSelectedTripForSurvey(null);
+  };
+
+  const addPlaceToTrip = async (
+    tripId: string,
+    tripTitle: string,
+    surveyData?: PlaceSurveyData
+  ) => {
     try {
       setAdding(true);
       const { data: user } = await supabase.auth.getUser();
@@ -330,6 +361,9 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         country: place.country || null,
         city: place.city || null,
         full_address: place.address || null,
+        // Survey data
+        interest_level: surveyData?.interest_level || 'maybe',
+        user_note: surveyData?.user_note || null,
       };
 
       // Use notification function to add place with notifications to collaborators
@@ -375,7 +409,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
     const title = created?.title || 'Nuevo viaje';
     // Pequeño delay para asegurar desmontaje del modal antes de continuar
     setTimeout(() => {
-      addPlaceToTrip(newTripId, title);
+      handleTripSelected(newTripId, title);
     }, 120);
   };
 
@@ -388,7 +422,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
   return (
     <>
       <Modal
-        visible={visible && !showNewTripModal}
+        visible={visible && !showNewTripModal && !showSurveyModal}
         animationType="slide"
         transparent
         presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : 'overFullScreen'}
@@ -459,7 +493,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
                       },
                     ]}
                     disabled={adding}
-                    onPress={() => addPlaceToTrip(t.id, t.title)}
+                    onPress={() => handleTripSelected(t.id, t.title)}
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.tripTitle, { color: theme.colors.text }]}>
@@ -514,6 +548,14 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
           website: place.website || null,
           phone: place.phone || null,
         }}
+      />
+
+      {/* Survey Modal */}
+      <PlaceSurveyModal
+        visible={showSurveyModal}
+        placeName={place.name}
+        onSubmit={handleSurveySubmit}
+        onCancel={handleSurveyCancel}
       />
     </>
   );

@@ -950,5 +950,17 @@
     "trips": "旅行",
     "booking": "预订",
     "profile": "个人资料"
+  },
+  "placeSurvey": {
+    "title": "您有多感兴趣？",
+    "interestLevel": "兴趣级别",
+    "note": "个人备注",
+    "optional": "可选",
+    "notePlaceholder": "为什么想去这个地方？",
+    "levels": {
+      "must_see": "必看",
+      "maybe": "也许",
+      "just_in_case": "以防万一"
+    }
   }
 }

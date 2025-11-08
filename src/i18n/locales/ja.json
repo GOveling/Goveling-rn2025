@@ -950,5 +950,17 @@
     "trips": "旅行",
     "booking": "予約",
     "profile": "プロフィール"
+  },
+  "placeSurvey": {
+    "title": "どのくらい興味がありますか？",
+    "interestLevel": "興味レベル",
+    "note": "個人メモ",
+    "optional": "任意",
+    "notePlaceholder": "なぜこの場所を訪れたいですか？",
+    "levels": {
+      "must_see": "必見",
+      "maybe": "多分",
+      "just_in_case": "念のため"
+    }
   }
 }
