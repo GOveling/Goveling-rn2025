@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import { View, ScrollView, StatusBar, Alert, RefreshControl, StyleSheet } from 'react-native';
+import { View, ScrollView, StatusBar, RefreshControl, StyleSheet } from 'react-native';
 
 import { useRouter } from 'expo-router';
 
@@ -12,11 +12,13 @@ import LocationWidget from '~/components/home/LocationWidget';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
 import PopularPlacesCarousel from '~/components/home/PopularPlacesCarousel';
 import StatCards from '~/components/home/StatCards';
+import PlaceDetailModal from '~/components/PlaceDetailModal';
 import { CityWelcomeModal } from '~/components/travelMode/CityWelcomeModal';
 import { CountryWelcomeModal } from '~/components/travelMode/CountryWelcomeModal';
 import { TripRefreshProvider } from '~/contexts/TripRefreshContext';
 import { useCityDetectionOnAppStart } from '~/hooks/useCityDetectionOnAppStart';
 import { useCountryDetectionOnAppStart } from '~/hooks/useCountryDetectionOnAppStart';
+import type { PopularPlace } from '~/hooks/usePopularPlacesV2';
 import {
   getCurrentPosition,
   reverseCityCached,
@@ -24,6 +26,7 @@ import {
   getLocationFromCoordinatesCached,
   getSavedPlaces,
 } from '~/lib/home';
+import type { EnhancedPlace } from '~/lib/placesSearch';
 import { registerDeviceToken } from '~/lib/push';
 import { useSettingsStore } from '~/lib/settingsStore';
 import { supabase } from '~/lib/supabase';
@@ -32,6 +35,25 @@ import { getWeatherCached } from '~/lib/weather';
 import { logger } from '~/utils/logger';
 
 import { useGetTripsBreakdownQuery } from '../../src/store/api/tripsApi';
+
+// Utility function to convert PopularPlace to EnhancedPlace
+function popularPlaceToEnhanced(popularPlace: PopularPlace): EnhancedPlace {
+  return {
+    id: popularPlace.id,
+    name: popularPlace.name,
+    address: popularPlace.address,
+    coordinates: {
+      lat: popularPlace.lat,
+      lng: popularPlace.lng,
+    },
+    category: popularPlace.category,
+    description: popularPlace.description,
+    photos: popularPlace.photo_url ? [popularPlace.photo_url] : undefined,
+    source: 'popular_places',
+    country_code: popularPlace.country_code,
+    city: popularPlace.city,
+  };
+}
 
 export const options = { headerShown: false };
 
@@ -66,6 +88,10 @@ export default function HomeTab() {
   const [pos, setPos] = React.useState<{ lat: number; lng: number } | null>(null);
   const [savedPlacesCount, setSavedPlacesCount] = React.useState<number>(0);
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
+
+  // State for Popular Places Detail Modal
+  const [selectedPopularPlace, setSelectedPopularPlace] = useState<EnhancedPlace | null>(null);
+  const [showPopularPlaceDetail, setShowPopularPlaceDetail] = useState<boolean>(false);
 
   const recomputeSavedPlaces = React.useCallback(async () => {
     logger.debug('🏠 HomeTab: recomputeSavedPlaces called');
@@ -408,11 +434,9 @@ export default function HomeTab() {
             userCountryCode={pendingCountryVisit?.countryInfo?.countryCode || undefined}
             userContinent={pendingCountryVisit?.countryInfo?.continent || undefined}
             onPlacePress={(place) => {
-              Alert.alert(
-                place.name,
-                `${place.description || t('home.popular_place_fallback')}\n\n📍 ${place.location_display}`,
-                [{ text: 'OK' }]
-              );
+              const enhancedPlace = popularPlaceToEnhanced(place);
+              setSelectedPopularPlace(enhancedPlace);
+              setShowPopularPlaceDetail(true);
             }}
           />
         </View>
@@ -439,6 +463,16 @@ export default function HomeTab() {
           onClose={dismissCityModal}
         />
       )}
+
+      {/* Popular Place Detail Modal */}
+      <PlaceDetailModal
+        visible={showPopularPlaceDetail}
+        place={selectedPopularPlace}
+        onClose={() => {
+          setShowPopularPlaceDetail(false);
+          setSelectedPopularPlace(null);
+        }}
+      />
     </TripRefreshProvider>
   );
 }

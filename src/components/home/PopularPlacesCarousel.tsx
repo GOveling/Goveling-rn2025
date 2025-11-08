@@ -1,7 +1,15 @@
 // src/components/home/PopularPlacesCarousel.tsx
 import React, { useState, useEffect, useRef } from 'react';
 
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  PanResponder,
+  Animated,
+  Dimensions,
+} from 'react-native';
 
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +17,8 @@ import { usePopularPlacesV2, type PopularPlace } from '~/hooks/usePopularPlacesV
 import { useTheme } from '~/lib/theme';
 
 const AUTO_ROTATE_INTERVAL = 8000; // 8 seconds
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25; // 25% of screen width
 
 interface Props {
   userCountryCode?: string;
@@ -34,6 +44,46 @@ export default function PopularPlacesCarousel({
   const [isPaused, setIsPaused] = useState(false);
 
   const autoRotateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pan = useRef(new Animated.Value(0)).current;
+  const panResponderRef = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only capture horizontal swipes (more horizontal than vertical)
+        return (
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10
+        );
+      },
+      onPanResponderGrant: () => {
+        setIsPaused(true); // Pause auto-rotation during swipe
+      },
+      onPanResponderMove: (_, gestureState) => {
+        pan.setValue(gestureState.dx);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx } = gestureState;
+
+        if (Math.abs(dx) > SWIPE_THRESHOLD) {
+          // Swipe detected
+          if (dx > 0) {
+            // Swipe right - go to previous
+            setCurrentIndex((prev) => (prev === 0 ? places.length - 1 : prev - 1));
+          } else {
+            // Swipe left - go to next
+            setCurrentIndex((prev) => (prev + 1) % places.length);
+          }
+        }
+
+        // Reset pan animation
+        Animated.spring(pan, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+
+        // Resume auto-rotation after a delay
+        setTimeout(() => setIsPaused(false), AUTO_ROTATE_INTERVAL);
+      },
+    })
+  ).current;
 
   // Auto-rotate logic
   useEffect(() => {
@@ -148,76 +198,87 @@ export default function PopularPlacesCarousel({
       </View>
 
       {/* Place Card */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => onPlacePress?.(currentPlace)}
-        onPressIn={() => setIsPaused(true)}
-        onPressOut={() => setIsPaused(false)}
-        style={[
-          styles.placeCard,
-          { backgroundColor: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F9FAFB' },
-        ]}
+      <Animated.View
+        {...panResponderRef.panHandlers}
+        style={{
+          transform: [{ translateX: pan }],
+        }}
       >
-        {/* Emoji/Photo */}
-        <View
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onPlacePress?.(currentPlace)}
+          onPressIn={() => setIsPaused(true)}
+          onPressOut={() => setIsPaused(false)}
           style={[
-            styles.placeImage,
-            { backgroundColor: theme.mode === 'dark' ? 'rgba(254, 243, 199, 0.2)' : '#FEF3C7' },
+            styles.placeCard,
+            { backgroundColor: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F9FAFB' },
           ]}
         >
-          {currentPlace.emoji ? (
-            <Text style={styles.placeEmoji}>{currentPlace.emoji}</Text>
-          ) : (
-            <Text style={styles.placeEmoji}>📍</Text>
-          )}
-        </View>
-
-        {/* Content */}
-        <View style={styles.placeContent}>
-          <View style={styles.placeTitleRow}>
-            <Text style={[styles.placeName, { color: theme.colors.text }]} numberOfLines={1}>
-              {currentPlace.name}
-            </Text>
-            {isLive && currentPlace.badge && (
-              <View
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor: theme.mode === 'dark' ? 'rgba(254, 226, 226, 0.2)' : '#FEE2E2',
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.badgeText,
-                    { color: theme.mode === 'dark' ? '#fca5a5' : '#DC2626' },
-                  ]}
-                >
-                  {currentPlace.badge}
-                </Text>
-              </View>
+          {/* Emoji/Photo */}
+          <View
+            style={[
+              styles.placeImage,
+              { backgroundColor: theme.mode === 'dark' ? 'rgba(254, 243, 199, 0.2)' : '#FEF3C7' },
+            ]}
+          >
+            {currentPlace.emoji ? (
+              <Text style={styles.placeEmoji}>{currentPlace.emoji}</Text>
+            ) : (
+              <Text style={styles.placeEmoji}>📍</Text>
             )}
           </View>
 
-          <Text style={[styles.placeLocation, { color: theme.colors.textMuted }]} numberOfLines={1}>
-            📍 {currentPlace.location_display}
-          </Text>
+          {/* Content */}
+          <View style={styles.placeContent}>
+            <View style={styles.placeTitleRow}>
+              <Text style={[styles.placeName, { color: theme.colors.text }]} numberOfLines={1}>
+                {currentPlace.name}
+              </Text>
+              {isLive && currentPlace.badge && (
+                <View
+                  style={[
+                    styles.badge,
+                    {
+                      backgroundColor:
+                        theme.mode === 'dark' ? 'rgba(254, 226, 226, 0.2)' : '#FEE2E2',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      { color: theme.mode === 'dark' ? '#fca5a5' : '#DC2626' },
+                    ]}
+                  >
+                    {currentPlace.badge}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-          <Text
-            style={[styles.placeDescription, { color: theme.colors.textMuted }]}
-            numberOfLines={2}
-          >
-            {currentPlace.description || t('home.popular_place_fallback')}
-          </Text>
+            <Text
+              style={[styles.placeLocation, { color: theme.colors.textMuted }]}
+              numberOfLines={1}
+            >
+              📍 {currentPlace.location_display}
+            </Text>
 
-          <Text
-            style={[styles.placeStats, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
-            numberOfLines={1}
-          >
-            ❤️ {getSavesText()}
-          </Text>
-        </View>
-      </TouchableOpacity>
+            <Text
+              style={[styles.placeDescription, { color: theme.colors.textMuted }]}
+              numberOfLines={2}
+            >
+              {currentPlace.description || t('home.popular_place_fallback')}
+            </Text>
+
+            <Text
+              style={[styles.placeStats, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
+              numberOfLines={1}
+            >
+              ❤️ {getSavesText()}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Pagination Dots */}
       {places.length > 1 && (
