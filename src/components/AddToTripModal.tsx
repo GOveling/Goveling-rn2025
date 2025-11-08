@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import {
   View,
@@ -11,12 +11,14 @@ import {
   ActivityIndicator,
   Alert,
   InteractionManager,
+  Dimensions,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 import { translateDynamic } from '~/i18n';
 import { EnhancedPlace } from '~/lib/placesSearch';
@@ -27,6 +29,8 @@ import { PlaceSurveyData } from '~/types/place';
 
 import NewTripModal from './NewTripModal';
 import PlaceSurveyModal from './PlaceSurveyModal';
+
+const { width } = Dimensions.get('window');
 
 interface AddToTripModalProps {
   visible: boolean;
@@ -63,6 +67,7 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
     title: string;
   } | null>(null);
   const [adding, setAdding] = useState(false);
+  const confettiRef = useRef<any>(null);
   const { i18n } = useTranslation();
   const [translated, setTranslated] = useState<Record<string, string>>({});
 
@@ -376,6 +381,11 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
         return;
       }
 
+      // Trigger confetti animation
+      if (confettiRef.current) {
+        confettiRef.current.start();
+      }
+
       Alert.alert(
         '¡Listo!',
         `${place.name} agregado a "${tripTitle}"`,
@@ -524,6 +534,17 @@ const AddToTripModal: React.FC<AddToTripModalProps> = ({ visible, onClose, place
               </ScrollView>
             )}
           </View>
+
+          {/* Confetti - AL FINAL para que esté al frente */}
+          <ConfettiCannon
+            ref={confettiRef}
+            count={150}
+            origin={{ x: width / 2, y: -10 }}
+            autoStart={false}
+            fadeOut
+            fallSpeed={2500}
+            explosionSpeed={350}
+          />
         </View>
       </Modal>
 
