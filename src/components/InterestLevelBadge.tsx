@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { InterestLevel, INTEREST_LEVEL_CONFIG } from '~/types/place';
 
@@ -8,17 +8,19 @@ interface InterestLevelBadgeProps {
   level?: InterestLevel;
   size?: 'small' | 'medium';
   showLabel?: boolean;
+  onPress?: () => void;
 }
 
 const InterestLevelBadge: React.FC<InterestLevelBadgeProps> = ({
   level = 'maybe',
   size = 'medium',
   showLabel = false,
+  onPress,
 }) => {
   const config = INTEREST_LEVEL_CONFIG[level];
   const isSmall = size === 'small';
 
-  return (
+  const BadgeContent = (
     <View
       style={[
         styles.badge,
@@ -26,10 +28,20 @@ const InterestLevelBadge: React.FC<InterestLevelBadgeProps> = ({
         { backgroundColor: `${config.color}20`, borderColor: config.color },
       ]}
     >
-      <Text style={[styles.stars, isSmall && styles.starsSmall]}>{config.icon}</Text>
+      <Text style={[styles.icon, isSmall && styles.iconSmall]}>{config.icon}</Text>
       {showLabel && !isSmall && <Text style={[styles.label, { color: config.color }]} />}
     </View>
   );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        {BadgeContent}
+      </TouchableOpacity>
+    );
+  }
+
+  return BadgeContent;
 };
 
 const styles = StyleSheet.create({
@@ -51,10 +63,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  stars: {
+  icon: {
     fontSize: 14,
   },
-  starsSmall: {
+  iconSmall: {
     fontSize: 10,
   },
   label: {

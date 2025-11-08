@@ -40,20 +40,20 @@ export interface InterestLevelConfig {
 export const INTEREST_LEVEL_CONFIG: Record<InterestLevel, InterestLevelConfig> = {
   must_see: {
     key: 'must_see',
-    icon: '⭐⭐⭐',
+    icon: '🔥',
     sortOrder: 1,
-    color: '#FFD700',
+    color: '#EF4444',
   },
   maybe: {
     key: 'maybe',
-    icon: '⭐⭐',
+    icon: '👀',
     sortOrder: 2,
-    color: '#FFA500',
+    color: '#3B82F6',
   },
   just_in_case: {
     key: 'just_in_case',
-    icon: '⭐',
+    icon: '💾',
     sortOrder: 3,
-    color: '#C0C0C0',
+    color: '#6B7280',
   },
 };

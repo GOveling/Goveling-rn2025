@@ -962,5 +962,9 @@
       "maybe": "多分",
       "just_in_case": "念のため"
     }
+  },
+  "placeInfo": {
+    "savedAs": "保存済み",
+    "yourNote": "あなたのメモ"
   }
 }

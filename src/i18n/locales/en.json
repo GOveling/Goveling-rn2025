@@ -1030,5 +1030,9 @@
       "maybe": "Maybe",
       "just_in_case": "Just in case"
     }
+  },
+  "placeInfo": {
+    "savedAs": "Saved as",
+    "yourNote": "Your note"
   }
 }

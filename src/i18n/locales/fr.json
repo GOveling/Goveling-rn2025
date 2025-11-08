@@ -962,5 +962,9 @@
       "maybe": "Peut-être",
       "just_in_case": "Au cas où"
     }
+  },
+  "placeInfo": {
+    "savedAs": "Enregistré comme",
+    "yourNote": "Votre note"
   }
 }

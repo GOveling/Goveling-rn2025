@@ -16,6 +16,7 @@ import { useTheme } from '~/lib/theme';
 import { resolveUserRoleForTrip } from '~/lib/userUtils';
 
 import InterestLevelBadge from '../../../src/components/InterestLevelBadge';
+import InterestLevelInfoModal from '../../../src/components/InterestLevelInfoModal';
 import PlaceDetailModal from '../../../src/components/PlaceDetailModal';
 
 interface Place {
@@ -53,6 +54,11 @@ export default function TripPlacesScreen() {
   const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'viewer'>('viewer');
   const [tripData, setTripData] = useState<any>(null);
   const [translatedDescriptions, setTranslatedDescriptions] = useState<Record<string, string>>({});
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const [selectedPlaceInfo, setSelectedPlaceInfo] = useState<{
+    level: 'must_see' | 'maybe' | 'just_in_case';
+    note?: string;
+  } | null>(null);
 
   // Verificar si el usuario puede editar (owner o editor)
   const canEdit = currentRole === 'owner' || currentRole === 'editor';
@@ -595,7 +601,17 @@ export default function TripPlacesScreen() {
                         </Text>
                         {place.interest_level && (
                           <View style={{ marginTop: 6 }}>
-                            <InterestLevelBadge level={place.interest_level} size="small" />
+                            <InterestLevelBadge
+                              level={place.interest_level}
+                              size="small"
+                              onPress={() => {
+                                setSelectedPlaceInfo({
+                                  level: place.interest_level!,
+                                  note: place.user_note,
+                                });
+                                setInfoModalVisible(true);
+                              }}
+                            />
                           </View>
                         )}
                         {place.user_note && (
@@ -816,6 +832,16 @@ export default function TripPlacesScreen() {
           tripTitle={tripTitle}
           isAlreadyInTrip={true}
           onRemoveFromTrip={() => handleRemovePlaceFromModal(selectedPlace)}
+        />
+      )}
+
+      {/* Interest Level Info Modal */}
+      {selectedPlaceInfo && (
+        <InterestLevelInfoModal
+          visible={infoModalVisible}
+          onClose={() => setInfoModalVisible(false)}
+          level={selectedPlaceInfo.level}
+          userNote={selectedPlaceInfo.note}
         />
       )}
     </View>

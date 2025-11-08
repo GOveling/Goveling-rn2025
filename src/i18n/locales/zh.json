@@ -962,5 +962,9 @@
       "maybe": "也许",
       "just_in_case": "以防万一"
     }
+  },
+  "placeInfo": {
+    "savedAs": "保存为",
+    "yourNote": "您的备注"
   }
 }
