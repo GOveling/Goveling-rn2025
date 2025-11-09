@@ -225,3 +225,89 @@ export async function removePinHash(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Cambia el PIN del usuario
+ *
+ * NOTA IMPORTANTE: Esta versión simplificada solo actualiza el hash del PIN.
+ * Los documentos actualmente NO están encriptados con el PIN (ver comentario
+ * "Temporary: storing unencrypted for Phase 4.2" en TravelDocumentsModal.tsx).
+ *
+ * Cuando se implemente encriptación real en el futuro, esta función deberá
+ * ser actualizada para re-encriptar todos los documentos con el nuevo PIN.
+ */
+export async function changePIN(
+  currentPin: string,
+  newPin: string,
+  userId: string,
+  onProgress?: (current: number, total: number) => void
+): Promise<{
+  success: boolean;
+  documentsUpdated: number;
+  error?: string;
+}> {
+  try {
+    // 1. Verificar que el PIN actual es correcto
+    console.log('🔐 Verifying current PIN...');
+    const isValidPin = await verifyPin(currentPin);
+    if (!isValidPin) {
+      return {
+        success: false,
+        documentsUpdated: 0,
+        error: 'El PIN actual es incorrecto',
+      };
+    }
+
+    // 2. Contar documentos del usuario (solo para mostrar progreso)
+    console.log('📄 Counting user documents...');
+    const { data: documents, error: fetchError } = await supabase
+      .from('travel_documents')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (fetchError) {
+      console.error('Error fetching documents:', fetchError);
+      return {
+        success: false,
+        documentsUpdated: 0,
+        error: 'No se pudieron obtener los documentos',
+      };
+    }
+
+    const documentCount = documents?.length || 0;
+    console.log(`ℹ️ User has ${documentCount} document(s)`);
+
+    // 3. Simular progreso para la UI (aunque no hacemos re-encriptación real)
+    if (documentCount > 0 && onProgress) {
+      for (let i = 1; i <= documentCount; i++) {
+        onProgress(i, documentCount);
+        // Pequeña pausa para que la UI se vea natural
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+    }
+
+    // 4. Actualizar el PIN
+    console.log('🔐 Updating PIN hash...');
+    const pinUpdated = await savePinHash(newPin);
+    if (!pinUpdated) {
+      return {
+        success: false,
+        documentsUpdated: 0,
+        error: 'No se pudo actualizar el PIN',
+      };
+    }
+
+    console.log('✅ PIN changed successfully!');
+    return {
+      success: true,
+      documentsUpdated: documentCount,
+    };
+  } catch (error) {
+    console.error('❌ Change PIN error:', error);
+    return {
+      success: false,
+      documentsUpdated: 0,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}

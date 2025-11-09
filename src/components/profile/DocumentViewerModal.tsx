@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import ImageViewing from 'react-native-image-viewing';
 
 import { useTheme } from '~/lib/theme';
+
+import ImageViewerCompat from './ImageViewerCompat';
 
 interface DocumentViewerModalProps {
   visible: boolean;
@@ -321,9 +322,9 @@ export default function DocumentViewerModal({
           </ScrollView>
         </View>
 
-        {/* Image Viewer with Zoom */}
+        {/* Image Viewer with Zoom - Cross-platform */}
         {!isPDF && decryptedData.imageUrl && (
-          <ImageViewing
+          <ImageViewerCompat
             images={[{ uri: decryptedData.imageUrl }]}
             imageIndex={0}
             visible={isImageViewerVisible}

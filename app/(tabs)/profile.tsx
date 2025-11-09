@@ -493,17 +493,20 @@ export default function ProfileTab() {
           }}
         />
 
-        <MenuSection
-          icon="document-text"
-          iconLib="Ionicons"
-          title={t('profile.menu.travel_documents')}
-          subtitle={t('profile.menu.travel_documents_desc')}
-          iconColor="#2196F3"
-          textColor={theme.colors.text}
-          subtitleColor={theme.colors.textMuted}
-          borderColor={theme.colors.border}
-          onPress={() => setShowTravelDocumentsModal(true)}
-        />
+        {/* Travel Documents - Only available on native platforms */}
+        {Platform.OS !== 'web' && (
+          <MenuSection
+            icon="document-text"
+            iconLib="Ionicons"
+            title={t('profile.menu.travel_documents')}
+            subtitle={t('profile.menu.travel_documents_desc')}
+            iconColor="#2196F3"
+            textColor={theme.colors.text}
+            subtitleColor={theme.colors.textMuted}
+            borderColor={theme.colors.border}
+            onPress={() => setShowTravelDocumentsModal(true)}
+          />
+        )}
 
         <MenuSection
           icon="chatbubble"
@@ -720,11 +723,13 @@ export default function ProfileTab() {
       {/* Settings Modal */}
       <SettingsModal visible={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
 
-      {/* Travel Documents Modal */}
-      <TravelDocumentsModal
-        visible={showTravelDocumentsModal}
-        onClose={() => setShowTravelDocumentsModal(false)}
-      />
+      {/* Travel Documents Modal - Only visible on native platforms */}
+      {Platform.OS !== 'web' && (
+        <TravelDocumentsModal
+          visible={showTravelDocumentsModal}
+          onClose={() => setShowTravelDocumentsModal(false)}
+        />
+      )}
 
       <View style={{ height: 100 }} />
     </ScrollView>

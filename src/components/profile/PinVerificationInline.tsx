@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -23,6 +23,18 @@ export default function PinVerificationInline({
   const theme = useTheme();
   const [pin, setPin] = useState('');
   const [attempts, setAttempts] = useState(0);
+
+  const handleKeyPress = (digit: string) => {
+    if (pin.length < 6) {
+      setPin(pin + digit);
+    }
+  };
+
+  const handleBackspace = () => {
+    if (pin.length > 0) {
+      setPin(pin.slice(0, -1));
+    }
+  };
 
   const handleVerify = async () => {
     if (pin.length < 4) {
@@ -55,11 +67,7 @@ export default function PinVerificationInline({
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-        <View style={styles.headerRight} />
       </View>
 
       {/* Content */}
@@ -72,29 +80,9 @@ export default function PinVerificationInline({
         {/* Message */}
         <Text style={[styles.message, { color: theme.colors.text }]}>{message}</Text>
 
-        {/* PIN Input */}
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.colors.card,
-              color: theme.colors.text,
-              borderColor: attempts > 0 ? '#FF9800' : theme.colors.border,
-            },
-          ]}
-          value={pin}
-          onChangeText={setPin}
-          placeholder="Ingresa tu PIN"
-          placeholderTextColor={theme.colors.textMuted}
-          keyboardType="number-pad"
-          secureTextEntry
-          maxLength={6}
-          autoFocus
-        />
-
         {/* PIN Dots */}
         <View style={styles.dotsContainer}>
-          {[0, 1, 2, 3].map((index) => (
+          {[0, 1, 2, 3, 4, 5].map((index) => (
             <View
               key={index}
               style={[
@@ -107,15 +95,83 @@ export default function PinVerificationInline({
           ))}
         </View>
 
-        {/* Verify Button */}
-        <TouchableOpacity
-          style={[styles.button, { opacity: pin.length >= 4 && attempts < 3 ? 1 : 0.5 }]}
-          onPress={handleVerify}
-          disabled={pin.length < 4 || attempts >= 3}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.buttonText}>Verificar</Text>
-        </TouchableOpacity>
+        {/* Custom Numeric Keyboard */}
+        <View style={styles.customKeyboard}>
+          <View style={styles.keyboardRow}>
+            {[1, 2, 3].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={[styles.keyButton, { backgroundColor: theme.colors.card }]}
+                onPress={() => handleKeyPress(num.toString())}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.keyText, { color: theme.colors.text }]}>{num}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.keyboardRow}>
+            {[4, 5, 6].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={[styles.keyButton, { backgroundColor: theme.colors.card }]}
+                onPress={() => handleKeyPress(num.toString())}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.keyText, { color: theme.colors.text }]}>{num}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.keyboardRow}>
+            {[7, 8, 9].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={[styles.keyButton, { backgroundColor: theme.colors.card }]}
+                onPress={() => handleKeyPress(num.toString())}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.keyText, { color: theme.colors.text }]}>{num}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.keyboardRow}>
+            {/* Backspace */}
+            <TouchableOpacity
+              style={[styles.keyButton, { backgroundColor: theme.colors.card }]}
+              onPress={handleBackspace}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="backspace-outline" size={28} color={theme.colors.text} />
+            </TouchableOpacity>
+            {/* Zero */}
+            <TouchableOpacity
+              style={[styles.keyButton, { backgroundColor: theme.colors.card }]}
+              onPress={() => handleKeyPress('0')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.keyText, { color: theme.colors.text }]}>0</Text>
+            </TouchableOpacity>
+            {/* Enter/Accept */}
+            <TouchableOpacity
+              style={[
+                styles.keyButton,
+                styles.enterButton,
+                {
+                  backgroundColor: pin.length >= 4 && attempts < 3 ? '#2196F3' : theme.colors.card,
+                  opacity: pin.length >= 4 && attempts < 3 ? 1 : 0.5,
+                },
+              ]}
+              onPress={handleVerify}
+              disabled={pin.length < 4 || attempts >= 3}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={32}
+                color={pin.length >= 4 && attempts < 3 ? '#FFFFFF' : theme.colors.textMuted}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Help Text */}
         <Text style={[styles.helpText, { color: theme.colors.textMuted }]}>
@@ -131,25 +187,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  closeButton: {
-    padding: 4,
-  },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
-  },
-  headerRight: {
-    width: 32,
   },
   content: {
     flex: 1,
@@ -166,36 +214,48 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     lineHeight: 24,
   },
-  input: {
-    width: '100%',
-    height: 50,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 2,
-    marginBottom: 16,
-  },
   dotsContainer: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 32,
+    justifyContent: 'center',
   },
   dot: {
     width: 16,
     height: 16,
     borderRadius: 8,
   },
-  button: {
-    backgroundColor: '#2196F3',
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 12,
+  customKeyboard: {
+    width: '100%',
+    marginTop: 16,
     marginBottom: 24,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+  keyboardRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 16,
+  },
+  keyButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  keyText: {
+    fontSize: 28,
+    fontWeight: '400',
+  },
+  enterButton: {
+    borderWidth: 2,
   },
   helpText: {
     fontSize: 14,

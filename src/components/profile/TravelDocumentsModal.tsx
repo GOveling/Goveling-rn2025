@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { WebView } from 'react-native-webview';
 
 import AddDocumentModal, { type DocumentFormData } from '~/components/profile/AddDocumentModal';
+import ChangePINModal from '~/components/profile/ChangePINModal';
 import DocumentViewerModal from '~/components/profile/DocumentViewerModal';
 import PinSetupInline from '~/components/profile/PinSetupInline';
 import PinSetupModal from '~/components/profile/PinSetupModal';
@@ -61,6 +62,23 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [showSecuritySettings, setShowSecuritySettings] = useState(false);
+  const [showChangePIN, setShowChangePIN] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+
+  // Get userId when modal opens
+  useEffect(() => {
+    const getUserId = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    if (visible) {
+      getUserId();
+    }
+  }, [visible]);
 
   // Reset authentication when modal opens/closes
   useEffect(() => {
@@ -646,6 +664,33 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
           <SecuritySettingsModal
             visible={showSecuritySettings}
             onClose={() => setShowSecuritySettings(false)}
+            onChangePIN={() => {
+              setShowSecuritySettings(false);
+              setShowChangePIN(true);
+            }}
+          />
+
+          {/* Change PIN Modal */}
+          <ChangePINModal
+            visible={showChangePIN}
+            onClose={() => setShowChangePIN(false)}
+            onSuccess={async () => {
+              setShowChangePIN(false);
+              Alert.alert(
+                '✅ Éxito',
+                'Tu PIN ha sido cambiado correctamente y todos tus documentos han sido re-encriptados.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Reload documents with new PIN
+                      loadDocuments();
+                    },
+                  },
+                ]
+              );
+            }}
+            userId={userId}
           />
 
           {/* PDF Viewer Modal - Completely Separate */}

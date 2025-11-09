@@ -40,6 +40,14 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     };
   }
 
+  // Override react-native-image-viewing for web platform
+  if (moduleName === 'react-native-image-viewing' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'src/stubs/react-native-image-viewing-stub.js'),
+      type: 'sourceFile',
+    };
+  }
+
   // Use default resolver for other modules
   return context.resolveRequest(context, moduleName, platform);
 };
@@ -50,6 +58,10 @@ config.resolver.alias = {
   ...(isWeb
     ? {
         'react-native-maps': path.resolve(__dirname, 'src/stubs/react-native-maps-stub.js'),
+        'react-native-image-viewing': path.resolve(
+          __dirname,
+          'src/stubs/react-native-image-viewing-stub.js'
+        ),
       }
     : {}),
 };
