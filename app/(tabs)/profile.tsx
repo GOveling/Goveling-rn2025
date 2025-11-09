@@ -21,10 +21,12 @@ import { Ionicons, MaterialIcons, Feather, AntDesign } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next';
 
 import PersonalInfoEditModal from '~/components/profile/PersonalInfoEditModal';
+import TravelDocumentsModal from '~/components/profile/TravelDocumentsModal';
 import SettingsModal from '~/components/SettingsModal';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
+import { hasPinConfigured, removePinHash, verifyPin } from '~/services/documentEncryption';
 
 import ProfileEditModal from '../../src/components/profile/ProfileEditModal';
 import { VisitedCitiesModal } from '../../src/components/profile/VisitedCitiesModal';
@@ -52,6 +54,7 @@ export default function ProfileTab() {
   const [showVisitedCountriesModal, setShowVisitedCountriesModal] = React.useState(false);
   const [showVisitedCitiesModal, setShowVisitedCitiesModal] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = React.useState(false);
+  const [showTravelDocumentsModal, setShowTravelDocumentsModal] = React.useState(false);
 
   React.useEffect(() => {
     console.log('📱 ProfileTab rendered');
@@ -235,6 +238,50 @@ export default function ProfileTab() {
         </View>
         <Feather name="chevron-right" size={20} color={subtitleColor || '#666'} />
       </TouchableOpacity>
+    );
+  };
+
+  // 🔐 DEBUG: Verificar si el PIN está guardado
+  const handleVerifyPinSaved = async () => {
+    const hasPin = await hasPinConfigured();
+    Alert.alert('🔐 Estado del PIN', hasPin ? '✅ PIN está guardado' : '❌ No hay PIN guardado');
+  };
+
+  // 🔐 DEBUG: Resetear el PIN
+  const handleResetPin = async () => {
+    Alert.alert(
+      '⚠️ Resetear PIN',
+      '¿Estás seguro de que quieres eliminar el PIN? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Resetear',
+          style: 'destructive',
+          onPress: async () => {
+            await removePinHash();
+            Alert.alert('✅ PIN Eliminado', 'El PIN ha sido eliminado correctamente.');
+          },
+        },
+      ]
+    );
+  };
+
+  // 🔐 DEBUG: Probar verificación de PIN
+  const handleTestVerifyPin = async () => {
+    const hasPin = await hasPinConfigured();
+    if (!hasPin) {
+      Alert.alert('❌ Error', 'No hay PIN configurado');
+      return;
+    }
+
+    Alert.prompt(
+      '🔐 Verificar PIN',
+      'Ingresa tu PIN para verificar:',
+      async (text) => {
+        const isValid = await verifyPin(text);
+        Alert.alert('🔐 Resultado', isValid ? '✅ PIN correcto' : '❌ PIN incorrecto');
+      },
+      'plain-text'
     );
   };
 
@@ -455,7 +502,7 @@ export default function ProfileTab() {
           textColor={theme.colors.text}
           subtitleColor={theme.colors.textMuted}
           borderColor={theme.colors.border}
-          onPress={() => Alert.alert(t('profile.documents'), t('profile.documents_coming_soon'))}
+          onPress={() => setShowTravelDocumentsModal(true)}
         />
 
         <MenuSection
@@ -524,6 +571,84 @@ export default function ProfileTab() {
           onPress={() => setShowSettingsModal(true)}
         />
       </View>
+
+      {/* 🔐 DEBUG: Sección de utilidades para el PIN */}
+      {__DEV__ && (
+        <View style={[styles.menuContainer, { backgroundColor: theme.colors.card, marginTop: 12 }]}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: '700',
+              color: '#FF9800',
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+            }}
+          >
+            🔐 DEBUG: Utilidades del PIN
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.menuSection, { borderBottomColor: theme.colors.border }]}
+            onPress={handleVerifyPinSaved}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconContainer, { backgroundColor: '#4CAF5020' }]}>
+                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              </View>
+              <View style={styles.menuText}>
+                <Text style={[styles.menuTitle, { color: theme.colors.text }]}>
+                  Verificar si PIN está guardado
+                </Text>
+                <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>
+                  Comprobar estado en SecureStore
+                </Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuSection, { borderBottomColor: theme.colors.border }]}
+            onPress={handleTestVerifyPin}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconContainer, { backgroundColor: '#2196F320' }]}>
+                <Ionicons name="key" size={20} color="#2196F3" />
+              </View>
+              <View style={styles.menuText}>
+                <Text style={[styles.menuTitle, { color: theme.colors.text }]}>
+                  Probar verificación de PIN
+                </Text>
+                <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>
+                  Ingresar PIN para validar
+                </Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuSection, { borderBottomWidth: 0 }]}
+            onPress={handleResetPin}
+          >
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconContainer, { backgroundColor: '#FF3B3020' }]}>
+                <Ionicons name="trash" size={20} color="#FF3B30" />
+              </View>
+              <View style={styles.menuText}>
+                <Text style={[styles.menuTitle, { color: '#FF3B30' }]}>
+                  Resetear PIN (eliminar)
+                </Text>
+                <Text style={[styles.menuSubtitle, { color: theme.colors.textMuted }]}>
+                  Borrar PIN de SecureStore
+                </Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Botón Cerrar Sesión */}
       <Pressable
@@ -594,6 +719,12 @@ export default function ProfileTab() {
 
       {/* Settings Modal */}
       <SettingsModal visible={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+
+      {/* Travel Documents Modal */}
+      <TravelDocumentsModal
+        visible={showTravelDocumentsModal}
+        onClose={() => setShowTravelDocumentsModal(false)}
+      />
 
       <View style={{ height: 100 }} />
     </ScrollView>
