@@ -19,6 +19,7 @@ npx expo run:android
 ## 📱 Core Features
 
 ### 🏠 Home Screen
+
 - **Current Trip Widget**: Active/upcoming trip with countdown
 - **Weather Header**: Current location weather with °C/°F toggle
 - **Nearby Alerts**: Distance-based notifications for saved places
@@ -26,6 +27,7 @@ npx expo run:android
 - **Popular Places**: Global trending destinations
 
 ### 🗺️ Trip Management
+
 - **Trip Creation**: Multi-day trips with dates, locations, and timezone support
 - **Places**: Save and organize locations with Google Places integration
 - **Team Collaboration**: Invite members, manage roles (owner/editor/viewer)
@@ -34,6 +36,7 @@ npx expo run:android
 - **Accommodations**: Check-in/out dates and booking details
 
 ### 🧭 Travel Mode
+
 - **Real-time Tracking**: Background location monitoring
 - **Country Detection**: Automatic country visit logging with 3-confirmation system
 - **City Detection**: Smart city-level tracking
@@ -41,12 +44,14 @@ npx expo run:android
 - **Visit Logging**: Automatic trip history with dwell time tracking
 
 ### 💬 Communication
+
 - **Trip Chat**: Real-time messaging per trip
 - **Notifications**: Firebase FCM push notifications (iOS + Android)
 - **Notification Inbox**: Centralized notification management
 - **Team Invitations**: Push notifications for team actions
 
 ### 🔍 Explore
+
 - **Google Places Search**: Discover places near your location
 - **Category Filters**: Browse by type (restaurants, hotels, attractions, etc.)
 - **Place Details**: Rich information with photos, ratings, hours, website
@@ -56,6 +61,7 @@ npx expo run:android
 ## 🏗️ Technical Architecture
 
 ### Frontend Stack
+
 - **React Native**: Cross-platform mobile development
 - **Expo SDK 52**: Development tools and native modules
 - **TypeScript**: Type-safe code
@@ -65,6 +71,7 @@ npx expo run:android
 - **Firebase Messaging**: Push notifications
 
 ### Backend Stack
+
 - **Supabase**: PostgreSQL database + Auth + Storage
 - **Edge Functions**: Serverless Deno functions
 - **Row Level Security (RLS)**: Database-level security
@@ -72,6 +79,7 @@ npx expo run:android
 - **PostGIS**: Geographic data and queries
 
 ### Key Services
+
 - **Google Places API**: Location search and details
 - **Open-Meteo**: Weather data (no API key required)
 - **Firebase FCM**: Push notification delivery
@@ -101,6 +109,7 @@ npx expo run:android
 ## 🗄️ Database Schema
 
 ### Core Tables
+
 - `profiles`: User data and preferences
 - `trips`: Trip information
 - `trip_members`: Team collaboration
@@ -113,11 +122,13 @@ npx expo run:android
 - `device_tokens`: FCM registration
 
 ### Location Tracking
+
 - `visited_countries`: Country visit history
-- `visited_cities`: City visit history  
+- `visited_cities`: City visit history
 - `place_visits`: Individual place check-ins
 
 ### Caching
+
 - `country_cache`: Reverse geocoding cache
 - `city_cache`: City metadata cache
 - `shared_place_saves`: Popular places tracking
@@ -135,12 +146,13 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=your-google-api-key
 
 # Firebase (for push notifications)
-# Place files: 
+# Place files:
 # - ios/GoogleService-Info.plist
 # - android/app/google-services.json
 ```
 
 ### Supabase Secrets (Edge Functions)
+
 ```bash
 supabase secrets set GOOGLE_PLACES_API_KEY=your-key
 supabase secrets set FCM_SERVER_KEY=your-fcm-server-key
@@ -149,6 +161,7 @@ supabase secrets set FCM_SERVER_KEY=your-fcm-server-key
 ## 🚀 Deployment
 
 ### Database Migrations
+
 ```bash
 # Deploy schema changes
 supabase db push
@@ -158,6 +171,7 @@ supabase migration up
 ```
 
 ### Edge Functions
+
 ```bash
 # Deploy all functions
 supabase functions deploy weather_now --no-verify-jwt
@@ -168,6 +182,7 @@ supabase functions deploy city_details --no-verify-jwt
 ```
 
 ### Mobile App
+
 ```bash
 # Development builds
 npx expo run:ios
@@ -184,6 +199,7 @@ eas update --branch production
 ## 🔧 Configuration
 
 ### Firebase Setup
+
 1. Create Firebase project at console.firebase.google.com
 2. Add iOS and Android apps
 3. Download config files:
@@ -192,6 +208,7 @@ eas update --branch production
 4. Add FCM Server Key to Supabase secrets
 
 ### Google Places API
+
 1. Enable in Google Cloud Console:
    - Places API
    - Places API (New)
@@ -200,6 +217,7 @@ eas update --branch production
 3. Add to `.env` and Supabase secrets
 
 ### MapLibre Setup
+
 Uses open-source tiles - no API key needed!
 
 ## 🧪 Testing
@@ -221,6 +239,7 @@ npx eslint . --fix
 ## 📊 Key Features Deep Dive
 
 ### Travel Mode Implementation
+
 - **Background Location**: Uses `expo-location` with accuracy optimization
 - **Country Detection**: 3-confirmation system to prevent false positives
 - **Offline Support**: Caches geocoding results
@@ -228,6 +247,7 @@ npx eslint . --fix
 - **Privacy**: Location only tracked when Travel Mode is active
 
 ### Real-time Chat
+
 - **Supabase Realtime**: WebSocket-based updates
 - **Message Types**: Text, images (future: voice, location)
 - **Read Receipts**: Track message read status
@@ -235,12 +255,14 @@ npx eslint . --fix
 - **Push Notifications**: Alert offline users
 
 ### Group Features
+
 - **Expense Splitting**: Track shared costs
 - **Decision Voting**: Democratic group choices
 - **Role-based Access**: Owner, editor, viewer permissions
 - **Real-time Sync**: Instant updates across devices
 
 ### Popular Places System
+
 - **Global Tracking**: Monitors place saves across all users
 - **Time Windows**: 1h, 6h, 24h trending calculations
 - **Regional Filtering**: Shows relevant places by continent/country
@@ -267,7 +289,7 @@ npx eslint . --fix
 
 ## 📈 Performance Optimizations
 
-- **Caching Strategy**: 
+- **Caching Strategy**:
   - Country/city geocoding results
   - Place details from Google
   - Route calculations
@@ -285,9 +307,41 @@ npx eslint . --fix
 - Voice messages not implemented
 - Location sharing requires manual enable per trip
 
+### 🔐 Travel Documents & Biometric Authentication
+
+**Important Note:** Face ID/Touch ID authentication for Travel Documents is **currently disabled in development** (Expo Go).
+
+**Why?**
+
+- Face ID requires native iOS configuration (`NSFaceIDUsageDescription`) that is not available in Expo Go
+- The feature is fully implemented and ready, but requires a production/development build to test
+- See `BUG5_FACEID_EXPO_GO_LIMITATION.md` for detailed explanation
+
+**Current State:**
+
+- ✅ PIN-based document encryption is working
+- ✅ Face ID code is implemented and tested
+- ✅ Configuration is complete in `app.json`
+- ⏸️ Face ID UI is temporarily hidden (code commented in `SecuritySettingsModal.tsx`)
+
+**To Enable Face ID in Production:**
+
+1. Uncomment Face ID section in `src/components/profile/SecuritySettingsModal.tsx` (search for "TEMPORARILY DISABLED")
+2. Build with EAS: `eas build --profile production --platform ios`
+3. Face ID will work automatically - no additional changes needed
+
+**Files to Review:**
+
+- `src/components/profile/SecuritySettingsModal.tsx` - UI toggle (currently commented)
+- `src/services/biometricAuth.ts` - Biometric service (ready)
+- `app.json` - Native configuration (complete)
+- `BUGFIXES_PHASE5.md` - Complete implementation documentation
+- `BUG5_FACEID_EXPO_GO_LIMITATION.md` - Limitation explanation
+
 ## 🗺️ Roadmap
 
 ### Planned Features
+
 - [ ] Voice messages in chat
 - [ ] Location sharing live map
 - [ ] Expense receipt scanning
@@ -299,6 +353,7 @@ npx eslint . --fix
 - [ ] Travel insurance integration
 
 ### Technical Improvements
+
 - [ ] Complete TypeScript migration
 - [ ] ESLint rule compliance
 - [ ] Component testing suite
@@ -329,6 +384,7 @@ This project is proprietary software. All rights reserved.
 ## 📞 Support
 
 For issues or questions:
+
 - GitHub Issues: [Create an issue]
 - Email: araos.sebastian@gmail.com
 

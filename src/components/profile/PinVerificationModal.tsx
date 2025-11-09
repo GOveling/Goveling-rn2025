@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import {
   View,
@@ -14,6 +14,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '~/lib/theme';
+import {
+  authenticateWithBiometrics,
+  isBiometricAuthEnabled,
+  checkBiometricCapabilities,
+  getBiometricTypeName,
+  getBiometricIconName,
+  type BiometricCapabilities,
+} from '~/services/biometricAuth';
 import { verifyPin } from '~/services/documentEncryption';
 
 interface PinVerificationModalProps {
@@ -35,6 +43,55 @@ export default function PinVerificationModal({
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [biometricCapabilities, setBiometricCapabilities] = useState<BiometricCapabilities | null>(
+    null
+  );
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricAttempted, setBiometricAttempted] = useState(false);
+
+  // Check biometric availability and auto-trigger when modal opens
+  useEffect(() => {
+    if (visible && !biometricAttempted) {
+      checkAndTriggerBiometric();
+    }
+  }, [visible]);
+
+  const checkAndTriggerBiometric = async () => {
+    try {
+      const capabilities = await checkBiometricCapabilities();
+      setBiometricCapabilities(capabilities);
+
+      if (capabilities.isAvailable) {
+        const enabled = await isBiometricAuthEnabled();
+        setBiometricEnabled(enabled);
+
+        if (enabled) {
+          // Auto-trigger biometric auth
+          setBiometricAttempted(true);
+          setTimeout(() => handleBiometricAuth(), 300); // Small delay for better UX
+        }
+      }
+    } catch (error) {
+      console.error('Error checking biometric capabilities:', error);
+    }
+  };
+
+  const handleBiometricAuth = async () => {
+    if (!biometricCapabilities || !biometricEnabled) return;
+
+    setLoading(true);
+    const result = await authenticateWithBiometrics(message);
+    setLoading(false);
+
+    if (result.success) {
+      console.log('✅ Biometric authentication successful');
+      handleClose();
+      onSuccess();
+    } else {
+      console.log('❌ Biometric authentication failed, fallback to PIN');
+      // User can now enter PIN manually
+    }
+  };
 
   const handleVerify = async () => {
     if (pin.length < 4) {
@@ -101,6 +158,33 @@ export default function PinVerificationModal({
 
           {/* Message */}
           <Text style={[styles.message, { color: theme.colors.text }]}>{message}</Text>
+
+          {/* Biometric Button */}
+          {biometricCapabilities?.isAvailable && biometricEnabled && (
+            <TouchableOpacity
+              style={[styles.biometricButton, { backgroundColor: theme.colors.card }]}
+              onPress={handleBiometricAuth}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={getBiometricIconName(biometricCapabilities.biometricType) as any}
+                size={32}
+                color={theme.colors.primary}
+              />
+              <Text style={[styles.biometricButtonText, { color: theme.colors.text }]}>
+                Usar {getBiometricTypeName(biometricCapabilities.biometricType)}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {biometricCapabilities?.isAvailable && biometricEnabled && (
+            <View style={styles.divider}>
+              <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+              <Text style={[styles.dividerText, { color: theme.colors.textMuted }]}>o</Text>
+              <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+            </View>
+          )}
 
           {/* Attempts indicator */}
           {attempts > 0 && (
@@ -284,5 +368,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+    gap: 12,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#2196F3' as const,
+  },
+  biometricButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    width: '100%',
+    marginBottom: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
   },
 });
