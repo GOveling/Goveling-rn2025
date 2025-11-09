@@ -523,26 +523,6 @@ export default function ProfileTab() {
           borderColor={theme.colors.border}
           onPress={() => setShowSettingsModal(true)}
         />
-
-        {/* 🔧 DEBUG: Botón temporal para limpiar cache de ciudades */}
-        {__DEV__ && (
-          <MenuSection
-            icon="trash-outline"
-            title={t('profile.menu.debug_clear_city_cache')}
-            subtitle={t('profile.menu.debug_clear_city_cache_desc')}
-            iconColor="#FF6B6B"
-            textColor={theme.colors.text}
-            subtitleColor={theme.colors.textMuted}
-            borderColor={theme.colors.border}
-            onPress={async () => {
-              const { cityDetectionService } = await import(
-                '~/services/travelMode/CityDetectionService'
-              );
-              await cityDetectionService.clearCache();
-              alert(t('profile.debug_cache_cleared'));
-            }}
-          />
-        )}
       </View>
 
       {/* Botón Cerrar Sesión */}
