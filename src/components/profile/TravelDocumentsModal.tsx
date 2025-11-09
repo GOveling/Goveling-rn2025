@@ -541,10 +541,13 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
           onSave={handleSaveDocument}
         />
 
-        {/* Document Viewer Modal */}
+        {/* Document Viewer Modal - Hidden when PDF viewer is open */}
         <DocumentViewerModal
-          visible={showDocumentViewer}
-          onClose={() => setShowDocumentViewer(false)}
+          visible={showDocumentViewer && !showPdfViewer}
+          onClose={() => {
+            setShowDocumentViewer(false);
+            setSelectedDocument(null);
+          }}
           document={selectedDocument}
           onDelete={handleDeleteDocument}
           onOpenPDF={handleOpenPDF}

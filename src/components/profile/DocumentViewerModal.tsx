@@ -123,9 +123,8 @@ export default function DocumentViewerModal({
     }
 
     console.log('✅ Notifying parent to open PDF viewer');
-    // Close this modal and let parent handle PDF viewing
-    onClose();
-    // Notify parent to open PDF in a separate modal
+    // Don't close this modal - just hide it temporarily while PDF is shown
+    // The parent will handle showing the PDF modal on top
     if (onOpenPDF) {
       onOpenPDF(decryptedData.imageUrl);
     }
