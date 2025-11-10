@@ -10,6 +10,8 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -61,6 +63,7 @@ export default function RecoveryCodeModal({
       const timer = setInterval(loadTimeRemaining, 60000);
       return () => clearInterval(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const loadTimeRemaining = async () => {
@@ -193,122 +196,140 @@ export default function RecoveryCodeModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={[styles.container, { backgroundColor: theme.colors.card }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              disabled={loading}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close" size={28} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.overlay}
+      >
+        <View style={styles.overlay}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.container, { backgroundColor: theme.colors.card }]}>
+              {/* Header */}
+              <View style={styles.header}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeButton}
+                  disabled={loading}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="close" size={28} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
 
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="mail-open-outline" size={48} color="#3B82F6" />
-            </View>
-          </View>
+              {/* Icon */}
+              <View style={styles.iconContainer}>
+                <View style={[styles.iconCircle, { backgroundColor: theme.colors.chipBg }]}>
+                  <Ionicons name="mail-open-outline" size={48} color={theme.colors.primary} />
+                </View>
+              </View>
 
-          {/* Title */}
-          <Text style={[styles.title, { color: theme.colors.text }]}>Ingresa el Código</Text>
+              {/* Title */}
+              <Text style={[styles.title, { color: theme.colors.text }]}>Ingresa el Código</Text>
 
-          {/* Description */}
-          <Text style={[styles.description, { color: theme.colors.textMuted }]}>
-            Enviamos un código de 6 dígitos a {maskEmail(email)}
-          </Text>
+              {/* Description */}
+              <Text style={[styles.description, { color: theme.colors.textMuted }]}>
+                Enviamos un código de 6 dígitos a {maskEmail(email)}
+              </Text>
 
-          {/* Code Inputs */}
-          <View style={styles.codeContainer}>
-            {code.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={inputRefs[index]}
+              {/* Code Inputs */}
+              <View style={styles.codeContainer}>
+                {code.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={inputRefs[index]}
+                    style={[
+                      styles.codeInput,
+                      {
+                        backgroundColor: theme.colors.background,
+                        color: theme.colors.text,
+                        borderColor: digit ? theme.colors.primary : theme.colors.border,
+                      },
+                    ]}
+                    value={digit}
+                    onChangeText={(text) => handleCodeChange(text, index)}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    selectTextOnFocus
+                    editable={!loading}
+                  />
+                ))}
+              </View>
+
+              {/* Info */}
+              <View style={styles.infoContainer}>
+                <View style={styles.infoItem}>
+                  <Ionicons name="time-outline" size={18} color={theme.colors.textMuted} />
+                  <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
+                    {timeRemaining > 0
+                      ? `Expira en ${timeRemaining} minuto${timeRemaining !== 1 ? 's' : ''}`
+                      : 'Código expirado'}
+                  </Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Ionicons
+                    name="shield-checkmark-outline"
+                    size={18}
+                    color={theme.colors.textMuted}
+                  />
+                  <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
+                    {attemptsLeft} intento{attemptsLeft !== 1 ? 's' : ''} restante
+                    {attemptsLeft !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Verify Button */}
+              <TouchableOpacity
                 style={[
-                  styles.codeInput,
-                  {
-                    backgroundColor: theme.colors.background,
-                    color: theme.colors.text,
-                    borderColor: digit ? '#3B82F6' : theme.colors.border,
-                  },
+                  styles.verifyButton,
+                  { backgroundColor: theme.colors.primary },
+                  (loading || code.join('').length !== 6) && styles.verifyButtonDisabled,
                 ]}
-                value={digit}
-                onChangeText={(text) => handleCodeChange(text, index)}
-                keyboardType="number-pad"
-                maxLength={6} // Allow paste
-                selectTextOnFocus
-                editable={!loading}
-                returnKeyType={index === 5 ? 'done' : 'next'}
-                onSubmitEditing={() => {
-                  if (index === 5) {
-                    handleVerifyCode();
-                  }
-                }}
-              />
-            ))}
-          </View>
+                onPress={() => handleVerifyCode()}
+                disabled={loading || code.join('').length !== 6}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color={theme.colors.primaryText} />
+                ) : (
+                  <Text style={[styles.verifyButtonText, { color: theme.colors.primaryText }]}>
+                    Verificar Código
+                  </Text>
+                )}
+              </TouchableOpacity>
 
-          {/* Info */}
-          <View style={styles.infoContainer}>
-            <View style={styles.infoItem}>
-              <Ionicons name="time-outline" size={18} color={theme.colors.textMuted} />
-              <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-                {timeRemaining > 0
-                  ? `Expira en ${timeRemaining} minuto${timeRemaining !== 1 ? 's' : ''}`
-                  : 'Código expirado'}
-              </Text>
+              {/* Cancel Button */}
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={onClose}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.cancelButtonText, { color: theme.colors.textMuted }]}>
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.textMuted} />
-              <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-                {attemptsLeft} intento{attemptsLeft !== 1 ? 's' : ''} restante
-                {attemptsLeft !== 1 ? 's' : ''}
-              </Text>
-            </View>
-          </View>
-
-          {/* Verify Button */}
-          <TouchableOpacity
-            style={[
-              styles.verifyButton,
-              (loading || code.join('').length !== 6) && styles.verifyButtonDisabled,
-            ]}
-            onPress={() => handleVerifyCode()}
-            disabled={loading || code.join('').length !== 6}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.verifyButtonText}>Verificar Código</Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Cancel Button */}
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={onClose}
-            disabled={loading}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.cancelButtonText, { color: theme.colors.textMuted }]}>
-              Cancelar
-            </Text>
-          </TouchableOpacity>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
+const OVERLAY_BG = 'rgba(0, 0, 0, 0.5)';
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: OVERLAY_BG,
+    justifyContent: 'flex-end',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'flex-end',
   },
   container: {
@@ -344,7 +365,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#DBEAFE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -390,7 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   verifyButton: {
-    backgroundColor: '#3B82F6',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -400,7 +419,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   verifyButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
