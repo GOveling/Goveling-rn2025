@@ -24,6 +24,10 @@ import {
 } from '~/services/biometricAuth';
 import { verifyPin } from '~/services/documentEncryption';
 
+import ForgotPinModal from './ForgotPinModal';
+import RecoveryCodeModal from './RecoveryCodeModal';
+import SetNewPinModal from './SetNewPinModal';
+
 interface PinVerificationModalProps {
   visible: boolean;
   onClose: () => void;
@@ -48,6 +52,12 @@ export default function PinVerificationModal({
   );
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAttempted, setBiometricAttempted] = useState(false);
+
+  // Recovery flow states
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [showRecoveryCode, setShowRecoveryCode] = useState(false);
+  const [showSetNewPin, setShowSetNewPin] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
 
   // Check biometric availability and auto-trigger when modal opens
   useEffect(() => {
@@ -129,7 +139,38 @@ export default function PinVerificationModal({
   const handleClose = () => {
     setPin('');
     setAttempts(0);
+    setBiometricAttempted(false);
     onClose();
+  };
+
+  const handleForgotPin = () => {
+    setShowForgotPin(true);
+  };
+
+  const handleRecoveryCodeSent = (email: string) => {
+    setRecoveryEmail(email);
+    setShowRecoveryCode(true);
+  };
+
+  const handleRecoveryCodeVerified = () => {
+    setShowSetNewPin(true);
+  };
+
+  const handleNewPinSet = () => {
+    // PIN reset complete, close all modals and trigger success
+    Alert.alert(
+      '✅ PIN Restablecido',
+      'Tu PIN ha sido restablecido exitosamente. Ahora puedes acceder a tus documentos.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            handleClose();
+            onSuccess();
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -255,12 +296,40 @@ export default function PinVerificationModal({
             )}
           </TouchableOpacity>
 
-          {/* Help text */}
-          <Text style={[styles.helpText, { color: theme.colors.textMuted }]}>
-            Si olvidaste tu PIN, contacta al soporte para recuperar el acceso.
-          </Text>
+          {/* Forgot PIN Button */}
+          <TouchableOpacity
+            style={styles.forgotPinButton}
+            onPress={handleForgotPin}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="help-circle-outline" size={18} color={theme.colors.primary} />
+            <Text style={[styles.forgotPinText, { color: theme.colors.primary }]}>
+              ¿Olvidaste tu PIN?
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Recovery Modals */}
+      <ForgotPinModal
+        visible={showForgotPin}
+        onClose={() => setShowForgotPin(false)}
+        onCodeSent={handleRecoveryCodeSent}
+      />
+
+      <RecoveryCodeModal
+        visible={showRecoveryCode}
+        onClose={() => setShowRecoveryCode(false)}
+        onSuccess={handleRecoveryCodeVerified}
+        email={recoveryEmail}
+      />
+
+      <SetNewPinModal
+        visible={showSetNewPin}
+        onClose={() => setShowSetNewPin(false)}
+        onSuccess={handleNewPinSet}
+      />
     </Modal>
   );
 }
@@ -364,11 +433,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  helpText: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
   biometricButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,5 +464,17 @@ const styles = StyleSheet.create({
   dividerText: {
     fontSize: 14,
     fontWeight: '500' as const,
+  },
+  forgotPinButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
+    marginTop: 8,
+  },
+  forgotPinText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
