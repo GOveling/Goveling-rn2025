@@ -3,9 +3,26 @@
  * Maneja encriptación local y comunicación con Edge Functions
  */
 
+// Polyfill para Web Crypto API en React Native (solo en builds nativos)
+// eslint-disable-next-line import/order, @typescript-eslint/no-var-requires
+let hasNativeCrypto = false;
+try {
+  // Solo intentar instalar si estamos en un build nativo (no Expo Go)
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { install } = require('react-native-quick-crypto');
+  install();
+  hasNativeCrypto = true;
+  console.log('✅ Native crypto available - offline decryption enabled');
+} catch (error) {
+  console.log('⚠️ Native crypto not available - offline decryption disabled (Expo Go)');
+  hasNativeCrypto = false;
+}
+
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
+
+import NetInfo from '@react-native-community/netinfo';
 
 import { supabase } from '~/lib/supabase';
 
@@ -285,7 +302,64 @@ export async function encryptDocument(documentData: {
 }
 
 /**
- * Desencripta un documento llamando al Edge Function
+ * Desencripta datos localmente usando Web Crypto API (para modo offline)
+ * Solo disponible en builds nativos con react-native-quick-crypto
+ */
+async function decryptDataLocally(
+  encryptedBase64: string,
+  ivBase64: string,
+  authTagBase64: string,
+  keyBase64: string
+): Promise<string> {
+  if (!hasNativeCrypto) {
+    throw new Error('Native crypto not available. Use a development build for offline decryption.');
+  }
+
+  try {
+    // Decodificar desde base64
+    const keyBytes = Uint8Array.from(atob(keyBase64), (c) => c.charCodeAt(0));
+    const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
+    const authTag = Uint8Array.from(atob(authTagBase64), (c) => c.charCodeAt(0));
+    const ciphertext = Uint8Array.from(atob(encryptedBase64), (c) => c.charCodeAt(0));
+
+    // Concatenar ciphertext + authTag (GCM lo requiere)
+    const encryptedBuffer = new Uint8Array(ciphertext.length + authTag.length);
+    encryptedBuffer.set(ciphertext);
+    encryptedBuffer.set(authTag, ciphertext.length);
+
+    // Importar la clave
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyBytes,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+
+    // Desencriptar
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv,
+        tagLength: 128,
+      },
+      cryptoKey,
+      encryptedBuffer
+    );
+
+    // Convertir a string
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedBuffer);
+  } catch (error) {
+    console.error('❌ Local decryption error:', error);
+    throw new Error(
+      `Local decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Desencripta un documento (usa Edge Function si hay conexión, local si offline)
  */
 export async function decryptDocument(
   documentId: string,
@@ -300,9 +374,6 @@ export async function decryptDocument(
   error?: string;
 }> {
   try {
-    const key = useRecoveryKey ? await generateRecoveryKey() : await generateDocumentKey(pin);
-
-    // Debug: Log input data
     console.log('🔍 Decrypt Input:', {
       documentId,
       hasEncryptedData: !!encryptedData,
@@ -311,10 +382,78 @@ export async function decryptDocument(
       ivLength: iv?.length || 0,
       hasAuthTag: !!authTag,
       authTagLength: authTag?.length || 0,
-      hasKey: !!key,
-      keyLength: key?.length || 0,
       useRecoveryKey,
     });
+
+    // Verificar conectividad PRIMERO (antes de cualquier llamada a Supabase)
+    const netState = await NetInfo.fetch();
+    const isOnline = netState.isConnected && netState.isInternetReachable;
+
+    console.log('🌐 Network state:', {
+      isConnected: netState.isConnected,
+      isInternetReachable: netState.isInternetReachable,
+      isOnline,
+    });
+
+    // Si estamos offline, usar desencriptación local (solo en builds nativos)
+    if (!isOnline) {
+      console.log('📴 Offline mode detected');
+
+      // Verificar si crypto nativo está disponible
+      if (!hasNativeCrypto) {
+        console.warn(
+          '⚠️ Offline decryption not available in Expo Go. Use a development build for offline support.'
+        );
+        return {
+          success: false,
+          error:
+            'Offline decryption requires a development build. Please connect to the internet or use a native build.',
+        };
+      }
+
+      console.log('🔐 Using local decryption (native crypto available)');
+
+      // Generar clave localmente sin Supabase (usa sesión cacheada)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        console.error('❌ No cached user session for offline decryption');
+        return { success: false, error: 'No cached user session' };
+      }
+
+      // Generar clave usando el userID cacheado
+      const salt = session.user.id;
+      const hexKey = await derivePinKey(pin, salt);
+      const key = hexToBase64(hexKey);
+
+      console.log('🔑 Generated offline key:', {
+        hasKey: !!key,
+        keyLength: key.length,
+        userId: session.user.id.substring(0, 8) + '...',
+      });
+
+      const decryptedJson = await decryptDataLocally(encryptedData, iv, authTag, key);
+      const decryptedData = JSON.parse(decryptedJson);
+
+      console.log('✅ Local decryption successful');
+      return {
+        success: true,
+        data: decryptedData,
+      };
+    }
+
+    // Si estamos online, generar clave y usar Edge Function
+    const key = useRecoveryKey ? await generateRecoveryKey() : await generateDocumentKey(pin);
+
+    console.log('🔑 Generated online key:', {
+      hasKey: !!key,
+      keyLength: key?.length || 0,
+    });
+
+    // Si estamos online, usar Edge Function
+    console.log('🌐 Online mode - using Edge Function');
 
     // Verificar sesión
     const {

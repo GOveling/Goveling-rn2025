@@ -14,6 +14,7 @@ import DocumentViewerModal from '~/components/profile/DocumentViewerModal';
 import PinSetupInline from '~/components/profile/PinSetupInline';
 import PinVerificationInline from '~/components/profile/PinVerificationInline';
 import SecuritySettingsModal from '~/components/profile/SecuritySettingsModal';
+import { useDocumentSync } from '~/hooks/useDocumentSync';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
 import { hasPinConfigured, encryptDocument, decryptDocument } from '~/services/documentEncryption';
@@ -73,6 +74,41 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   const [showSecuritySettings, setShowSecuritySettings] = useState(false);
   const [showChangePIN, setShowChangePIN] = useState(false);
   const [userId, setUserId] = useState<string>('');
+
+  // Offline Sync Hook
+  const {
+    cachedDocuments,
+    cacheSizeMB,
+    downloadForOffline,
+    removeFromCache,
+    isDocumentAvailableOffline,
+    refreshCacheStatus,
+    isConnected,
+    isSyncing,
+    queueStatus,
+    lastSyncAt,
+  } = useDocumentSync();
+
+  // Estado de descarga por documento
+  const [downloadingDocs, setDownloadingDocs] = useState<Set<string>>(new Set());
+
+  // Helper: formatear tiempo relativo para last sync
+  const getRelativeTime = (date: Date | null): string => {
+    if (!date) return '';
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
 
   // Get userId when modal opens
   useEffect(() => {
@@ -158,19 +194,48 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   const loadDocuments = async (pin?: string) => {
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
 
-      const { data, error } = await supabase
-        .from('travel_documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Check connectivity first
+      if (!isConnected) {
+        console.warn('⚠️ Cannot load documents - offline mode');
+        setDocuments([]);
+        return;
+      }
 
-      if (error) {
-        console.error('Error loading documents:', error);
+      let user;
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        user = authUser;
+      } catch (error) {
+        console.warn('⚠️ Cannot verify user (network error) - skipping document load');
+        setDocuments([]);
+        return;
+      }
+
+      if (!user) {
+        setDocuments([]);
+        return;
+      }
+
+      let data;
+      try {
+        const result = await supabase
+          .from('travel_documents')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (result.error) {
+          console.error('Error loading documents:', result.error);
+          return;
+        }
+
+        data = result.data;
+      } catch (error) {
+        console.warn('⚠️ Cannot load documents (network error)');
+        setDocuments([]);
         return;
       }
 
@@ -227,32 +292,37 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
             if (decryptedData.filePath) {
               console.log('🔗 Generating signed URL for:', decryptedData.filePath);
 
-              const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-                .from('travel-documents')
-                .createSignedUrl(decryptedData.filePath, 3600);
-
-              if (signedUrlError) {
-                console.error('❌ Signed URL error:', JSON.stringify(signedUrlError));
-
-                // Fallback: try public URL
-                const { data: publicUrlData } = supabase.storage
+              try {
+                const { data: signedUrlData, error: signedUrlError } = await supabase.storage
                   .from('travel-documents')
-                  .getPublicUrl(decryptedData.filePath);
+                  .createSignedUrl(decryptedData.filePath, 3600);
 
-                console.log('🔓 Using public URL fallback:', publicUrlData.publicUrl);
+                if (signedUrlError) {
+                  console.error('❌ Signed URL error:', JSON.stringify(signedUrlError));
 
-                doc.encrypted_data_primary = JSON.stringify({
-                  ...decryptedData,
-                  imageUrl: publicUrlData.publicUrl,
-                  filePath: decryptedData.filePath,
-                });
-              } else if (signedUrlData) {
-                console.log('✅ Signed URL generated successfully');
-                doc.encrypted_data_primary = JSON.stringify({
-                  ...decryptedData,
-                  imageUrl: signedUrlData.signedUrl,
-                  filePath: decryptedData.filePath,
-                });
+                  // Fallback: try public URL
+                  const { data: publicUrlData } = supabase.storage
+                    .from('travel-documents')
+                    .getPublicUrl(decryptedData.filePath);
+
+                  console.log('🔓 Using public URL fallback:', publicUrlData.publicUrl);
+
+                  doc.encrypted_data_primary = JSON.stringify({
+                    ...decryptedData,
+                    imageUrl: publicUrlData.publicUrl,
+                    filePath: decryptedData.filePath,
+                  });
+                } else if (signedUrlData) {
+                  console.log('✅ Signed URL generated successfully');
+                  doc.encrypted_data_primary = JSON.stringify({
+                    ...decryptedData,
+                    imageUrl: signedUrlData.signedUrl,
+                    filePath: decryptedData.filePath,
+                  });
+                }
+              } catch (urlError) {
+                // Network error generating signed URL
+                console.warn('⚠️ Cannot generate signed URL (network error) - skipping');
               }
             } else {
               console.log('⚠️ No filePath found, keeping original imageUrl');
@@ -654,6 +724,131 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     setShowPdfViewer(true);
   };
 
+  // ====== OFFLINE CACHE FUNCTIONS ======
+
+  /**
+   * Descargar documento para acceso offline
+   */
+  const handleDownloadForOffline = async (doc: Document) => {
+    try {
+      console.log('📥 Downloading document for offline:', doc.id);
+
+      // Mostrar indicador de descarga
+      setDownloadingDocs((prev) => new Set(prev).add(doc.id));
+
+      // Verificar que tengamos los datos encriptados
+      if (!doc.encrypted_data_primary || !doc.primary_iv || !doc.primary_auth_tag) {
+        Alert.alert('Error', 'No se pueden descargar documentos sin datos encriptados.');
+        return;
+      }
+
+      // Descargar y cachear
+      const success = await downloadForOffline(
+        doc.id,
+        doc.encrypted_data_primary,
+        doc.primary_iv,
+        doc.primary_auth_tag,
+        {
+          documentType: doc.document_type,
+          expiryDate: doc.expiry_date,
+        }
+      );
+
+      if (success) {
+        Alert.alert(
+          '✅ Disponible Offline',
+          'El documento se ha descargado y está disponible sin conexión.'
+        );
+        await refreshCacheStatus();
+      } else {
+        Alert.alert(
+          '❌ Error',
+          'No se pudo descargar el documento. Verifica el espacio disponible.'
+        );
+      }
+    } catch (error) {
+      console.error('Error downloading for offline:', error);
+      Alert.alert('❌ Error', 'No se pudo descargar el documento.');
+    } finally {
+      // Remover indicador de descarga
+      setDownloadingDocs((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(doc.id);
+        return newSet;
+      });
+    }
+  };
+
+  /**
+   * Eliminar documento del cache offline
+   */
+  const handleRemoveFromOffline = async (doc: Document) => {
+    Alert.alert(
+      'Eliminar Cache Offline',
+      '¿Deseas eliminar este documento del almacenamiento offline? Seguirá disponible en línea.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🗑️ Removing from offline cache:', doc.id);
+
+              const success = await removeFromCache(doc.id);
+
+              if (success) {
+                Alert.alert('✅ Eliminado', 'El documento se ha eliminado del cache offline.');
+                await refreshCacheStatus();
+              } else {
+                Alert.alert('❌ Error', 'No se pudo eliminar del cache offline.');
+              }
+            } catch (error) {
+              console.error('Error removing from offline:', error);
+              Alert.alert('❌ Error', 'No se pudo eliminar del cache.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Mostrar menú de opciones offline para un documento
+   */
+  const handleOfflineOptions = (doc: Document) => {
+    const isOffline = isDocumentAvailableOffline(doc.id);
+
+    const options: any[] = [
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+    ];
+
+    if (isOffline) {
+      options.unshift({
+        text: '🗑️ Eliminar de Offline',
+        style: 'destructive',
+        onPress: () => handleRemoveFromOffline(doc),
+      });
+    } else {
+      options.unshift({
+        text: '📥 Descargar para Offline',
+        onPress: () => handleDownloadForOffline(doc),
+      });
+    }
+
+    Alert.alert(
+      'Opciones Offline',
+      'Gestiona el almacenamiento offline de este documento:',
+      options
+    );
+  };
+
   console.log('🎨 TravelDocumentsModal Render State:', {
     visible,
     hasPin,
@@ -680,9 +875,57 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
                 <Ionicons name="close" size={28} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              {t('profile.menu.travel_documents')}
-            </Text>
+            <View style={styles.headerCenter}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>
+                {t('profile.menu.travel_documents')}
+              </Text>
+
+              {/* Network & Sync Status */}
+              <View style={styles.statusRow}>
+                {/* Connection indicator */}
+                <View style={styles.connectionIndicator}>
+                  <Ionicons
+                    name={isConnected ? 'wifi' : 'wifi-outline'}
+                    size={10}
+                    color={isConnected ? '#10B981' : '#EF4444'}
+                  />
+                  <Text
+                    style={[styles.connectionText, { color: isConnected ? '#10B981' : '#EF4444' }]}
+                  >
+                    {isConnected ? 'Online' : 'Offline'}
+                  </Text>
+                </View>
+
+                {/* Sync indicator */}
+                {isSyncing && (
+                  <View style={styles.syncIndicator}>
+                    <Text style={styles.syncText}>⏳ Syncing...</Text>
+                  </View>
+                )}
+
+                {/* Queue indicator */}
+                {queueStatus.pendingItems > 0 && (
+                  <View style={styles.queueIndicator}>
+                    <Ionicons name="cloud-upload-outline" size={10} color="#F59E0B" />
+                    <Text style={styles.queueText}>{queueStatus.pendingItems} pending</Text>
+                  </View>
+                )}
+
+                {/* Cache indicator */}
+                {cachedDocuments.size > 0 && (
+                  <Text style={[styles.cacheIndicator, { color: theme.colors.textMuted }]}>
+                    {cachedDocuments.size} offline • {cacheSizeMB.toFixed(1)} MB
+                  </Text>
+                )}
+
+                {/* Last sync indicator */}
+                {lastSyncAt && isConnected && (
+                  <Text style={[styles.lastSyncText, { color: theme.colors.textMuted }]}>
+                    Last sync: {getRelativeTime(lastSyncAt)}
+                  </Text>
+                )}
+              </View>
+            </View>
             <View style={styles.headerRight}>
               <TouchableOpacity
                 onPress={() => setShowSecuritySettings(true)}
@@ -826,6 +1069,13 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
                                   <Text style={styles.pdfBadgeText}>PDF</Text>
                                 </View>
                               )}
+                              {/* Offline Badge */}
+                              {isDocumentAvailableOffline(doc.id) && (
+                                <View style={styles.offlineBadge}>
+                                  <Ionicons name="cloud-offline" size={12} color="#10B981" />
+                                  <Text style={styles.offlineBadgeText}>Offline</Text>
+                                </View>
+                              )}
                             </View>
                             <Text
                               style={[styles.documentExpiry, { color: theme.colors.textMuted }]}
@@ -839,6 +1089,21 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
                             color={theme.colors.textMuted}
                           />
                         </TouchableOpacity>
+                        {/* Offline button */}
+                        <TouchableOpacity
+                          style={styles.offlineButton}
+                          onPress={() => handleOfflineOptions(doc)}
+                          activeOpacity={0.7}
+                        >
+                          {downloadingDocs.has(doc.id) ? (
+                            <Text style={styles.offlineButtonIcon}>⏳</Text>
+                          ) : isDocumentAvailableOffline(doc.id) ? (
+                            <Ionicons name="cloud-done" size={20} color="#10B981" />
+                          ) : (
+                            <Ionicons name="cloud-download-outline" size={20} color="#2196F3" />
+                          )}
+                        </TouchableOpacity>
+
                         {/* Delete button */}
                         <TouchableOpacity
                           style={styles.deleteButton}
@@ -1014,11 +1279,64 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 4,
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  connectionIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  connectionText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  syncIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  syncText: {
+    fontSize: 10,
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
+  queueIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  queueText: {
+    fontSize: 10,
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
+  cacheIndicator: {
+    fontSize: 11,
+    marginTop: 0,
+    textAlign: 'center',
+  },
+  lastSyncText: {
+    fontSize: 10,
+    marginTop: 2,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   content: {
     flex: 1,
@@ -1150,7 +1468,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    paddingRight: 52, // Extra padding to avoid overlap with delete button (36px width + 8px right margin + 8px spacing)
+    paddingRight: 96, // Extra padding for offline (36px) + delete (36px) buttons + spacing (16px) + margin (8px)
     flex: 1,
   },
   deleteButton: {
@@ -1163,6 +1481,20 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  offlineButton: {
+    position: 'absolute',
+    top: 8,
+    right: 52, // 8px (margin) + 36px (delete button) + 8px (spacing)
+    backgroundColor: 'rgba(33, 150, 243, 0.1)' as const,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offlineButtonIcon: {
+    fontSize: 16,
   },
   documentIcon: {
     width: 50,
@@ -1201,6 +1533,22 @@ const styles = StyleSheet.create({
   },
   pdfBadgeText: {
     color: '#FFFFFF' as const,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  offlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)' as const,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#10B981' as const,
+  },
+  offlineBadgeText: {
+    color: '#10B981' as const,
     fontSize: 10,
     fontWeight: '600',
   },
