@@ -1150,6 +1150,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+    paddingRight: 52, // Extra padding to avoid overlap with delete button (36px width + 8px right margin + 8px spacing)
     flex: 1,
   },
   deleteButton: {
