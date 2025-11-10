@@ -45,6 +45,7 @@ export async function getUserEmail(): Promise<string | null> {
 
 /**
  * Solicita un código de recuperación por email
+ * SEGURIDAD: Usa Edge Function con service_role que maneja todo el proceso de forma segura
  * @returns {success, message, email?, developmentCode?}
  */
 export async function requestRecoveryCode(): Promise<{
@@ -67,89 +68,57 @@ export async function requestRecoveryCode(): Promise<{
       };
     }
 
-    // Generar código de 6 dígitos
-    const code = generateRecoveryCode();
-    const codeHash = await hashRecoveryCode(code);
+    console.log('🔐 Requesting PIN recovery via Edge Function for:', user.email);
 
-    // Calcular expiración (15 minutos desde ahora)
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-
-    // Invalidar códigos anteriores no usados
-    await supabase
-      .from('recovery_codes')
-      .update({ is_used: true })
-      .eq('user_id', user.id)
-      .eq('is_used', false);
-
-    // Guardar nuevo código en la base de datos
-    const { error: insertError } = await supabase.from('recovery_codes').insert({
-      user_id: user.id,
-      code_hash: codeHash,
-      sent_to_email: user.email,
-      expires_at: expiresAt,
-      is_used: false,
-      attempts: 0,
-      max_attempts: 3,
-    });
-
-    if (insertError) {
-      console.error('Error inserting recovery code:', insertError);
-      return {
-        success: false,
-        message: 'Error al generar el código de recuperación',
-        error: insertError.message,
-      };
-    }
-
-    // Llamar Edge Function para enviar email
-    console.log('📧 Calling send-recovery-email Edge Function...', {
-      email: user.email,
-      userId: user.id,
-    });
-
-    const { data: emailData, error: emailError } = await supabase.functions.invoke(
-      'send-recovery-email',
+    // Llamar Edge Function SEGURA - maneja todo el proceso con service_role
+    const { data: response, error: functionError } = await supabase.functions.invoke(
+      'request-pin-recovery',
       {
         body: {
           email: user.email,
-          code: code,
-          userId: user.id,
         },
       }
     );
 
-    console.log('📧 Edge Function response:', { data: emailData, error: emailError });
+    console.log('📧 Edge Function response:', { data: response, error: functionError });
 
-    if (emailError) {
-      console.error('❌ Error sending recovery email:', emailError);
-      console.error('❌ Error details:', JSON.stringify(emailError, null, 2));
+    if (functionError) {
+      console.error('❌ Error calling Edge Function:', functionError);
       return {
         success: false,
-        message: 'Error al enviar el email de recuperación',
-        error: emailError.message,
+        message: 'Error al solicitar código de recuperación',
+        error: functionError.message,
       };
     }
 
-    // Check if we're in development mode
-    if (emailData?.developmentMode) {
-      console.log('🔧 MODO DESARROLLO - Código de recuperación:', emailData.code);
+    if (!response?.ok) {
+      console.error('❌ Edge Function returned error:', response);
+      return {
+        success: false,
+        message: response?.error || 'Error desconocido',
+        error: response?.error,
+      };
+    }
+
+    // Modo desarrollo: mostrar código en consola
+    if (response.developmentMode && response.code) {
+      console.log('🔧 MODO DESARROLLO - Código de recuperación:', response.code);
       console.log('🔧 Este código es válido por 15 minutos');
 
-      // In development, show the code in an alert for easy copying
       if (__DEV__) {
         console.log('═══════════════════════════════════════');
-        console.log('📋 CÓDIGO DE RECUPERACIÓN: ' + emailData.code);
+        console.log('📋 CÓDIGO DE RECUPERACIÓN: ' + response.code);
         console.log('═══════════════════════════════════════');
       }
     }
 
-    console.log('✅ Recovery code sent successfully to:', user.email);
+    console.log('✅ Recovery code process completed successfully');
 
     return {
       success: true,
-      message: `Código enviado a ${user.email}`,
+      message: response.message || `Código enviado a ${user.email}`,
       email: user.email,
-      developmentCode: emailData?.developmentMode ? emailData.code : undefined,
+      developmentCode: response.developmentMode ? response.code : undefined,
     };
   } catch (error) {
     console.error('Error in requestRecoveryCode:', error);
