@@ -12,13 +12,11 @@ import AddDocumentModal, { type DocumentFormData } from '~/components/profile/Ad
 import ChangePINModal from '~/components/profile/ChangePINModal';
 import DocumentViewerModal from '~/components/profile/DocumentViewerModal';
 import PinSetupInline from '~/components/profile/PinSetupInline';
-import PinSetupModal from '~/components/profile/PinSetupModal';
 import PinVerificationInline from '~/components/profile/PinVerificationInline';
-import PinVerificationModal from '~/components/profile/PinVerificationModal';
 import SecuritySettingsModal from '~/components/profile/SecuritySettingsModal';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
-import { hasPinConfigured, encryptDocument } from '~/services/documentEncryption';
+import { hasPinConfigured, encryptDocument, decryptDocument } from '~/services/documentEncryption';
 
 interface TravelDocumentsModalProps {
   visible: boolean;
@@ -31,6 +29,8 @@ interface Document {
   expiry_date: string;
   has_image: boolean;
   encrypted_data_primary: string;
+  primary_iv?: string;
+  primary_auth_tag?: string;
   created_at: string;
   status?: 'valid' | 'warning' | 'critical' | 'expired';
 }
@@ -42,6 +42,15 @@ interface DecryptedData {
   notes: string;
   imageUrl?: string; // Signed URL (generated at load time)
   filePath?: string; // Original storage path
+}
+
+interface EncryptedDataResponse {
+  encryptedWithPrimary: string;
+  encryptedWithRecovery: string;
+  primaryIv: string;
+  recoveryIv: string;
+  primaryAuthTag: string;
+  recoveryAuthTag: string;
 }
 
 export default function TravelDocumentsModal({ visible, onClose }: TravelDocumentsModalProps) {
@@ -125,7 +134,28 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     setHasPin(pinConfigured);
   };
 
-  const loadDocuments = async () => {
+  // Helper to detect if document uses real encryption
+  const isRealEncryption = (doc: Document): boolean => {
+    // Check that all required encryption fields exist AND have valid values (not empty strings)
+    const hasValidPrimaryIv = doc.primary_iv && doc.primary_iv.trim().length > 0;
+    const hasValidPrimaryAuthTag = doc.primary_auth_tag && doc.primary_auth_tag.trim().length > 0;
+    const hasValidEncryptedData =
+      doc.encrypted_data_primary && doc.encrypted_data_primary.trim().length > 0;
+
+    const isValid = !!(hasValidPrimaryIv && hasValidPrimaryAuthTag && hasValidEncryptedData);
+
+    console.log('🔍 isRealEncryption check:', {
+      documentId: doc.id?.substring(0, 8),
+      hasValidPrimaryIv,
+      hasValidPrimaryAuthTag,
+      hasValidEncryptedData,
+      isValid,
+    });
+
+    return isValid;
+  };
+
+  const loadDocuments = async (pin?: string) => {
     try {
       setLoading(true);
       const {
@@ -148,7 +178,39 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       const documentsWithUrls = await Promise.all(
         (data || []).map(async (doc) => {
           try {
-            const decryptedData = JSON.parse(doc.encrypted_data_primary);
+            let decryptedData;
+
+            // Check if document uses real encryption
+            if (isRealEncryption(doc)) {
+              console.log('🔐 Document uses real encryption, decrypting...');
+
+              // For now, we'll skip decryption if no PIN provided
+              // Documents will be decrypted on-demand when viewing
+              if (!pin) {
+                console.log('⚠️ No PIN provided, skipping decryption for list view');
+                return doc; // Return encrypted document as-is
+              }
+
+              // Decrypt with PIN
+              const decryptResult = await decryptDocument(
+                doc.id,
+                doc.encrypted_data_primary,
+                doc.primary_iv!,
+                doc.primary_auth_tag!,
+                pin
+              );
+
+              if (!decryptResult.success) {
+                console.error('❌ Failed to decrypt document:', decryptResult.error);
+                return doc; // Return encrypted document as-is
+              }
+
+              decryptedData = decryptResult.data;
+            } else {
+              // Legacy document with JSON.stringify
+              console.log('📜 Legacy document format, using JSON.parse');
+              decryptedData = JSON.parse(doc.encrypted_data_primary);
+            }
             console.log('🔍 Decrypted data:', decryptedData);
 
             // Handle old documents with imageUrl (extract filePath from URL)
@@ -242,11 +304,12 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   };
 
-  const handlePinVerified = async () => {
+  const handlePinVerified = async (pin: string) => {
     // Check if this is for viewing documents or saving a document
     if (!pendingDocumentData) {
       // PIN verified for viewing documents
-      console.log('🔐 PIN verified, granting access to documents...');
+      console.log('[PIN] Verified, granting access to documents...');
+      setVerifiedPin(pin);
       setShowPinVerification(false);
       setIsAuthenticated(true);
       // loadDocuments will be called by useEffect when isAuthenticated becomes true
@@ -255,7 +318,8 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
 
     // PIN verified for saving a document
     try {
-      console.log('🔐 PIN verified, saving document...');
+      console.log('[SAVE] PIN verified, saving document with encryption...');
+      setVerifiedPin(pin);
       setShowPinVerification(false);
       setSaving(true);
 
@@ -266,7 +330,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       if (!user) throw new Error('User not authenticated');
 
       // 1. Upload file (image or PDF) to Storage
-      console.log('📤 Uploading file to storage...');
+      console.log('[STORAGE] Uploading file...');
       const fileBase64 = await FileSystem.readAsStringAsync(pendingDocumentData.imageUri, {
         encoding: 'base64',
       });
@@ -285,50 +349,64 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        console.error('[STORAGE] Upload error:', uploadError);
         throw uploadError;
       }
 
-      console.log('✅ Image uploaded:', uploadData.path);
+      console.log('[STORAGE] File uploaded:', uploadData.path);
 
-      // 2. Store only the file path (we'll generate signed URLs when loading)
-      // Note: Bucket is private, so we can't use getPublicUrl()
-      const filePath = uploadData.path;
+      // 2. Encrypt document data with Edge Function
+      console.log('[ENCRYPT] Encrypting document data...');
+      const documentId = `doc-${Date.now()}`; // Temporary ID for encryption
 
-      // 3. For now, save to database without encryption (Phase 4.3 will add encryption)
-      console.log('💾 Saving to database...');
+      const encryptionResult = await encryptDocument({
+        documentId,
+        title: `${pendingDocumentData.type}-${Date.now()}`,
+        documentType: pendingDocumentData.type,
+        documentNumber: pendingDocumentData.documentNumber,
+        issuingCountry: pendingDocumentData.issuingCountry,
+        issuingDate: pendingDocumentData.issueDate.toISOString(),
+        expiryDate: pendingDocumentData.expiryDate.toISOString(),
+        notes: pendingDocumentData.notes || '',
+        imageUri: uploadData.path, // Store the storage path
+        pin,
+      });
+
+      if (!encryptionResult.success || !encryptionResult.encryptedData) {
+        console.error('[ENCRYPT] Encryption failed:', encryptionResult.error);
+        throw new Error(encryptionResult.error || 'Encryption failed');
+      }
+
+      const encryptedData = encryptionResult.encryptedData as EncryptedDataResponse;
+      console.log('[ENCRYPT] Document encrypted successfully');
+
+      // 3. Save encrypted data to database
+      console.log('[DB] Saving encrypted document...');
       const { error: dbError } = await supabase.from('travel_documents').insert({
         user_id: user.id,
         document_type: pendingDocumentData.type,
         expiry_date: pendingDocumentData.expiryDate.toISOString(),
         has_image: true,
-        // Temporary: storing unencrypted for Phase 4.2
-        encrypted_data_primary: JSON.stringify({
-          documentNumber: pendingDocumentData.documentNumber,
-          issuingCountry: pendingDocumentData.issuingCountry,
-          issueDate: pendingDocumentData.issueDate.toISOString(),
-          notes: pendingDocumentData.notes || '',
-          filePath: filePath, // Store path, not URL
-        }),
-        primary_iv: 'temp',
-        primary_auth_tag: 'temp',
-        encrypted_data_recovery: 'temp',
-        recovery_iv: 'temp',
-        recovery_auth_tag: 'temp',
+        encrypted_data_primary: encryptedData.encryptedWithPrimary,
+        primary_iv: encryptedData.primaryIv,
+        primary_auth_tag: encryptedData.primaryAuthTag,
+        encrypted_data_recovery: encryptedData.encryptedWithRecovery,
+        recovery_iv: encryptedData.recoveryIv,
+        recovery_auth_tag: encryptedData.recoveryAuthTag,
       });
 
       if (dbError) {
-        console.error('Database error:', dbError);
+        console.error('[DB] Database error:', dbError);
         throw dbError;
       }
 
       setSaving(false);
-      console.log('✅ Document saved successfully!');
+      console.log('[SUCCESS] Document saved with encryption!');
 
-      // Recargar la lista de documentos
+      // Reload documents list
       await loadDocuments();
 
-      Alert.alert('✅ Documento Guardado', 'El documento se ha guardado correctamente.', [
+      Alert.alert('Documento Guardado', 'El documento se ha guardado correctamente.', [
         {
           text: 'OK',
           onPress: () => {
@@ -338,7 +416,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       ]);
     } catch (error) {
       setSaving(false);
-      console.error('Error saving document:', error);
+      console.error('[ERROR] Saving document:', error);
       Alert.alert('Error', 'No se pudo guardar el documento. Intenta de nuevo.');
     }
   };
@@ -403,9 +481,73 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   };
 
-  const handleDocumentPress = (doc: Document) => {
-    setSelectedDocument(doc);
-    setShowDocumentViewer(true);
+  const handleDocumentPress = async (doc: Document) => {
+    try {
+      let documentToView = doc;
+
+      // If document uses real encryption, decrypt it first
+      if (isRealEncryption(doc) && verifiedPin) {
+        console.log('🔐 Decrypting document for viewing...');
+        console.log('🔍 Document encryption fields:', {
+          hasEncryptedData: !!doc.encrypted_data_primary,
+          hasPrimaryIv: !!doc.primary_iv,
+          hasPrimaryAuthTag: !!doc.primary_auth_tag,
+          primaryIvValue: doc.primary_iv,
+          primaryAuthTagValue: doc.primary_auth_tag,
+          encryptedDataPreview: doc.encrypted_data_primary?.substring(0, 50),
+        });
+
+        const decryptResult = await decryptDocument(
+          doc.id,
+          doc.encrypted_data_primary,
+          doc.primary_iv!,
+          doc.primary_auth_tag!,
+          verifiedPin
+        );
+
+        if (decryptResult.success && decryptResult.data) {
+          console.log('✅ Document decrypted successfully');
+          console.log('🔍 Decrypted data:', decryptResult.data);
+
+          // Cast to expected type
+          const data = decryptResult.data as {
+            documentNumber?: string;
+            issuingCountry?: string;
+            issuingDate?: string;
+            notes?: string;
+            imageUri?: string;
+          };
+
+          // Map decrypted data to the format expected by DocumentViewerModal
+          const mappedData = {
+            documentNumber: data.documentNumber,
+            issuingCountry: data.issuingCountry,
+            issueDate: data.issuingDate,
+            notes: data.notes,
+            imageUrl: data.imageUri, // Map imageUri to imageUrl
+            filePath: data.imageUri, // Use same value for filePath
+          };
+
+          console.log('🔍 Mapped data:', mappedData);
+
+          // Create a temporary decrypted version for viewing
+          documentToView = {
+            ...doc,
+            encrypted_data_primary: JSON.stringify(mappedData),
+          };
+        } else {
+          console.error('❌ Failed to decrypt document:', decryptResult.error);
+          Alert.alert('Error', 'No se pudo desencriptar el documento');
+          return;
+        }
+      }
+
+      setSelectedDocument(documentToView);
+      setShowDocumentViewer(true);
+    } catch (error) {
+      console.error('Error preparing document for viewing:', error);
+      Alert.alert('Error', 'No se pudo cargar el documento');
+    }
   };
 
   const handleDeleteDocument = async () => {
@@ -449,6 +591,60 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteDocumentFromList = async (doc: Document) => {
+    Alert.alert(
+      'Eliminar Documento',
+      '¿Estás seguro de que deseas eliminar este documento? Esta acción no se puede deshacer.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              // 1. Delete from database
+              const { error: dbError } = await supabase
+                .from('travel_documents')
+                .delete()
+                .eq('id', doc.id);
+
+              if (dbError) {
+                console.error('Database delete error:', dbError);
+                throw dbError;
+              }
+
+              // 2. Try to delete file from storage (best effort)
+              try {
+                // Try to parse encrypted data to get filePath
+                const data = JSON.parse(doc.encrypted_data_primary) as DecryptedData;
+                if (data.filePath) {
+                  await supabase.storage.from('travel-documents').remove([data.filePath]);
+                }
+              } catch (storageError) {
+                console.warn('Storage cleanup error (non-critical):', storageError);
+              }
+
+              // 3. Reload documents list
+              await loadDocuments();
+
+              Alert.alert('✅ Eliminado', 'El documento se ha eliminado correctamente.');
+            } catch (error) {
+              console.error('Error deleting document from list:', error);
+              Alert.alert('❌ Error', 'No se pudo eliminar el documento.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleOpenPDF = (url: string) => {
@@ -603,37 +799,55 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
                   {documents.map((doc) => {
                     const fileType = getFileType(doc);
                     return (
-                      <TouchableOpacity
+                      <View
                         key={doc.id}
                         style={[styles.documentCard, { backgroundColor: theme.colors.card }]}
-                        activeOpacity={0.7}
-                        onPress={() => handleDocumentPress(doc)}
                       >
-                        <View style={styles.documentIcon}>
-                          <Ionicons
-                            name={getDocumentIcon(doc.document_type)}
-                            size={32}
-                            color="#2196F3"
-                          />
-                        </View>
-                        <View style={styles.documentInfo}>
-                          <View style={styles.documentTitleRow}>
-                            <Text style={[styles.documentType, { color: theme.colors.text }]}>
-                              {getDocumentTypeLabel(doc.document_type)}
-                            </Text>
-                            {fileType === 'pdf' && (
-                              <View style={styles.pdfBadge}>
-                                <Ionicons name="document-text" size={12} color="#FFFFFF" />
-                                <Text style={styles.pdfBadgeText}>PDF</Text>
-                              </View>
-                            )}
+                        <TouchableOpacity
+                          style={styles.documentCardContent}
+                          activeOpacity={0.7}
+                          onPress={() => handleDocumentPress(doc)}
+                        >
+                          <View style={styles.documentIcon}>
+                            <Ionicons
+                              name={getDocumentIcon(doc.document_type)}
+                              size={32}
+                              color="#2196F3"
+                            />
                           </View>
-                          <Text style={[styles.documentExpiry, { color: theme.colors.textMuted }]}>
-                            Vence: {new Date(doc.expiry_date).toLocaleDateString('es-ES')}
-                          </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={24} color={theme.colors.textMuted} />
-                      </TouchableOpacity>
+                          <View style={styles.documentInfo}>
+                            <View style={styles.documentTitleRow}>
+                              <Text style={[styles.documentType, { color: theme.colors.text }]}>
+                                {getDocumentTypeLabel(doc.document_type)}
+                              </Text>
+                              {fileType === 'pdf' && (
+                                <View style={styles.pdfBadge}>
+                                  <Ionicons name="document-text" size={12} color="#FFFFFF" />
+                                  <Text style={styles.pdfBadgeText}>PDF</Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text
+                              style={[styles.documentExpiry, { color: theme.colors.textMuted }]}
+                            >
+                              Vence: {new Date(doc.expiry_date).toLocaleDateString('es-ES')}
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={24}
+                            color={theme.colors.textMuted}
+                          />
+                        </TouchableOpacity>
+                        {/* Delete button */}
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={() => handleDeleteDocumentFromList(doc)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                        </TouchableOpacity>
+                      </View>
                     );
                   })}
                 </View>
@@ -923,9 +1137,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   documentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     shadowColor: '#000' as const,
@@ -933,6 +1144,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    overflow: 'hidden',
+  },
+  documentCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    flex: 1,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)' as const,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   documentIcon: {
     width: 50,

@@ -82,53 +82,123 @@ serve(async (req) => {
   try {
     // Validar autenticación
     const authHeader = req.headers.get('Authorization');
+    console.log('🔍 Auth header present:', !!authHeader);
+
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    // Crear cliente de Supabase
+    // Crear cliente de Supabase con SERVICE_ROLE_KEY para bypass RLS
+    // (ya validamos la autenticación del usuario con el JWT)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: authHeader },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
         },
       }
     );
 
-    // Obtener usuario autenticado
+    // Extraer JWT del header y validar usuario
+    const jwt = authHeader.replace('Bearer ', '');
+    console.log('🔑 JWT length:', jwt.length);
+
+    // Obtener usuario autenticado pasando el JWT
     const {
       data: { user },
       error: userError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser(jwt);
 
-    if (userError || !user) {
-      throw new Error('User not authenticated');
+    console.log('👤 User validation:', {
+      hasUser: !!user,
+      hasError: !!userError,
+      errorMessage: userError?.message,
+    });
+
+    if (userError) {
+      console.error('❌ User authentication error:', userError.message);
+      throw new Error(`User not authenticated: ${userError.message}`);
     }
 
-    // Parsear request body
-    const body: DecryptRequest = await req.json();
+    if (!user) {
+      console.error('❌ No user found after JWT validation');
+      throw new Error('User not authenticated: No user found');
+    }
+
+    console.log('🔄 About to parse request body...');
+
+    // Parsear request body con manejo de errores específico
+    let body: DecryptRequest;
+    try {
+      body = await req.json();
+      console.log('✅ Body parsed successfully');
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      const errorMsg = parseError instanceof Error ? parseError.message : String(parseError);
+      throw new Error(`Invalid JSON in request body: ${errorMsg}`);
+    }
+
+    console.log('📦 Request body:', {
+      hasDocumentId: !!body.documentId,
+      documentIdLength: body.documentId?.length || 0,
+      hasEncryptedData: !!body.encryptedData,
+      encryptedDataLength: body.encryptedData?.length || 0,
+      hasIv: !!body.iv,
+      ivLength: body.iv?.length || 0,
+      hasAuthTag: !!body.authTag,
+      authTagLength: body.authTag?.length || 0,
+      hasKeyDerived: !!body.keyDerived,
+      keyDerivedLength: body.keyDerived?.length || 0,
+      useRecoveryKey: body.useRecoveryKey,
+    });
 
     // Validar campos requeridos
     if (!body.documentId || !body.encryptedData || !body.iv || !body.authTag || !body.keyDerived) {
-      throw new Error('Missing required fields');
+      const missing = [];
+      if (!body.documentId) missing.push('documentId');
+      if (!body.encryptedData) missing.push('encryptedData');
+      if (!body.iv) missing.push('iv');
+      if (!body.authTag) missing.push('authTag');
+      if (!body.keyDerived) missing.push('keyDerived');
+      console.error('❌ Missing required fields:', missing);
+      throw new Error(`Missing required fields: ${missing.join(', ')}`);
     }
 
     // Verificar que el documento pertenece al usuario
+    console.log('🔍 Checking document ownership for:', body.documentId);
     const { data: docMetadata, error: docError } = await supabaseClient
       .from('travel_documents')
       .select('user_id')
       .eq('id', body.documentId)
       .single();
 
+    console.log('📄 Document query result:', {
+      hasData: !!docMetadata,
+      hasError: !!docError,
+      errorMessage: docError?.message,
+      errorDetails: docError?.details,
+      errorHint: docError?.hint,
+      errorCode: docError?.code,
+    });
+
     if (docError || !docMetadata) {
+      console.error('❌ Document not found or error:', {
+        docError,
+        userId: user.id,
+        documentId: body.documentId,
+      });
       throw new Error('Document not found');
     }
 
+    console.log('✅ Document found, checking ownership...');
     if (docMetadata.user_id !== user.id) {
+      console.error('❌ Unauthorized: document belongs to different user');
       throw new Error('Unauthorized access to document');
     }
+
+    console.log('✅ Document ownership verified');
 
     // Registrar acceso (auditoría)
     await supabaseClient.from('document_access_logs').insert({
@@ -149,6 +219,24 @@ serve(async (req) => {
     // Parsear JSON
     const decryptedData = JSON.parse(decryptedString);
 
+    // Si hay una imagen (filePath en imageUri), generar signed URL
+    if (decryptedData.imageUri) {
+      console.log('🖼️ Generating signed URL for image:', decryptedData.imageUri);
+
+      const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
+        .from('travel-documents')
+        .createSignedUrl(decryptedData.imageUri, 3600); // 1 hora de validez
+
+      if (signedUrlError) {
+        console.error('❌ Error generating signed URL:', signedUrlError);
+        // No fallar la desencriptación por esto, solo loguear
+      } else if (signedUrlData?.signedUrl) {
+        console.log('✅ Signed URL generated successfully');
+        // Reemplazar el filePath con la signed URL
+        decryptedData.imageUri = signedUrlData.signedUrl;
+      }
+    }
+
     const response: DecryptResponse = {
       success: true,
       data: decryptedData,
@@ -165,13 +253,14 @@ serve(async (req) => {
     // 1. Clave incorrecta (PIN wrong)
     // 2. Datos corruptos
     // 3. AuthTag no coincide (tampering detected)
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({
         success: false,
         error:
-          error.message === 'OperationError'
+          errorMsg === 'OperationError'
             ? 'Invalid key or corrupted data'
-            : error.message || 'Internal server error',
+            : errorMsg || 'Internal server error',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

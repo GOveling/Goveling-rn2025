@@ -12,7 +12,7 @@ import RecoveryCodeModal from './RecoveryCodeModal';
 import SetNewPinModal from './SetNewPinModal';
 
 interface PinVerificationInlineProps {
-  onSuccess: () => void;
+  onSuccess: (pin: string) => void;
   onCancel: () => void;
   title?: string;
   message?: string;
@@ -55,9 +55,10 @@ export default function PinVerificationInline({
     const isValid = await verifyPin(pin);
 
     if (isValid) {
+      const verifiedPin = pin;
       setPin('');
       setAttempts(0);
-      onSuccess();
+      onSuccess(verifiedPin);
     } else {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
@@ -86,7 +87,7 @@ export default function PinVerificationInline({
     setShowSetNewPin(true);
   };
 
-  const handleNewPinSet = () => {
+  const handleNewPinSet = (newPin: string) => {
     // PIN reset complete, close all modals and trigger success
     Alert.alert(
       '✅ PIN Restablecido',
@@ -97,7 +98,7 @@ export default function PinVerificationInline({
           onPress: () => {
             setPin('');
             setAttempts(0);
-            onSuccess();
+            onSuccess(newPin);
           },
         },
       ]

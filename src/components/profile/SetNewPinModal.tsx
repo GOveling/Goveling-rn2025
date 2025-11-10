@@ -18,7 +18,7 @@ import { savePinHash } from '~/services/documentEncryption';
 interface SetNewPinModalProps {
   visible: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (newPin: string) => void;
 }
 
 export default function SetNewPinModal({ visible, onClose, onSuccess }: SetNewPinModalProps) {
@@ -85,6 +85,7 @@ export default function SetNewPinModal({ visible, onClose, onSuccess }: SetNewPi
       setLoading(false);
 
       if (success) {
+        const newPin = pin;
         Alert.alert(
           '✅ PIN Restablecido',
           'Tu nuevo PIN ha sido configurado exitosamente. Ahora puedes acceder a tus documentos con el nuevo PIN.',
@@ -93,7 +94,7 @@ export default function SetNewPinModal({ visible, onClose, onSuccess }: SetNewPi
               text: 'Continuar',
               onPress: () => {
                 resetModal();
-                onSuccess();
+                onSuccess(newPin);
               },
             },
           ]
