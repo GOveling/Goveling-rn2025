@@ -29,6 +29,7 @@ import { createRealtimeHandler } from '~/utils/errorHandling';
 import { CountryImage } from './CountryImage';
 import GroupOptionsModal from './GroupOptionsModal';
 import LiquidButton from './LiquidButton';
+import SmartRouteModal from './SmartRouteModal';
 import TripDetailsModal from './TripDetailsModal';
 import { useGetProfileQuery } from '../store/api/userApi';
 
@@ -103,6 +104,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
     firstPlaceImage: undefined,
   });
   const [showModal, setShowModal] = useState(false);
+  const [showSmartRouteModal, setShowSmartRouteModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [ownerProfile, setOwnerProfile] = useState<{
@@ -1254,7 +1256,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           <LiquidButton
             title={t('trips.card.smart_route')}
             icon="🧠"
-            onPress={() => router.push(`/trips/${trip.id}/route`)}
+            onPress={() => setShowSmartRouteModal(true)}
             variant="glass"
           />
 
@@ -1298,6 +1300,16 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           setCurrentTrip(updatedTrip);
           onTripUpdated?.(updatedTrip);
         }}
+      />
+
+      {/* Modal de Ruta Inteligente IA */}
+      <SmartRouteModal
+        visible={showSmartRouteModal}
+        onClose={() => setShowSmartRouteModal(false)}
+        tripId={trip.id}
+        tripTitle={trip.title}
+        tripStartDate={currentTrip.start_date}
+        tripEndDate={currentTrip.end_date}
       />
 
       {/* Modal de opciones del grupo */}
