@@ -220,7 +220,9 @@ serve(async (req) => {
     const decryptedData = JSON.parse(decryptedString);
 
     // Si hay una imagen (filePath en imageUri), generar signed URL
-    if (decryptedData.imageUri) {
+    // IMPORTANTE: NO modificar imageUri (mantener path relativo para offline)
+    // En su lugar, agregar imageUrl con la URL firmada
+    if (decryptedData.imageUri && !decryptedData.imageUri.startsWith('http')) {
       console.log('🖼️ Generating signed URL for image:', decryptedData.imageUri);
 
       const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
@@ -232,8 +234,9 @@ serve(async (req) => {
         // No fallar la desencriptación por esto, solo loguear
       } else if (signedUrlData?.signedUrl) {
         console.log('✅ Signed URL generated successfully');
-        // Reemplazar el filePath con la signed URL
-        decryptedData.imageUri = signedUrlData.signedUrl;
+        // AGREGAR imageUrl como campo separado (NO sobrescribir imageUri)
+        decryptedData.imageUrl = signedUrlData.signedUrl;
+        // imageUri mantiene el path relativo para descarga offline
       }
     }
 

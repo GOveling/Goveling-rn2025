@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 
@@ -18,6 +18,12 @@ import { useDocumentSync } from '~/hooks/useDocumentSync';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
 import { hasPinConfigured, encryptDocument, decryptDocument } from '~/services/documentEncryption';
+import {
+  listCachedDocuments,
+  getCachedDocument,
+  syncCacheWithOnlineDocuments,
+  removeCachedDocument,
+} from '~/services/documentSync';
 
 interface TravelDocumentsModalProps {
   visible: boolean;
@@ -92,6 +98,9 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   // Estado de descarga por documento
   const [downloadingDocs, setDownloadingDocs] = useState<Set<string>>(new Set());
 
+  // Track previous connection state to detect reconnection
+  const prevIsConnectedRef = useRef<boolean | null>(null);
+
   // Helper: formatear tiempo relativo para last sync
   const getRelativeTime = (date: Date | null): string => {
     if (!date) return '';
@@ -163,6 +172,77 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   }, [visible, hasPin, isAuthenticated]);
 
+  // Listen to connectivity changes and reload documents when back online
+  useEffect(() => {
+    console.log('[NETWORK] Connection state changed:', {
+      isConnected,
+      visible,
+      isAuthenticated,
+      prevState: prevIsConnectedRef.current,
+    });
+
+    // Skip initial mount (when prevState is null)
+    if (prevIsConnectedRef.current === null) {
+      console.log('[NETWORK] Initial mount - setting initial state');
+      prevIsConnectedRef.current = isConnected;
+      return;
+    }
+
+    const wasOffline = prevIsConnectedRef.current === false;
+    const isNowOnline = isConnected === true;
+
+    console.log('[NETWORK] Checking transition:', { wasOffline, isNowOnline });
+
+    // Detect transition from offline to online
+    if (wasOffline && isNowOnline) {
+      console.log('[RECONNECT] Back online!');
+
+      // Only reload if modal is visible and authenticated
+      if (visible && isAuthenticated) {
+        console.log('[RECONNECT] Syncing cache and reloading documents...');
+
+        // Execute sync asynchronously
+        (async () => {
+          try {
+            // First, load documents from DB to get current list
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: onlineDocs } = await supabase
+              .from('travel_documents')
+              .select('id')
+              .eq('user_id', user.id);
+
+            if (onlineDocs) {
+              const onlineIds = onlineDocs.map((d) => d.id);
+              console.log('[RECONNECT] Syncing cache with online documents...');
+              const syncResult = await syncCacheWithOnlineDocuments(onlineIds);
+
+              if (syncResult.removed.length > 0) {
+                console.log(
+                  `[RECONNECT] Cleaned ${syncResult.removed.length} orphaned documents from cache`
+                );
+              }
+            }
+          } catch (error) {
+            console.error('[RECONNECT] Error syncing cache:', error);
+          }
+
+          // Finally, reload documents from DB
+          loadDocuments(undefined, true);
+        })();
+      } else {
+        console.log('[RECONNECT] Modal not ready, will reload when opened');
+      }
+    }
+
+    // Update ref for next comparison
+    prevIsConnectedRef.current = isConnected;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
+
   const checkPinStatus = async () => {
     console.log('🔐 Checking PIN status...');
     const pinConfigured = await hasPinConfigured();
@@ -191,16 +271,62 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     return isValid;
   };
 
-  const loadDocuments = async (pin?: string) => {
+  const loadDocuments = async (pin?: string, forceOnline: boolean = false) => {
     try {
       setLoading(true);
 
-      // Check connectivity first
-      if (!isConnected) {
-        console.warn('⚠️ Cannot load documents - offline mode');
-        setDocuments([]);
-        return;
+      // Check connectivity - if offline, load from cache (unless forceOnline is true)
+      if (!isConnected && !forceOnline) {
+        console.log('[OFFLINE] Loading documents from local cache...');
+
+        try {
+          const cachedIds = await listCachedDocuments();
+          console.log(`[OFFLINE] Found ${cachedIds.length} cached documents`);
+
+          if (cachedIds.length === 0) {
+            console.log('[OFFLINE] No cached documents available');
+            setDocuments([]);
+            setLoading(false);
+            return;
+          }
+
+          // Load cached documents
+          const cachedDocs = await Promise.all(
+            cachedIds.map(async (docId) => {
+              const cached = await getCachedDocument(docId);
+              if (!cached) return null;
+
+              // Convert cached document to Document format
+              const doc: Document = {
+                id: cached.documentId,
+                document_type: cached.metadata.documentType,
+                expiry_date: cached.metadata.expiryDate || '',
+                has_image: true, // If cached, it has image data
+                encrypted_data_primary: cached.encryptedData,
+                primary_iv: cached.iv,
+                primary_auth_tag: cached.authTag,
+                created_at: new Date().toISOString(), // Not stored in cache
+              };
+              return doc;
+            })
+          );
+
+          // Filter out nulls
+          const validDocs = cachedDocs.filter((doc): doc is Document => doc !== null);
+          console.log(`[OFFLINE] Loaded ${validDocs.length} documents from cache`);
+
+          setDocuments(validDocs);
+          setLoading(false);
+          return;
+        } catch (cacheError) {
+          console.error('[OFFLINE] Error loading from cache:', cacheError);
+          setDocuments([]);
+          setLoading(false);
+          return;
+        }
       }
+
+      console.log('[ONLINE] Loading documents from database...');
 
       let user;
       try {
@@ -210,12 +336,18 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         user = authUser;
       } catch (error) {
         console.warn('⚠️ Cannot verify user (network error) - skipping document load');
+        // If forceOnline was requested but we can't connect, show error
+        if (forceOnline) {
+          Alert.alert('Error de Conexión', 'No se pudo conectar a la base de datos.');
+        }
         setDocuments([]);
+        setLoading(false);
         return;
       }
 
       if (!user) {
         setDocuments([]);
+        setLoading(false);
         return;
       }
 
@@ -229,13 +361,22 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
 
         if (result.error) {
           console.error('Error loading documents:', result.error);
+          setLoading(false);
           return;
         }
 
         data = result.data;
+        console.log(`[ONLINE] Loaded ${data?.length || 0} documents from database`);
       } catch (error) {
         console.warn('⚠️ Cannot load documents (network error)');
+        if (forceOnline) {
+          Alert.alert(
+            'Error de Conexión',
+            'No se pudo cargar los documentos desde la base de datos.'
+          );
+        }
         setDocuments([]);
+        setLoading(false);
         return;
       }
 
@@ -299,26 +440,14 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
 
                 if (signedUrlError) {
                   console.error('❌ Signed URL error:', JSON.stringify(signedUrlError));
-
-                  // Fallback: try public URL
-                  const { data: publicUrlData } = supabase.storage
-                    .from('travel-documents')
-                    .getPublicUrl(decryptedData.filePath);
-
-                  console.log('🔓 Using public URL fallback:', publicUrlData.publicUrl);
-
-                  doc.encrypted_data_primary = JSON.stringify({
-                    ...decryptedData,
-                    imageUrl: publicUrlData.publicUrl,
-                    filePath: decryptedData.filePath,
-                  });
+                  console.log('ℹ️ Keeping original data for offline compatibility');
                 } else if (signedUrlData) {
                   console.log('✅ Signed URL generated successfully');
-                  doc.encrypted_data_primary = JSON.stringify({
-                    ...decryptedData,
-                    imageUrl: signedUrlData.signedUrl,
-                    filePath: decryptedData.filePath,
-                  });
+                  // NO modificar encrypted_data_primary - mantener datos originales intactos
+                  // Las URLs firmadas se generarán on-demand cuando se necesiten mostrar
+                  console.log(
+                    'ℹ️ Keeping original encrypted data intact for offline compatibility'
+                  );
                 }
               } catch (urlError) {
                 // Network error generating signed URL
@@ -452,6 +581,11 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
 
       // 3. Save encrypted data to database
       console.log('[DB] Saving encrypted document...');
+      console.log('[DB] Document type being inserted:', {
+        documentType: pendingDocumentData.type,
+        typeOf: typeof pendingDocumentData.type,
+        fullPendingData: pendingDocumentData,
+      });
       const { error: dbError } = await supabase.from('travel_documents').insert({
         user_id: user.id,
         document_type: pendingDocumentData.type,
@@ -473,8 +607,8 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       setSaving(false);
       console.log('[SUCCESS] Document saved with encryption!');
 
-      // Reload documents list
-      await loadDocuments();
+      // Reload documents list (force online load since we just saved to DB)
+      await loadDocuments(undefined, true);
 
       Alert.alert('Documento Guardado', 'El documento se ha guardado correctamente.', [
         {
@@ -505,7 +639,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         return 'document-text';
       case 'id_card':
         return 'card';
-      case 'driver_license':
+      case 'drivers_license':
         return 'car';
       case 'vaccination':
         return 'medical';
@@ -526,7 +660,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         return 'Visa';
       case 'id_card':
         return 'Cédula de Identidad';
-      case 'driver_license':
+      case 'drivers_license':
         return 'Licencia de Conducir';
       case 'vaccination':
         return 'Certificado de Vacuna';
@@ -585,8 +719,43 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
             issuingCountry?: string;
             issuingDate?: string;
             notes?: string;
-            imageUri?: string;
+            imageUri?: string; // Path relativo (para offline)
+            imageUrl?: string; // URL firmada (para online)
           };
+
+          // Priorizar imageUrl (signed URL) si está online, sino usar imageUri (path relativo)
+          let finalImageUrl = isConnected ? data.imageUrl || data.imageUri : data.imageUri;
+
+          // If offline and image is available in cache, load from cache
+          if (!isConnected && isDocumentAvailableOffline(doc.id)) {
+            console.log('[OFFLINE-VIEW] Loading image from offline cache...');
+            try {
+              // FileSystem.documentDirectory already includes "file://" prefix
+              const localImagePath = `${FileSystem.documentDirectory}goveling_docs/${doc.id}_image.jpg`;
+              console.log('[OFFLINE-VIEW] Checking path:', localImagePath);
+              const fileInfo = await FileSystem.getInfoAsync(localImagePath);
+
+              if (fileInfo.exists) {
+                finalImageUrl = localImagePath;
+                console.log('[OFFLINE-VIEW] SUCCESS: Using local cached image');
+              } else {
+                console.warn('[OFFLINE-VIEW] Cached image file not found at primary location');
+                // Try alternative cache location
+                const altImagePath = `${FileSystem.cacheDirectory}goveling_docs/${doc.id}_image.jpg`;
+                console.log('[OFFLINE-VIEW] Trying alternative path:', altImagePath);
+                const altFileInfo = await FileSystem.getInfoAsync(altImagePath);
+                if (altFileInfo.exists) {
+                  finalImageUrl = altImagePath;
+                  console.log('[OFFLINE-VIEW] SUCCESS: Using alternative cached image');
+                } else {
+                  console.warn('[OFFLINE-VIEW] Image not found in any cache location');
+                }
+              }
+            } catch (cacheError) {
+              console.error('[OFFLINE-VIEW] Error loading from cache:', cacheError);
+              // Fallback to original URL
+            }
+          }
 
           // Map decrypted data to the format expected by DocumentViewerModal
           const mappedData = {
@@ -594,8 +763,8 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
             issuingCountry: data.issuingCountry,
             issueDate: data.issuingDate,
             notes: data.notes,
-            imageUrl: data.imageUri, // Map imageUri to imageUrl
-            filePath: data.imageUri, // Use same value for filePath
+            imageUrl: finalImageUrl, // Use cached image URL if offline
+            filePath: finalImageUrl,
           };
 
           console.log('🔍 Mapped data:', mappedData);
@@ -731,7 +900,63 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
    */
   const handleDownloadForOffline = async (doc: Document) => {
     try {
-      console.log('📥 Downloading document for offline:', doc.id);
+      console.log('[OFFLINE-DOWNLOAD] Starting download for document:', doc.id);
+
+      // ⚠️ Verificar que estemos online (no se puede descargar en modo offline)
+      if (!isConnected) {
+        Alert.alert(
+          '❌ Sin Conexión',
+          'Necesitas estar conectado a internet para descargar documentos offline.'
+        );
+        return;
+      }
+
+      // ⚠️ Verificar que el documento exista en DB (no solo en cache)
+      // Re-fetch para confirmar que existe
+      const { data: exists, error: checkError } = await supabase
+        .from('travel_documents')
+        .select('id')
+        .eq('id', doc.id)
+        .single();
+
+      if (checkError || !exists) {
+        Alert.alert(
+          '⚠️ Documento No Disponible',
+          'Este documento ya no existe en la base de datos. Se eliminará del cache local.',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Eliminar del cache
+                await removeCachedDocument(doc.id);
+                await refreshCacheStatus();
+                // Recargar documentos
+                await loadDocuments(undefined, true);
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // ✅ SYNC: Limpiar cache antes de descargar (eliminar documentos huérfanos)
+      console.log('[SYNC] Cleaning orphaned documents from cache...');
+      const onlineIds = documents.map((d) => d.id);
+      const syncResult = await syncCacheWithOnlineDocuments(onlineIds);
+
+      if (syncResult.removed.length > 0) {
+        console.log(
+          `[SYNC] Removed ${syncResult.removed.length} orphaned documents:`,
+          syncResult.removed
+        );
+        Alert.alert(
+          '🧹 Cache Limpiado',
+          `Se eliminaron ${syncResult.removed.length} documento(s) que ya no existen en la nube.`,
+          [{ text: 'OK' }]
+        );
+        // Refrescar estado del cache
+        await refreshCacheStatus();
+      }
 
       // Mostrar indicador de descarga
       setDownloadingDocs((prev) => new Set(prev).add(doc.id));
@@ -742,7 +967,81 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         return;
       }
 
-      // Descargar y cachear
+      // Extraer imageStoragePath desencriptando el documento
+      // IMPORTANTE: Re-fetch desde DB para obtener el path original (no la URL firmada en memoria)
+      let imageStoragePath: string | undefined;
+
+      const hasEncryption = isRealEncryption(doc);
+      console.log('[OFFLINE-DOWNLOAD] Encryption check:', { hasEncryption, hasPin: !!verifiedPin });
+
+      if (hasEncryption && verifiedPin) {
+        console.log('[OFFLINE-DOWNLOAD] Re-fetching document from DB to get original path...');
+
+        // Re-fetch document from database to get original encrypted data
+        const { data: freshDoc, error: fetchError } = await supabase
+          .from('travel_documents')
+          .select('encrypted_data_primary, primary_iv, primary_auth_tag')
+          .eq('id', doc.id)
+          .single();
+
+        if (fetchError || !freshDoc) {
+          console.error('[OFFLINE-DOWNLOAD] Could not fetch document:', fetchError);
+        } else {
+          console.log('[OFFLINE-DOWNLOAD] Document fetched, decrypting to get image path...');
+          console.log('[OFFLINE-DOWNLOAD] Has encrypted data:', !!freshDoc.encrypted_data_primary);
+          console.log('[OFFLINE-DOWNLOAD] Has IV:', !!freshDoc.primary_iv);
+          console.log('[OFFLINE-DOWNLOAD] Has auth tag:', !!freshDoc.primary_auth_tag);
+
+          const decryptResult = await decryptDocument(
+            doc.id,
+            freshDoc.encrypted_data_primary,
+            freshDoc.primary_iv!,
+            freshDoc.primary_auth_tag!,
+            verifiedPin
+          );
+
+          console.log('[OFFLINE-DOWNLOAD] Decrypt result:', {
+            success: decryptResult.success,
+            hasData: !!decryptResult.data,
+            error: decryptResult.error,
+          });
+
+          if (decryptResult.success && decryptResult.data) {
+            const data = decryptResult.data as any;
+
+            console.log('[OFFLINE-DOWNLOAD] Decrypted data fields:', {
+              allKeys: Object.keys(data),
+              hasImageUri: !!data.imageUri,
+              imageUri: data.imageUri,
+              hasFilePath: !!data.filePath,
+              filePath: data.filePath,
+              hasImageUrl: !!data.imageUrl,
+              imageUrl: data.imageUrl,
+            });
+
+            // Priorizar filePath (siempre es el path relativo)
+            // Si no existe, usar imageUri solo si NO es una URL completa
+            if (data.filePath) {
+              imageStoragePath = data.filePath;
+            } else if (data.imageUri && !data.imageUri.startsWith('http')) {
+              imageStoragePath = data.imageUri;
+            } else if (data.imageUrl && !data.imageUrl.startsWith('http')) {
+              imageStoragePath = data.imageUrl;
+            }
+
+            console.log('[OFFLINE-DOWNLOAD] Extracted image storage path:', imageStoragePath);
+          } else {
+            console.error('[OFFLINE-DOWNLOAD] Decryption failed:', decryptResult.error);
+          }
+        }
+      } else {
+        console.warn('[OFFLINE-DOWNLOAD] Skipping image extraction:', {
+          hasEncryption,
+          hasPin: !!verifiedPin,
+        });
+      }
+
+      // Descargar y cachear (con imagen comprimida si existe)
       const success = await downloadForOffline(
         doc.id,
         doc.encrypted_data_primary,
@@ -751,13 +1050,16 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         {
           documentType: doc.document_type,
           expiryDate: doc.expiry_date,
-        }
+        },
+        imageStoragePath
       );
 
       if (success) {
         Alert.alert(
           '✅ Disponible Offline',
-          'El documento se ha descargado y está disponible sin conexión.'
+          imageStoragePath
+            ? 'El documento y su imagen se han descargado con compresión optimizada.'
+            : 'El documento se ha descargado y está disponible sin conexión.'
         );
         await refreshCacheStatus();
       } else {

@@ -3,8 +3,13 @@
  * Gestiona el cache offline de documentos encriptados
  */
 
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import * as FileSystem from 'expo-file-system/legacy';
+
+import { supabase } from '~/lib/supabase';
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -171,7 +176,120 @@ export function getPerformanceStats(): {
 }
 
 /**
+ * Helper: Comprimir y guardar imagen localmente
+ * Optimiza la imagen manteniendo calidad visual al hacer zoom
+ */
+async function downloadAndCompressImage(
+  imageUrl: string,
+  documentId: string
+): Promise<{ success: boolean; localPath?: string; sizeMB?: number; error?: string }> {
+  const startTime = Date.now();
+
+  try {
+    console.log('[IMAGE-CACHE] Downloading image for offline:', imageUrl);
+
+    // 1. Crear directorio si no existe
+    const cacheDir = `${FileSystem.documentDirectory}goveling_docs/`;
+    const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+      console.log('[IMAGE-CACHE] Created cache directory:', cacheDir);
+    }
+
+    // 2. Descargar imagen temporal
+    const tempPath = `${FileSystem.cacheDirectory}temp_${documentId}.jpg`;
+    const downloadResult = await FileSystem.downloadAsync(imageUrl, tempPath);
+
+    if (downloadResult.status !== 200) {
+      console.error('[IMAGE-CACHE] Failed to download image:', downloadResult.status);
+      return { success: false, error: `HTTP ${downloadResult.status}` };
+    }
+
+    const fileInfo = await FileSystem.getInfoAsync(tempPath);
+    const originalSize = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
+    console.log(`[IMAGE-CACHE] Downloaded: ${(originalSize / 1024 / 1024).toFixed(2)}MB`);
+
+    // 3. Comprimir imagen con calidad óptima
+    // JPEG quality 85 = sweet spot entre tamaño y calidad
+    // Redimensionar si es muy grande (max 2048px mantiene calidad en zoom)
+    const compressed = await manipulateAsync(
+      tempPath,
+      [
+        {
+          resize: {
+            width: 2048, // Máximo ancho - mantiene aspect ratio
+          },
+        },
+      ],
+      {
+        compress: 0.85, // 85% quality - óptimo para fotos
+        format: SaveFormat.JPEG,
+      }
+    );
+
+    // 4. Mover a ubicación permanente
+    const finalPath = `${cacheDir}${documentId}_image.jpg`;
+    await FileSystem.moveAsync({
+      from: compressed.uri,
+      to: finalPath,
+    });
+
+    // 5. Limpiar archivo temporal
+    try {
+      await FileSystem.deleteAsync(tempPath, { idempotent: true });
+    } catch (cleanupError) {
+      console.warn('[IMAGE-CACHE] Could not delete temp file:', cleanupError);
+    }
+
+    const finalFileInfo = await FileSystem.getInfoAsync(finalPath);
+    const finalSize = finalFileInfo.exists && 'size' in finalFileInfo ? finalFileInfo.size : 0;
+    const compressionRatio = originalSize / finalSize;
+    const duration = Date.now() - startTime;
+
+    console.log(
+      `[IMAGE-CACHE] SUCCESS: Image compressed ${(originalSize / 1024 / 1024).toFixed(2)}MB -> ${(finalSize / 1024 / 1024).toFixed(2)}MB (${compressionRatio.toFixed(2)}x) in ${duration}ms`
+    );
+
+    return {
+      success: true,
+      localPath: finalPath,
+      sizeMB: finalSize / 1024 / 1024,
+    };
+  } catch (error) {
+    console.error('[IMAGE-CACHE] Error compressing image:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Helper: Obtener URL firmada de imagen desde Supabase Storage
+ */
+async function getImageSignedUrl(storagePath: string): Promise<string | null> {
+  try {
+    // El storagePath viene como "user_id/document_id/filename.jpg"
+    const { data, error } = await supabase.storage
+      .from('travel-documents')
+      .createSignedUrl(storagePath, 60 * 60); // 1 hora de validez
+
+    if (error) {
+      console.error('[IMAGE-CACHE] Error getting signed URL:', error);
+      return null;
+    }
+
+    return data.signedUrl;
+  } catch (error) {
+    console.error('[IMAGE-CACHE] Error in getImageSignedUrl:', error);
+    return null;
+  }
+}
+
+/**
  * 1.1 Descargar y cachear documento encriptado (con optimizaciones)
+ * Ahora incluye descarga y compresión optimizada de imágenes
  */
 export async function cacheDocument(
   documentId: string,
@@ -181,7 +299,8 @@ export async function cacheDocument(
   metadata: {
     documentType: string;
     expiryDate: string;
-  }
+  },
+  imageStoragePath?: string // Opcional: path de la imagen en Supabase Storage
 ): Promise<boolean> {
   const startTime = Date.now();
 
@@ -261,6 +380,31 @@ export async function cacheDocument(
     // Actualizar metadata
     await updateCacheMetadata();
 
+    // Si hay imagen, descargarla y comprimirla
+    let imageCompressed = false;
+    let imageSizeMB = 0;
+
+    if (imageStoragePath) {
+      console.log('[CACHE] Downloading and compressing image...');
+
+      // Obtener URL firmada
+      const signedUrl = await getImageSignedUrl(imageStoragePath);
+
+      if (signedUrl) {
+        const imageResult = await downloadAndCompressImage(signedUrl, documentId);
+
+        if (imageResult.success) {
+          imageCompressed = true;
+          imageSizeMB = imageResult.sizeMB || 0;
+          console.log(`[CACHE] Image cached: ${imageSizeMB.toFixed(2)}MB`);
+        } else {
+          console.warn(`[CACHE] Could not cache image: ${imageResult.error}`);
+        }
+      } else {
+        console.warn('[CACHE] Could not get signed URL for image');
+      }
+    }
+
     // Track performance
     const duration = Date.now() - startTime;
     trackPerformance({
@@ -271,10 +415,12 @@ export async function cacheDocument(
       compressionRatio,
     });
 
-    console.log(`✅ Document cached successfully: ${documentId} (${duration}ms)`);
+    console.log(
+      `[CACHE] SUCCESS: Document cached ${documentId} (${duration}ms)${imageCompressed ? ` + image (${imageSizeMB.toFixed(2)}MB)` : ''}`
+    );
     return true;
   } catch (error) {
-    console.error('❌ Error caching document:', error);
+    console.error('[CACHE] Error caching document:', error);
     return false;
   }
 }
@@ -355,13 +501,26 @@ export async function removeCachedDocument(documentId: string): Promise<boolean>
     delete cache[documentId];
     await AsyncStorage.setItem(STORAGE_KEYS.CACHE, JSON.stringify(cache));
 
+    // Eliminar imagen asociada si existe
+    try {
+      const imagePath = `${FileSystem.documentDirectory}goveling_docs/${documentId}_image.jpg`;
+      const imageInfo = await FileSystem.getInfoAsync(imagePath);
+
+      if (imageInfo.exists) {
+        await FileSystem.deleteAsync(imagePath);
+        console.log('[CACHE] Image file deleted:', imagePath);
+      }
+    } catch (imageError) {
+      console.warn('[CACHE] Could not delete image file:', imageError);
+    }
+
     // Actualizar metadata
     await updateCacheMetadata();
 
-    console.log('✅ Document removed from cache:', documentId);
+    console.log('[CACHE] Document removed from cache:', documentId);
     return true;
   } catch (error) {
-    console.error('❌ Error removing cached document:', error);
+    console.error('[CACHE] Error removing cached document:', error);
     return false;
   }
 }
@@ -387,6 +546,50 @@ export async function listCachedDocuments(): Promise<string[]> {
   } catch (error) {
     console.error('❌ Error listing cached documents:', error);
     return [];
+  }
+}
+
+/**
+ * 1.4.1 Sincronizar cache con documentos online
+ * Elimina del cache local los documentos que ya no existen en la DB online
+ * Se ejecuta cuando el usuario presiona "Descargar" estando online
+ */
+export async function syncCacheWithOnlineDocuments(onlineDocumentIds: string[]): Promise<{
+  removed: string[];
+  kept: string[];
+}> {
+  try {
+    console.log('🔄 [SYNC] Starting cache sync with online documents...');
+    console.log('🔄 [SYNC] Online document IDs:', onlineDocumentIds);
+
+    const cachedIds = await listCachedDocuments();
+    console.log('🔄 [SYNC] Cached document IDs:', cachedIds);
+
+    const removed: string[] = [];
+    const kept: string[] = [];
+
+    // Identificar documentos huérfanos (en cache pero no online)
+    for (const cachedId of cachedIds) {
+      if (!onlineDocumentIds.includes(cachedId)) {
+        // Documento ya no existe online, eliminar del cache
+        console.log(`🗑️ [SYNC] Removing orphaned document from cache: ${cachedId}`);
+        const success = await removeCachedDocument(cachedId);
+        if (success) {
+          removed.push(cachedId);
+          console.log(`✅ [SYNC] Removed: ${cachedId}`);
+        } else {
+          console.error(`❌ [SYNC] Failed to remove: ${cachedId}`);
+        }
+      } else {
+        kept.push(cachedId);
+      }
+    }
+
+    console.log(`✅ [SYNC] Sync complete: ${removed.length} removed, ${kept.length} kept`);
+    return { removed, kept };
+  } catch (error) {
+    console.error('❌ [SYNC] Error syncing cache:', error);
+    return { removed: [], kept: [] };
   }
 }
 

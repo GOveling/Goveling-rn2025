@@ -42,7 +42,8 @@ interface UseDocumentSyncReturn {
     encryptedData: string,
     iv: string,
     authTag: string,
-    metadata: { documentType: string; expiryDate: string }
+    metadata: { documentType: string; expiryDate: string },
+    imageStoragePath?: string
   ) => Promise<boolean>;
   removeFromCache: (documentId: string) => Promise<boolean>;
   isDocumentAvailableOffline: (documentId: string) => boolean;
@@ -219,19 +220,27 @@ export function useDocumentSync(): UseDocumentSyncReturn {
     return cleanup;
   }, [refreshCacheStatus]);
 
-  // Descargar documento para offline
+  // Descargar documento para offline (con imagen comprimida)
   const downloadForOffline = useCallback(
     async (
       documentId: string,
       encryptedData: string,
       iv: string,
       authTag: string,
-      metadata: { documentType: string; expiryDate: string }
+      metadata: { documentType: string; expiryDate: string },
+      imageStoragePath?: string
     ): Promise<boolean> => {
       try {
-        console.log('📥 Downloading document for offline:', documentId);
+        console.log('[OFFLINE-SYNC] Downloading document for offline:', documentId);
 
-        const success = await cacheDocument(documentId, encryptedData, iv, authTag, metadata);
+        const success = await cacheDocument(
+          documentId,
+          encryptedData,
+          iv,
+          authTag,
+          metadata,
+          imageStoragePath
+        );
 
         if (success) {
           // Actualizar estado local
@@ -252,7 +261,7 @@ export function useDocumentSync(): UseDocumentSyncReturn {
   const removeFromCache = useCallback(
     async (documentId: string): Promise<boolean> => {
       try {
-        console.log('🗑️ Removing from cache:', documentId);
+        console.log('[CACHE-REMOVE] Removing from cache:', documentId);
 
         const success = await removeCachedDocument(documentId);
 
