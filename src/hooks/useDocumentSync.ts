@@ -48,6 +48,7 @@ interface UseDocumentSyncReturn {
   removeFromCache: (documentId: string) => Promise<boolean>;
   isDocumentAvailableOffline: (documentId: string) => boolean;
   refreshCacheStatus: () => Promise<void>;
+  refreshConnectivity: () => Promise<void>;
   clearCache: () => Promise<boolean>;
   getCachedDocumentData: (documentId: string) => Promise<{
     documentId: string;
@@ -328,6 +329,43 @@ export function useDocumentSync(): UseDocumentSyncReturn {
     }
   }, []);
 
+  // Verificar estado de conectividad (útil para forzar actualización)
+  const refreshConnectivity = useCallback(async (): Promise<void> => {
+    try {
+      console.log('🔄 Refreshing connectivity status...');
+      console.log('🔍 [DEBUG] About to call checkConnectivity()...');
+
+      // Force a fresh fetch from NetInfo
+      const state = await checkConnectivity();
+
+      console.log('🔍 [DEBUG] Raw NetInfo state:', JSON.stringify(state, null, 2));
+
+      const connected = state.isConnected && state.isInternetReachable;
+
+      console.log('📡 Connectivity status refreshed:', {
+        isConnected: state.isConnected,
+        isInternetReachable: state.isInternetReachable,
+        type: state.type,
+        finalConnected: connected,
+      });
+
+      // iOS Simulator workaround: if type is 'none' but we might have connectivity
+      // Check if this is a simulator issue
+      if (state.type === 'none' && !connected) {
+        console.warn('⚠️ NetInfo reports "none" - might be iOS Simulator issue');
+        console.warn('⚠️ Try testing on a real device or check simulator network settings');
+      }
+
+      // Update state immediately
+      setIsConnected(connected);
+
+      console.log('✅ Connectivity state updated to:', connected);
+    } catch (error) {
+      console.error('❌ Error refreshing connectivity:', error);
+      setIsConnected(false);
+    }
+  }, []);
+
   return {
     // Estado
     cachedDocuments,
@@ -344,6 +382,7 @@ export function useDocumentSync(): UseDocumentSyncReturn {
     removeFromCache,
     isDocumentAvailableOffline,
     refreshCacheStatus,
+    refreshConnectivity,
     clearCache,
     getCachedDocumentData,
     getPerformanceStats,

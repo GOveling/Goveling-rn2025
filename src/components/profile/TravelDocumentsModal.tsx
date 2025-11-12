@@ -23,6 +23,7 @@ import {
   getCachedDocument,
   syncCacheWithOnlineDocuments,
   removeCachedDocument,
+  checkConnectivity,
 } from '~/services/documentSync';
 
 interface TravelDocumentsModalProps {
@@ -89,6 +90,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     removeFromCache,
     isDocumentAvailableOffline,
     refreshCacheStatus,
+    refreshConnectivity,
     isConnected,
     isSyncing,
     queueStatus,
@@ -272,11 +274,28 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   };
 
   const loadDocuments = async (pin?: string, forceOnline: boolean = false) => {
+    console.log('🚀🚀🚀 [LOAD-DOCUMENTS] NUEVA VERSION - Starting loadDocuments...');
     try {
       setLoading(true);
 
+      // ALWAYS refresh connectivity before loading to ensure we have current status
+      console.log('[LOAD] Checking current connectivity before loading...');
+      await refreshConnectivity();
+
+      // Note: After refreshConnectivity, isConnected might not be updated yet in this scope
+      // So we need to check it from the service directly
+      const currentConnectivity = await checkConnectivity();
+      const isCurrentlyConnected =
+        currentConnectivity.isConnected && currentConnectivity.isInternetReachable;
+
+      console.log('[LOAD] Current connectivity status:', {
+        isCurrentlyConnected,
+        forceOnline,
+        willUseCache: !isCurrentlyConnected && !forceOnline,
+      });
+
       // Check connectivity - if offline, load from cache (unless forceOnline is true)
-      if (!isConnected && !forceOnline) {
+      if (!isCurrentlyConnected && !forceOnline) {
         console.log('[OFFLINE] Loading documents from local cache...');
 
         try {
