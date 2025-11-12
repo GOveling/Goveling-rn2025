@@ -2,17 +2,6 @@
   "cli": {
     "version": ">= 5.4.0"
   },
-  "update": {
-    "development": {
-      "channel": "development"
-    },
-    "preview": {
-      "channel": "preview"
-    },
-    "production": {
-      "channel": "production"
-    }
-  },
   "build": {
     "development": {
       "developmentClient": true,
