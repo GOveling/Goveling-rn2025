@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 
+import Constants from 'expo-constants';
+
 import { Ionicons } from '@expo/vector-icons';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -17,6 +19,11 @@ import SecuritySettingsModal from '~/components/profile/SecuritySettingsModal';
 import { useDocumentSync } from '~/hooks/useDocumentSync';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
+import {
+  authenticateWithBiometrics,
+  isBiometricAuthEnabled,
+  checkBiometricCapabilities,
+} from '~/services/biometricAuth';
 import { hasPinConfigured, encryptDocument, decryptDocument } from '~/services/documentEncryption';
 import {
   listCachedDocuments,
@@ -81,6 +88,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   const [showSecuritySettings, setShowSecuritySettings] = useState(false);
   const [showChangePIN, setShowChangePIN] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [isTryingBiometric, setIsTryingBiometric] = useState(false); // Track if we're attempting Face ID
 
   // Offline Sync Hook
   const {
@@ -151,7 +159,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   }, [visible]);
 
-  // Handle authentication flow
+  // Handle authentication flow with Face ID priority
   useEffect(() => {
     if (!visible) return;
 
@@ -162,17 +170,78 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       console.log('🔐 No PIN configured - showing setup');
       setShowPinSetup(true);
       setShowPinVerification(false);
+      setIsTryingBiometric(false);
     } else if (hasPin && !isAuthenticated) {
-      // PIN configured but not authenticated - show verification
-      console.log('🔐 Has PIN but not authenticated - showing verification');
-      setShowPinVerification(true);
-      setShowPinSetup(false);
+      // PIN configured but not authenticated - try Face ID first
+      console.log('🔐 Has PIN but not authenticated - attempting Face ID first...');
+      tryBiometricAuthFirst();
     } else if (hasPin && isAuthenticated) {
       // Authenticated - load documents
       console.log('🔐 Authenticated - loading documents');
       loadDocuments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, hasPin, isAuthenticated]);
+
+  // Try Face ID authentication first, fallback to PIN if needed
+  const tryBiometricAuthFirst = async () => {
+    try {
+      setIsTryingBiometric(true);
+
+      // Check if biometric is available and enabled
+      const capabilities = await checkBiometricCapabilities();
+      const enabled = await isBiometricAuthEnabled();
+
+      console.log('🔍 Biometric Check:', {
+        isAvailable: capabilities.isAvailable,
+        enabled,
+        biometricType: capabilities.biometricType,
+      });
+
+      if (capabilities.isAvailable && enabled) {
+        // Attempt Face ID authentication
+        console.log('✨ Attempting Face ID authentication...');
+        const result = await authenticateWithBiometrics(
+          'Autentícate para acceder a tus documentos de viaje'
+        );
+
+        if (result.success) {
+          console.log('✅ Face ID successful - granting access to document list');
+          setIsAuthenticated(true);
+          setVerifiedPin(''); // No PIN yet - will be requested when opening documents
+          setShowPinVerification(false);
+          setIsTryingBiometric(false);
+          return;
+        } else {
+          console.log('❌ Face ID failed or cancelled - showing PIN entry');
+        }
+      } else {
+        console.log('⚠️ Face ID not available or not enabled - showing PIN entry');
+      }
+
+      // Fallback to PIN entry
+      setShowPinVerification(true);
+      setShowPinSetup(false);
+      setIsTryingBiometric(false);
+    } catch (error) {
+      console.error('❌ Error during biometric authentication:', error);
+      // Fallback to PIN entry
+      setShowPinVerification(true);
+      setShowPinSetup(false);
+      setIsTryingBiometric(false);
+    }
+  };
+
+  // Handle modal close - clear authentication session
+  const handleModalClose = () => {
+    console.log('🚪 Closing Travel Documents - clearing session');
+    setIsAuthenticated(false);
+    setVerifiedPin(null);
+    setSelectedDocument(null);
+    setShowPinVerification(false);
+    setIsTryingBiometric(false);
+    onClose();
+  };
 
   // Listen to connectivity changes and reload documents when back online
   useEffect(() => {
@@ -523,9 +592,94 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   };
 
   const handlePinVerified = async (pin: string) => {
+    // Check if this is for viewing a specific document (after Face ID authentication)
+    if (selectedDocument && !pendingDocumentData) {
+      console.log('[PIN] Verified for viewing specific document');
+      setVerifiedPin(pin);
+      setShowPinVerification(false);
+
+      // Decrypt and open the document directly (without calling handleDocumentPress again)
+      const docToOpen = selectedDocument;
+      setSelectedDocument(null); // Clear selection
+
+      try {
+        console.log('🔐 Decrypting document for viewing...');
+        console.log('🔍 Document encryption fields:', {
+          hasEncryptedData: !!docToOpen.encrypted_data_primary,
+          hasPrimaryIv: !!docToOpen.primary_iv,
+          hasPrimaryAuthTag: !!docToOpen.primary_auth_tag,
+          primaryIvValue: docToOpen.primary_iv,
+          primaryAuthTagValue: docToOpen.primary_auth_tag,
+          encryptedDataPreview: docToOpen.encrypted_data_primary.substring(0, 50),
+        });
+
+        const decryptResult = await decryptDocument(
+          docToOpen.id,
+          docToOpen.encrypted_data_primary,
+          docToOpen.primary_iv || '',
+          docToOpen.primary_auth_tag || '',
+          pin
+        );
+
+        if (!decryptResult.success || !decryptResult.data) {
+          console.error('❌ Decryption failed');
+          Alert.alert('Error', 'No se pudo desencriptar el documento. Verifica tu PIN.');
+          return;
+        }
+
+        console.log('✅ Document decrypted successfully');
+        console.log('🔍 Decrypted data:', decryptResult.data);
+
+        const decryptedData = decryptResult.data as any;
+
+        // Build full Supabase Storage URL if we have imageUri
+        const imageUri = decryptedData.imageUri || decryptedData.imageUrl || '';
+        let fullImageUrl = '';
+
+        if (imageUri) {
+          // If it's already a full URL, use it as is
+          if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+            fullImageUrl = imageUri;
+          } else {
+            // Build Supabase Storage URL
+            const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+            fullImageUrl = `${supabaseUrl}/storage/v1/object/public/travel-documents/${imageUri}`;
+          }
+        }
+
+        // Map decrypted data to expected format
+        const mappedData: DecryptedData = {
+          documentNumber: decryptedData.documentNumber || '',
+          issuingCountry: decryptedData.issuingCountry || '',
+          issueDate: decryptedData.issuingDate || decryptedData.issueDate || '',
+          notes: decryptedData.notes || '',
+          imageUrl: fullImageUrl,
+          filePath: fullImageUrl,
+        };
+
+        console.log('🔍 Mapped data:', mappedData);
+
+        const fileType: 'image' | 'pdf' = decryptedData.imageUrl?.endsWith('.pdf')
+          ? 'pdf'
+          : 'image';
+
+        if (fileType === 'pdf') {
+          setPdfUrl(mappedData.imageUrl || null);
+          setShowPdfViewer(true);
+        } else {
+          setSelectedDocument(docToOpen);
+          setShowDocumentViewer(true);
+        }
+      } catch (error) {
+        console.error('❌ Error during decryption:', error);
+        Alert.alert('Error', 'No se pudo desencriptar el documento. Por favor verifica tu PIN.');
+      }
+      return;
+    }
+
     // Check if this is for viewing documents or saving a document
     if (!pendingDocumentData) {
-      // PIN verified for viewing documents
+      // PIN verified for viewing documents (Face ID fallback scenario)
       console.log('[PIN] Verified, granting access to documents...');
       setVerifiedPin(pin);
       setShowPinVerification(false);
@@ -708,8 +862,34 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     try {
       let documentToView = doc;
 
-      // If document uses real encryption, decrypt it first
-      if (isRealEncryption(doc) && verifiedPin) {
+      // If document uses real encryption, check if we need PIN
+      if (isRealEncryption(doc)) {
+        // If no PIN available (user entered with Face ID), request PIN now
+        if (!verifiedPin) {
+          console.log('🔐 Document encrypted but no PIN available');
+          console.log('📝 Requesting PIN to decrypt this document...');
+
+          Alert.alert(
+            '🔐 PIN Requerido',
+            'Necesitas ingresar tu PIN para desencriptar y ver este documento.',
+            [
+              {
+                text: 'Cancelar',
+                style: 'cancel',
+              },
+              {
+                text: 'Ingresar PIN',
+                onPress: () => {
+                  // Store the document to view after PIN verification
+                  setSelectedDocument(doc);
+                  setShowPinVerification(true);
+                },
+              },
+            ]
+          );
+          return;
+        }
+
         console.log('🔐 Decrypting document for viewing...');
         console.log('🔍 Document encryption fields:', {
           hasEncryptedData: !!doc.encrypted_data_primary,
@@ -738,12 +918,25 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
             issuingCountry?: string;
             issuingDate?: string;
             notes?: string;
-            imageUri?: string; // Path relativo (para offline)
-            imageUrl?: string; // URL firmada (para online)
+            imageUri?: string; // Path relativo
+            imageUrl?: string; // URL firmada
           };
 
-          // Priorizar imageUrl (signed URL) si está online, sino usar imageUri (path relativo)
-          let finalImageUrl = isConnected ? data.imageUrl || data.imageUri : data.imageUri;
+          // Determine image URL based on connection status and available data
+          let finalImageUrl = '';
+
+          if (isConnected) {
+            // Online: Use imageUrl if available, otherwise build Supabase Storage URL from imageUri
+            if (data.imageUrl && data.imageUrl.startsWith('http')) {
+              finalImageUrl = data.imageUrl;
+            } else if (data.imageUri) {
+              const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+              finalImageUrl = `${supabaseUrl}/storage/v1/object/public/travel-documents/${data.imageUri}`;
+            }
+          } else {
+            // Offline: Will try to load from cache below
+            finalImageUrl = data.imageUri || data.imageUrl || '';
+          }
 
           // If offline and image is available in cache, load from cache
           if (!isConnected && isDocumentAvailableOffline(doc.id)) {
@@ -1186,13 +1379,13 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         visible={visible}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={onClose}
+        onRequestClose={handleModalClose}
       >
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
             <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <TouchableOpacity onPress={handleModalClose} style={styles.closeButton}>
                 <Ionicons name="close" size={28} color={theme.colors.text} />
               </TouchableOpacity>
             </View>

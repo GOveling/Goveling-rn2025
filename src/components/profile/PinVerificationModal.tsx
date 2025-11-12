@@ -53,38 +53,60 @@ export default function PinVerificationModal({
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAttempted, setBiometricAttempted] = useState(false);
 
+  console.log('🔐 PinVerificationModal rendered:', { visible, biometricAttempted });
+
   // Recovery flow states
   const [showForgotPin, setShowForgotPin] = useState(false);
   const [showRecoveryCode, setShowRecoveryCode] = useState(false);
   const [showSetNewPin, setShowSetNewPin] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
 
-  // Check biometric availability and auto-trigger when modal opens
-  useEffect(() => {
-    if (visible && !biometricAttempted) {
-      checkAndTriggerBiometric();
-    }
-  }, [visible]);
-
   const checkAndTriggerBiometric = async () => {
     try {
       const capabilities = await checkBiometricCapabilities();
       setBiometricCapabilities(capabilities);
 
+      console.log('🔍 Biometric Capabilities:', {
+        isAvailable: capabilities.isAvailable,
+        hasHardware: capabilities.hasHardware,
+        isEnrolled: capabilities.isEnrolled,
+        biometricType: capabilities.biometricType,
+      });
+
       if (capabilities.isAvailable) {
         const enabled = await isBiometricAuthEnabled();
         setBiometricEnabled(enabled);
 
+        console.log('🔍 Biometric Enabled in App:', enabled);
+
         if (enabled) {
           // Auto-trigger biometric auth
+          console.log('✨ Auto-triggering biometric authentication...');
           setBiometricAttempted(true);
           setTimeout(() => handleBiometricAuth(), 300); // Small delay for better UX
+        } else {
+          console.log('⚠️ Biometric is available but NOT enabled in app settings');
         }
+      } else {
+        console.log('⚠️ Biometric NOT available:', {
+          hasHardware: capabilities.hasHardware,
+          isEnrolled: capabilities.isEnrolled,
+        });
       }
     } catch (error) {
       console.error('Error checking biometric capabilities:', error);
     }
   };
+
+  // Check biometric availability and auto-trigger when modal opens
+  useEffect(() => {
+    console.log('🔐 PinVerificationModal useEffect:', { visible, biometricAttempted });
+    if (visible && !biometricAttempted) {
+      console.log('🔐 Calling checkAndTriggerBiometric...');
+      checkAndTriggerBiometric();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   const handleBiometricAuth = async () => {
     if (!biometricCapabilities || !biometricEnabled) return;

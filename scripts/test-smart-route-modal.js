@@ -1,6 +1,6 @@
 /**
  * Script para probar el SmartRouteModal con datos reales de la base de datos
- * 
+ *
  * Este script te ayudará a verificar que:
  * 1. Los lugares se cargan correctamente desde Supabase
  * 2. La conversión al formato ML funciona
@@ -80,32 +80,32 @@ console.log('');
 // Helper function to test ML endpoint independently
 async function testMLEndpointQuick() {
   console.log('🚀 Testing ML endpoint with minimal data...');
-  
+
   const testPayload = {
-    "places": [
+    places: [
       {
-        "id": "test",
-        "name": "Plaza de Armas",
-        "lat": -33.4372,
-        "lon": -70.6506,
-        "type": "tourist_attraction",
-        "priority": 8,
-        "min_duration_hours": 1.5
-      }
+        id: 'test',
+        name: 'Plaza de Armas',
+        lat: -33.4372,
+        lon: -70.6506,
+        type: 'tourist_attraction',
+        priority: 8,
+        min_duration_hours: 1.5,
+      },
     ],
-    "start_date": "2025-01-15",
-    "end_date": "2025-01-15",
-    "transport_mode": "drive",
-    "daily_start_hour": 9,
-    "daily_end_hour": 18,
-    "max_walking_distance_km": 15.0,
-    "max_daily_activities": 6,
-    "preferences": {
-      "culture_weight": 0.8,
-      "nature_weight": 0.6,
-      "food_weight": 0.9
+    start_date: '2025-01-15',
+    end_date: '2025-01-15',
+    transport_mode: 'drive',
+    daily_start_hour: 9,
+    daily_end_hour: 18,
+    max_walking_distance_km: 15.0,
+    max_daily_activities: 6,
+    preferences: {
+      culture_weight: 0.8,
+      nature_weight: 0.6,
+      food_weight: 0.9,
     },
-    "accommodations": []
+    accommodations: [],
   };
 
   try {
@@ -114,7 +114,7 @@ async function testMLEndpointQuick() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(testPayload)
+      body: JSON.stringify(testPayload),
     });
 
     if (response.ok) {

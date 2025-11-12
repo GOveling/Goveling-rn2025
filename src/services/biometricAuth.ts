@@ -178,10 +178,14 @@ export async function authenticateWithBiometrics(
  */
 export async function isBiometricAuthEnabled(): Promise<boolean> {
   try {
+    console.log('🔍 [biometricAuth] Checking if biometric is enabled...');
     const value = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
-    return value === 'true';
+    console.log(`🔍 [biometricAuth] AsyncStorage value for "${BIOMETRIC_ENABLED_KEY}":`, value);
+    const isEnabled = value === 'true';
+    console.log('🔍 [biometricAuth] Is enabled:', isEnabled);
+    return isEnabled;
   } catch (error) {
-    console.error('Error checking biometric auth status:', error);
+    console.error('❌ [biometricAuth] Error checking biometric auth status:', error);
     return false;
   }
 }
@@ -191,10 +195,17 @@ export async function isBiometricAuthEnabled(): Promise<boolean> {
  */
 export async function setBiometricAuthEnabled(enabled: boolean): Promise<void> {
   try {
+    console.log(`🔧 [biometricAuth] Setting biometric auth to: ${enabled}`);
     await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, enabled ? 'true' : 'false');
-    console.log(`✅ Biometric auth ${enabled ? 'enabled' : 'disabled'}`);
+    console.log(
+      `✅ [biometricAuth] Successfully saved to AsyncStorage: ${enabled ? 'true' : 'false'}`
+    );
+
+    // Verify it was saved
+    const savedValue = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
+    console.log(`🔍 [biometricAuth] Verification read from AsyncStorage:`, savedValue);
   } catch (error) {
-    console.error('Error setting biometric auth status:', error);
+    console.error('❌ [biometricAuth] Error setting biometric auth status:', error);
     throw error;
   }
 }

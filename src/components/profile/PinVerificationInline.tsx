@@ -34,6 +34,8 @@ export default function PinVerificationInline({
   const [showSetNewPin, setShowSetNewPin] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
 
+  console.log('🔐 PinVerificationInline rendered - PIN only mode');
+
   const handleKeyPress = (digit: string) => {
     if (pin.length < 6) {
       setPin(pin + digit);

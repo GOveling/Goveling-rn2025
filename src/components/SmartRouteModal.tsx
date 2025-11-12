@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -10,12 +11,16 @@ import {
   TextInput,
 } from 'react-native';
 import { Modal } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '~/lib/theme';
+
 import { supabase } from '~/lib/supabase';
+import { useTheme } from '~/lib/theme';
+
 import ConditionalMapView from './ConditionalMapView';
 
 interface SmartRouteModalProps {
@@ -114,7 +119,7 @@ export default function SmartRouteModal({
 }: SmartRouteModalProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  
+
   // States
   const [loading, setLoading] = useState(false);
   const [places, setPlaces] = useState<MLPlace[]>([]);
@@ -155,7 +160,7 @@ export default function SmartRouteModal({
   // Update config dates when trip dates change
   useEffect(() => {
     if (tripStartDate || tripEndDate) {
-      setConfig(prev => ({
+      setConfig((prev) => ({
         ...prev,
         start_date: tripStartDate || prev.start_date,
         end_date: tripEndDate || prev.end_date,
@@ -166,11 +171,12 @@ export default function SmartRouteModal({
   const loadTripPlaces = async () => {
     try {
       console.log('🔍 Loading places for trip:', tripId);
-      
+
       // Get all trip places directly (no separate places table exists)
       const { data: tripPlaces, error } = await supabase
         .from('trip_places')
-        .select(`
+        .select(
+          `
           id,
           place_id,
           name,
@@ -179,7 +185,8 @@ export default function SmartRouteModal({
           address,
           category,
           rating
-        `)
+        `
+        )
         .eq('trip_id', tripId);
 
       if (error) {
@@ -213,20 +220,19 @@ export default function SmartRouteModal({
           address: place.address,
           google_place_id: place.place_id,
         };
-        
+
         console.log(`📍 Converted place ${index + 1}:`, {
           name: mlPlace.name,
           type: mlPlace.type,
           priority: mlPlace.priority,
-          duration: mlPlace.min_duration_hours
+          duration: mlPlace.min_duration_hours,
         });
-        
+
         return mlPlace;
       });
 
       console.log('✅ Total ML places loaded:', mlPlaces.length);
       setPlaces(mlPlaces);
-
     } catch (error) {
       console.error('Error in loadTripPlaces:', error);
       Alert.alert('Error', 'Ocurrió un error al cargar los lugares');
@@ -331,9 +337,9 @@ export default function SmartRouteModal({
       placesCount: places.length,
       startDate: config.start_date,
       endDate: config.end_date,
-      transport: config.transport_mode
+      transport: config.transport_mode,
     });
-    
+
     if (places.length === 0) {
       console.log('❌ No places available');
       Alert.alert('Sin lugares', 'No hay lugares disponibles para generar el itinerario');
@@ -389,25 +395,26 @@ export default function SmartRouteModal({
         console.log('✅ Itinerary received:', result.itinerary);
         setItinerary(result.itinerary);
         setShowResults(true);
-        
+
         // Show success message with summary
         const totalDays = result.itinerary.length;
-        const totalActivities = result.itinerary.reduce((sum, day) => 
-          sum + (day.places?.filter(p => p.category === 'activity').length || 0), 0);
-        
+        const totalActivities = result.itinerary.reduce(
+          (sum, day) => sum + (day.places?.filter((p) => p.category === 'activity').length || 0),
+          0
+        );
+
         Alert.alert(
-          '🎉 ¡Itinerario generado!', 
+          '🎉 ¡Itinerario generado!',
           `Se creó un itinerario de ${totalDays} días con ${totalActivities} actividades principales.`
         );
       } else {
         throw new Error('Respuesta inválida del servidor ML');
       }
-
     } catch (error) {
       console.error('❌ Error generating itinerary:', error);
       Alert.alert(
         'Error',
-        error instanceof Error 
+        error instanceof Error
           ? `No se pudo generar el itinerario: ${error.message}`
           : 'Error desconocido al generar el itinerario'
       );
@@ -420,9 +427,7 @@ export default function SmartRouteModal({
     <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Ruta Inteligente IA
-        </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Ruta Inteligente IA</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
           Genera un itinerario optimizado para {tripTitle || 'tu viaje'}
         </Text>
@@ -443,9 +448,12 @@ export default function SmartRouteModal({
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
           📅 Fechas del itinerario
         </Text>
-        
+
         <TouchableOpacity
-          style={[styles.input, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
+          ]}
           onPress={() => setShowStartDatePicker(true)}
         >
           <Text style={[styles.inputText, { color: theme.colors.text }]}>
@@ -455,7 +463,10 @@ export default function SmartRouteModal({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.input, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
+          ]}
           onPress={() => setShowEndDatePicker(true)}
         >
           <Text style={[styles.inputText, { color: theme.colors.text }]}>
@@ -470,14 +481,17 @@ export default function SmartRouteModal({
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
           🚗 Modo de transporte
         </Text>
-        
+
         <TouchableOpacity
-          style={[styles.input, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
+          ]}
           onPress={() => setShowTransportPicker(true)}
         >
           <Text style={[styles.inputText, { color: theme.colors.text }]}>
-            {TRANSPORT_MODES.find(mode => mode.value === config.transport_mode)?.icon} {' '}
-            {TRANSPORT_MODES.find(mode => mode.value === config.transport_mode)?.label}
+            {TRANSPORT_MODES.find((mode) => mode.value === config.transport_mode)?.icon}{' '}
+            {TRANSPORT_MODES.find((mode) => mode.value === config.transport_mode)?.label}
           </Text>
           <Ionicons name="chevron-down" size={20} color={theme.colors.textMuted} />
         </TouchableOpacity>
@@ -485,19 +499,27 @@ export default function SmartRouteModal({
 
       {/* Schedule */}
       <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-          ⏰ Horario diario
-        </Text>
-        
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>⏰ Horario diario</Text>
+
         <View style={styles.row}>
           <View style={styles.timeInputContainer}>
             <Text style={[styles.label, { color: theme.colors.textMuted }]}>Inicio</Text>
             <TextInput
-              style={[styles.timeInput, { backgroundColor: theme.colors.background, borderColor: theme.colors.border, color: theme.colors.text }]}
+              style={[
+                styles.timeInput,
+                {
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
               value={config.daily_start_hour.toString()}
               onChangeText={(text) => {
                 const hour = parseInt(text) || 9;
-                setConfig(prev => ({ ...prev, daily_start_hour: Math.max(6, Math.min(12, hour)) }));
+                setConfig((prev) => ({
+                  ...prev,
+                  daily_start_hour: Math.max(6, Math.min(12, hour)),
+                }));
               }}
               keyboardType="numeric"
               placeholder="9"
@@ -508,11 +530,21 @@ export default function SmartRouteModal({
           <View style={styles.timeInputContainer}>
             <Text style={[styles.label, { color: theme.colors.textMuted }]}>Fin</Text>
             <TextInput
-              style={[styles.timeInput, { backgroundColor: theme.colors.background, borderColor: theme.colors.border, color: theme.colors.text }]}
+              style={[
+                styles.timeInput,
+                {
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
               value={config.daily_end_hour.toString()}
               onChangeText={(text) => {
                 const hour = parseInt(text) || 18;
-                setConfig(prev => ({ ...prev, daily_end_hour: Math.max(15, Math.min(23, hour)) }));
+                setConfig((prev) => ({
+                  ...prev,
+                  daily_end_hour: Math.max(15, Math.min(23, hour)),
+                }));
               }}
               keyboardType="numeric"
               placeholder="18"
@@ -524,10 +556,8 @@ export default function SmartRouteModal({
 
       {/* Preferences */}
       <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-          ⚖️ Preferencias
-        </Text>
-        
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>⚖️ Preferencias</Text>
+
         <View style={styles.preferenceRow}>
           <Text style={[styles.preferenceLabel, { color: theme.colors.text }]}>🎭 Cultura</Text>
           <Text style={[styles.preferenceValue, { color: theme.colors.textMuted }]}>
@@ -584,7 +614,9 @@ export default function SmartRouteModal({
             <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={[styles.resultsTitle, { color: theme.colors.text }]}>Itinerario Generado</Text>
+            <Text style={[styles.resultsTitle, { color: theme.colors.text }]}>
+              Itinerario Generado
+            </Text>
             <Text style={[styles.resultsSubtitle, { color: theme.colors.textMuted }]}>
               {itinerary.length} días optimizados por IA
             </Text>
@@ -594,16 +626,21 @@ export default function SmartRouteModal({
 
       {/* Lista de días mejorada */}
       {itinerary.map((day, index) => (
-        <View key={day.day} style={[
-          styles.dayCard,
-          { backgroundColor: theme.colors.card },
-          day.is_suggested && styles.suggestedDayCard
-        ]}>
+        <View
+          key={day.day}
+          style={[
+            styles.dayCard,
+            { backgroundColor: theme.colors.card },
+            day.is_suggested && styles.suggestedDayCard,
+          ]}
+        >
           {/* Header del día */}
           <View style={styles.dayHeader}>
             <View style={styles.dayHeaderLeft}>
               <Text style={[styles.dayNumber, { color: theme.colors.text }]}>Día {day.day}</Text>
-              <Text style={[styles.dayDate, { color: theme.colors.textMuted }]}>{formatDate(day.date)}</Text>
+              <Text style={[styles.dayDate, { color: theme.colors.textMuted }]}>
+                {formatDate(day.date)}
+              </Text>
               {day.is_suggested && (
                 <View style={styles.aiSuggestedBadge}>
                   <Ionicons name="sparkles" size={12} color="#8B5CF6" />
@@ -613,7 +650,8 @@ export default function SmartRouteModal({
             </View>
             <View>
               <Text style={[styles.dayStatsText, { color: theme.colors.textMuted }]}>
-                {day.total_places || 0} lugares • {day.total_time || '0h'} total • {day.free_time || '0h'} libre
+                {day.total_places || 0} lugares • {day.total_time || '0h'} total •{' '}
+                {day.free_time || '0h'} libre
               </Text>
             </View>
           </View>
@@ -623,14 +661,21 @@ export default function SmartRouteModal({
             <View style={[styles.baseLocation, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
               <Ionicons name="bed" size={16} color="#10B981" />
               <View style={styles.baseLocationInfo}>
-                <Text style={[styles.baseLocationName, { color: theme.colors.text }]}>{day.base.name}</Text>
-                <Text style={[styles.baseLocationAddress, { color: theme.colors.textMuted }]} numberOfLines={1}>
+                <Text style={[styles.baseLocationName, { color: theme.colors.text }]}>
+                  {day.base.name}
+                </Text>
+                <Text
+                  style={[styles.baseLocationAddress, { color: theme.colors.textMuted }]}
+                  numberOfLines={1}
+                >
                   {day.base.address}
                 </Text>
                 {day.base.rating && day.base.rating > 0 && (
                   <View style={styles.ratingContainer}>
                     <Ionicons name="star" size={12} color="#F59E0B" />
-                    <Text style={[styles.ratingText, { color: theme.colors.text }]}>{day.base.rating}</Text>
+                    <Text style={[styles.ratingText, { color: theme.colors.text }]}>
+                      {day.base.rating}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -644,17 +689,26 @@ export default function SmartRouteModal({
                 🎯 Actividades programadas ({day.places.length})
               </Text>
               {day.places.map((place: any, placeIndex: number) => (
-                <View key={placeIndex} style={[
-                  styles.activityItem,
-                  { borderBottomColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#F3F4F6' }
-                ]}>
+                <View
+                  key={placeIndex}
+                  style={[
+                    styles.activityItem,
+                    {
+                      borderBottomColor:
+                        theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#F3F4F6',
+                    },
+                  ]}
+                >
                   <View style={styles.activityIconContainer}>
                     <Text style={styles.activityIcon}>
                       {getActivityIcon(place.type || place.category)}
                     </Text>
                   </View>
                   <View style={styles.activityInfo}>
-                    <Text style={[styles.activityName, { color: theme.colors.text }]} numberOfLines={1}>
+                    <Text
+                      style={[styles.activityName, { color: theme.colors.text }]}
+                      numberOfLines={1}
+                    >
                       {place.name}
                     </Text>
                     <View style={styles.activityDetails}>
@@ -670,14 +724,15 @@ export default function SmartRouteModal({
                       )}
                       {(place.priority || place.order) && (
                         <View style={styles.priorityBadge}>
-                          <Text style={styles.priorityText}>
-                            #{place.priority || place.order}
-                          </Text>
+                          <Text style={styles.priorityText}>#{place.priority || place.order}</Text>
                         </View>
                       )}
                     </View>
                     {place.description && (
-                      <Text style={[styles.activityDescription, { color: theme.colors.textMuted }]} numberOfLines={2}>
+                      <Text
+                        style={[styles.activityDescription, { color: theme.colors.textMuted }]}
+                        numberOfLines={2}
+                      >
                         {place.description}
                       </Text>
                     )}
@@ -698,9 +753,7 @@ export default function SmartRouteModal({
           {/* Recomendaciones accionables */}
           {day.actionable_recommendations && day.actionable_recommendations.length > 0 && (
             <View style={styles.recommendationsContainer}>
-              <Text style={styles.recommendationsTitle}>
-                💡 Recomendaciones
-              </Text>
+              <Text style={styles.recommendationsTitle}>💡 Recomendaciones</Text>
               {day.actionable_recommendations.map((rec: any, recIndex: number) => (
                 <View key={recIndex} style={styles.recommendationItem}>
                   <Ionicons name="bulb" size={14} color="#F59E0B" />
@@ -716,9 +769,7 @@ export default function SmartRouteModal({
           {day.suggestion_reason && (
             <View style={styles.suggestionReason}>
               <Ionicons name="information-circle" size={14} color="#8B5CF6" />
-              <Text style={styles.suggestionReasonText}>
-                {day.suggestion_reason}
-              </Text>
+              <Text style={styles.suggestionReasonText}>{day.suggestion_reason}</Text>
             </View>
           )}
 
@@ -735,10 +786,7 @@ export default function SmartRouteModal({
 
       {/* Botones de acción mejorados */}
       <View style={styles.resultsActions}>
-        <TouchableOpacity
-          style={styles.mapButton}
-          onPress={() => setShowMapModal(true)}
-        >
+        <TouchableOpacity style={styles.mapButton} onPress={() => setShowMapModal(true)}>
           <LinearGradient
             colors={['#10B981', '#059669']}
             start={{ x: 0, y: 0 }}
@@ -755,7 +803,9 @@ export default function SmartRouteModal({
           onPress={handleSaveItinerary}
         >
           <Ionicons name="bookmark" size={20} color={theme.colors.primary} />
-          <Text style={[styles.saveButtonText, { color: theme.colors.primary }]}>Guardar Itinerario</Text>
+          <Text style={[styles.saveButtonText, { color: theme.colors.primary }]}>
+            Guardar Itinerario
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -802,25 +852,21 @@ export default function SmartRouteModal({
 
   // Función para manejar guardar itinerario
   const handleSaveItinerary = () => {
-    Alert.alert(
-      'Guardar Itinerario',
-      '¿Deseas guardar este itinerario generado por IA?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Guardar', 
-          onPress: () => {
-            // TODO: Implementar guardado en backend
-            Alert.alert('Éxito', 'Itinerario guardado correctamente');
-          }
-        }
-      ]
-    );
+    Alert.alert('Guardar Itinerario', '¿Deseas guardar este itinerario generado por IA?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Guardar',
+        onPress: () => {
+          // TODO: Implementar guardado en backend
+          Alert.alert('Éxito', 'Itinerario guardado correctamente');
+        },
+      },
+    ]);
   };
 
   const buildMapMarkersFromItinerary = () => {
     let markers: any[] = [];
-    
+
     // Construir todos los marcadores primero
     itinerary.forEach((day) => {
       // Agregar hoteles base de cada día
@@ -843,7 +889,7 @@ export default function SmartRouteModal({
           markerSize: 'large', // Marcador más grande para hoteles
         });
       }
-      
+
       // Agregar actividades/lugares de cada día
       (day.places || []).forEach((place, idx) => {
         if (place.lat && place.lng) {
@@ -873,31 +919,31 @@ export default function SmartRouteModal({
 
     // Aplicar filtros
     if (selectedDayFilter !== null) {
-      markers = markers.filter(m => m.dayNumber === selectedDayFilter);
+      markers = markers.filter((m) => m.dayNumber === selectedDayFilter);
     }
-    
+
     if (showOnlyHotels) {
-      markers = markers.filter(m => m.isBase);
+      markers = markers.filter((m) => m.isBase);
     }
-    
+
     if (showOnlyActivities) {
-      markers = markers.filter(m => m.isActivity);
+      markers = markers.filter((m) => m.isActivity);
     }
 
     console.log('🗺️ Map markers built:', {
       total: markers.length,
-      hotels: markers.filter(m => m.isBase).length,
-      activities: markers.filter(m => m.isActivity).length,
+      hotels: markers.filter((m) => m.isBase).length,
+      activities: markers.filter((m) => m.isActivity).length,
       dayFilter: selectedDayFilter,
       hotelFilter: showOnlyHotels,
       activityFilter: showOnlyActivities,
-      sampleMarkers: markers.slice(0, 5).map(m => ({
+      sampleMarkers: markers.slice(0, 5).map((m) => ({
         name: m.name,
         isBase: m.isBase,
         color: m.markerColor,
         icon: m.icon,
-        day: m.dayNumber
-      }))
+        day: m.dayNumber,
+      })),
     });
 
     return markers;
@@ -951,9 +997,9 @@ export default function SmartRouteModal({
             onChange={(event, selectedDate) => {
               setShowStartDatePicker(false);
               if (selectedDate) {
-                setConfig(prev => ({
+                setConfig((prev) => ({
                   ...prev,
-                  start_date: selectedDate.toISOString().split('T')[0]
+                  start_date: selectedDate.toISOString().split('T')[0],
                 }));
               }
             }}
@@ -968,9 +1014,9 @@ export default function SmartRouteModal({
             onChange={(event, selectedDate) => {
               setShowEndDatePicker(false);
               if (selectedDate) {
-                setConfig(prev => ({
+                setConfig((prev) => ({
                   ...prev,
-                  end_date: selectedDate.toISOString().split('T')[0]
+                  end_date: selectedDate.toISOString().split('T')[0],
                 }));
               }
             }}
@@ -985,18 +1031,18 @@ export default function SmartRouteModal({
             animationType="fade"
             onRequestClose={() => setShowTransportPicker(false)}
           >
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.pickerOverlay}
               activeOpacity={1}
               onPress={() => setShowTransportPicker(false)}
             >
               <View style={[styles.pickerModal, { backgroundColor: theme.colors.card }]}>
-                {TRANSPORT_MODES.map(mode => (
+                {TRANSPORT_MODES.map((mode) => (
                   <TouchableOpacity
                     key={mode.value}
                     style={styles.pickerOption}
                     onPress={() => {
-                      setConfig(prev => ({ ...prev, transport_mode: mode.value as any }));
+                      setConfig((prev) => ({ ...prev, transport_mode: mode.value as any }));
                       setShowTransportPicker(false);
                     }}
                   >
@@ -1031,21 +1077,27 @@ export default function SmartRouteModal({
 
             {/* Controles de filtrado */}
             <View style={[styles.mapFilters, { backgroundColor: theme.colors.card }]}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterScrollContent}
+              >
                 {/* Filtro por día */}
                 <TouchableOpacity
                   style={[
                     styles.filterButton,
                     selectedDayFilter === null && styles.filterButtonActive,
-                    { borderColor: theme.colors.border }
+                    { borderColor: theme.colors.border },
                   ]}
                   onPress={() => setSelectedDayFilter(null)}
                 >
-                  <Text style={[
-                    styles.filterButtonText,
-                    selectedDayFilter === null && styles.filterButtonTextActive,
-                    { color: selectedDayFilter === null ? '#FFFFFF' : theme.colors.text }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      selectedDayFilter === null && styles.filterButtonTextActive,
+                      { color: selectedDayFilter === null ? '#FFFFFF' : theme.colors.text },
+                    ]}
+                  >
                     Todos los días
                   </Text>
                 </TouchableOpacity>
@@ -1056,15 +1108,17 @@ export default function SmartRouteModal({
                     style={[
                       styles.filterButton,
                       selectedDayFilter === day.day && styles.filterButtonActive,
-                      { borderColor: theme.colors.border }
+                      { borderColor: theme.colors.border },
                     ]}
                     onPress={() => setSelectedDayFilter(day.day)}
                   >
-                    <Text style={[
-                      styles.filterButtonText,
-                      selectedDayFilter === day.day && styles.filterButtonTextActive,
-                      { color: selectedDayFilter === day.day ? '#FFFFFF' : theme.colors.text }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.filterButtonText,
+                        selectedDayFilter === day.day && styles.filterButtonTextActive,
+                        { color: selectedDayFilter === day.day ? '#FFFFFF' : theme.colors.text },
+                      ]}
+                    >
                       Día {day.day}
                     </Text>
                   </TouchableOpacity>
@@ -1077,7 +1131,7 @@ export default function SmartRouteModal({
                   style={[
                     styles.typeFilterButton,
                     showOnlyHotels && styles.typeFilterActive,
-                    { borderColor: theme.colors.border }
+                    { borderColor: theme.colors.border },
                   ]}
                   onPress={() => {
                     setShowOnlyHotels(!showOnlyHotels);
@@ -1085,10 +1139,12 @@ export default function SmartRouteModal({
                   }}
                 >
                   <Text style={styles.typeFilterIcon}>🏨</Text>
-                  <Text style={[
-                    styles.typeFilterText,
-                    { color: showOnlyHotels ? '#FFFFFF' : theme.colors.text }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.typeFilterText,
+                      { color: showOnlyHotels ? '#FFFFFF' : theme.colors.text },
+                    ]}
+                  >
                     Hoteles
                   </Text>
                 </TouchableOpacity>
@@ -1097,7 +1153,7 @@ export default function SmartRouteModal({
                   style={[
                     styles.typeFilterButton,
                     showOnlyActivities && styles.typeFilterActive,
-                    { borderColor: theme.colors.border }
+                    { borderColor: theme.colors.border },
                   ]}
                   onPress={() => {
                     setShowOnlyActivities(!showOnlyActivities);
@@ -1105,10 +1161,12 @@ export default function SmartRouteModal({
                   }}
                 >
                   <Text style={styles.typeFilterIcon}>🎯</Text>
-                  <Text style={[
-                    styles.typeFilterText,
-                    { color: showOnlyActivities ? '#FFFFFF' : theme.colors.text }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.typeFilterText,
+                      { color: showOnlyActivities ? '#FFFFFF' : theme.colors.text },
+                    ]}
+                  >
                     Actividades
                   </Text>
                 </TouchableOpacity>
@@ -1117,7 +1175,7 @@ export default function SmartRouteModal({
                   style={[
                     styles.typeFilterButton,
                     !showOnlyHotels && !showOnlyActivities && styles.typeFilterActive,
-                    { borderColor: theme.colors.border }
+                    { borderColor: theme.colors.border },
                   ]}
                   onPress={() => {
                     setShowOnlyHotels(false);
@@ -1125,10 +1183,15 @@ export default function SmartRouteModal({
                   }}
                 >
                   <Text style={styles.typeFilterIcon}>📍</Text>
-                  <Text style={[
-                    styles.typeFilterText,
-                    { color: !showOnlyHotels && !showOnlyActivities ? '#FFFFFF' : theme.colors.text }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.typeFilterText,
+                      {
+                        color:
+                          !showOnlyHotels && !showOnlyActivities ? '#FFFFFF' : theme.colors.text,
+                      },
+                    ]}
+                  >
                     Todo
                   </Text>
                 </TouchableOpacity>

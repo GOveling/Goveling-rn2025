@@ -497,9 +497,48 @@ export async function decryptDocument(
     });
 
     if (error) {
-      console.error('❌ Decryption error:', error);
+      console.error('❌ Edge Function error:', error);
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
-      return { success: false, error: error.message };
+
+      // Fallback to local decryption if Edge Function fails
+      console.log('🔄 Edge Function failed, attempting local decryption as fallback...');
+
+      if (!hasNativeCrypto) {
+        console.warn('⚠️ Native crypto not available for fallback');
+        return { success: false, error: error.message };
+      }
+
+      try {
+        console.log('🔐 Using local decryption fallback');
+
+        // Generate key locally
+        const {
+          data: { session: fallbackSession },
+        } = await supabase.auth.getSession();
+
+        if (!fallbackSession?.user) {
+          console.error('❌ No user session for fallback decryption');
+          return { success: false, error: error.message };
+        }
+
+        const salt = fallbackSession.user.id;
+        const hexKey = await derivePinKey(pin, salt);
+        const localKey = hexToBase64(hexKey);
+
+        console.log('🔑 Generated fallback local key');
+
+        const decryptedJson = await decryptDataLocally(encryptedData, iv, authTag, localKey);
+        const decryptedData = JSON.parse(decryptedJson);
+
+        console.log('✅ Fallback local decryption successful');
+        return {
+          success: true,
+          data: decryptedData,
+        };
+      } catch (fallbackError) {
+        console.error('❌ Fallback decryption also failed:', fallbackError);
+        return { success: false, error: error.message };
+      }
     }
 
     return {
@@ -508,6 +547,29 @@ export async function decryptDocument(
     };
   } catch (error) {
     console.error('Decryption service error:', error);
+
+    // Try local decryption as final fallback
+    if (hasNativeCrypto) {
+      console.log('🔄 Attempting local decryption as final fallback...');
+      try {
+        const {
+          data: { session: fallbackSession },
+        } = await supabase.auth.getSession();
+
+        if (fallbackSession?.user) {
+          const salt = fallbackSession.user.id;
+          const hexKey = await derivePinKey(pin, salt);
+          const localKey = hexToBase64(hexKey);
+          const decryptedJson = await decryptDataLocally(encryptedData, iv, authTag, localKey);
+          const decryptedData = JSON.parse(decryptedJson);
+          console.log('✅ Final fallback decryption successful');
+          return { success: true, data: decryptedData };
+        }
+      } catch (fallbackError) {
+        console.error('❌ Final fallback failed:', fallbackError);
+      }
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
