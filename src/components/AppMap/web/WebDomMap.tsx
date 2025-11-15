@@ -179,7 +179,7 @@ export default function WebDomMap({
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
-          {isLocating ? '🔄 Localizando...' : '📍 Mi Ubicación'}
+          {isLocating ? '🔄 Localizando...' : 'Mi Ubicación'}
         </button>
       )}
     </div>

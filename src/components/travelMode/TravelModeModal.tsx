@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert } from 'react-native';
 
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import SavedPlacesMapModal from '~/components/SavedPlacesMapModal';
 import { isFeatureEnabled } from '~/config/featureFlags';
@@ -414,12 +415,18 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
             {state.currentLocation && (
               <View style={[styles.locationInfo, { borderTopColor: theme.colors.border }]}>
-                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
-                  📍 Lat: {state.currentLocation.coordinates.latitude.toFixed(6)}
-                </Text>
-                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
-                  📍 Lng: {state.currentLocation.coordinates.longitude.toFixed(6)}
-                </Text>
+                <View style={[styles.locationTextContainer]}>
+                  <Ionicons name="location-outline" size={12} color={theme.colors.textMuted} />
+                  <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
+                    Lat: {state.currentLocation.coordinates.latitude.toFixed(6)}
+                  </Text>
+                </View>
+                <View style={[styles.locationTextContainer]}>
+                  <Ionicons name="location-outline" size={12} color={theme.colors.textMuted} />
+                  <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
+                    Lng: {state.currentLocation.coordinates.longitude.toFixed(6)}
+                  </Text>
+                </View>
                 <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
                   🎯 Precisión: ±{Math.round(state.currentLocation.accuracy)}m
                 </Text>
@@ -788,8 +795,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   locationText: {
-    fontSize: 13,
-    marginBottom: 4,
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  locationTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    gap: 4,
+  },
+  speedDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   energyMode: {
     fontSize: 14,

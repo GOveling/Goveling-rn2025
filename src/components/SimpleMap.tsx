@@ -51,7 +51,7 @@ export default function SimpleMap({ accommodations, style }: SimpleMapProps) {
                 <Text style={styles.locationName}>{accommodation.name}</Text>
                 <Text style={styles.locationAddress}>{accommodation.address}</Text>
                 <Text style={styles.coordinates}>
-                  📍 {accommodation.latitude.toFixed(4)}, {accommodation.longitude.toFixed(4)}
+                  � {accommodation.latitude.toFixed(4)}, {accommodation.longitude.toFixed(4)}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />

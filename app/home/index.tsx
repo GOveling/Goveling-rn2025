@@ -7,6 +7,9 @@ import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
 
 import { useTranslation } from 'react-i18next';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';
@@ -119,7 +122,7 @@ export default function Home() {
           >
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>📍 {city}</Text>
+                <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>{city}</Text>
                 <Text style={{ fontSize: 16, color: 'white', marginLeft: 8 }}>
                   • {new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
                 </Text>
@@ -131,7 +134,6 @@ export default function Home() {
                 onPress={toggleUnits}
                 style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}
               >
-                <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
                 <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
                   {typeof temp === 'number' ? temp.toFixed(1).replace('.', ',') : '—'}°
                   {units === 'c' ? 'C' : 'F'}
@@ -142,7 +144,7 @@ export default function Home() {
                 onPress={() => console.log('Inbox feature coming soon')}
                 style={{ position: 'relative' }}
               >
-                <Text style={{ fontSize: 24 }}>🔔</Text>
+                <Ionicons name="notifications" size={24} color="white" />
                 <View
                   style={{
                     position: 'absolute',
@@ -177,7 +179,6 @@ export default function Home() {
                   minHeight: 120,
                 }}
               >
-                <Text style={{ fontSize: 16, color: 'white', marginBottom: 4 }}>📍</Text>
                 <Text style={{ fontSize: 32, color: 'white', fontWeight: 'bold', marginBottom: 4 }}>
                   {savedPlacesCount}
                 </Text>
@@ -198,7 +199,6 @@ export default function Home() {
                   minHeight: 120,
                 }}
               >
-                <Text style={{ fontSize: 16, color: 'white', marginBottom: 4 }}>📅</Text>
                 <Text style={{ fontSize: 32, color: 'white', fontWeight: 'bold', marginBottom: 4 }}>
                   {upcomingTripsCount}
                 </Text>
@@ -283,9 +283,14 @@ export default function Home() {
                   marginBottom: 12,
                 }}
               >
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                  ✈️ Acceder al Modo Travel
-                </Text>
+                <View
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FontAwesome name="plane" size={16} color="white" style={{ marginRight: 8 }} />
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                    Acceder al Modo Travel
+                  </Text>
+                </View>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -346,11 +351,17 @@ export default function Home() {
               }}
             >
               <View>
-                <Text
-                  style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 4 }}
-                >
-                  📈 Lugares Populares
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <MaterialIcons
+                    name="trending-up"
+                    size={20}
+                    color={colors.text}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
+                    Lugares Populares
+                  </Text>
+                </View>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
                   Globalmente
                 </Text>
@@ -360,9 +371,6 @@ export default function Home() {
                   Siguiente:
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.textMuted }}>4:52</Text>
-                <TouchableOpacity style={{ marginTop: 4 }}>
-                  <Text style={{ fontSize: 16, color: '#8B5CF6' }}>🔄 Actualizar</Text>
-                </TouchableOpacity>
               </View>
             </View>
 
@@ -387,7 +395,7 @@ export default function Home() {
                   justifyContent: 'center',
                 }}
               >
-                <Text style={{ fontSize: 24 }}>🌅</Text>
+                <MaterialIcons name="wb-sunny" size={24} color="#F59E0B" />
               </View>
 
               <View style={{ flex: 1 }}>
@@ -398,12 +406,17 @@ export default function Home() {
                     Santorini Sunset Point
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 14, color: '#F59E0B', marginRight: 2 }}>⭐</Text>
+                    <MaterialIcons
+                      name="star"
+                      size={14}
+                      color="#F59E0B"
+                      style={{ marginRight: 2 }}
+                    />
                     <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>4.9</Text>
                   </View>
                 </View>
                 <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 4 }}>
-                  📍 Santorini, Greece
+                  <Ionicons name="location" size={12} color={colors.textMuted} /> Santorini, Greece
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 16 }}>
                   One of the world's most photographed sunsets with breathtaking views over the

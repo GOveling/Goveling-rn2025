@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
+import { Ionicons } from '@expo/vector-icons';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 
@@ -415,10 +416,13 @@ const CurrentTripCard = React.memo(function CurrentTripCard() {
           <Text style={styles.activeTripName}>{selectedActiveTrip.name || t('home.my_trip')}</Text>
 
           {selectedActiveTrip.start_date && selectedActiveTrip.end_date && (
-            <Text style={styles.activeTripDates}>
-              📅 {formatDate(selectedActiveTrip.start_date)} -{' '}
-              {formatDate(selectedActiveTrip.end_date)}
-            </Text>
+            <View style={styles.activeTripDatesContainer}>
+              <Ionicons name="calendar-outline" size={14} color="white" />
+              <Text style={styles.activeTripDates}>
+                {formatDate(selectedActiveTrip.start_date)} -{' '}
+                {formatDate(selectedActiveTrip.end_date)}
+              </Text>
+            </View>
           )}
         </View>
 
@@ -643,6 +647,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: 'white',
     opacity: 0.9,
+    marginLeft: 6,
+  },
+  activeTripDatesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   activeTripActions: {
     gap: 12,

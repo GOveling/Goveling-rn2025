@@ -32,7 +32,6 @@ const StatCards = React.memo<StatCardsProps>(
           onPress={() => router.push('/(tabs)/explore')}
         >
           <LinearGradient colors={COLORS.gradients.purple} style={styles.gradientCard}>
-            <Text style={styles.iconText}>📍</Text>
             <Text style={styles.countText}>{savedPlacesCount}</Text>
             <Text style={styles.labelText}>{t('home.saved_places')}</Text>
           </LinearGradient>
@@ -41,7 +40,6 @@ const StatCards = React.memo<StatCardsProps>(
         {/* Próximos Viajes Card */}
         <TouchableOpacity style={styles.cardTouchable} onPress={() => router.push('/(tabs)/trips')}>
           <LinearGradient colors={COLORS.gradients.orange} style={styles.gradientCard}>
-            <Text style={styles.iconText}>📅</Text>
             <Text style={styles.countText}>{upcomingTripsCount}</Text>
             <Text style={styles.labelText}>{t('home.upcoming_trips')}</Text>
           </LinearGradient>
@@ -80,11 +78,6 @@ const styles = StyleSheet.create({
   },
 
   // Text Styles
-  iconText: {
-    fontSize: 16,
-    color: COLORS.text.white,
-    marginBottom: 4,
-  },
   countText: {
     fontSize: 32,
     color: COLORS.text.white,

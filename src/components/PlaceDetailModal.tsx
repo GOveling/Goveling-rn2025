@@ -17,6 +17,7 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
+import { Ionicons } from '@expo/vector-icons';
 
 import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { useTranslation } from 'react-i18next';
@@ -463,10 +464,20 @@ export default function PlaceDetailModal({
     setErrorState: (error: boolean) => void,
     disabled: boolean = false
   ) => {
-    const handleAnimationFailure = (error: unknown) => {
-      console.log('Lottie animation failed:', error);
-      setErrorState(true);
-    };
+    // Map fallback emojis to Ionicons
+    let iconName: keyof typeof Ionicons.glyphMap = 'help-circle';
+    let iconColor = theme.colors.primary;
+
+    if (fallbackEmoji === '🚴‍♂️') {
+      iconName = 'walk';
+      iconColor = '#8B5CF6';
+    } else if (fallbackEmoji === '📌') {
+      iconName = 'location';
+      iconColor = '#EF4444';
+    } else if (fallbackEmoji === '🌐') {
+      iconName = 'globe';
+      iconColor = '#3B82F6';
+    }
 
     return (
       <View
@@ -476,21 +487,7 @@ export default function PlaceDetailModal({
           disabled && styles.actionIconDisabled,
         ]}
       >
-        {!errorState ? (
-          <LottieView
-            ref={lottieRef}
-            source={animationSource}
-            style={[styles.lottieIcon, disabled && styles.lottieIconDisabled]}
-            loop={false}
-            autoPlay={false}
-            resizeMode="contain"
-            onAnimationFailure={handleAnimationFailure}
-          />
-        ) : (
-          <Text style={[styles.fallbackEmoji, disabled && styles.fallbackEmojiDisabled]}>
-            {fallbackEmoji}
-          </Text>
-        )}
+        <Ionicons name={iconName} size={40} color={disabled ? theme.colors.textMuted : iconColor} />
       </View>
     );
   };
@@ -577,7 +574,7 @@ export default function PlaceDetailModal({
               />
             ) : (
               <LinearGradient colors={['#F5F5F5', '#E5E5E5']} style={styles.headerImage}>
-                <Text style={styles.headerPlaceholder}>📍</Text>
+                <Ionicons name="location-outline" size={20} color={theme.colors.text} />
               </LinearGradient>
             )}
 
@@ -618,7 +615,12 @@ export default function PlaceDetailModal({
 
               {place.address && (
                 <View style={styles.addressRow}>
-                  <Text style={styles.addressIcon}>📍</Text>
+                  <Ionicons
+                    name="location-outline"
+                    size={16}
+                    color={theme.colors.text}
+                    style={styles.addressIcon}
+                  />
                   <Text style={[styles.addressText, { color: theme.colors.textMuted }]}>
                     {place.address}
                   </Text>
@@ -889,7 +891,7 @@ export default function PlaceDetailModal({
                   {renderActionIcon(
                     locationLottieRef,
                     themedLocationAnimation,
-                    '📍', // Emoji de fallback para ubicación
+                    '📌', // Pin icon fallback para ubicación
                     locationLottieError,
                     setLocationLottieError,
                     !place.coordinates
@@ -948,7 +950,12 @@ export default function PlaceDetailModal({
                   colors={['#DE3D00', '#FF6B35']}
                   style={styles.floatingButtonGradient}
                 >
-                  <Text style={styles.floatingButtonIcon}>➕</Text>
+                  <Ionicons
+                    name="add-circle"
+                    size={24}
+                    color="#FFFFFF"
+                    style={{ marginRight: 8 }}
+                  />
                   <Text style={styles.floatingButtonText}>
                     {tripId
                       ? t('explore.modal.add_to', { trip: tripTitle || t('explore.modal.trip') })
@@ -1297,20 +1304,6 @@ const styles = StyleSheet.create({
   actionTextDisabled: {
     opacity: 0.5,
   },
-  lottieIcon: {
-    width: 40, // Aumentado para mayor presencia visual
-    height: 40,
-  },
-  lottieIconDisabled: {
-    opacity: 0.5,
-  },
-  fallbackEmoji: {
-    fontSize: 24,
-    textAlign: 'center',
-  },
-  fallbackEmojiDisabled: {
-    opacity: 0.5,
-  },
   bottomSpacing: {
     height: 100,
   },
@@ -1338,10 +1331,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 16,
-  },
-  floatingButtonIcon: {
-    fontSize: 20,
-    marginRight: 12,
   },
   floatingButtonText: {
     color: '#FFFFFF',

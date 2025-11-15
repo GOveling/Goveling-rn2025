@@ -2,6 +2,7 @@ import React from 'react';
 
 import { View, Text, StyleSheet } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 
 import { useTranslation } from 'react-i18next';
@@ -118,7 +119,7 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Text style={styles.iconText}>🎯</Text>
+            <Ionicons name="alert-circle" size={20} color="#FFFFFF" />
           </View>
 
           <View style={styles.headerContent}>
@@ -135,7 +136,7 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <Text style={styles.iconText}>🎯</Text>
+          <Ionicons name="alert-circle" size={20} color="#FFFFFF" />
         </View>
 
         <View style={styles.headerContent}>
@@ -170,7 +171,11 @@ const NearbyAlerts = React.memo(function NearbyAlerts({ tripId }: NearbyAlertsPr
                   </Text>
                   {typeof item.distance_m === 'number' && (
                     <View style={styles.distanceContainer}>
-                      <Text style={styles.distanceIcon}>📍</Text>
+                      <Ionicons
+                        name="location-outline"
+                        size={12}
+                        color={COLORS.secondary.amberDark}
+                      />
                       <Text
                         style={[
                           styles.placeDistance,
@@ -215,9 +220,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
-  iconText: {
-    fontSize: 20,
   },
   headerContent: {
     flex: 1,

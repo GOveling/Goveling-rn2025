@@ -44,12 +44,12 @@ interface ProfileData {
 }
 
 const genderOptions = [
-  { label: 'profile.personal_info.genders.masculine', value: 'masculine', icon: '👨' },
-  { label: 'profile.personal_info.genders.feminine', value: 'feminine', icon: '👩' },
+  { label: 'profile.personal_info.genders.masculine', value: 'masculine', icon: 'man-outline' },
+  { label: 'profile.personal_info.genders.feminine', value: 'feminine', icon: 'woman-outline' },
   {
     label: 'profile.personal_info.genders.prefer_not_to_say',
     value: 'prefer_not_to_say',
-    icon: '🤐',
+    icon: 'person-outline',
   },
 ];
 
@@ -152,7 +152,7 @@ export default function PersonalInfoScreen() {
         style={[styles.pickerOption, isSelected && styles.pickerOptionSelected]}
         onPress={onPress}
       >
-        <Text style={styles.pickerOptionIcon}>🏙️</Text>
+        <Ionicons name="business-outline" size={24} color="#6366F1" />
         <View style={styles.cityOptionContent}>
           <Text style={[styles.pickerOptionText, isSelected && styles.pickerOptionTextSelected]}>
             {item.city}
@@ -334,11 +334,11 @@ export default function PersonalInfoScreen() {
 
   const getCountryLabel = (countryCode: string) => {
     const country = countries.find((c) => c.country_code === countryCode);
-    return country ? `🌍 ${country.country_name}` : '';
+    return country ? country.country_name : '';
   };
 
   const getCityLabel = (cityName: string) => {
-    return cityName ? `🏙️ ${cityName}` : '';
+    return cityName ? cityName : '';
   };
 
   const normalizePhoneCode = (phoneCode: string): string => {
@@ -740,7 +740,7 @@ export default function PersonalInfoScreen() {
                     setShowGenderPicker(false);
                   }}
                 >
-                  <Text style={styles.pickerOptionIcon}>{option.icon}</Text>
+                  <Ionicons name={option.icon as any} size={24} color="#6366F1" />
                   <Text
                     style={[
                       styles.pickerOptionText,
@@ -788,7 +788,7 @@ export default function PersonalInfoScreen() {
                     setShowCountryPicker(false);
                   }}
                 >
-                  <Text style={styles.pickerOptionIcon}>🌍</Text>
+                  <Ionicons name="earth-outline" size={24} color="#6366F1" />
                   <View style={styles.countryOptionContent}>
                     <Text
                       style={[

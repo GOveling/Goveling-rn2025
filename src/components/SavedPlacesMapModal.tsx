@@ -13,9 +13,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-import * as Location from 'expo-location';
-
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 import { useTheme } from '~/lib/theme';
 import { useDistanceUnit } from '~/utils/units';
@@ -610,7 +609,12 @@ export default function SavedPlacesMapModal({
 
                   {calculateDistance(selectedPlace) && (
                     <Text style={[styles.calloutDistance, { color: theme.colors.textMuted }]}>
-                      📍 {calculateDistance(selectedPlace)}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="location-outline" size={12} color="#666" />
+                        <Text style={[styles.distanceText, { color: theme.colors.textMuted }]}>
+                          {calculateDistance(selectedPlace)}
+                        </Text>
+                      </View>
                     </Text>
                   )}
 
@@ -792,6 +796,10 @@ const styles = StyleSheet.create({
   calloutDistance: {
     fontSize: 14,
     marginBottom: 12,
+  },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   calloutButton: {
     backgroundColor: '#3B82F6',

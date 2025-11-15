@@ -166,7 +166,7 @@ class TravelNotificationService {
       // Send notification
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: isArrival ? '🎯 Has llegado!' : '📍 Cerca de tu destino',
+          title: isArrival ? 'Has llegado!' : 'Cerca de tu destino',
           body: isArrival
             ? `Has alcanzado ${placeName}`
             : `Estás a ${distanceText} de ${placeName}`,
@@ -202,7 +202,7 @@ class TravelNotificationService {
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🚀 Modo Travel Activado',
+          title: 'Modo Travel Activado',
           body: `Recibirás notificaciones cuando te acerques a los lugares de ${tripName}`,
           data: {
             type: 'welcome',
@@ -229,7 +229,7 @@ class TravelNotificationService {
 
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🛣️ Desviación de Ruta',
+          title: 'Desviación de Ruta',
           body: 'Parece que te has desviado de la ruta. ¿Recalcular?',
           data: {
             type: 'deviation',
