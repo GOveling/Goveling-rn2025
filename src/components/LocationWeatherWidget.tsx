@@ -2,6 +2,8 @@ import React from 'react';
 
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { WeatherService, WeatherData } from '../services/weatherService';
 
 interface LocationWeatherWidgetProps {
@@ -54,7 +56,10 @@ export default function LocationWeatherWidget({
   if (loading) {
     return (
       <View style={[styles.loadingContainer, style]}>
-        <Text style={styles.loadingText}>📍 Cargando...</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Ionicons name="refresh" size={16} color={styles.loadingText.color} />
+          <Text style={styles.loadingText}>Cargando...</Text>
+        </View>
       </View>
     );
   }
@@ -62,9 +67,12 @@ export default function LocationWeatherWidget({
   if (error) {
     return (
       <View style={[styles.errorContainer, style]}>
-        <Text style={styles.errorText}>
-          📍 {latitude.toFixed(3)}, {longitude.toFixed(3)}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Ionicons name="location-outline" size={16} color={styles.errorText.color} />
+          <Text style={styles.errorText}>
+            {latitude.toFixed(3)}, {longitude.toFixed(3)}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -74,12 +82,12 @@ export default function LocationWeatherWidget({
       <View style={styles.locationContainer}>
         <View style={styles.locationRow}>
           {/* Line 185 equivalent - this is where the location name is rendered */}
-          <Text style={styles.locationText}>
-            📍{' '}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="location-outline" size={16} color={styles.locationText.color} />
             <Text style={styles.locationName}>
               {weatherData?.location?.city || `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`}
             </Text>
-          </Text>
+          </View>
           <Text style={styles.dateText}>
             • {new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
           </Text>

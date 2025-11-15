@@ -154,7 +154,7 @@ export default function NativeMap({
           }}
         >
           <Text style={{ fontSize: 14, fontWeight: '600' }}>
-            {isLocating ? '🔄 Localizando...' : '📍 Mi Ubicación'}
+            {isLocating ? '🔄 Localizando...' : 'Mi Ubicación'}
           </Text>
         </TouchableOpacity>
       )}

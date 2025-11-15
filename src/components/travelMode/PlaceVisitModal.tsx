@@ -78,7 +78,7 @@ export function PlaceVisitModal({
   }, [visible]);
 
   const getPlaceIcon = (): string => {
-    if (!placeTypes || placeTypes.length === 0) return '📍';
+    if (!placeTypes || placeTypes.length === 0) return '�';
 
     const type = placeTypes[0]?.toLowerCase();
 
@@ -95,7 +95,7 @@ export function PlaceVisitModal({
     if (type.includes('church') || type.includes('temple')) return '⛪';
     if (type.includes('tourist')) return '🗺️';
 
-    return '📍';
+    return '�';
   };
 
   const getPlaceCategory = (): string => {

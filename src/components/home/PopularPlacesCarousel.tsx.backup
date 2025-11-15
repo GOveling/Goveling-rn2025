@@ -2,45 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import { usePopularPlacesV2, type PopularPlace } from '~/hooks/usePopularPlacesV2';
 import { useTheme } from '~/lib/theme';
 
 const AUTO_ROTATE_INTERVAL = 8000; // 8 seconds
-
-// Map emojis to Ionicons
-const getIconForEmoji = (
-  emoji: string
-): { name: keyof typeof Ionicons.glyphMap; color: string } => {
-  // Remove variation selectors and normalize
-  const normalizedEmoji = emoji.replace(/\uFE0F/g, '').trim();
-
-  // Use includes for more flexible matching
-  if (normalizedEmoji.includes('🗼')) return { name: 'business', color: '#8B5CF6' };
-  if (normalizedEmoji.includes('⛰')) return { name: 'triangle', color: '#10B981' };
-  if (normalizedEmoji.includes('🏯')) return { name: 'home', color: '#EF4444' };
-  if (normalizedEmoji.includes('🏛')) return { name: 'library', color: '#F59E0B' };
-  if (normalizedEmoji.includes('⛪')) return { name: 'business', color: '#3B82F6' };
-  if (normalizedEmoji.includes('🌅')) return { name: 'sunny', color: '#F97316' };
-  if (normalizedEmoji.includes('🕌')) return { name: 'moon', color: '#6366F1' };
-  if (normalizedEmoji.includes('🎭')) return { name: 'musical-notes', color: '#EC4899' };
-  if (normalizedEmoji.includes('🎡')) return { name: 'radio', color: '#EC4899' }; // Ferris wheel
-  if (normalizedEmoji.includes('🍽')) return { name: 'restaurant', color: '#F59E0B' }; // Restaurant
-
-  return { name: 'location', color: '#8B5CF6' };
-};
-
-// Map badge strings to icon and text
-const getBadgeIcon = (badge: string): { icon: keyof typeof Ionicons.glyphMap; text: string } => {
-  if (badge.includes('HOT NOW')) return { icon: 'flame', text: 'HOT NOW' };
-  if (badge.includes('TRENDING')) return { icon: 'trending-up', text: 'TRENDING' };
-  if (badge.includes('POPULAR')) return { icon: 'star', text: 'POPULAR' };
-  if (badge.includes('RISING')) return { icon: 'sparkles', text: 'RISING' };
-  return { icon: 'star', text: 'POPULAR' };
-};
 
 interface Props {
   userCountryCode?: string;
@@ -55,7 +24,7 @@ export default function PopularPlacesCarousel({
 }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { places, isLive, isLoading } = usePopularPlacesV2({
+  const { places, isLive, isLoading, refresh } = usePopularPlacesV2({
     userCountryCode,
     userContinent,
     maxResults: 5,
@@ -126,7 +95,7 @@ export default function PopularPlacesCarousel({
     );
   }
 
-  const currentPlace = places[currentIndex];
+  const currentPlace = places[currentIndex] || null;
 
   // Format saves count
   const getSavesText = () => {
@@ -182,9 +151,17 @@ export default function PopularPlacesCarousel({
             )}
           </View>
         </View>
+
+        <TouchableOpacity onPress={refresh} style={styles.refreshButton}>
+          <Text
+            style={[styles.refreshText, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
+          >
+            {t('home.refresh')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Place Card */}
+      {/* Place Card */
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() => onPlacePress?.(currentPlace)}
@@ -203,13 +180,9 @@ export default function PopularPlacesCarousel({
           ]}
         >
           {currentPlace.emoji ? (
-            <Ionicons
-              name={getIconForEmoji(currentPlace.emoji).name}
-              size={32}
-              color={getIconForEmoji(currentPlace.emoji).color}
-            />
+            <Text style={styles.placeEmoji}>{currentPlace.emoji}</Text>
           ) : (
-            <Ionicons name="location" size={32} color="#8B5CF6" />
+            <Ionicons name="location-outline" size={24} color="#FF6B35" style={styles.placeEmoji} />
           )}
         </View>
 
@@ -228,18 +201,13 @@ export default function PopularPlacesCarousel({
                   },
                 ]}
               >
-                <Ionicons
-                  name={getBadgeIcon(currentPlace.badge).icon}
-                  size={10}
-                  color={theme.mode === 'dark' ? '#fca5a5' : '#DC2626'}
-                />
                 <Text
                   style={[
                     styles.badgeText,
                     { color: theme.mode === 'dark' ? '#fca5a5' : '#DC2626' },
                   ]}
                 >
-                  {getBadgeIcon(currentPlace.badge).text}
+                  {currentPlace.badge}
                 </Text>
               </View>
             )}
@@ -247,10 +215,7 @@ export default function PopularPlacesCarousel({
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Ionicons name="location-outline" size={14} color={theme.colors.textMuted} />
-            <Text
-              style={[styles.placeLocation, { color: theme.colors.textMuted }]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.placeLocation, { color: theme.colors.textMuted }]} numberOfLines={1}>
               {currentPlace.location_display}
             </Text>
           </View>
@@ -262,23 +227,16 @@ export default function PopularPlacesCarousel({
             {currentPlace.description || t('home.popular_place_fallback')}
           </Text>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons
-              name="heart"
-              size={14}
-              color={theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6'}
-            />
-            <Text
-              style={[styles.placeStats, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
-              numberOfLines={1}
-            >
-              {getSavesText()}
-            </Text>
-          </View>
+          <Text
+            style={[styles.placeStats, { color: theme.mode === 'dark' ? '#a78bfa' : '#8B5CF6' }]}
+            numberOfLines={1}
+          >
+            ❤️ {getSavesText()}
+          </Text>
         </View>
       </TouchableOpacity>
 
-      {/* Pagination with Navigation Arrows */}
+      {/* Pagination Dots with Navigation Arrows */}
       {places.length > 1 && (
         <View style={styles.paginationContainer}>
           <TouchableOpacity
@@ -381,6 +339,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
+  refreshButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  refreshText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   placeCard: {
     flexDirection: 'row',
     borderRadius: 12,
@@ -412,9 +378,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,

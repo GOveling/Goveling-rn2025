@@ -29,6 +29,7 @@
       "expo-file-system",
       "expo-updates",
       "./plugins/withReactNativeMaps.js",
+      "./plugins/withReactNativeVectorIcons.js",
       "expo-web-browser",
       "expo-secure-store",
       [

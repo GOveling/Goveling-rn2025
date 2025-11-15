@@ -213,7 +213,7 @@ const FALLBACK_PLACES: PopularPlace[] = [
 ];
 
 export function usePopularPlacesV2(options: UsePopularPlacesOptions = {}) {
-  const { userCountryCode, userContinent, maxResults = 8, enableAutoRefresh = true } = options;
+  const { userCountryCode, userContinent, maxResults = 5, enableAutoRefresh = true } = options;
 
   const [places, setPlaces] = useState<PopularPlace[]>(FALLBACK_PLACES);
   const [isLive, setIsLive] = useState(false);

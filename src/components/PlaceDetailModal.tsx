@@ -17,6 +17,7 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
+import { Ionicons } from '@expo/vector-icons';
 
 import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,7 @@ import DirectionsModeSelector from './DirectionsModeSelector';
 import MapAppSelectorModal from './MapAppSelectorModal';
 import MapModal from './MapModal';
 import MiniMapModal from './MiniMapModal';
+import PlaceTripsModal from './PlaceTripsModal';
 import RouteMapModal from './RouteMapModal';
 import cycleAnimation from '../../assets/animations/cycle.json';
 import globeAnimation from '../../assets/animations/globe.json';
@@ -33,9 +35,9 @@ import locationCircleAnimation from '../../assets/animations/location-circle.jso
 import { translateDynamic } from '../i18n';
 import { processPlaceCategories } from '../lib/categoryProcessor';
 import { EnhancedPlace } from '../lib/placesSearch';
+import { supabase } from '../lib/supabase';
 import { useTheme } from '../lib/theme';
 import { getRouteToPlace, type TransportMode } from '../lib/useDirections';
-import { useFavorites } from '../lib/useFavorites';
 import { colorizeLottie } from '../utils/lottieColorizer';
 import { useDistanceUnit } from '../utils/units';
 
@@ -60,17 +62,18 @@ export default function PlaceDetailModal({
   tripTitle,
   onAddToTrip,
   isAlreadyInTrip = false,
-  onRemoveFromTrip,
+  onRemoveFromTrip: _onRemoveFromTrip,
 }: PlaceDetailModalProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
-  const { isFavorite, toggleFavorite, loading: favLoading } = useFavorites();
   const distance = useDistanceUnit();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
   const [showMapModal, setShowMapModal] = React.useState(false);
   const [showMiniMap, setShowMiniMap] = React.useState(false);
   const [tempHideMainModal, setTempHideMainModal] = React.useState(false);
   const [showAddToTrip, setShowAddToTrip] = React.useState(false);
+  const [showPlaceTrips, setShowPlaceTrips] = React.useState(false);
+  const [isPlaceInAnyTrip, setIsPlaceInAnyTrip] = React.useState(false);
   const [aboutText, setAboutText] = React.useState<string | null>(null);
 
   // Estados para direcciones
@@ -140,6 +143,58 @@ export default function PlaceDetailModal({
   React.useEffect(() => {
     setSelectedPhotoIndex(0);
   }, [place?.id]);
+
+  // Check if place is in any user trip
+  React.useEffect(() => {
+    const checkIfPlaceInTrips = async () => {
+      if (!place?.id || !visible) {
+        setIsPlaceInAnyTrip(false);
+        return;
+      }
+
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user?.user?.id) {
+          setIsPlaceInAnyTrip(false);
+          return;
+        }
+
+        // Get all user trips (owned and collaborative)
+        const [ownedTripsResult, collabIdsResult] = await Promise.all([
+          supabase
+            .from('trips')
+            .select('id')
+            .or(`user_id.eq.${user.user.id},owner_id.eq.${user.user.id}`)
+            .neq('status', 'cancelled'),
+          supabase.from('trip_collaborators').select('trip_id').eq('user_id', user.user.id),
+        ]);
+
+        const ownedTripIds = (ownedTripsResult.data || []).map((t) => t.id);
+        const collabTripIds = (collabIdsResult.data || []).map((c) => c.trip_id);
+        const allTripIds = [...new Set([...ownedTripIds, ...collabTripIds])];
+
+        if (allTripIds.length === 0) {
+          setIsPlaceInAnyTrip(false);
+          return;
+        }
+
+        // Check if place exists in any of these trips
+        const { data: tripPlaces } = await supabase
+          .from('trip_places')
+          .select('id')
+          .eq('place_id', place.id)
+          .in('trip_id', allTripIds)
+          .limit(1);
+
+        setIsPlaceInAnyTrip((tripPlaces?.length || 0) > 0);
+      } catch (error) {
+        console.error('Error checking if place is in trips:', error);
+        setIsPlaceInAnyTrip(false);
+      }
+    };
+
+    checkIfPlaceInTrips();
+  }, [place?.id, visible]);
 
   // Translate About/description dynamically when place or language changes
   React.useEffect(() => {
@@ -430,17 +485,8 @@ export default function PlaceDetailModal({
   };
 
   const handleSavePlace = async () => {
-    // If this place is already in a trip and we have a remove function, use it
-    if (isAlreadyInTrip && onRemoveFromTrip) {
-      onRemoveFromTrip();
-      return;
-    }
-
-    // Otherwise, handle normal favorite toggle
-    const success = await toggleFavorite(place);
-    if (!success) {
-      Alert.alert('Error', 'No se pudo actualizar los favoritos');
-    }
+    // Open modal showing all trips where this place has been added
+    setShowPlaceTrips(true);
   };
 
   const handleAddToTrip = () => {
@@ -463,10 +509,20 @@ export default function PlaceDetailModal({
     setErrorState: (error: boolean) => void,
     disabled: boolean = false
   ) => {
-    const handleAnimationFailure = (error: unknown) => {
-      console.log('Lottie animation failed:', error);
-      setErrorState(true);
-    };
+    // Map fallback emojis to Ionicons
+    let iconName: keyof typeof Ionicons.glyphMap = 'help-circle';
+    let iconColor = theme.colors.primary;
+
+    if (fallbackEmoji === '🚴‍♂️') {
+      iconName = 'walk';
+      iconColor = '#8B5CF6';
+    } else if (fallbackEmoji === '📌') {
+      iconName = 'location';
+      iconColor = '#EF4444';
+    } else if (fallbackEmoji === '🌐') {
+      iconName = 'globe';
+      iconColor = '#3B82F6';
+    }
 
     return (
       <View
@@ -476,21 +532,7 @@ export default function PlaceDetailModal({
           disabled && styles.actionIconDisabled,
         ]}
       >
-        {!errorState ? (
-          <LottieView
-            ref={lottieRef}
-            source={animationSource}
-            style={[styles.lottieIcon, disabled && styles.lottieIconDisabled]}
-            loop={false}
-            autoPlay={false}
-            resizeMode="contain"
-            onAnimationFailure={handleAnimationFailure}
-          />
-        ) : (
-          <Text style={[styles.fallbackEmoji, disabled && styles.fallbackEmojiDisabled]}>
-            {fallbackEmoji}
-          </Text>
-        )}
+        <Ionicons name={iconName} size={40} color={disabled ? theme.colors.textMuted : iconColor} />
       </View>
     );
   };
@@ -577,7 +619,7 @@ export default function PlaceDetailModal({
               />
             ) : (
               <LinearGradient colors={['#F5F5F5', '#E5E5E5']} style={styles.headerImage}>
-                <Text style={styles.headerPlaceholder}>📍</Text>
+                <Ionicons name="location-outline" size={20} color={theme.colors.text} />
               </LinearGradient>
             )}
 
@@ -589,17 +631,13 @@ export default function PlaceDetailModal({
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSavePlace}
-                disabled={favLoading || (!isAlreadyInTrip && !isFavorite(place.id))}
-              >
-                <View style={styles.saveButtonBlur}>
-                  <Text style={styles.saveButtonText}>
-                    {isAlreadyInTrip ? '❤️' : isFavorite(place.id) ? '❤️' : '🤍'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              {(isAlreadyInTrip || isPlaceInAnyTrip) && (
+                <TouchableOpacity style={styles.saveButton} onPress={handleSavePlace}>
+                  <View style={styles.saveButtonBlur}>
+                    <Ionicons name="heart" size={22} color="#EF4444" />
+                  </View>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -618,7 +656,12 @@ export default function PlaceDetailModal({
 
               {place.address && (
                 <View style={styles.addressRow}>
-                  <Text style={styles.addressIcon}>📍</Text>
+                  <Ionicons
+                    name="location-outline"
+                    size={16}
+                    color={theme.colors.text}
+                    style={styles.addressIcon}
+                  />
                   <Text style={[styles.addressText, { color: theme.colors.textMuted }]}>
                     {place.address}
                   </Text>
@@ -889,7 +932,7 @@ export default function PlaceDetailModal({
                   {renderActionIcon(
                     locationLottieRef,
                     themedLocationAnimation,
-                    '📍', // Emoji de fallback para ubicación
+                    '📌', // Pin icon fallback para ubicación
                     locationLottieError,
                     setLocationLottieError,
                     !place.coordinates
@@ -948,7 +991,12 @@ export default function PlaceDetailModal({
                   colors={['#DE3D00', '#FF6B35']}
                   style={styles.floatingButtonGradient}
                 >
-                  <Text style={styles.floatingButtonIcon}>➕</Text>
+                  <Ionicons
+                    name="add-circle"
+                    size={24}
+                    color="#FFFFFF"
+                    style={{ marginRight: 8 }}
+                  />
                   <Text style={styles.floatingButtonText}>
                     {tripId
                       ? t('explore.modal.add_to', { trip: tripTitle || t('explore.modal.trip') })
@@ -1047,6 +1095,14 @@ export default function PlaceDetailModal({
           destinationName={place.name}
         />
       )}
+
+      {/* Place Trips Modal - Shows all trips where this place has been added */}
+      <PlaceTripsModal
+        visible={showPlaceTrips}
+        onClose={() => setShowPlaceTrips(false)}
+        placeId={place.id}
+        placeName={place.name}
+      />
     </>
   );
 }
@@ -1114,9 +1170,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
-  },
-  saveButtonText: {
-    fontSize: 20,
   },
   content: {
     borderTopLeftRadius: 24,
@@ -1297,20 +1350,6 @@ const styles = StyleSheet.create({
   actionTextDisabled: {
     opacity: 0.5,
   },
-  lottieIcon: {
-    width: 40, // Aumentado para mayor presencia visual
-    height: 40,
-  },
-  lottieIconDisabled: {
-    opacity: 0.5,
-  },
-  fallbackEmoji: {
-    fontSize: 24,
-    textAlign: 'center',
-  },
-  fallbackEmojiDisabled: {
-    opacity: 0.5,
-  },
   bottomSpacing: {
     height: 100,
   },
@@ -1338,10 +1377,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 16,
-  },
-  floatingButtonIcon: {
-    fontSize: 20,
-    marginRight: 12,
   },
   floatingButtonText: {
     color: '#FFFFFF',

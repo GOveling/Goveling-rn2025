@@ -59,20 +59,40 @@ export default function AccommodationExplorer() {
 
   // Accommodation types with translations
   const accommodationTypes = [
-    { type: 'hotel', label: t('trips.accommodation.types.hotel'), icon: '🏨', color: '#FF6B6B' },
+    {
+      type: 'hotel',
+      label: t('trips.accommodation.types.hotel'),
+      icon: 'business-outline',
+      color: '#FF6B6B',
+    },
     {
       type: 'airbnb',
       label: t('trips.accommodation.types.airbnb'),
-      icon: '🏠',
+      icon: 'home-outline',
       color: '#4ECDC4',
     },
-    { type: 'resort', label: t('trips.accommodation.types.resort'), icon: '🏖️', color: '#45B7D1' },
-    { type: 'hostel', label: t('trips.accommodation.types.hostel'), icon: '🏠', color: '#96CEB4' },
-    { type: 'cabin', label: t('trips.accommodation.types.cabin'), icon: '🏘️', color: '#FFEAA7' },
+    {
+      type: 'resort',
+      label: t('trips.accommodation.types.resort'),
+      icon: 'sunny-outline',
+      color: '#45B7D1',
+    },
+    {
+      type: 'hostel',
+      label: t('trips.accommodation.types.hostel'),
+      icon: 'bed-outline',
+      color: '#96CEB4',
+    },
+    {
+      type: 'cabin',
+      label: t('trips.accommodation.types.cabin'),
+      icon: 'home-outline',
+      color: '#FFEAA7',
+    },
     {
       type: 'apartment',
       label: t('trips.accommodation.types.apartment'),
-      icon: '🏢',
+      icon: 'business-outline',
       color: '#DDA0DD',
     },
   ];

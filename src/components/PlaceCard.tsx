@@ -12,6 +12,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useTranslation } from 'react-i18next';
 
@@ -172,7 +173,12 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
 
         {place.address && (
           <View style={styles.addressRow}>
-            <Text style={[styles.addressIcon, { color: theme.colors.textMuted }]}>📍</Text>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={theme.colors.textMuted}
+              style={[styles.addressIcon, { color: theme.colors.textMuted }]}
+            />
             <Text
               style={[
                 styles.addressText,

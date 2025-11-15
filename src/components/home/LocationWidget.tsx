@@ -2,6 +2,7 @@ import React from 'react';
 
 import { View, Text } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTranslation } from 'react-i18next';
@@ -50,16 +51,26 @@ const LocationWidget = React.memo<LocationWidgetProps>(
         >
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>📍 {city}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="location-outline" size={16} color="white" />
+                <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>{city}</Text>
+              </View>
               <Text style={{ fontSize: 16, color: 'white', marginLeft: 8 }}>• {currentDate}</Text>
             </View>
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-              <Text style={{ fontSize: 16, color: 'white', marginRight: 4 }}>🌡️</Text>
+              <Ionicons
+                name="thermometer-outline"
+                size={16}
+                color="white"
+                style={{
+                  marginRight: 4,
+                }}
+              />
               <Text style={{ fontSize: 16, color: 'white', fontWeight: '600' }}>
-                {typeof temp === 'number' ? temperature.format(temp) : '—'}
+                {typeof temp === 'number' && !isNaN(temp) ? temperature.format(temp) : '—'}
               </Text>
             </View>
 

@@ -478,7 +478,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
   };
 
   const getFirstCountryFlag = () => {
-    if (tripData.countryCodes.length === 0) return '🌍';
+    if (tripData.countryCodes.length === 0)
+      return <Ionicons name="earth-outline" size={16} color={theme.colors.text} />;
     return getCountryFlag(tripData.countryCodes[0]);
   };
 
@@ -855,7 +856,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
                 marginTop: 4,
               }}
             >
-              <Text style={{ fontSize: 16, color: '#8B5CF6', marginRight: 8 }}>👥</Text>
+              <Ionicons
+                name="people-outline"
+                size={16}
+                color="#8B5CF6"
+                style={{ marginRight: 8 }}
+              />
               <TouchableOpacity
                 onPress={() => {
                   if (tripData.collaboratorsCount > 1) {
@@ -936,7 +942,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               marginBottom: 16,
             }}
           >
-            <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={theme.colors.text}
+              style={{ marginRight: 8 }}
+            />
             <View
               style={{
                 flexDirection: 'row',
@@ -979,7 +990,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
             marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 16, marginRight: 8 }}>📅</Text>
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={theme.colors.text}
+            style={{ marginRight: 8 }}
+          />
           <Text
             style={{
               fontSize: 16,
@@ -1002,7 +1018,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>👥</Text>
+            <Ionicons
+              name="people-outline"
+              size={16}
+              color={theme.colors.text}
+              style={{ marginRight: 8 }}
+            />
             <Text style={{ fontSize: 16, color: theme.colors.text, fontWeight: '500' }}>
               {tripData.collaboratorsCount}{' '}
               {tripData.collaboratorsCount === 1
@@ -1032,7 +1053,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onTripUpdated }) => {
               alignItems: 'center',
             }}
           >
-            <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={theme.colors.text}
+              style={{ marginRight: 8 }}
+            />
             <Text
               style={{
                 fontSize: 16,

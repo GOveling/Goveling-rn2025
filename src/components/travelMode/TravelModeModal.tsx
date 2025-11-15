@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert } from 'react-native';
 
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import SavedPlacesMapModal from '~/components/SavedPlacesMapModal';
 import { isFeatureEnabled } from '~/config/featureFlags';
@@ -317,9 +318,12 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
           ]}
         >
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            🚀 {t('home.travel_mode')}
-          </Text>
+          <View style={styles.headerTitle}>
+            <Ionicons name="rocket" size={24} color="#8B5CF6" style={{ marginRight: 8 }} />
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {t('home.travel_mode')}
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={onClose}
             style={[styles.closeButton, { backgroundColor: theme.colors.border }]}
@@ -385,15 +389,18 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 { backgroundColor: '#3B82F6' },
               ]}
             >
-              <Text
-                style={[
-                  styles.mapButtonText,
-                  !state.isActive && styles.mapButtonTextDisabled,
-                  { color: '#FFF' },
-                ]}
-              >
-                🗺️ {t('home.view_map')}
-              </Text>
+              <View style={styles.buttonContent}>
+                <Ionicons name="map" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                <Text
+                  style={[
+                    styles.mapButtonText,
+                    !state.isActive && styles.mapButtonTextDisabled,
+                    { color: '#FFF' },
+                  ]}
+                >
+                  {t('home.view_map')}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -414,12 +421,18 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
 
             {state.currentLocation && (
               <View style={[styles.locationInfo, { borderTopColor: theme.colors.border }]}>
-                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
-                  📍 Lat: {state.currentLocation.coordinates.latitude.toFixed(6)}
-                </Text>
-                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
-                  📍 Lng: {state.currentLocation.coordinates.longitude.toFixed(6)}
-                </Text>
+                <View style={[styles.locationTextContainer]}>
+                  <Ionicons name="location-outline" size={12} color={theme.colors.textMuted} />
+                  <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
+                    Lat: {state.currentLocation.coordinates.latitude.toFixed(6)}
+                  </Text>
+                </View>
+                <View style={[styles.locationTextContainer]}>
+                  <Ionicons name="location-outline" size={12} color={theme.colors.textMuted} />
+                  <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
+                    Lng: {state.currentLocation.coordinates.longitude.toFixed(6)}
+                  </Text>
+                </View>
                 <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
                   🎯 Precisión: ±{Math.round(state.currentLocation.accuracy)}m
                 </Text>
@@ -427,9 +440,17 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             )}
 
             {state.energyMode && (
-              <Text style={[styles.energyMode, { color: theme.colors.textMuted }]}>
-                🔋 Modo: {state.energyMode}
-              </Text>
+              <View style={styles.energyModeContainer}>
+                <Ionicons
+                  name="battery-half"
+                  size={16}
+                  color={theme.colors.textMuted}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.energyMode, { color: theme.colors.textMuted }]}>
+                  Modo: {state.energyMode}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -612,18 +633,26 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 style={[styles.button, { backgroundColor: '#3B82F6' }]}
                 disabled={isLoading}
               >
-                <Text style={[styles.buttonText, { color: '#FFF' }]}>
-                  {isLoading ? t('home.starting') : `🚀 ${t('home.start_travel_mode')}`}
-                </Text>
+                <View style={styles.buttonContent}>
+                  {!isLoading && (
+                    <Ionicons name="rocket" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                    {isLoading ? t('home.starting') : t('home.start_travel_mode')}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 onPress={handleStopTravelMode}
                 style={[styles.button, { backgroundColor: '#EF4444' }]}
               >
-                <Text style={[styles.buttonText, { color: '#FFF' }]}>
-                  🛑 {t('home.stop_travel_mode')}
-                </Text>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="stop-circle" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                    {t('home.stop_travel_mode')}
+                  </Text>
+                </View>
               </TouchableOpacity>
             )}
           </View>
@@ -637,13 +666,13 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
           >
             <Text style={[styles.infoTitle, { color: '#3B82F6' }]}>{t('home.how_it_works')}</Text>
             <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-              • {t('home.how_it_works_1')}
+              {t('home.how_it_works_1')}
             </Text>
             <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-              • {t('home.how_it_works_2')}
+              {t('home.how_it_works_2')}
             </Text>
             <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-              • {t('home.how_it_works_3')}
+              {t('home.how_it_works_3')}
             </Text>
           </View>
         </ScrollView>
@@ -719,6 +748,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -733,6 +766,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 20,
     fontWeight: 'bold',
+    lineHeight: 20,
   },
   content: {
     flex: 1,
@@ -788,11 +822,26 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   locationText: {
-    fontSize: 13,
-    marginBottom: 4,
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  locationTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    gap: 4,
+  },
+  speedDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   energyMode: {
     fontSize: 14,
+  },
+  energyModeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 8,
   },
   placeItem: {
@@ -819,6 +868,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 16,
     alignItems: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     fontSize: 16,

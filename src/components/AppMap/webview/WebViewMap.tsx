@@ -247,7 +247,7 @@ export default function WebViewMap(props: AppMapProps) {
           }}
         >
           <Text style={{ fontSize: 14, fontWeight: '600' }}>
-            {isLocating ? '🔄 Localizando...' : '📍 Mi Ubicación'}
+            {isLocating ? '🔄 Localizando...' : 'Mi Ubicación'}
           </Text>
         </TouchableOpacity>
       )}
