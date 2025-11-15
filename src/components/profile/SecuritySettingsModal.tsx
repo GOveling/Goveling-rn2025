@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  // Switch, // Temporarily disabled - will be used in production build
+  Switch,
   Alert,
 } from 'react-native';
 
@@ -16,11 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '~/lib/theme';
 import {
   checkBiometricCapabilities,
-  // isBiometricAuthEnabled, // Temporarily disabled
-  // setBiometricAuthEnabled, // Temporarily disabled
-  // authenticateWithBiometrics, // Temporarily disabled
-  // getBiometricTypeName, // Temporarily disabled
-  // getBiometricIconName, // Temporarily disabled
+  isBiometricAuthEnabled,
+  setBiometricAuthEnabled,
+  authenticateWithBiometrics,
+  getBiometricTypeName,
+  getBiometricIconName,
   type BiometricCapabilities,
 } from '~/services/biometricAuth';
 
@@ -36,10 +36,11 @@ export default function SecuritySettingsModal({
   onChangePIN,
 }: SecuritySettingsModalProps) {
   const theme = useTheme();
-  const [_biometricCapabilities, _setBiometricCapabilities] =
-    useState<BiometricCapabilities | null>(null);
-  // const [biometricEnabled, setBiometricEnabledState] = useState(false); // Temporarily disabled
-  const [_loading, _setLoading] = useState(false);
+  const [biometricCapabilities, setBiometricCapabilities] = useState<BiometricCapabilities | null>(
+    null
+  );
+  const [biometricEnabled, setBiometricEnabledState] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -49,22 +50,26 @@ export default function SecuritySettingsModal({
 
   const loadBiometricSettings = async () => {
     try {
+      console.log('🔧 SecuritySettingsModal: Loading biometric settings...');
       const capabilities = await checkBiometricCapabilities();
-      _setBiometricCapabilities(capabilities);
+      console.log('🔧 SecuritySettingsModal: Capabilities:', capabilities);
+      setBiometricCapabilities(capabilities);
 
-      // Temporarily disabled - will be re-enabled in production build
-      // if (capabilities.isAvailable) {
-      //   const enabled = await isBiometricAuthEnabled();
-      //   setBiometricEnabledState(enabled);
-      // }
+      if (capabilities.isAvailable) {
+        const enabled = await isBiometricAuthEnabled();
+        console.log('🔧 SecuritySettingsModal: Current enabled state:', enabled);
+        setBiometricEnabledState(enabled);
+      }
     } catch (error) {
-      console.error('Error loading biometric settings:', error);
+      console.error('❌ SecuritySettingsModal: Error loading biometric settings:', error);
     }
   };
 
-  /* Temporarily disabled - Face ID requires production build
   const handleToggleBiometric = async (value: boolean) => {
+    console.log('🔧 SecuritySettingsModal: Toggle biometric called with value:', value);
+
     if (!biometricCapabilities?.isAvailable) {
+      console.log('❌ SecuritySettingsModal: Biometric not available');
       Alert.alert(
         'No disponible',
         'La autenticación biométrica no está disponible en este dispositivo.'
@@ -73,26 +78,35 @@ export default function SecuritySettingsModal({
     }
 
     // Don't allow toggling while loading
-    if (loading) return;
+    if (loading) {
+      console.log('⏳ SecuritySettingsModal: Already loading, skipping...');
+      return;
+    }
 
     setLoading(true);
 
     try {
       if (value) {
+        console.log('🔓 SecuritySettingsModal: Attempting to ENABLE biometric...');
         // Enabling - require authentication first (skip enabled check since we're setting it up)
         const result = await authenticateWithBiometrics(
           `Habilitar ${getBiometricTypeName(biometricCapabilities.biometricType)}`,
           true // Skip the "isEnabled" check during setup
         );
 
+        console.log('🔧 SecuritySettingsModal: Biometric auth result:', result);
+
         if (result.success) {
+          console.log('✅ SecuritySettingsModal: Auth successful, saving to storage...');
           await setBiometricAuthEnabled(true);
           setBiometricEnabledState(true);
+          console.log('✅ SecuritySettingsModal: Biometric ENABLED successfully');
           Alert.alert(
             '✅ Habilitado',
             `${getBiometricTypeName(biometricCapabilities.biometricType)} ha sido habilitado correctamente.`
           );
         } else {
+          console.log('❌ SecuritySettingsModal: Auth failed:', result.error);
           // Authentication failed or cancelled - keep switch OFF
           setBiometricEnabledState(false);
           Alert.alert('Error', result.error || 'No se pudo habilitar la autenticación biométrica');
@@ -126,16 +140,12 @@ export default function SecuritySettingsModal({
       setLoading(false);
     }
   };
-  */
 
   const renderBiometricSection = () => {
-    // 🚧 TEMPORARILY DISABLED: Face ID requires Development Build or Production Build
-    // Face ID is not supported in Expo Go. This section will be re-enabled when building
-    // the production app with EAS Build.
-    // See: BUG5_FACEID_EXPO_GO_LIMITATION.md for more details
-    return null;
+    // ✅ ENABLED: Face ID now works in iOS Simulator and Development/Production builds
+    // Note: Face ID requires Xcode simulator or a production build - NOT supported in Expo Go
+    // See: BUG5_FACEID_EXPO_GO_LIMITATION.md for details
 
-    /* BIOMETRIC SECTION - READY FOR PRODUCTION BUILD
     if (!biometricCapabilities) {
       return null;
     }
@@ -155,7 +165,8 @@ export default function SecuritySettingsModal({
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <Ionicons
-                name={getBiometricIconName(biometricType) as any}
+                // @ts-expect-error - Dynamic icon name from biometric service
+                name={getBiometricIconName(biometricType)}
                 size={24}
                 color={isAvailable ? theme.colors.primary : theme.colors.textMuted}
               />
@@ -205,7 +216,6 @@ export default function SecuritySettingsModal({
         )}
       </View>
     );
-    */
   };
   return (
     <Modal
@@ -351,28 +361,27 @@ const styles = StyleSheet.create({
   settingSubtitle: {
     fontSize: 13,
   },
-  // Temporarily disabled - will be used in production build with Face ID
-  // infoBox: {
-  //   flexDirection: 'row',
-  //   gap: 8,
-  //   backgroundColor: '#E3F2FD',
-  //   padding: 12,
-  //   borderRadius: 8,
-  //   marginTop: 12,
-  // },
-  // warningBox: {
-  //   flexDirection: 'row',
-  //   gap: 8,
-  //   backgroundColor: '#FFF3E0',
-  //   padding: 12,
-  //   borderRadius: 8,
-  //   marginTop: 12,
-  // },
-  // infoText: {
-  //   fontSize: 13,
-  //   flex: 1,
-  //   lineHeight: 18,
-  // },
+  infoBox: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: '#E3F2FD',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  warningBox: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: '#FFF3E0',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  infoText: {
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18,
+  },
   infoSection: {
     alignItems: 'center',
     padding: 32,

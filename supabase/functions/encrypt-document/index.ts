@@ -99,29 +99,41 @@ serve(async (req) => {
   try {
     // Validar autenticación
     const authHeader = req.headers.get('Authorization');
+    console.log('🔍 Auth header present:', !!authHeader);
+
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    // Crear cliente de Supabase
+    // Crear cliente de Supabase con el service role key para operaciones admin
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Obtener usuario autenticado
+    // Obtener usuario autenticado usando el JWT del header
+    // Esto valida el token y devuelve el usuario
+    const jwt = authHeader.replace('Bearer ', '');
+    console.log('🔑 JWT length:', jwt.length);
+
     const {
       data: { user },
       error: userError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser(jwt);
 
-    if (userError || !user) {
-      throw new Error('User not authenticated');
+    console.log('👤 User validation:', {
+      hasUser: !!user,
+      hasError: !!userError,
+      errorMessage: userError?.message,
+    });
+
+    if (userError) {
+      console.error('Auth error:', userError);
+      throw new Error(`User not authenticated: ${userError.message}`);
+    }
+
+    if (!user) {
+      throw new Error('User not authenticated: No user found');
     }
 
     // Parsear request body
@@ -186,10 +198,11 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Encryption error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Internal server error',
+        error: errorMessage,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

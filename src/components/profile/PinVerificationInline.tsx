@@ -7,8 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '~/lib/theme';
 import { verifyPin } from '~/services/documentEncryption';
 
+import ForgotPinModal from './ForgotPinModal';
+import RecoveryCodeModal from './RecoveryCodeModal';
+import SetNewPinModal from './SetNewPinModal';
+
 interface PinVerificationInlineProps {
-  onSuccess: () => void;
+  onSuccess: (pin: string) => void;
   onCancel: () => void;
   title?: string;
   message?: string;
@@ -23,6 +27,14 @@ export default function PinVerificationInline({
   const theme = useTheme();
   const [pin, setPin] = useState('');
   const [attempts, setAttempts] = useState(0);
+
+  // Recovery flow states
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [showRecoveryCode, setShowRecoveryCode] = useState(false);
+  const [showSetNewPin, setShowSetNewPin] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+
+  console.log('🔐 PinVerificationInline rendered - PIN only mode');
 
   const handleKeyPress = (digit: string) => {
     if (pin.length < 6) {
@@ -45,9 +57,10 @@ export default function PinVerificationInline({
     const isValid = await verifyPin(pin);
 
     if (isValid) {
+      const verifiedPin = pin;
       setPin('');
       setAttempts(0);
-      onSuccess();
+      onSuccess(verifiedPin);
     } else {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
@@ -61,6 +74,37 @@ export default function PinVerificationInline({
         setPin('');
       }
     }
+  };
+
+  const handleForgotPin = () => {
+    setShowForgotPin(true);
+  };
+
+  const handleRecoveryCodeSent = (email: string) => {
+    setRecoveryEmail(email);
+    setShowRecoveryCode(true);
+  };
+
+  const handleRecoveryCodeVerified = () => {
+    setShowSetNewPin(true);
+  };
+
+  const handleNewPinSet = (newPin: string) => {
+    // PIN reset complete, close all modals and trigger success
+    Alert.alert(
+      '✅ PIN Restablecido',
+      'Tu PIN ha sido restablecido exitosamente. Ahora puedes acceder a tus documentos.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setPin('');
+            setAttempts(0);
+            onSuccess(newPin);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -173,11 +217,38 @@ export default function PinVerificationInline({
           </View>
         </View>
 
-        {/* Help Text */}
-        <Text style={[styles.helpText, { color: theme.colors.textMuted }]}>
-          Si olvidaste tu PIN, contacta al soporte para recuperar el acceso.
-        </Text>
+        {/* Forgot PIN Button */}
+        <TouchableOpacity
+          style={styles.forgotPinButton}
+          onPress={handleForgotPin}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="help-circle-outline" size={18} color={theme.colors.primary} />
+          <Text style={[styles.forgotPinText, { color: theme.colors.primary }]}>
+            ¿Olvidaste tu PIN?
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Recovery Modals */}
+      <ForgotPinModal
+        visible={showForgotPin}
+        onClose={() => setShowForgotPin(false)}
+        onCodeSent={handleRecoveryCodeSent}
+      />
+
+      <RecoveryCodeModal
+        visible={showRecoveryCode}
+        onClose={() => setShowRecoveryCode(false)}
+        onSuccess={handleRecoveryCodeVerified}
+        email={recoveryEmail}
+      />
+
+      <SetNewPinModal
+        visible={showSetNewPin}
+        onClose={() => setShowSetNewPin(false)}
+        onSuccess={handleNewPinSet}
+      />
     </View>
   );
 }
@@ -257,9 +328,17 @@ const styles = StyleSheet.create({
   enterButton: {
     borderWidth: 2,
   },
-  helpText: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
+  forgotPinButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  forgotPinText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

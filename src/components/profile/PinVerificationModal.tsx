@@ -24,6 +24,10 @@ import {
 } from '~/services/biometricAuth';
 import { verifyPin } from '~/services/documentEncryption';
 
+import ForgotPinModal from './ForgotPinModal';
+import RecoveryCodeModal from './RecoveryCodeModal';
+import SetNewPinModal from './SetNewPinModal';
+
 interface PinVerificationModalProps {
   visible: boolean;
   onClose: () => void;
@@ -49,32 +53,60 @@ export default function PinVerificationModal({
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAttempted, setBiometricAttempted] = useState(false);
 
-  // Check biometric availability and auto-trigger when modal opens
-  useEffect(() => {
-    if (visible && !biometricAttempted) {
-      checkAndTriggerBiometric();
-    }
-  }, [visible]);
+  console.log('🔐 PinVerificationModal rendered:', { visible, biometricAttempted });
+
+  // Recovery flow states
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [showRecoveryCode, setShowRecoveryCode] = useState(false);
+  const [showSetNewPin, setShowSetNewPin] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
 
   const checkAndTriggerBiometric = async () => {
     try {
       const capabilities = await checkBiometricCapabilities();
       setBiometricCapabilities(capabilities);
 
+      console.log('🔍 Biometric Capabilities:', {
+        isAvailable: capabilities.isAvailable,
+        hasHardware: capabilities.hasHardware,
+        isEnrolled: capabilities.isEnrolled,
+        biometricType: capabilities.biometricType,
+      });
+
       if (capabilities.isAvailable) {
         const enabled = await isBiometricAuthEnabled();
         setBiometricEnabled(enabled);
 
+        console.log('🔍 Biometric Enabled in App:', enabled);
+
         if (enabled) {
           // Auto-trigger biometric auth
+          console.log('✨ Auto-triggering biometric authentication...');
           setBiometricAttempted(true);
           setTimeout(() => handleBiometricAuth(), 300); // Small delay for better UX
+        } else {
+          console.log('⚠️ Biometric is available but NOT enabled in app settings');
         }
+      } else {
+        console.log('⚠️ Biometric NOT available:', {
+          hasHardware: capabilities.hasHardware,
+          isEnrolled: capabilities.isEnrolled,
+        });
       }
     } catch (error) {
       console.error('Error checking biometric capabilities:', error);
     }
   };
+
+  // Check biometric availability and auto-trigger when modal opens
+  useEffect(() => {
+    console.log('🔐 PinVerificationModal useEffect:', { visible, biometricAttempted });
+    if (visible && !biometricAttempted) {
+      console.log('🔐 Calling checkAndTriggerBiometric...');
+      checkAndTriggerBiometric();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   const handleBiometricAuth = async () => {
     if (!biometricCapabilities || !biometricEnabled) return;
@@ -129,7 +161,38 @@ export default function PinVerificationModal({
   const handleClose = () => {
     setPin('');
     setAttempts(0);
+    setBiometricAttempted(false);
     onClose();
+  };
+
+  const handleForgotPin = () => {
+    setShowForgotPin(true);
+  };
+
+  const handleRecoveryCodeSent = (email: string) => {
+    setRecoveryEmail(email);
+    setShowRecoveryCode(true);
+  };
+
+  const handleRecoveryCodeVerified = () => {
+    setShowSetNewPin(true);
+  };
+
+  const handleNewPinSet = () => {
+    // PIN reset complete, close all modals and trigger success
+    Alert.alert(
+      '✅ PIN Restablecido',
+      'Tu PIN ha sido restablecido exitosamente. Ahora puedes acceder a tus documentos.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            handleClose();
+            onSuccess();
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -255,12 +318,40 @@ export default function PinVerificationModal({
             )}
           </TouchableOpacity>
 
-          {/* Help text */}
-          <Text style={[styles.helpText, { color: theme.colors.textMuted }]}>
-            Si olvidaste tu PIN, contacta al soporte para recuperar el acceso.
-          </Text>
+          {/* Forgot PIN Button */}
+          <TouchableOpacity
+            style={styles.forgotPinButton}
+            onPress={handleForgotPin}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="help-circle-outline" size={18} color={theme.colors.primary} />
+            <Text style={[styles.forgotPinText, { color: theme.colors.primary }]}>
+              ¿Olvidaste tu PIN?
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Recovery Modals */}
+      <ForgotPinModal
+        visible={showForgotPin}
+        onClose={() => setShowForgotPin(false)}
+        onCodeSent={handleRecoveryCodeSent}
+      />
+
+      <RecoveryCodeModal
+        visible={showRecoveryCode}
+        onClose={() => setShowRecoveryCode(false)}
+        onSuccess={handleRecoveryCodeVerified}
+        email={recoveryEmail}
+      />
+
+      <SetNewPinModal
+        visible={showSetNewPin}
+        onClose={() => setShowSetNewPin(false)}
+        onSuccess={handleNewPinSet}
+      />
     </Modal>
   );
 }
@@ -364,11 +455,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  helpText: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
   biometricButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,5 +486,17 @@ const styles = StyleSheet.create({
   dividerText: {
     fontSize: 14,
     fontWeight: '500' as const,
+  },
+  forgotPinButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
+    marginTop: 8,
+  },
+  forgotPinText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

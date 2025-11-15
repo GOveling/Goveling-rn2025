@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+
+import Constants from 'expo-constants';
 
 import { Ionicons } from '@expo/vector-icons';
 import { decode } from 'base64-arraybuffer';
@@ -12,13 +14,24 @@ import AddDocumentModal, { type DocumentFormData } from '~/components/profile/Ad
 import ChangePINModal from '~/components/profile/ChangePINModal';
 import DocumentViewerModal from '~/components/profile/DocumentViewerModal';
 import PinSetupInline from '~/components/profile/PinSetupInline';
-import PinSetupModal from '~/components/profile/PinSetupModal';
 import PinVerificationInline from '~/components/profile/PinVerificationInline';
-import PinVerificationModal from '~/components/profile/PinVerificationModal';
 import SecuritySettingsModal from '~/components/profile/SecuritySettingsModal';
+import { useDocumentSync } from '~/hooks/useDocumentSync';
 import { supabase } from '~/lib/supabase';
 import { useTheme } from '~/lib/theme';
-import { hasPinConfigured, encryptDocument } from '~/services/documentEncryption';
+import {
+  authenticateWithBiometrics,
+  isBiometricAuthEnabled,
+  checkBiometricCapabilities,
+} from '~/services/biometricAuth';
+import { hasPinConfigured, encryptDocument, decryptDocument } from '~/services/documentEncryption';
+import {
+  listCachedDocuments,
+  getCachedDocument,
+  syncCacheWithOnlineDocuments,
+  removeCachedDocument,
+  checkConnectivity,
+} from '~/services/documentSync';
 
 interface TravelDocumentsModalProps {
   visible: boolean;
@@ -31,6 +44,8 @@ interface Document {
   expiry_date: string;
   has_image: boolean;
   encrypted_data_primary: string;
+  primary_iv?: string;
+  primary_auth_tag?: string;
   created_at: string;
   status?: 'valid' | 'warning' | 'critical' | 'expired';
 }
@@ -42,6 +57,15 @@ interface DecryptedData {
   notes: string;
   imageUrl?: string; // Signed URL (generated at load time)
   filePath?: string; // Original storage path
+}
+
+interface EncryptedDataResponse {
+  encryptedWithPrimary: string;
+  encryptedWithRecovery: string;
+  primaryIv: string;
+  recoveryIv: string;
+  primaryAuthTag: string;
+  recoveryAuthTag: string;
 }
 
 export default function TravelDocumentsModal({ visible, onClose }: TravelDocumentsModalProps) {
@@ -64,6 +88,46 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
   const [showSecuritySettings, setShowSecuritySettings] = useState(false);
   const [showChangePIN, setShowChangePIN] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [isTryingBiometric, setIsTryingBiometric] = useState(false); // Track if we're attempting Face ID
+
+  // Offline Sync Hook
+  const {
+    cachedDocuments,
+    cacheSizeMB,
+    downloadForOffline,
+    removeFromCache,
+    isDocumentAvailableOffline,
+    refreshCacheStatus,
+    refreshConnectivity,
+    isConnected,
+    isSyncing,
+    queueStatus,
+    lastSyncAt,
+  } = useDocumentSync();
+
+  // Estado de descarga por documento
+  const [downloadingDocs, setDownloadingDocs] = useState<Set<string>>(new Set());
+
+  // Track previous connection state to detect reconnection
+  const prevIsConnectedRef = useRef<boolean | null>(null);
+
+  // Helper: formatear tiempo relativo para last sync
+  const getRelativeTime = (date: Date | null): string => {
+    if (!date) return '';
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
 
   // Get userId when modal opens
   useEffect(() => {
@@ -95,7 +159,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   }, [visible]);
 
-  // Handle authentication flow
+  // Handle authentication flow with Face ID priority
   useEffect(() => {
     if (!visible) return;
 
@@ -106,17 +170,149 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       console.log('🔐 No PIN configured - showing setup');
       setShowPinSetup(true);
       setShowPinVerification(false);
+      setIsTryingBiometric(false);
     } else if (hasPin && !isAuthenticated) {
-      // PIN configured but not authenticated - show verification
-      console.log('🔐 Has PIN but not authenticated - showing verification');
-      setShowPinVerification(true);
-      setShowPinSetup(false);
+      // PIN configured but not authenticated - try Face ID first
+      console.log('🔐 Has PIN but not authenticated - attempting Face ID first...');
+      tryBiometricAuthFirst();
     } else if (hasPin && isAuthenticated) {
       // Authenticated - load documents
       console.log('🔐 Authenticated - loading documents');
       loadDocuments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, hasPin, isAuthenticated]);
+
+  // Try Face ID authentication first, fallback to PIN if needed
+  const tryBiometricAuthFirst = async () => {
+    try {
+      setIsTryingBiometric(true);
+
+      // Check if biometric is available and enabled
+      const capabilities = await checkBiometricCapabilities();
+      const enabled = await isBiometricAuthEnabled();
+
+      console.log('🔍 Biometric Check:', {
+        isAvailable: capabilities.isAvailable,
+        enabled,
+        biometricType: capabilities.biometricType,
+      });
+
+      if (capabilities.isAvailable && enabled) {
+        // Attempt Face ID authentication
+        console.log('✨ Attempting Face ID authentication...');
+        const result = await authenticateWithBiometrics(
+          'Autentícate para acceder a tus documentos de viaje'
+        );
+
+        if (result.success) {
+          console.log('✅ Face ID successful - granting access to document list');
+          setIsAuthenticated(true);
+          setVerifiedPin(''); // No PIN yet - will be requested when opening documents
+          setShowPinVerification(false);
+          setIsTryingBiometric(false);
+          return;
+        } else {
+          console.log('❌ Face ID failed or cancelled - showing PIN entry');
+        }
+      } else {
+        console.log('⚠️ Face ID not available or not enabled - showing PIN entry');
+      }
+
+      // Fallback to PIN entry
+      setShowPinVerification(true);
+      setShowPinSetup(false);
+      setIsTryingBiometric(false);
+    } catch (error) {
+      console.error('❌ Error during biometric authentication:', error);
+      // Fallback to PIN entry
+      setShowPinVerification(true);
+      setShowPinSetup(false);
+      setIsTryingBiometric(false);
+    }
+  };
+
+  // Handle modal close - clear authentication session
+  const handleModalClose = () => {
+    console.log('🚪 Closing Travel Documents - clearing session');
+    setIsAuthenticated(false);
+    setVerifiedPin(null);
+    setSelectedDocument(null);
+    setShowPinVerification(false);
+    setIsTryingBiometric(false);
+    onClose();
+  };
+
+  // Listen to connectivity changes and reload documents when back online
+  useEffect(() => {
+    console.log('[NETWORK] Connection state changed:', {
+      isConnected,
+      visible,
+      isAuthenticated,
+      prevState: prevIsConnectedRef.current,
+    });
+
+    // Skip initial mount (when prevState is null)
+    if (prevIsConnectedRef.current === null) {
+      console.log('[NETWORK] Initial mount - setting initial state');
+      prevIsConnectedRef.current = isConnected;
+      return;
+    }
+
+    const wasOffline = prevIsConnectedRef.current === false;
+    const isNowOnline = isConnected === true;
+
+    console.log('[NETWORK] Checking transition:', { wasOffline, isNowOnline });
+
+    // Detect transition from offline to online
+    if (wasOffline && isNowOnline) {
+      console.log('[RECONNECT] Back online!');
+
+      // Only reload if modal is visible and authenticated
+      if (visible && isAuthenticated) {
+        console.log('[RECONNECT] Syncing cache and reloading documents...');
+
+        // Execute sync asynchronously
+        (async () => {
+          try {
+            // First, load documents from DB to get current list
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: onlineDocs } = await supabase
+              .from('travel_documents')
+              .select('id')
+              .eq('user_id', user.id);
+
+            if (onlineDocs) {
+              const onlineIds = onlineDocs.map((d) => d.id);
+              console.log('[RECONNECT] Syncing cache with online documents...');
+              const syncResult = await syncCacheWithOnlineDocuments(onlineIds);
+
+              if (syncResult.removed.length > 0) {
+                console.log(
+                  `[RECONNECT] Cleaned ${syncResult.removed.length} orphaned documents from cache`
+                );
+              }
+            }
+          } catch (error) {
+            console.error('[RECONNECT] Error syncing cache:', error);
+          }
+
+          // Finally, reload documents from DB
+          loadDocuments(undefined, true);
+        })();
+      } else {
+        console.log('[RECONNECT] Modal not ready, will reload when opened');
+      }
+    }
+
+    // Update ref for next comparison
+    prevIsConnectedRef.current = isConnected;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
 
   const checkPinStatus = async () => {
     console.log('🔐 Checking PIN status...');
@@ -125,22 +321,150 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     setHasPin(pinConfigured);
   };
 
-  const loadDocuments = async () => {
+  // Helper to detect if document uses real encryption
+  const isRealEncryption = (doc: Document): boolean => {
+    // Check that all required encryption fields exist AND have valid values (not empty strings)
+    const hasValidPrimaryIv = doc.primary_iv && doc.primary_iv.trim().length > 0;
+    const hasValidPrimaryAuthTag = doc.primary_auth_tag && doc.primary_auth_tag.trim().length > 0;
+    const hasValidEncryptedData =
+      doc.encrypted_data_primary && doc.encrypted_data_primary.trim().length > 0;
+
+    const isValid = !!(hasValidPrimaryIv && hasValidPrimaryAuthTag && hasValidEncryptedData);
+
+    console.log('🔍 isRealEncryption check:', {
+      documentId: doc.id?.substring(0, 8),
+      hasValidPrimaryIv,
+      hasValidPrimaryAuthTag,
+      hasValidEncryptedData,
+      isValid,
+    });
+
+    return isValid;
+  };
+
+  const loadDocuments = async (pin?: string, forceOnline: boolean = false) => {
+    console.log('🚀🚀🚀 [LOAD-DOCUMENTS] NUEVA VERSION - Starting loadDocuments...');
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
 
-      const { data, error } = await supabase
-        .from('travel_documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // ALWAYS refresh connectivity before loading to ensure we have current status
+      console.log('[LOAD] Checking current connectivity before loading...');
+      await refreshConnectivity();
 
-      if (error) {
-        console.error('Error loading documents:', error);
+      // Note: After refreshConnectivity, isConnected might not be updated yet in this scope
+      // So we need to check it from the service directly
+      const currentConnectivity = await checkConnectivity();
+      const isCurrentlyConnected =
+        currentConnectivity.isConnected && currentConnectivity.isInternetReachable;
+
+      console.log('[LOAD] Current connectivity status:', {
+        isCurrentlyConnected,
+        forceOnline,
+        willUseCache: !isCurrentlyConnected && !forceOnline,
+      });
+
+      // Check connectivity - if offline, load from cache (unless forceOnline is true)
+      if (!isCurrentlyConnected && !forceOnline) {
+        console.log('[OFFLINE] Loading documents from local cache...');
+
+        try {
+          const cachedIds = await listCachedDocuments();
+          console.log(`[OFFLINE] Found ${cachedIds.length} cached documents`);
+
+          if (cachedIds.length === 0) {
+            console.log('[OFFLINE] No cached documents available');
+            setDocuments([]);
+            setLoading(false);
+            return;
+          }
+
+          // Load cached documents
+          const cachedDocs = await Promise.all(
+            cachedIds.map(async (docId) => {
+              const cached = await getCachedDocument(docId);
+              if (!cached) return null;
+
+              // Convert cached document to Document format
+              const doc: Document = {
+                id: cached.documentId,
+                document_type: cached.metadata.documentType,
+                expiry_date: cached.metadata.expiryDate || '',
+                has_image: true, // If cached, it has image data
+                encrypted_data_primary: cached.encryptedData,
+                primary_iv: cached.iv,
+                primary_auth_tag: cached.authTag,
+                created_at: new Date().toISOString(), // Not stored in cache
+              };
+              return doc;
+            })
+          );
+
+          // Filter out nulls
+          const validDocs = cachedDocs.filter((doc): doc is Document => doc !== null);
+          console.log(`[OFFLINE] Loaded ${validDocs.length} documents from cache`);
+
+          setDocuments(validDocs);
+          setLoading(false);
+          return;
+        } catch (cacheError) {
+          console.error('[OFFLINE] Error loading from cache:', cacheError);
+          setDocuments([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      console.log('[ONLINE] Loading documents from database...');
+
+      let user;
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        user = authUser;
+      } catch (error) {
+        console.warn('⚠️ Cannot verify user (network error) - skipping document load');
+        // If forceOnline was requested but we can't connect, show error
+        if (forceOnline) {
+          Alert.alert('Error de Conexión', 'No se pudo conectar a la base de datos.');
+        }
+        setDocuments([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!user) {
+        setDocuments([]);
+        setLoading(false);
+        return;
+      }
+
+      let data;
+      try {
+        const result = await supabase
+          .from('travel_documents')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (result.error) {
+          console.error('Error loading documents:', result.error);
+          setLoading(false);
+          return;
+        }
+
+        data = result.data;
+        console.log(`[ONLINE] Loaded ${data?.length || 0} documents from database`);
+      } catch (error) {
+        console.warn('⚠️ Cannot load documents (network error)');
+        if (forceOnline) {
+          Alert.alert(
+            'Error de Conexión',
+            'No se pudo cargar los documentos desde la base de datos.'
+          );
+        }
+        setDocuments([]);
+        setLoading(false);
         return;
       }
 
@@ -148,7 +472,39 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       const documentsWithUrls = await Promise.all(
         (data || []).map(async (doc) => {
           try {
-            const decryptedData = JSON.parse(doc.encrypted_data_primary);
+            let decryptedData;
+
+            // Check if document uses real encryption
+            if (isRealEncryption(doc)) {
+              console.log('🔐 Document uses real encryption, decrypting...');
+
+              // For now, we'll skip decryption if no PIN provided
+              // Documents will be decrypted on-demand when viewing
+              if (!pin) {
+                console.log('⚠️ No PIN provided, skipping decryption for list view');
+                return doc; // Return encrypted document as-is
+              }
+
+              // Decrypt with PIN
+              const decryptResult = await decryptDocument(
+                doc.id,
+                doc.encrypted_data_primary,
+                doc.primary_iv!,
+                doc.primary_auth_tag!,
+                pin
+              );
+
+              if (!decryptResult.success) {
+                console.error('❌ Failed to decrypt document:', decryptResult.error);
+                return doc; // Return encrypted document as-is
+              }
+
+              decryptedData = decryptResult.data;
+            } else {
+              // Legacy document with JSON.stringify
+              console.log('📜 Legacy document format, using JSON.parse');
+              decryptedData = JSON.parse(doc.encrypted_data_primary);
+            }
             console.log('🔍 Decrypted data:', decryptedData);
 
             // Handle old documents with imageUrl (extract filePath from URL)
@@ -165,32 +521,25 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
             if (decryptedData.filePath) {
               console.log('🔗 Generating signed URL for:', decryptedData.filePath);
 
-              const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-                .from('travel-documents')
-                .createSignedUrl(decryptedData.filePath, 3600);
-
-              if (signedUrlError) {
-                console.error('❌ Signed URL error:', JSON.stringify(signedUrlError));
-
-                // Fallback: try public URL
-                const { data: publicUrlData } = supabase.storage
+              try {
+                const { data: signedUrlData, error: signedUrlError } = await supabase.storage
                   .from('travel-documents')
-                  .getPublicUrl(decryptedData.filePath);
+                  .createSignedUrl(decryptedData.filePath, 3600);
 
-                console.log('🔓 Using public URL fallback:', publicUrlData.publicUrl);
-
-                doc.encrypted_data_primary = JSON.stringify({
-                  ...decryptedData,
-                  imageUrl: publicUrlData.publicUrl,
-                  filePath: decryptedData.filePath,
-                });
-              } else if (signedUrlData) {
-                console.log('✅ Signed URL generated successfully');
-                doc.encrypted_data_primary = JSON.stringify({
-                  ...decryptedData,
-                  imageUrl: signedUrlData.signedUrl,
-                  filePath: decryptedData.filePath,
-                });
+                if (signedUrlError) {
+                  console.error('❌ Signed URL error:', JSON.stringify(signedUrlError));
+                  console.log('ℹ️ Keeping original data for offline compatibility');
+                } else if (signedUrlData) {
+                  console.log('✅ Signed URL generated successfully');
+                  // NO modificar encrypted_data_primary - mantener datos originales intactos
+                  // Las URLs firmadas se generarán on-demand cuando se necesiten mostrar
+                  console.log(
+                    'ℹ️ Keeping original encrypted data intact for offline compatibility'
+                  );
+                }
+              } catch (urlError) {
+                // Network error generating signed URL
+                console.warn('⚠️ Cannot generate signed URL (network error) - skipping');
               }
             } else {
               console.log('⚠️ No filePath found, keeping original imageUrl');
@@ -242,11 +591,97 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   };
 
-  const handlePinVerified = async () => {
+  const handlePinVerified = async (pin: string) => {
+    // Check if this is for viewing a specific document (after Face ID authentication)
+    if (selectedDocument && !pendingDocumentData) {
+      console.log('[PIN] Verified for viewing specific document');
+      setVerifiedPin(pin);
+      setShowPinVerification(false);
+
+      // Decrypt and open the document directly (without calling handleDocumentPress again)
+      const docToOpen = selectedDocument;
+      setSelectedDocument(null); // Clear selection
+
+      try {
+        console.log('🔐 Decrypting document for viewing...');
+        console.log('🔍 Document encryption fields:', {
+          hasEncryptedData: !!docToOpen.encrypted_data_primary,
+          hasPrimaryIv: !!docToOpen.primary_iv,
+          hasPrimaryAuthTag: !!docToOpen.primary_auth_tag,
+          primaryIvValue: docToOpen.primary_iv,
+          primaryAuthTagValue: docToOpen.primary_auth_tag,
+          encryptedDataPreview: docToOpen.encrypted_data_primary.substring(0, 50),
+        });
+
+        const decryptResult = await decryptDocument(
+          docToOpen.id,
+          docToOpen.encrypted_data_primary,
+          docToOpen.primary_iv || '',
+          docToOpen.primary_auth_tag || '',
+          pin
+        );
+
+        if (!decryptResult.success || !decryptResult.data) {
+          console.error('❌ Decryption failed');
+          Alert.alert('Error', 'No se pudo desencriptar el documento. Verifica tu PIN.');
+          return;
+        }
+
+        console.log('✅ Document decrypted successfully');
+        console.log('🔍 Decrypted data:', decryptResult.data);
+
+        const decryptedData = decryptResult.data as any;
+
+        // Build full Supabase Storage URL if we have imageUri
+        const imageUri = decryptedData.imageUri || decryptedData.imageUrl || '';
+        let fullImageUrl = '';
+
+        if (imageUri) {
+          // If it's already a full URL, use it as is
+          if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+            fullImageUrl = imageUri;
+          } else {
+            // Build Supabase Storage URL
+            const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+            fullImageUrl = `${supabaseUrl}/storage/v1/object/public/travel-documents/${imageUri}`;
+          }
+        }
+
+        // Map decrypted data to expected format
+        const mappedData: DecryptedData = {
+          documentNumber: decryptedData.documentNumber || '',
+          issuingCountry: decryptedData.issuingCountry || '',
+          issueDate: decryptedData.issuingDate || decryptedData.issueDate || '',
+          notes: decryptedData.notes || '',
+          imageUrl: fullImageUrl,
+          filePath: fullImageUrl,
+        };
+
+        console.log('🔍 Mapped data:', mappedData);
+
+        const fileType: 'image' | 'pdf' = decryptedData.imageUrl?.endsWith('.pdf')
+          ? 'pdf'
+          : 'image';
+
+        if (fileType === 'pdf') {
+          setPdfUrl(mappedData.imageUrl || null);
+          setShowPdfViewer(true);
+        } else {
+          setSelectedDocument(docToOpen);
+          setShowDocumentViewer(true);
+        }
+      } catch (error) {
+        console.error('❌ Error during decryption:', error);
+        Alert.alert('Error', 'No se pudo desencriptar el documento. Por favor verifica tu PIN.');
+      }
+      return;
+    }
+
     // Check if this is for viewing documents or saving a document
     if (!pendingDocumentData) {
-      // PIN verified for viewing documents
-      console.log('🔐 PIN verified, granting access to documents...');
+      // PIN verified for viewing documents (Face ID fallback scenario)
+      console.log('[PIN] Verified, granting access to documents...');
+      setVerifiedPin(pin);
       setShowPinVerification(false);
       setIsAuthenticated(true);
       // loadDocuments will be called by useEffect when isAuthenticated becomes true
@@ -255,7 +690,8 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
 
     // PIN verified for saving a document
     try {
-      console.log('🔐 PIN verified, saving document...');
+      console.log('[SAVE] PIN verified, saving document with encryption...');
+      setVerifiedPin(pin);
       setShowPinVerification(false);
       setSaving(true);
 
@@ -266,7 +702,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       if (!user) throw new Error('User not authenticated');
 
       // 1. Upload file (image or PDF) to Storage
-      console.log('📤 Uploading file to storage...');
+      console.log('[STORAGE] Uploading file...');
       const fileBase64 = await FileSystem.readAsStringAsync(pendingDocumentData.imageUri, {
         encoding: 'base64',
       });
@@ -285,50 +721,69 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        console.error('[STORAGE] Upload error:', uploadError);
         throw uploadError;
       }
 
-      console.log('✅ Image uploaded:', uploadData.path);
+      console.log('[STORAGE] File uploaded:', uploadData.path);
 
-      // 2. Store only the file path (we'll generate signed URLs when loading)
-      // Note: Bucket is private, so we can't use getPublicUrl()
-      const filePath = uploadData.path;
+      // 2. Encrypt document data with Edge Function
+      console.log('[ENCRYPT] Encrypting document data...');
+      const documentId = `doc-${Date.now()}`; // Temporary ID for encryption
 
-      // 3. For now, save to database without encryption (Phase 4.3 will add encryption)
-      console.log('💾 Saving to database...');
+      const encryptionResult = await encryptDocument({
+        documentId,
+        title: `${pendingDocumentData.type}-${Date.now()}`,
+        documentType: pendingDocumentData.type,
+        documentNumber: pendingDocumentData.documentNumber,
+        issuingCountry: pendingDocumentData.issuingCountry,
+        issuingDate: pendingDocumentData.issueDate.toISOString(),
+        expiryDate: pendingDocumentData.expiryDate.toISOString(),
+        notes: pendingDocumentData.notes || '',
+        imageUri: uploadData.path, // Store the storage path
+        pin,
+      });
+
+      if (!encryptionResult.success || !encryptionResult.encryptedData) {
+        console.error('[ENCRYPT] Encryption failed:', encryptionResult.error);
+        throw new Error(encryptionResult.error || 'Encryption failed');
+      }
+
+      const encryptedData = encryptionResult.encryptedData as EncryptedDataResponse;
+      console.log('[ENCRYPT] Document encrypted successfully');
+
+      // 3. Save encrypted data to database
+      console.log('[DB] Saving encrypted document...');
+      console.log('[DB] Document type being inserted:', {
+        documentType: pendingDocumentData.type,
+        typeOf: typeof pendingDocumentData.type,
+        fullPendingData: pendingDocumentData,
+      });
       const { error: dbError } = await supabase.from('travel_documents').insert({
         user_id: user.id,
         document_type: pendingDocumentData.type,
         expiry_date: pendingDocumentData.expiryDate.toISOString(),
         has_image: true,
-        // Temporary: storing unencrypted for Phase 4.2
-        encrypted_data_primary: JSON.stringify({
-          documentNumber: pendingDocumentData.documentNumber,
-          issuingCountry: pendingDocumentData.issuingCountry,
-          issueDate: pendingDocumentData.issueDate.toISOString(),
-          notes: pendingDocumentData.notes || '',
-          filePath: filePath, // Store path, not URL
-        }),
-        primary_iv: 'temp',
-        primary_auth_tag: 'temp',
-        encrypted_data_recovery: 'temp',
-        recovery_iv: 'temp',
-        recovery_auth_tag: 'temp',
+        encrypted_data_primary: encryptedData.encryptedWithPrimary,
+        primary_iv: encryptedData.primaryIv,
+        primary_auth_tag: encryptedData.primaryAuthTag,
+        encrypted_data_recovery: encryptedData.encryptedWithRecovery,
+        recovery_iv: encryptedData.recoveryIv,
+        recovery_auth_tag: encryptedData.recoveryAuthTag,
       });
 
       if (dbError) {
-        console.error('Database error:', dbError);
+        console.error('[DB] Database error:', dbError);
         throw dbError;
       }
 
       setSaving(false);
-      console.log('✅ Document saved successfully!');
+      console.log('[SUCCESS] Document saved with encryption!');
 
-      // Recargar la lista de documentos
-      await loadDocuments();
+      // Reload documents list (force online load since we just saved to DB)
+      await loadDocuments(undefined, true);
 
-      Alert.alert('✅ Documento Guardado', 'El documento se ha guardado correctamente.', [
+      Alert.alert('Documento Guardado', 'El documento se ha guardado correctamente.', [
         {
           text: 'OK',
           onPress: () => {
@@ -338,7 +793,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
       ]);
     } catch (error) {
       setSaving(false);
-      console.error('Error saving document:', error);
+      console.error('[ERROR] Saving document:', error);
       Alert.alert('Error', 'No se pudo guardar el documento. Intenta de nuevo.');
     }
   };
@@ -357,7 +812,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         return 'document-text';
       case 'id_card':
         return 'card';
-      case 'driver_license':
+      case 'drivers_license':
         return 'car';
       case 'vaccination':
         return 'medical';
@@ -378,7 +833,7 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         return 'Visa';
       case 'id_card':
         return 'Cédula de Identidad';
-      case 'driver_license':
+      case 'drivers_license':
         return 'Licencia de Conducir';
       case 'vaccination':
         return 'Certificado de Vacuna';
@@ -403,9 +858,147 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   };
 
-  const handleDocumentPress = (doc: Document) => {
-    setSelectedDocument(doc);
-    setShowDocumentViewer(true);
+  const handleDocumentPress = async (doc: Document) => {
+    try {
+      let documentToView = doc;
+
+      // If document uses real encryption, check if we need PIN
+      if (isRealEncryption(doc)) {
+        // If no PIN available (user entered with Face ID), request PIN now
+        if (!verifiedPin) {
+          console.log('🔐 Document encrypted but no PIN available');
+          console.log('📝 Requesting PIN to decrypt this document...');
+
+          Alert.alert(
+            '🔐 PIN Requerido',
+            'Necesitas ingresar tu PIN para desencriptar y ver este documento.',
+            [
+              {
+                text: 'Cancelar',
+                style: 'cancel',
+              },
+              {
+                text: 'Ingresar PIN',
+                onPress: () => {
+                  // Store the document to view after PIN verification
+                  setSelectedDocument(doc);
+                  setShowPinVerification(true);
+                },
+              },
+            ]
+          );
+          return;
+        }
+
+        console.log('🔐 Decrypting document for viewing...');
+        console.log('🔍 Document encryption fields:', {
+          hasEncryptedData: !!doc.encrypted_data_primary,
+          hasPrimaryIv: !!doc.primary_iv,
+          hasPrimaryAuthTag: !!doc.primary_auth_tag,
+          primaryIvValue: doc.primary_iv,
+          primaryAuthTagValue: doc.primary_auth_tag,
+          encryptedDataPreview: doc.encrypted_data_primary?.substring(0, 50),
+        });
+
+        const decryptResult = await decryptDocument(
+          doc.id,
+          doc.encrypted_data_primary,
+          doc.primary_iv!,
+          doc.primary_auth_tag!,
+          verifiedPin
+        );
+
+        if (decryptResult.success && decryptResult.data) {
+          console.log('✅ Document decrypted successfully');
+          console.log('🔍 Decrypted data:', decryptResult.data);
+
+          // Cast to expected type
+          const data = decryptResult.data as {
+            documentNumber?: string;
+            issuingCountry?: string;
+            issuingDate?: string;
+            notes?: string;
+            imageUri?: string; // Path relativo
+            imageUrl?: string; // URL firmada
+          };
+
+          // Determine image URL based on connection status and available data
+          let finalImageUrl = '';
+
+          if (isConnected) {
+            // Online: Use imageUrl if available, otherwise build Supabase Storage URL from imageUri
+            if (data.imageUrl && data.imageUrl.startsWith('http')) {
+              finalImageUrl = data.imageUrl;
+            } else if (data.imageUri) {
+              const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+              finalImageUrl = `${supabaseUrl}/storage/v1/object/public/travel-documents/${data.imageUri}`;
+            }
+          } else {
+            // Offline: Will try to load from cache below
+            finalImageUrl = data.imageUri || data.imageUrl || '';
+          }
+
+          // If offline and image is available in cache, load from cache
+          if (!isConnected && isDocumentAvailableOffline(doc.id)) {
+            console.log('[OFFLINE-VIEW] Loading image from offline cache...');
+            try {
+              // FileSystem.documentDirectory already includes "file://" prefix
+              const localImagePath = `${FileSystem.documentDirectory}goveling_docs/${doc.id}_image.jpg`;
+              console.log('[OFFLINE-VIEW] Checking path:', localImagePath);
+              const fileInfo = await FileSystem.getInfoAsync(localImagePath);
+
+              if (fileInfo.exists) {
+                finalImageUrl = localImagePath;
+                console.log('[OFFLINE-VIEW] SUCCESS: Using local cached image');
+              } else {
+                console.warn('[OFFLINE-VIEW] Cached image file not found at primary location');
+                // Try alternative cache location
+                const altImagePath = `${FileSystem.cacheDirectory}goveling_docs/${doc.id}_image.jpg`;
+                console.log('[OFFLINE-VIEW] Trying alternative path:', altImagePath);
+                const altFileInfo = await FileSystem.getInfoAsync(altImagePath);
+                if (altFileInfo.exists) {
+                  finalImageUrl = altImagePath;
+                  console.log('[OFFLINE-VIEW] SUCCESS: Using alternative cached image');
+                } else {
+                  console.warn('[OFFLINE-VIEW] Image not found in any cache location');
+                }
+              }
+            } catch (cacheError) {
+              console.error('[OFFLINE-VIEW] Error loading from cache:', cacheError);
+              // Fallback to original URL
+            }
+          }
+
+          // Map decrypted data to the format expected by DocumentViewerModal
+          const mappedData = {
+            documentNumber: data.documentNumber,
+            issuingCountry: data.issuingCountry,
+            issueDate: data.issuingDate,
+            notes: data.notes,
+            imageUrl: finalImageUrl, // Use cached image URL if offline
+            filePath: finalImageUrl,
+          };
+
+          console.log('🔍 Mapped data:', mappedData);
+
+          // Create a temporary decrypted version for viewing
+          documentToView = {
+            ...doc,
+            encrypted_data_primary: JSON.stringify(mappedData),
+          };
+        } else {
+          console.error('❌ Failed to decrypt document:', decryptResult.error);
+          Alert.alert('Error', 'No se pudo desencriptar el documento');
+          return;
+        }
+      }
+
+      setSelectedDocument(documentToView);
+      setShowDocumentViewer(true);
+    } catch (error) {
+      console.error('Error preparing document for viewing:', error);
+      Alert.alert('Error', 'No se pudo cargar el documento');
+    }
   };
 
   const handleDeleteDocument = async () => {
@@ -451,11 +1044,323 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
     }
   };
 
+  const handleDeleteDocumentFromList = async (doc: Document) => {
+    Alert.alert(
+      'Eliminar Documento',
+      '¿Estás seguro de que deseas eliminar este documento? Esta acción no se puede deshacer.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              // 1. Delete from database
+              const { error: dbError } = await supabase
+                .from('travel_documents')
+                .delete()
+                .eq('id', doc.id);
+
+              if (dbError) {
+                console.error('Database delete error:', dbError);
+                throw dbError;
+              }
+
+              // 2. Try to delete file from storage (best effort)
+              try {
+                // Try to parse encrypted data to get filePath
+                const data = JSON.parse(doc.encrypted_data_primary) as DecryptedData;
+                if (data.filePath) {
+                  await supabase.storage.from('travel-documents').remove([data.filePath]);
+                }
+              } catch (storageError) {
+                console.warn('Storage cleanup error (non-critical):', storageError);
+              }
+
+              // 3. Reload documents list
+              await loadDocuments();
+
+              Alert.alert('✅ Eliminado', 'El documento se ha eliminado correctamente.');
+            } catch (error) {
+              console.error('Error deleting document from list:', error);
+              Alert.alert('❌ Error', 'No se pudo eliminar el documento.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleOpenPDF = (url: string) => {
     console.log('📱 TravelDocumentsModal: Opening PDF in separate modal');
     console.log('📱 PDF URL:', url.substring(0, 100));
     setPdfUrl(url);
     setShowPdfViewer(true);
+  };
+
+  // ====== OFFLINE CACHE FUNCTIONS ======
+
+  /**
+   * Descargar documento para acceso offline
+   */
+  const handleDownloadForOffline = async (doc: Document) => {
+    try {
+      console.log('[OFFLINE-DOWNLOAD] Starting download for document:', doc.id);
+
+      // ⚠️ Verificar que estemos online (no se puede descargar en modo offline)
+      if (!isConnected) {
+        Alert.alert(
+          '❌ Sin Conexión',
+          'Necesitas estar conectado a internet para descargar documentos offline.'
+        );
+        return;
+      }
+
+      // ⚠️ Verificar que el documento exista en DB (no solo en cache)
+      // Re-fetch para confirmar que existe
+      const { data: exists, error: checkError } = await supabase
+        .from('travel_documents')
+        .select('id')
+        .eq('id', doc.id)
+        .single();
+
+      if (checkError || !exists) {
+        Alert.alert(
+          '⚠️ Documento No Disponible',
+          'Este documento ya no existe en la base de datos. Se eliminará del cache local.',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Eliminar del cache
+                await removeCachedDocument(doc.id);
+                await refreshCacheStatus();
+                // Recargar documentos
+                await loadDocuments(undefined, true);
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // ✅ SYNC: Limpiar cache antes de descargar (eliminar documentos huérfanos)
+      console.log('[SYNC] Cleaning orphaned documents from cache...');
+      const onlineIds = documents.map((d) => d.id);
+      const syncResult = await syncCacheWithOnlineDocuments(onlineIds);
+
+      if (syncResult.removed.length > 0) {
+        console.log(
+          `[SYNC] Removed ${syncResult.removed.length} orphaned documents:`,
+          syncResult.removed
+        );
+        Alert.alert(
+          '🧹 Cache Limpiado',
+          `Se eliminaron ${syncResult.removed.length} documento(s) que ya no existen en la nube.`,
+          [{ text: 'OK' }]
+        );
+        // Refrescar estado del cache
+        await refreshCacheStatus();
+      }
+
+      // Mostrar indicador de descarga
+      setDownloadingDocs((prev) => new Set(prev).add(doc.id));
+
+      // Verificar que tengamos los datos encriptados
+      if (!doc.encrypted_data_primary || !doc.primary_iv || !doc.primary_auth_tag) {
+        Alert.alert('Error', 'No se pueden descargar documentos sin datos encriptados.');
+        return;
+      }
+
+      // Extraer imageStoragePath desencriptando el documento
+      // IMPORTANTE: Re-fetch desde DB para obtener el path original (no la URL firmada en memoria)
+      let imageStoragePath: string | undefined;
+
+      const hasEncryption = isRealEncryption(doc);
+      console.log('[OFFLINE-DOWNLOAD] Encryption check:', { hasEncryption, hasPin: !!verifiedPin });
+
+      if (hasEncryption && verifiedPin) {
+        console.log('[OFFLINE-DOWNLOAD] Re-fetching document from DB to get original path...');
+
+        // Re-fetch document from database to get original encrypted data
+        const { data: freshDoc, error: fetchError } = await supabase
+          .from('travel_documents')
+          .select('encrypted_data_primary, primary_iv, primary_auth_tag')
+          .eq('id', doc.id)
+          .single();
+
+        if (fetchError || !freshDoc) {
+          console.error('[OFFLINE-DOWNLOAD] Could not fetch document:', fetchError);
+        } else {
+          console.log('[OFFLINE-DOWNLOAD] Document fetched, decrypting to get image path...');
+          console.log('[OFFLINE-DOWNLOAD] Has encrypted data:', !!freshDoc.encrypted_data_primary);
+          console.log('[OFFLINE-DOWNLOAD] Has IV:', !!freshDoc.primary_iv);
+          console.log('[OFFLINE-DOWNLOAD] Has auth tag:', !!freshDoc.primary_auth_tag);
+
+          const decryptResult = await decryptDocument(
+            doc.id,
+            freshDoc.encrypted_data_primary,
+            freshDoc.primary_iv!,
+            freshDoc.primary_auth_tag!,
+            verifiedPin
+          );
+
+          console.log('[OFFLINE-DOWNLOAD] Decrypt result:', {
+            success: decryptResult.success,
+            hasData: !!decryptResult.data,
+            error: decryptResult.error,
+          });
+
+          if (decryptResult.success && decryptResult.data) {
+            const data = decryptResult.data as any;
+
+            console.log('[OFFLINE-DOWNLOAD] Decrypted data fields:', {
+              allKeys: Object.keys(data),
+              hasImageUri: !!data.imageUri,
+              imageUri: data.imageUri,
+              hasFilePath: !!data.filePath,
+              filePath: data.filePath,
+              hasImageUrl: !!data.imageUrl,
+              imageUrl: data.imageUrl,
+            });
+
+            // Priorizar filePath (siempre es el path relativo)
+            // Si no existe, usar imageUri solo si NO es una URL completa
+            if (data.filePath) {
+              imageStoragePath = data.filePath;
+            } else if (data.imageUri && !data.imageUri.startsWith('http')) {
+              imageStoragePath = data.imageUri;
+            } else if (data.imageUrl && !data.imageUrl.startsWith('http')) {
+              imageStoragePath = data.imageUrl;
+            }
+
+            console.log('[OFFLINE-DOWNLOAD] Extracted image storage path:', imageStoragePath);
+          } else {
+            console.error('[OFFLINE-DOWNLOAD] Decryption failed:', decryptResult.error);
+          }
+        }
+      } else {
+        console.warn('[OFFLINE-DOWNLOAD] Skipping image extraction:', {
+          hasEncryption,
+          hasPin: !!verifiedPin,
+        });
+      }
+
+      // Descargar y cachear (con imagen comprimida si existe)
+      const success = await downloadForOffline(
+        doc.id,
+        doc.encrypted_data_primary,
+        doc.primary_iv,
+        doc.primary_auth_tag,
+        {
+          documentType: doc.document_type,
+          expiryDate: doc.expiry_date,
+        },
+        imageStoragePath
+      );
+
+      if (success) {
+        Alert.alert(
+          '✅ Disponible Offline',
+          imageStoragePath
+            ? 'El documento y su imagen se han descargado con compresión optimizada.'
+            : 'El documento se ha descargado y está disponible sin conexión.'
+        );
+        await refreshCacheStatus();
+      } else {
+        Alert.alert(
+          '❌ Error',
+          'No se pudo descargar el documento. Verifica el espacio disponible.'
+        );
+      }
+    } catch (error) {
+      console.error('Error downloading for offline:', error);
+      Alert.alert('❌ Error', 'No se pudo descargar el documento.');
+    } finally {
+      // Remover indicador de descarga
+      setDownloadingDocs((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(doc.id);
+        return newSet;
+      });
+    }
+  };
+
+  /**
+   * Eliminar documento del cache offline
+   */
+  const handleRemoveFromOffline = async (doc: Document) => {
+    Alert.alert(
+      'Eliminar Cache Offline',
+      '¿Deseas eliminar este documento del almacenamiento offline? Seguirá disponible en línea.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🗑️ Removing from offline cache:', doc.id);
+
+              const success = await removeFromCache(doc.id);
+
+              if (success) {
+                Alert.alert('✅ Eliminado', 'El documento se ha eliminado del cache offline.');
+                await refreshCacheStatus();
+              } else {
+                Alert.alert('❌ Error', 'No se pudo eliminar del cache offline.');
+              }
+            } catch (error) {
+              console.error('Error removing from offline:', error);
+              Alert.alert('❌ Error', 'No se pudo eliminar del cache.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Mostrar menú de opciones offline para un documento
+   */
+  const handleOfflineOptions = (doc: Document) => {
+    const isOffline = isDocumentAvailableOffline(doc.id);
+
+    const options: any[] = [
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+    ];
+
+    if (isOffline) {
+      options.unshift({
+        text: '🗑️ Eliminar de Offline',
+        style: 'destructive',
+        onPress: () => handleRemoveFromOffline(doc),
+      });
+    } else {
+      options.unshift({
+        text: '📥 Descargar para Offline',
+        onPress: () => handleDownloadForOffline(doc),
+      });
+    }
+
+    Alert.alert(
+      'Opciones Offline',
+      'Gestiona el almacenamiento offline de este documento:',
+      options
+    );
   };
 
   console.log('🎨 TravelDocumentsModal Render State:', {
@@ -474,19 +1379,67 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
         visible={visible}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={onClose}
+        onRequestClose={handleModalClose}
       >
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
             <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <TouchableOpacity onPress={handleModalClose} style={styles.closeButton}>
                 <Ionicons name="close" size={28} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              {t('profile.menu.travel_documents')}
-            </Text>
+            <View style={styles.headerCenter}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>
+                {t('profile.menu.travel_documents')}
+              </Text>
+
+              {/* Network & Sync Status */}
+              <View style={styles.statusRow}>
+                {/* Connection indicator */}
+                <View style={styles.connectionIndicator}>
+                  <Ionicons
+                    name={isConnected ? 'wifi' : 'wifi-outline'}
+                    size={10}
+                    color={isConnected ? '#10B981' : '#EF4444'}
+                  />
+                  <Text
+                    style={[styles.connectionText, { color: isConnected ? '#10B981' : '#EF4444' }]}
+                  >
+                    {isConnected ? 'Online' : 'Offline'}
+                  </Text>
+                </View>
+
+                {/* Sync indicator */}
+                {isSyncing && (
+                  <View style={styles.syncIndicator}>
+                    <Text style={styles.syncText}>⏳ Syncing...</Text>
+                  </View>
+                )}
+
+                {/* Queue indicator */}
+                {queueStatus.pendingItems > 0 && (
+                  <View style={styles.queueIndicator}>
+                    <Ionicons name="cloud-upload-outline" size={10} color="#F59E0B" />
+                    <Text style={styles.queueText}>{queueStatus.pendingItems} pending</Text>
+                  </View>
+                )}
+
+                {/* Cache indicator */}
+                {cachedDocuments.size > 0 && (
+                  <Text style={[styles.cacheIndicator, { color: theme.colors.textMuted }]}>
+                    {cachedDocuments.size} offline • {cacheSizeMB.toFixed(1)} MB
+                  </Text>
+                )}
+
+                {/* Last sync indicator */}
+                {lastSyncAt && isConnected && (
+                  <Text style={[styles.lastSyncText, { color: theme.colors.textMuted }]}>
+                    Last sync: {getRelativeTime(lastSyncAt)}
+                  </Text>
+                )}
+              </View>
+            </View>
             <View style={styles.headerRight}>
               <TouchableOpacity
                 onPress={() => setShowSecuritySettings(true)}
@@ -603,37 +1556,77 @@ export default function TravelDocumentsModal({ visible, onClose }: TravelDocumen
                   {documents.map((doc) => {
                     const fileType = getFileType(doc);
                     return (
-                      <TouchableOpacity
+                      <View
                         key={doc.id}
                         style={[styles.documentCard, { backgroundColor: theme.colors.card }]}
-                        activeOpacity={0.7}
-                        onPress={() => handleDocumentPress(doc)}
                       >
-                        <View style={styles.documentIcon}>
-                          <Ionicons
-                            name={getDocumentIcon(doc.document_type)}
-                            size={32}
-                            color="#2196F3"
-                          />
-                        </View>
-                        <View style={styles.documentInfo}>
-                          <View style={styles.documentTitleRow}>
-                            <Text style={[styles.documentType, { color: theme.colors.text }]}>
-                              {getDocumentTypeLabel(doc.document_type)}
-                            </Text>
-                            {fileType === 'pdf' && (
-                              <View style={styles.pdfBadge}>
-                                <Ionicons name="document-text" size={12} color="#FFFFFF" />
-                                <Text style={styles.pdfBadgeText}>PDF</Text>
-                              </View>
-                            )}
+                        <TouchableOpacity
+                          style={styles.documentCardContent}
+                          activeOpacity={0.7}
+                          onPress={() => handleDocumentPress(doc)}
+                        >
+                          <View style={styles.documentIcon}>
+                            <Ionicons
+                              name={getDocumentIcon(doc.document_type)}
+                              size={32}
+                              color="#2196F3"
+                            />
                           </View>
-                          <Text style={[styles.documentExpiry, { color: theme.colors.textMuted }]}>
-                            Vence: {new Date(doc.expiry_date).toLocaleDateString('es-ES')}
-                          </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={24} color={theme.colors.textMuted} />
-                      </TouchableOpacity>
+                          <View style={styles.documentInfo}>
+                            <View style={styles.documentTitleRow}>
+                              <Text style={[styles.documentType, { color: theme.colors.text }]}>
+                                {getDocumentTypeLabel(doc.document_type)}
+                              </Text>
+                              {fileType === 'pdf' && (
+                                <View style={styles.pdfBadge}>
+                                  <Ionicons name="document-text" size={12} color="#FFFFFF" />
+                                  <Text style={styles.pdfBadgeText}>PDF</Text>
+                                </View>
+                              )}
+                              {/* Offline Badge */}
+                              {isDocumentAvailableOffline(doc.id) && (
+                                <View style={styles.offlineBadge}>
+                                  <Ionicons name="cloud-offline" size={12} color="#10B981" />
+                                  <Text style={styles.offlineBadgeText}>Offline</Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text
+                              style={[styles.documentExpiry, { color: theme.colors.textMuted }]}
+                            >
+                              Vence: {new Date(doc.expiry_date).toLocaleDateString('es-ES')}
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={24}
+                            color={theme.colors.textMuted}
+                          />
+                        </TouchableOpacity>
+                        {/* Offline button */}
+                        <TouchableOpacity
+                          style={styles.offlineButton}
+                          onPress={() => handleOfflineOptions(doc)}
+                          activeOpacity={0.7}
+                        >
+                          {downloadingDocs.has(doc.id) ? (
+                            <Text style={styles.offlineButtonIcon}>⏳</Text>
+                          ) : isDocumentAvailableOffline(doc.id) ? (
+                            <Ionicons name="cloud-done" size={20} color="#10B981" />
+                          ) : (
+                            <Ionicons name="cloud-download-outline" size={20} color="#2196F3" />
+                          )}
+                        </TouchableOpacity>
+
+                        {/* Delete button */}
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={() => handleDeleteDocumentFromList(doc)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                        </TouchableOpacity>
+                      </View>
                     );
                   })}
                 </View>
@@ -800,11 +1793,64 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 4,
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  connectionIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  connectionText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  syncIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  syncText: {
+    fontSize: 10,
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
+  queueIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  queueText: {
+    fontSize: 10,
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
+  cacheIndicator: {
+    fontSize: 11,
+    marginTop: 0,
+    textAlign: 'center',
+  },
+  lastSyncText: {
+    fontSize: 10,
+    marginTop: 2,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   content: {
     flex: 1,
@@ -923,9 +1969,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   documentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     shadowColor: '#000' as const,
@@ -933,6 +1976,39 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    overflow: 'hidden',
+  },
+  documentCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingRight: 96, // Extra padding for offline (36px) + delete (36px) buttons + spacing (16px) + margin (8px)
+    flex: 1,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)' as const,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offlineButton: {
+    position: 'absolute',
+    top: 8,
+    right: 52, // 8px (margin) + 36px (delete button) + 8px (spacing)
+    backgroundColor: 'rgba(33, 150, 243, 0.1)' as const,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offlineButtonIcon: {
+    fontSize: 16,
   },
   documentIcon: {
     width: 50,
@@ -971,6 +2047,22 @@ const styles = StyleSheet.create({
   },
   pdfBadgeText: {
     color: '#FFFFFF' as const,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  offlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)' as const,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#10B981' as const,
+  },
+  offlineBadgeText: {
+    color: '#10B981' as const,
     fontSize: 10,
     fontWeight: '600',
   },

@@ -10,6 +10,8 @@ import { AppState, AppStateStatus } from 'react-native';
 
 import * as Location from 'expo-location';
 
+import NetInfo from '@react-native-community/netinfo';
+
 import { supabase } from '~/lib/supabase';
 import {
   countryDetectionService,
@@ -181,6 +183,7 @@ export function useCountryDetectionOnAppStart() {
 
     setState((prev) => ({ ...prev, isDetecting: true }));
 
+    // Wrap EVERYTHING in try-catch to prevent ANY error from propagating
     try {
       console.log('🚀 App launched - detecting country...');
 
@@ -284,23 +287,50 @@ export function useCountryDetectionOnAppStart() {
         `🎯 Detected country: ${currentCountry.countryFlag} ${currentCountry.countryName} (${currentCountry.countryCode})`
       );
 
-      // Get last visited country from DATABASE (single source of truth)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('❌ User not authenticated');
+      // Check network connectivity BEFORE making any requests
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected || !netState.isInternetReachable) {
+        console.warn('⚠️ No internet connection - skipping country visit tracking');
         setState((prev) => ({ ...prev, isDetecting: false }));
         return;
       }
 
-      const { data: lastVisit } = await supabase
-        .from('country_visits')
-        .select('country_code, country_name, entry_date, latitude, longitude')
-        .eq('user_id', user.id)
-        .order('entry_date', { ascending: false })
-        .limit(1)
-        .single();
+      // Get last visited country from DATABASE (single source of truth)
+      let user;
+      try {
+        const result = await supabase.auth.getUser();
+        user = result?.data?.user || null;
+      } catch (error) {
+        // Network error - silently skip and don't propagate error
+        console.warn('⚠️ Cannot check user auth (offline) - skipping country detection');
+        setState((prev) => ({ ...prev, isDetecting: false }));
+        return;
+      }
+
+      if (!user) {
+        // Don't log as error if offline - just skip silently
+        console.log('⚠️ User not authenticated - skipping country detection');
+        setState((prev) => ({ ...prev, isDetecting: false }));
+        return;
+      }
+
+      let lastVisit;
+      try {
+        const { data } = await supabase
+          .from('country_visits')
+          .select('country_code, country_name, entry_date, latitude, longitude')
+          .eq('user_id', user.id)
+          .order('entry_date', { ascending: false })
+          .limit(1)
+          .single();
+        lastVisit = data;
+      } catch (error) {
+        // Network error or no data - treat as first visit
+        console.warn(
+          '⚠️ Cannot fetch last country visit (network error) - treating as first visit'
+        );
+        lastVisit = null;
+      }
 
       if (lastVisit) {
         console.log(
@@ -415,7 +445,13 @@ export function useCountryDetectionOnAppStart() {
         });
       }
     } catch (error) {
-      console.error('❌ Error detecting country:', error);
+      // Suppress ALL errors - especially network errors when offline
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Network request failed') || errorMessage.includes('fetch')) {
+        console.warn('⚠️ Country detection skipped (offline mode)');
+      } else {
+        console.warn('⚠️ Country detection error:', errorMessage);
+      }
       setState((prev) => ({ ...prev, isDetecting: false }));
     }
   };
@@ -459,25 +495,31 @@ export function useCountryDetectionOnAppStart() {
       // TODO: Count places in this country (needs trip context)
       const placesCount = 0;
 
-      const { error } = await supabase.from('country_visits').insert({
-        user_id: userId,
-        trip_id: null, // Not associated with specific trip
-        country_code: countryInfo.countryCode,
-        country_name: countryInfo.countryName,
-        entry_date: new Date().toISOString(),
-        latitude: coordinates.latitude.toString(), // Store as text for DB compatibility
-        longitude: coordinates.longitude.toString(), // Store as text for DB compatibility
-        is_return: isReturn,
-        places_count: placesCount,
-        previous_country_code: previousCountryCode,
-      });
+      try {
+        const { error } = await supabase.from('country_visits').insert({
+          user_id: userId,
+          trip_id: null, // Not associated with specific trip
+          country_code: countryInfo.countryCode,
+          country_name: countryInfo.countryName,
+          entry_date: new Date().toISOString(),
+          latitude: coordinates.latitude.toString(), // Store as text for DB compatibility
+          longitude: coordinates.longitude.toString(), // Store as text for DB compatibility
+          is_return: isReturn,
+          places_count: placesCount,
+          previous_country_code: previousCountryCode,
+        });
 
-      if (error) {
-        console.error('❌ Error saving country visit:', error);
-        return;
+        if (error) {
+          console.error('❌ Error saving country visit:', error);
+          return;
+        }
+
+        console.log('✅ Country visit saved successfully');
+      } catch (error) {
+        // Network error - cannot save to DB
+        console.warn('⚠️ Cannot save country visit (network error) - will retry later');
+        // Don't return - continue with the flow
       }
-
-      console.log('✅ Country visit saved successfully');
 
       // Update cache to prevent re-showing modal
       await countryDetectionService.setLastCountry(countryInfo.countryCode);

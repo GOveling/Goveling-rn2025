@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   View,
@@ -13,7 +13,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '~/lib/theme';
-import { changePIN } from '~/services/documentEncryption';
+import {
+  authenticateWithBiometrics,
+  isBiometricAuthEnabled,
+  checkBiometricCapabilities,
+  getBiometricTypeName,
+  getBiometricIconName,
+  type BiometricCapabilities,
+} from '~/services/biometricAuth';
+import { changePIN, verifyPin } from '~/services/documentEncryption';
 
 interface ChangePINModalProps {
   visible: boolean;
@@ -36,12 +44,103 @@ export default function ChangePINModal({
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
 
+  // Biometric states
+  const [biometricCapabilities, setBiometricCapabilities] = useState<BiometricCapabilities | null>(
+    null
+  );
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricVerified, setBiometricVerified] = useState(false);
+
+  console.log('🔐 ChangePINModal rendered:', {
+    visible,
+    step,
+    biometricEnabled,
+    biometricVerified,
+  });
+
+  // Load biometric capabilities and check if enabled
+  useEffect(() => {
+    const loadBiometricSettings = async () => {
+      console.log('🔍 ChangePINModal: Loading biometric settings...');
+      const capabilities = await checkBiometricCapabilities();
+      console.log('🔍 ChangePINModal Biometric Capabilities:', capabilities);
+      setBiometricCapabilities(capabilities);
+
+      if (capabilities.isAvailable) {
+        const enabled = await isBiometricAuthEnabled();
+        console.log('🔍 ChangePINModal Biometric Enabled in App:', enabled);
+        setBiometricEnabled(enabled);
+      }
+    };
+
+    if (visible) {
+      loadBiometricSettings();
+    }
+  }, [visible]);
+
+  const handleBiometricAuth = useCallback(async () => {
+    if (!biometricCapabilities?.isAvailable || !biometricEnabled) {
+      console.log('❌ ChangePINModal: Biometric not available');
+      return;
+    }
+
+    console.log('🔐 ChangePINModal: Attempting biometric authentication...');
+    const biometricType = getBiometricTypeName(biometricCapabilities.biometricType);
+    const result = await authenticateWithBiometrics(
+      `Verifica tu identidad con ${biometricType} para cambiar tu PIN`
+    );
+
+    console.log('🔐 ChangePINModal: Biometric auth result:', result);
+
+    if (result.success) {
+      console.log('✅ ChangePINModal: Biometric verification successful');
+      setBiometricVerified(true);
+      // Show message explaining that current PIN is still needed
+      Alert.alert(
+        '✅ Identidad Verificada',
+        'Ahora ingresa tu PIN actual. Es necesario para re-encriptar tus documentos con el nuevo PIN.',
+        [{ text: 'Continuar', onPress: () => {} }]
+      );
+    } else if (result.error) {
+      console.log('❌ ChangePINModal: Biometric verification failed:', result.error);
+      // User can still enter PIN manually
+    }
+  }, [biometricCapabilities, biometricEnabled]);
+
+  // Auto-trigger biometric when modal opens on "current" step
+  useEffect(() => {
+    const triggerBiometric = async () => {
+      if (
+        visible &&
+        step === 'current' &&
+        biometricEnabled &&
+        biometricCapabilities?.isAvailable &&
+        !biometricVerified &&
+        !loading
+      ) {
+        console.log('✨ ChangePINModal: Auto-triggering biometric for current PIN verification');
+        await handleBiometricAuth();
+      }
+    };
+
+    triggerBiometric();
+  }, [
+    visible,
+    step,
+    biometricEnabled,
+    biometricCapabilities,
+    biometricVerified,
+    loading,
+    handleBiometricAuth,
+  ]);
+
   const resetModal = () => {
     setCurrentPin('');
     setNewPin('');
     setConfirmPin('');
     setStep('current');
     setProgress({ current: 0, total: 0 });
+    setBiometricVerified(false);
   };
 
   const handleClose = () => {
@@ -170,7 +269,9 @@ export default function ChangePINModal({
         return {
           title: 'Cambiar PIN',
           icon: 'key' as const,
-          message: 'Ingresa tu PIN actual para continuar',
+          message: biometricVerified
+            ? 'Ingresa tu PIN actual (necesario para re-encriptar documentos)'
+            : 'Ingresa tu PIN actual para continuar',
           placeholder: 'PIN actual',
         };
       case 'new':
@@ -277,6 +378,57 @@ export default function ChangePINModal({
                   />
                 ))}
               </View>
+
+              {/* Biometric Button or Verified Badge - only on "current" step */}
+              {step === 'current' && biometricEnabled && biometricCapabilities?.isAvailable && (
+                <>
+                  {biometricVerified ? (
+                    // Show verified badge
+                    <View style={[styles.verifiedBadge, { backgroundColor: theme.colors.card }]}>
+                      <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                      <Text style={[styles.verifiedText, { color: theme.colors.text }]}>
+                        Identidad verificada con{' '}
+                        {getBiometricTypeName(biometricCapabilities.biometricType)}
+                      </Text>
+                    </View>
+                  ) : (
+                    // Show biometric button
+                    <>
+                      <TouchableOpacity
+                        style={[styles.biometricButton, { backgroundColor: theme.colors.card }]}
+                        onPress={handleBiometricAuth}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={
+                            getBiometricIconName(
+                              biometricCapabilities.biometricType
+                            ) as keyof typeof Ionicons.glyphMap
+                          }
+                          size={32}
+                          color="#2196F3"
+                        />
+                        <Text style={[styles.biometricButtonText, { color: theme.colors.text }]}>
+                          Usar {getBiometricTypeName(biometricCapabilities.biometricType)}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Divider */}
+                      <View style={styles.divider}>
+                        <View
+                          style={[styles.dividerLine, { backgroundColor: theme.colors.border }]}
+                        />
+                        <Text style={[styles.dividerText, { color: theme.colors.textMuted }]}>
+                          o
+                        </Text>
+                        <View
+                          style={[styles.dividerLine, { backgroundColor: theme.colors.border }]}
+                        />
+                      </View>
+                    </>
+                  )}
+                </>
+              )}
 
               {/* Custom Numeric Keyboard */}
               <View style={styles.customKeyboard}>
@@ -445,6 +597,51 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    marginBottom: 16,
+    width: '100%',
+  },
+  biometricButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 24,
+    width: '100%',
+  },
+  verifiedText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '500',
   },
   customKeyboard: {
     width: '100%',

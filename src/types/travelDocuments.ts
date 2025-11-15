@@ -11,7 +11,7 @@ export enum DocumentType {
   TICKET = 'ticket',
   VACCINATION = 'vaccination',
   ID_CARD = 'id_card',
-  DRIVER_LICENSE = 'driver_license',
+  DRIVER_LICENSE = 'drivers_license', // Corregido para coincidir con la DB
   OTHER = 'other',
 }
 

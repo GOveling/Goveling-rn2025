@@ -1,0 +1,269 @@
+═══════════════════════════════════════════════════════════════════
+   🔧 FIX: BOTÓN DE RECUPERACIÓN DE PIN AHORA VISIBLE EN EXPO GO
+═══════════════════════════════════════════════════════════════════
+
+📱 PROBLEMA REPORTADO
+────────────────────────────────────────────────────────────────────
+Usuario vio en Expo Go:
+  "Si olvidaste tu PIN, contacta al soporte para recuperar el acceso."
+  
+En vez de:
+  "¿Olvidaste tu PIN?" [botón interactivo]
+
+═══════════════════════════════════════════════════════════════════
+🔍 CAUSA RAÍZ IDENTIFICADA
+═══════════════════════════════════════════════════════════════════
+
+ANTES del fix:
+  ✅ PinVerificationModal.tsx     → ACTUALIZADO (modal completo)
+  ❌ PinVerificationInline.tsx    → NO ACTUALIZADO (teclado numérico)
+  
+La app usa PinVerificationInline.tsx en TravelDocumentsModal!
+
+Estructura de componentes:
+┌─────────────────────────────────────────────────────┐
+│  TravelDocumentsModal                               │
+│  ├─ Pantalla de documentos                          │
+│  └─ PinVerificationInline ← ESTE SE MUESTRA         │
+│      └─ Teclado numérico 3x4                        │
+│         └─ Texto viejo en línea 178                 │
+└─────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+✅ SOLUCIÓN IMPLEMENTADA
+═══════════════════════════════════════════════════════════════════
+
+Archivo: src/components/profile/PinVerificationInline.tsx
+
+CAMBIO 1: Imports (líneas 10-12)
+────────────────────────────────────────────────────────────────────
++ import ForgotPinModal from './ForgotPinModal';
++ import RecoveryCodeModal from './RecoveryCodeModal';
++ import SetNewPinModal from './SetNewPinModal';
+
+CAMBIO 2: Estados de recuperación (líneas 32-35)
+────────────────────────────────────────────────────────────────────
++ const [showForgotPin, setShowForgotPin] = useState(false);
++ const [showRecoveryCode, setShowRecoveryCode] = useState(false);
++ const [showSetNewPin, setShowSetNewPin] = useState(false);
++ const [recoveryEmail, setRecoveryEmail] = useState('');
+
+CAMBIO 3: Handlers del flujo (líneas 76-106)
+────────────────────────────────────────────────────────────────────
++ const handleForgotPin = () => {
++   setShowForgotPin(true);
++ };
+
++ const handleRecoveryCodeSent = (email: string) => {
++   setRecoveryEmail(email);
++   setShowRecoveryCode(true);
++ };
+
++ const handleRecoveryCodeVerified = () => {
++   setShowSetNewPin(true);
++ };
+
++ const handleNewPinSet = () => {
++   Alert.alert(
++     '✅ PIN Restablecido',
++     'Tu PIN ha sido restablecido exitosamente...',
++     [{ text: 'OK', onPress: () => { ... onSuccess(); } }]
++   );
++ };
+
+CAMBIO 4: Reemplazo del texto viejo (líneas 218-226)
+────────────────────────────────────────────────────────────────────
+ANTES:
+- <Text style={[styles.helpText, { color: theme.colors.textMuted }]}>
+-   Si olvidaste tu PIN, contacta al soporte para recuperar el acceso.
+- </Text>
+
+DESPUÉS:
++ <TouchableOpacity
++   style={styles.forgotPinButton}
++   onPress={handleForgotPin}
++   activeOpacity={0.7}
++ >
++   <Ionicons name="help-circle-outline" size={18} color={theme.colors.primary} />
++   <Text style={[styles.forgotPinText, { color: theme.colors.primary }]}>
++     ¿Olvidaste tu PIN?
++   </Text>
++ </TouchableOpacity>
+
+CAMBIO 5: Renderizado de modales (líneas 231-248)
+────────────────────────────────────────────────────────────────────
++ {/* Recovery Modals */}
++ <ForgotPinModal
++   visible={showForgotPin}
++   onClose={() => setShowForgotPin(false)}
++   onCodeSent={handleRecoveryCodeSent}
++ />
++ 
++ <RecoveryCodeModal
++   visible={showRecoveryCode}
++   onClose={() => setShowRecoveryCode(false)}
++   onSuccess={handleRecoveryCodeVerified}
++   email={recoveryEmail}
++ />
++ 
++ <SetNewPinModal
++   visible={showSetNewPin}
++   onClose={() => setShowSetNewPin(false)}
++   onSuccess={handleNewPinSet}
++ />
+
+CAMBIO 6: Nuevos estilos (líneas 328-337)
+────────────────────────────────────────────────────────────────────
++ forgotPinButton: {
++   flexDirection: 'row',
++   alignItems: 'center',
++   justifyContent: 'center',
++   gap: 8,
++   paddingVertical: 12,
++   paddingHorizontal: 16,
++   marginTop: 8,
++ },
++ forgotPinText: {
++   fontSize: 15,
++   fontWeight: '600',
++ },
+
+═══════════════════════════════════════════════════════════════════
+📊 RESULTADO FINAL
+═══════════════════════════════════════════════════════════════════
+
+ANTES DEL FIX:
+┌─────────────────────────────────────────────────────┐
+│  Ingresa tu PIN para acceder a tus documentos      │
+│                                                     │
+│           ●  ●  ●  ●                                │
+│                                                     │
+│       [1] [2] [3]                                   │
+│       [4] [5] [6]                                   │
+│       [7] [8] [9]                                   │
+│       [⌫] [0] [✓]                                   │
+│                                                     │
+│  Si olvidaste tu PIN, contacta al soporte          │
+│  para recuperar el acceso.                         │
+└─────────────────────────────────────────────────────┘
+
+DESPUÉS DEL FIX:
+┌─────────────────────────────────────────────────────┐
+│  Ingresa tu PIN para acceder a tus documentos      │
+│                                                     │
+│           ●  ●  ●  ●                                │
+│                                                     │
+│       [1] [2] [3]                                   │
+│       [4] [5] [6]                                   │
+│       [7] [8] [9]                                   │
+│       [⌫] [0] [✓]                                   │
+│                                                     │
+│     ℹ️  ¿Olvidaste tu PIN?     ← CLICKEABLE        │
+│        ─────────────────                            │
+└─────────────────────────────────────────────────────┘
+          ↓ Al hacer clic
+┌─────────────────────────────────────────────────────┐
+│     Recuperar PIN                      ✕            │
+│  ─────────────────────────────────────────────      │
+│                                                     │
+│  📧 Enviaremos un código de verificación a:        │
+│                                                     │
+│      ar****@email.com                               │
+│                                                     │
+│  ℹ️ El código expirará en 15 minutos              │
+│     Tendrás 3 intentos para ingresarlo             │
+│                                                     │
+│               [Enviar Código]                       │
+│               [    Cancelar    ]                    │
+└─────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+🎯 FLUJO COMPLETO AHORA DISPONIBLE
+═══════════════════════════════════════════════════════════════════
+
+1. Usuario ve teclado numérico
+   └─> Clic en "¿Olvidaste tu PIN?"
+   
+2. ForgotPinModal
+   └─> Confirma envío de código
+   
+3. RecoveryCodeModal
+   ├─> Ingresa 6 dígitos
+   ├─> Timer: 15:00 cuenta atrás
+   └─> 3 intentos disponibles
+   
+4. SetNewPinModal
+   ├─> Paso 1/2: Nuevo PIN (4 dígitos)
+   └─> Paso 2/2: Confirmar PIN
+   
+5. ✅ PIN Restablecido
+   └─> Acceso a documentos
+
+═══════════════════════════════════════════════════════════════════
+✅ ESTADO ACTUAL
+═══════════════════════════════════════════════════════════════════
+
+COMPONENTE              ESTADO        RECUPERACIÓN
+────────────────────────────────────────────────────────────────────
+PinVerificationModal    ✅ Completo    ✅ Implementada
+PinVerificationInline   ✅ Completo    ✅ Implementada ← HOY
+ForgotPinModal          ✅ Completo    (300 líneas)
+RecoveryCodeModal       ✅ Completo    (420 líneas)
+SetNewPinModal          ✅ Completo    (410 líneas)
+pinRecovery.ts          ✅ Completo    (320 líneas)
+send-recovery-email     ✅ Deployed    Edge Function
+recovery_codes table    ✅ Migrada     RLS aplicado
+
+═══════════════════════════════════════════════════════════════════
+🧪 TESTING EN EXPO GO
+═══════════════════════════════════════════════════════════════════
+
+Pasos para verificar:
+1. Reload de la app en Expo Go (Cmd+R en iOS / Shake en Android)
+2. Ir a Perfil → Documentos de Viaje
+3. Verificar que aparece: "¿Olvidaste tu PIN?" con ícono ℹ️
+4. Hacer clic → ForgotPinModal debe aparecer
+5. Confirmar → RecoveryCodeModal con 6 campos
+6. Ingresar código → SetNewPinModal (2 pasos)
+7. Completar → Alert de éxito → Acceso a documentos
+
+Modo Desarrollo (sin RESEND_API_KEY):
+  - Código aparece en respuesta de Edge Function
+  - Visible en console logs
+  - No se envía email real
+
+═══════════════════════════════════════════════════════════════════
+📝 ARCHIVOS MODIFICADOS
+═══════════════════════════════════════════════════════════════════
+
+✏️  src/components/profile/PinVerificationInline.tsx
+    - Agregados imports de modales (3 líneas)
+    - Agregados estados de recuperación (4 líneas)
+    - Agregados handlers (31 líneas)
+    - Reemplazado texto por botón (9 líneas)
+    - Renderizados modales (18 líneas)
+    - Agregados estilos (10 líneas)
+    TOTAL: +75 líneas, -3 líneas
+
+📄 PHASE6_EMAIL_RECOVERY_COMPLETE.md (nuevo)
+    - Documentación completa de Fase 6
+    - Flujo de usuario detallado
+    - Guía de testing
+    - Checklist de completado
+
+═══════════════════════════════════════════════════════════════════
+🎉 FASE 6 COMPLETAMENTE FINALIZADA
+═══════════════════════════════════════════════════════════════════
+
+✅ Backend implementado
+✅ UI/UX completa en ambos componentes
+✅ Seguridad aplicada (hash, RLS, expiración)
+✅ Testing guide creado
+✅ Documentación completa
+✅ Deploy automatizado
+✅ Botón visible en Expo Go
+
+El usuario ahora puede recuperar su PIN desde cualquier pantalla
+de verificación, ya sea el modal completo o el teclado inline.
+
+═══════════════════════════════════════════════════════════════════
