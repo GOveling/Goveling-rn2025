@@ -56,7 +56,7 @@ export class TrackingOptimizer {
       timeInterval: context.updateInterval,
       showsBackgroundLocationIndicator: true,
       foregroundService: {
-        notificationTitle: '🚀 Modo Travel Activo',
+        notificationTitle: 'Modo Travel Activo',
         notificationBody: `Rastreando (${this.getModeName(context.mode)}) - ${context.speedKmh.toFixed(0)} km/h`,
       },
     };

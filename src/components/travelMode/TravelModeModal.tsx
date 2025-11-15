@@ -318,9 +318,12 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
           ]}
         >
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            🚀 {t('home.travel_mode')}
-          </Text>
+          <View style={styles.headerTitle}>
+            <Ionicons name="rocket" size={24} color="#8B5CF6" style={{ marginRight: 8 }} />
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {t('home.travel_mode')}
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={onClose}
             style={[styles.closeButton, { backgroundColor: theme.colors.border }]}
@@ -386,15 +389,18 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 { backgroundColor: '#3B82F6' },
               ]}
             >
-              <Text
-                style={[
-                  styles.mapButtonText,
-                  !state.isActive && styles.mapButtonTextDisabled,
-                  { color: '#FFF' },
-                ]}
-              >
-                🗺️ {t('home.view_map')}
-              </Text>
+              <View style={styles.buttonContent}>
+                <Ionicons name="map" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                <Text
+                  style={[
+                    styles.mapButtonText,
+                    !state.isActive && styles.mapButtonTextDisabled,
+                    { color: '#FFF' },
+                  ]}
+                >
+                  {t('home.view_map')}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -434,9 +440,17 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
             )}
 
             {state.energyMode && (
-              <Text style={[styles.energyMode, { color: theme.colors.textMuted }]}>
-                🔋 Modo: {state.energyMode}
-              </Text>
+              <View style={styles.energyModeContainer}>
+                <Ionicons
+                  name="battery-half"
+                  size={16}
+                  color={theme.colors.textMuted}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.energyMode, { color: theme.colors.textMuted }]}>
+                  Modo: {state.energyMode}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -619,18 +633,26 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
                 style={[styles.button, { backgroundColor: '#3B82F6' }]}
                 disabled={isLoading}
               >
-                <Text style={[styles.buttonText, { color: '#FFF' }]}>
-                  {isLoading ? t('home.starting') : `🚀 ${t('home.start_travel_mode')}`}
-                </Text>
+                <View style={styles.buttonContent}>
+                  {!isLoading && (
+                    <Ionicons name="rocket" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                    {isLoading ? t('home.starting') : t('home.start_travel_mode')}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 onPress={handleStopTravelMode}
                 style={[styles.button, { backgroundColor: '#EF4444' }]}
               >
-                <Text style={[styles.buttonText, { color: '#FFF' }]}>
-                  🛑 {t('home.stop_travel_mode')}
-                </Text>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="stop-circle" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                    {t('home.stop_travel_mode')}
+                  </Text>
+                </View>
               </TouchableOpacity>
             )}
           </View>
@@ -644,13 +666,13 @@ export function TravelModeModal({ visible, onClose, tripId, tripName }: TravelMo
           >
             <Text style={[styles.infoTitle, { color: '#3B82F6' }]}>{t('home.how_it_works')}</Text>
             <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-              • {t('home.how_it_works_1')}
+              {t('home.how_it_works_1')}
             </Text>
             <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-              • {t('home.how_it_works_2')}
+              {t('home.how_it_works_2')}
             </Text>
             <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>
-              • {t('home.how_it_works_3')}
+              {t('home.how_it_works_3')}
             </Text>
           </View>
         </ScrollView>
@@ -726,6 +748,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -740,6 +766,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 20,
     fontWeight: 'bold',
+    lineHeight: 20,
   },
   content: {
     flex: 1,
@@ -811,6 +838,10 @@ const styles = StyleSheet.create({
   },
   energyMode: {
     fontSize: 14,
+  },
+  energyModeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 8,
   },
   placeItem: {
@@ -837,6 +868,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 16,
     alignItems: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     fontSize: 16,
