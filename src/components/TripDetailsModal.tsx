@@ -41,26 +41,26 @@ import ManageTeamModal from './teams/ManageTeamModal';
 
 // Mapas para obtener íconos de alojamiento y transporte
 const accommodationIcons: { [key: string]: string } = {
-  hotel: '🏨',
-  cabin: '🏘️',
-  resort: '🏖️',
-  hostel: '🏠',
-  apartment: '🏢',
-  camping: '⛺',
-  rural_house: '🏡',
-  other: '🏨',
+  hotel: 'business',
+  cabin: 'home',
+  resort: 'bed',
+  hostel: 'home-outline',
+  apartment: 'business-outline',
+  camping: 'bonfire',
+  rural_house: 'home-sharp',
+  other: 'business',
 };
 
 const transportIcons: { [key: string]: string } = {
-  car: '🚗',
-  plane: '✈️',
-  train: '🚂',
-  bus: '🚌',
-  metro: '🚇',
-  boat: '⛵',
-  bike: '🚲',
-  walking: '🚶',
-  other: '🚗',
+  car: 'car',
+  plane: 'airplane',
+  train: 'train',
+  bus: 'bus',
+  metro: 'subway',
+  boat: 'boat',
+  bike: 'bicycle',
+  walking: 'walk',
+  other: 'car',
 };
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -693,10 +693,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           <View style={styles.tagContainer}>
             {editableTrip.accommodation_preference.split(',').map((acc, index) => {
               const trimmedAcc = acc.trim();
-              const icon = accommodationIcons[trimmedAcc] || '🏨';
+              const icon = accommodationIcons[trimmedAcc] || 'business';
               return (
                 <View key={index} style={styles.tag}>
-                  <Text style={styles.tagIcon}>{icon}</Text>
+                  <Ionicons name={icon as any} size={16} color="#666" style={{ marginRight: 6 }} />
                   <Text style={styles.tagText}>
                     {trimmedAcc.charAt(0).toUpperCase() + trimmedAcc.slice(1)}
                   </Text>
@@ -719,10 +719,10 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           <View style={styles.tagContainer}>
             {editableTrip.transport_preference.split(',').map((transport, index) => {
               const trimmedTransport = transport.trim();
-              const icon = transportIcons[trimmedTransport] || '🚗';
+              const icon = transportIcons[trimmedTransport] || 'car';
               return (
                 <View key={index} style={styles.tag}>
-                  <Text style={styles.tagIcon}>{icon}</Text>
+                  <Ionicons name={icon as any} size={16} color="#666" style={{ marginRight: 6 }} />
                   <Text style={styles.tagText}>
                     {trimmedTransport.charAt(0).toUpperCase() + trimmedTransport.slice(1)}
                   </Text>
@@ -1014,7 +1014,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           ]}
         >
           <View style={styles.headerLeft}>
-            <Text style={styles.headerIcon}>🌍</Text>
+            <Ionicons name="globe" size={24} color={theme.colors.text} style={{ marginRight: 8 }} />
             <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{trip.title}</Text>
           </View>
           <TouchableOpacity onPress={onClose}>
@@ -1113,10 +1113,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  headerIcon: {
-    fontSize: 24,
-    marginRight: 8,
   },
   headerTitle: {
     fontSize: 20,
@@ -1239,10 +1235,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-  },
-  tagIcon: {
-    fontSize: 16,
-    marginRight: 6,
   },
   tagText: {
     fontSize: 14,
