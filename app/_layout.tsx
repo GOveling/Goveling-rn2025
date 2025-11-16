@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 
 import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack, useSegments, Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
@@ -136,43 +138,50 @@ export default function Root() {
 
   return (
     <ErrorBoundary>
-      <Provider store={store}>
-        <PersistGate loading={<ActivityIndicator size="large" />} persistor={persistor}>
-          <I18nextProvider i18n={i18n} key={i18nKey}>
-            <ThemeProvider>
-              <AppSettingsProvider>
-                <AuthProvider>
-                  <TravelModeProvider>
-                    <ToastProvider>
-                      <>
-                        {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
-                        <Stack
-                          screenOptions={{
-                            headerShown: false,
-                            ...(Platform.OS === 'web' && {
-                              contentStyle: { backgroundColor: '#F7F7FA' },
-                            }),
-                          }}
-                        >
-                          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                          {/* Use explicit routes to match actual files */}
-                          <Stack.Screen name="auth/index" options={{ headerShown: false }} />
-                          <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
-                          <Stack.Screen name="settings/index" options={{ headerShown: false }} />
-                          <Stack.Screen name="+not-found" />
-                        </Stack>
-                        {/* El guard se renderiza como hermano y solo hace Redirect cuando corresponde */}
-                        <InlineAuthGuard />
-                        <StatusBar style="auto" />
-                      </>
-                    </ToastProvider>
-                  </TravelModeProvider>
-                </AuthProvider>
-              </AppSettingsProvider>
-            </ThemeProvider>
-          </I18nextProvider>
-        </PersistGate>
-      </Provider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Provider store={store}>
+          <PersistGate loading={<ActivityIndicator size="large" />} persistor={persistor}>
+            <I18nextProvider i18n={i18n} key={i18nKey}>
+              <ThemeProvider>
+                <AppSettingsProvider>
+                  <AuthProvider>
+                    <TravelModeProvider>
+                      <BottomSheetModalProvider>
+                        <ToastProvider>
+                          <>
+                            {/* El Stack siempre está montado para que el router pueda renderizar rutas */}
+                            <Stack
+                              screenOptions={{
+                                headerShown: false,
+                                ...(Platform.OS === 'web' && {
+                                  contentStyle: { backgroundColor: '#F7F7FA' },
+                                }),
+                              }}
+                            >
+                              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                              {/* Use explicit routes to match actual files */}
+                              <Stack.Screen name="auth/index" options={{ headerShown: false }} />
+                              <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+                              <Stack.Screen
+                                name="settings/index"
+                                options={{ headerShown: false }}
+                              />
+                              <Stack.Screen name="+not-found" />
+                            </Stack>
+                            {/* El guard se renderiza como hermano y solo hace Redirect cuando corresponde */}
+                            <InlineAuthGuard />
+                            <StatusBar style="auto" />
+                          </>
+                        </ToastProvider>
+                      </BottomSheetModalProvider>
+                    </TravelModeProvider>
+                  </AuthProvider>
+                </AppSettingsProvider>
+              </ThemeProvider>
+            </I18nextProvider>
+          </PersistGate>
+        </Provider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }
