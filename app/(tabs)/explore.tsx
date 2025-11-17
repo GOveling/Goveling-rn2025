@@ -404,11 +404,26 @@ export default function ExploreTab() {
             <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
               {tripId ? t('explore.add_places_title') : t('explore.explore_places_title')}
             </Text>
-            <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
-              {tripId
-                ? t('explore.adding_places_to', { tripTitle })
-                : t('explore.discover_subtitle')}
-            </Text>
+            <View style={styles.headerSubtitleContainer}>
+              <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
+                {tripId
+                  ? t('explore.adding_places_to', { tripTitle })
+                  : t('explore.discover_subtitle')}
+              </Text>
+              {tripId && (
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log('🚫 Clearing trip context, returning to free exploration');
+                    // Clear the trip context and return to explore without tripId
+                    router.replace('/explore');
+                  }}
+                  style={styles.clearTripButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Filtros Categorías (UI/UX Mejorado) */}
@@ -836,6 +851,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666666',
     fontWeight: '500',
+  },
+  headerSubtitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  clearTripButton: {
+    padding: 4,
+    marginLeft: 4,
   },
 
   // Content styles
