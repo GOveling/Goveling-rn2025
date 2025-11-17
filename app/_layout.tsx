@@ -2,12 +2,12 @@ import React, { useEffect } from 'react';
 
 import { Platform, View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack, useSegments, Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { I18nextProvider } from 'react-i18next';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 

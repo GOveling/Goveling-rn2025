@@ -31,6 +31,7 @@ interface PlaceTripsModalProps {
   onClose: () => void;
   placeId: string;
   placeName: string;
+  onCloseAll?: () => void; // New: callback to close parent modal too
 }
 
 export default function PlaceTripsModal({
@@ -38,6 +39,7 @@ export default function PlaceTripsModal({
   onClose,
   placeId,
   placeName,
+  onCloseAll,
 }: PlaceTripsModalProps) {
   const theme = useTheme();
   const router = useRouter();
@@ -112,7 +114,16 @@ export default function PlaceTripsModal({
   };
 
   const handleTripPress = (tripId: string) => {
+    console.log('🚀 PlaceTripsModal: Navigating to trip:', tripId);
+    // Close this modal
     onClose();
+    // Close parent modal (PlaceDetailModal) if callback provided
+    if (onCloseAll) {
+      console.log('🚀 PlaceTripsModal: Closing parent modal');
+      onCloseAll();
+    }
+    // Navigate to trip
+    console.log('🚀 PlaceTripsModal: Executing navigation');
     router.push(`/trips/${tripId}`);
   };
 
@@ -221,6 +232,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%',
+    minHeight: '50%',
     paddingBottom: 34,
   },
   header: {
@@ -253,12 +265,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minHeight: 300,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 40,
+    minHeight: 200,
   },
   loadingText: {
     marginTop: 12,
@@ -268,8 +282,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 40,
     paddingHorizontal: 40,
+    minHeight: 200,
   },
   emptyTitle: {
     fontSize: 20,

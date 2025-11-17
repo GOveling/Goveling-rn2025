@@ -17,8 +17,8 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
-import { Ionicons } from '@expo/vector-icons';
 
+import { Ionicons } from '@expo/vector-icons';
 import LottieView, { type AnimationObject } from 'lottie-react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -38,6 +38,7 @@ import { EnhancedPlace } from '../lib/placesSearch';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../lib/theme';
 import { getRouteToPlace, type TransportMode } from '../lib/useDirections';
+import { useFavorites } from '../lib/useFavorites';
 import { colorizeLottie } from '../utils/lottieColorizer';
 import { useDistanceUnit } from '../utils/units';
 
@@ -67,6 +68,12 @@ export default function PlaceDetailModal({
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const distance = useDistanceUnit();
+  const {
+    isFavorite,
+    toggleFavorite,
+    loading: favoritesLoading,
+    refreshFavorites,
+  } = useFavorites();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = React.useState(0);
   const [showMapModal, setShowMapModal] = React.useState(false);
   const [showMiniMap, setShowMiniMap] = React.useState(false);
@@ -143,6 +150,18 @@ export default function PlaceDetailModal({
   React.useEffect(() => {
     setSelectedPhotoIndex(0);
   }, [place?.id]);
+
+  // Refresh favorites when modal opens (only once per place/visibility change)
+  React.useEffect(() => {
+    const loadFavorites = async () => {
+      if (visible && place) {
+        console.log('[PlaceDetailModal] Refreshing favorites on modal open...');
+        await refreshFavorites();
+      }
+    };
+    loadFavorites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, place?.id]);
 
   // Check if place is in any user trip
   React.useEffect(() => {
@@ -485,8 +504,24 @@ export default function PlaceDetailModal({
   };
 
   const handleSavePlace = async () => {
-    // Open modal showing all trips where this place has been added
-    setShowPlaceTrips(true);
+    console.log('[PlaceDetailModal] 💖 Favorite button clicked!', place.name);
+    console.log('[PlaceDetailModal] Current favorite state:', isFavorite(place.id));
+
+    // If already a favorite, show trips modal instead of toggling
+    if (isFavorite(place.id)) {
+      console.log('[PlaceDetailModal] Opening trips modal...');
+      setTempHideMainModal(true); // Hide main modal to show trips modal
+      setShowPlaceTrips(true);
+      return;
+    }
+
+    // If not a favorite, add it
+    const success = await toggleFavorite(place);
+    console.log('[PlaceDetailModal] Toggle result:', success);
+
+    if (!success) {
+      Alert.alert(t('explore.modal.error_title'), t('explore.card.error_favorites'));
+    }
   };
 
   const handleAddToTrip = () => {
@@ -631,13 +666,19 @@ export default function PlaceDetailModal({
                 </View>
               </TouchableOpacity>
 
-              {(isAlreadyInTrip || isPlaceInAnyTrip) && (
-                <TouchableOpacity style={styles.saveButton} onPress={handleSavePlace}>
-                  <View style={styles.saveButtonBlur}>
-                    <Ionicons name="heart" size={22} color="#EF4444" />
-                  </View>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSavePlace}
+                disabled={favoritesLoading}
+              >
+                <View style={styles.saveButtonBlur}>
+                  <Ionicons
+                    name={isFavorite(place.id) ? 'heart' : 'heart-outline'}
+                    size={22}
+                    color={isFavorite(place.id) ? '#EF4444' : '#FFFFFF'}
+                  />
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -1099,7 +1140,15 @@ export default function PlaceDetailModal({
       {/* Place Trips Modal - Shows all trips where this place has been added */}
       <PlaceTripsModal
         visible={showPlaceTrips}
-        onClose={() => setShowPlaceTrips(false)}
+        onClose={() => {
+          setShowPlaceTrips(false);
+          setTempHideMainModal(false); // Restore main modal
+        }}
+        onCloseAll={() => {
+          console.log('🚀 PlaceDetailModal: Closing all modals before navigation');
+          setShowPlaceTrips(false);
+          onClose(); // Close the main PlaceDetailModal
+        }}
         placeId={place.id}
         placeName={place.name}
       />

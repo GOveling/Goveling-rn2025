@@ -5,6 +5,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   Image,
   StyleSheet,
   Alert,
@@ -12,8 +13,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { translateDynamic } from '../i18n';
@@ -30,6 +31,7 @@ interface PlaceCardProps {
 }
 
 export default function PlaceCard({ place, onPress, style, compact = false }: PlaceCardProps) {
+  console.log('[PlaceCard] RENDER:', place.name);
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { isFavorite, toggleFavorite, loading } = useFavorites();
@@ -58,8 +60,10 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
   }, [place.description, i18n.language]);
 
   const handleFavoritePress = async (e: GestureResponderEvent) => {
+    console.log('[PlaceCard] Favorite button pressed!', place.name);
     e.stopPropagation();
     const success = await toggleFavorite(place);
+    console.log('[PlaceCard] Toggle result:', success);
     if (!success) {
       Alert.alert(t('explore.modal.error_title'), t('explore.card.error_favorites'));
     }
@@ -136,114 +140,143 @@ export default function PlaceCard({ place, onPress, style, compact = false }: Pl
   };
 
   return (
-    <TouchableOpacity
+    <View
       style={[
         styles.container,
         compact && styles.containerCompact,
         { backgroundColor: theme.colors.card },
         style,
       ]}
-      onPress={() => onPress(place)}
-      activeOpacity={0.7}
     >
-      <View style={[styles.photoContainer, compact && styles.photoContainerCompact]}>
-        {renderPhoto()}
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <Text
-            style={[
-              styles.placeName,
-              compact && styles.placeNameCompact,
-              { color: theme.colors.text },
-            ]}
-            numberOfLines={compact ? 1 : 2}
-          >
-            {place.name}
-          </Text>
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={handleFavoritePress}
-            disabled={loading}
-          >
-            <Text style={styles.favoriteIcon}>{isFavorite(place.id) ? '❤️' : '🤍'}</Text>
-          </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.cardTouchable}
+        onPress={() => onPress(place)}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.photoContainer, compact && styles.photoContainerCompact]}>
+          {renderPhoto()}
         </View>
 
-        {place.address && (
-          <View style={styles.addressRow}>
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color={theme.colors.textMuted}
-              style={[styles.addressIcon, { color: theme.colors.textMuted }]}
-            />
+        <View style={styles.content}>
+          <View style={styles.titleRow}>
             <Text
               style={[
-                styles.addressText,
-                compact && styles.addressTextCompact,
-                { color: theme.colors.textMuted },
+                styles.placeName,
+                compact && styles.placeNameCompact,
+                { color: theme.colors.text },
               ]}
               numberOfLines={compact ? 1 : 2}
             >
-              {place.address}
+              {place.name}
             </Text>
           </View>
-        )}
 
-        {/* Editorial Summary / About */}
-        {place.description && !compact && (
-          <Text style={[styles.editorialText, { color: theme.colors.textMuted }]} numberOfLines={2}>
-            {aboutText ?? place.description}
-          </Text>
-        )}
-
-        {typeof place.distance_km === 'number' && (
-          <Text
-            style={[
-              styles.distanceText,
-              compact && styles.distanceTextCompact,
-              { color: theme.colors.textMuted },
-            ]}
-          >
-            {distance.format(place.distance_km, 2)}
-          </Text>
-        )}
-
-        <View style={styles.bottomRow}>
-          {place.rating && (
-            <View style={styles.ratingContainer}>
-              <Text style={styles.starIcon}>⭐</Text>
+          {place.address && (
+            <View style={styles.addressRow}>
+              <Ionicons
+                name="location-outline"
+                size={16}
+                color={theme.colors.textMuted}
+                style={[styles.addressIcon, { color: theme.colors.textMuted }]}
+              />
               <Text
                 style={[
-                  styles.ratingText,
-                  compact && styles.ratingTextCompact,
-                  { color: theme.colors.text },
+                  styles.addressText,
+                  compact && styles.addressTextCompact,
+                  { color: theme.colors.textMuted },
                 ]}
+                numberOfLines={compact ? 1 : 2}
               >
-                {place.rating}
+                {place.address}
               </Text>
-              {place.reviews_count && (
-                <Text
-                  style={[
-                    styles.reviewsText,
-                    compact && styles.reviewsTextCompact,
-                    { color: theme.colors.textMuted },
-                  ]}
-                >
-                  ({place.reviews_count})
-                </Text>
-              )}
             </View>
           )}
 
-          {renderPriceLevel()}
+          {/* Editorial Summary / About */}
+          {place.description && !compact && (
+            <Text
+              style={[styles.editorialText, { color: theme.colors.textMuted }]}
+              numberOfLines={2}
+            >
+              {aboutText ?? place.description}
+            </Text>
+          )}
 
-          {renderStatus()}
+          {typeof place.distance_km === 'number' && (
+            <Text
+              style={[
+                styles.distanceText,
+                compact && styles.distanceTextCompact,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              {distance.format(place.distance_km, 2)}
+            </Text>
+          )}
+
+          <View style={styles.bottomRow}>
+            {place.rating && (
+              <View style={styles.ratingContainer}>
+                <Text style={styles.starIcon}>⭐</Text>
+                <Text
+                  style={[
+                    styles.ratingText,
+                    compact && styles.ratingTextCompact,
+                    { color: theme.colors.text },
+                  ]}
+                >
+                  {place.rating}
+                </Text>
+                {place.reviews_count && (
+                  <Text
+                    style={[
+                      styles.reviewsText,
+                      compact && styles.reviewsTextCompact,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    ({place.reviews_count})
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {renderPriceLevel()}
+
+            {renderStatus()}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+
+      {/* Botón de favoritos en posición absoluta, fuera del TouchableOpacity */}
+      <Pressable
+        style={styles.favoriteButtonAbsolute}
+        onPress={(e) => {
+          console.log('[PlaceCard] ⭐ PRESSABLE PRESSED!', place.name);
+          handleFavoritePress(e);
+        }}
+        onPressIn={() => console.log('[PlaceCard] 👆 Press IN', place.name)}
+        onPressOut={() => console.log('[PlaceCard] 👇 Press OUT', place.name)}
+        disabled={loading}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
+        {({ pressed }) => {
+          console.log(
+            '[PlaceCard] 🔄 Render button for:',
+            place.name,
+            'pressed:',
+            pressed,
+            'isFavorite:',
+            isFavorite(place.id)
+          );
+          return (
+            <Text style={[styles.favoriteIcon, pressed && { opacity: 0.6 }]}>
+              {isFavorite(place.id) ? '❤️' : '🤍'}
+            </Text>
+          );
+        }}
+      </Pressable>
+    </View>
   );
 }
 
@@ -299,8 +332,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
   },
+  cardTouchable: {
+    flex: 1,
+  },
   favoriteButton: {
     padding: 4,
+  },
+  favoriteButtonAbsolute: {
+    position: 'absolute',
+    top: 24,
+    right: 24,
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    zIndex: 10,
   },
   favoriteIcon: {
     fontSize: 20,

@@ -132,18 +132,26 @@ export function useFavorites() {
   const [loading, setLoading] = useState(false);
 
   const loadFavorites = useCallback(async () => {
+    console.log('[useFavorites] 🔄 loadFavorites started...');
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('[useFavorites] ❌ No user found');
+        return;
+      }
 
       // Get all trip IDs where user is owner or collaborator
-      const { data: ownTrips } = await supabase.from('trips').select('id').eq('user_id', user.id);
+      const { data: ownTrips } = await supabase
+        .from('trips')
+        .select('id')
+        .or(`owner_id.eq.${user.id},user_id.eq.${user.id}`);
       const { data: collabTrips } = await supabase
         .from('trip_collaborators')
         .select('trip_id')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('status', 'accepted');
 
       const tripIds = [
         ...(ownTrips || []).map((t) => t.id),
@@ -167,6 +175,7 @@ export function useFavorites() {
 
       // Get unique place_ids (a place might be in multiple trips)
       const uniquePlaceIds = [...new Set(data?.map((item) => item.place_id) || [])];
+      console.log('[useFavorites] Loaded favorites:', uniquePlaceIds.length, 'places');
       setFavorites(uniquePlaceIds);
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -180,7 +189,16 @@ export function useFavorites() {
 
   const isFavorite = useCallback(
     (placeId: string) => {
-      return favorites.includes(placeId);
+      const result = favorites.includes(placeId);
+      console.log(
+        '[useFavorites] isFavorite check:',
+        placeId,
+        '→',
+        result,
+        'Total favorites:',
+        favorites.length
+      );
+      return result;
     },
     [favorites]
   );
@@ -273,6 +291,12 @@ export function useFavorites() {
           const { error } = await supabase.from('trip_places').insert([tripPlaceData]);
 
           if (error) {
+            // Si es error de duplicado, considéralo como éxito (ya existe)
+            if (error.code === '23505') {
+              console.log('Place already in favorites, treating as success');
+              setFavorites((prev) => [...prev, place.id]);
+              return true;
+            }
             console.error('Error adding favorite:', error);
             return false;
           }
