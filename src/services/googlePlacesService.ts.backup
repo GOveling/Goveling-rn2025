@@ -1,0 +1,209 @@
+import Constants from 'expo-constants';
+
+// Interfaces para Places API (New) - Compatible con Explore
+export interface NearbyPlace {
+  id: string;
+  displayName: {
+    text: string;
+    languageCode: string;
+  };
+  formattedAddress: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  rating?: number;
+  userRatingCount?: number;
+  types?: string[];
+  primaryType?: string;
+  photos?: Array<{
+    name: string;
+    widthPx: number;
+    heightPx: number;
+  }>;
+  distance?: number;
+}
+
+// Usar la misma estrategia que Explore: leer de app.json
+const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY || '';
+const PLACES_API_BASE = 'https://places.googleapis.com/v1';
+
+/**
+ * Servicio para interactuar con Google Places API (New)
+ * Compatible con la implementación de ExploreService
+ */
+export class GooglePlacesService {
+  /**
+   * Verificar que la API Key esté configurada
+   */
+  private static checkApiKey(): void {
+    if (!GOOGLE_PLACES_API_KEY || GOOGLE_PLACES_API_KEY.trim() === '') {
+      console.warn(
+        'Google Places API Key is not configured in app.json. Places search will not work.'
+      );
+      throw new Error(
+        'Google Places API Key is not configured. Please add GOOGLE_MAPS_API_KEY to app.json extra section.'
+      );
+    }
+  }
+
+  /**
+   * Busca lugares mientras el usuario escribe (autocomplete)
+   */
+  static async searchPlaces(
+    query: string,
+    location?: { latitude: number; longitude: number },
+    radius?: number
+  ): Promise<PlaceSuggestion[]> {
+    if (!query.trim()) return [];
+
+    // Verificar que la API key esté configurada
+    if (!this.API_KEY) {
+      console.warn('Google Places API Key not configured. Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env');
+      return [];
+    }
+
+    try {
+      let url = `${this.BASE_URL}/autocomplete/json?input=${encodeURIComponent(query)}&key=${this.API_KEY}`;
+
+      // Si hay ubicación, priorizar resultados cercanos
+      if (location) {
+        url += `&location=${location.latitude},${location.longitude}`;
+        if (radius) {
+          url += `&radius=${radius}`;
+        }
+      }
+
+      // Tipo de lugares (excluir rutas y direcciones genéricas)
+      url += '&types=establishment|tourist_attraction|point_of_interest';
+
+      const response = await fetch(url);
+      const data: AutocompleteResponse = await response.json();
+
+      if (data.status === 'OK') {
+        return data.predictions;
+      }
+
+      if (data.status === 'REQUEST_DENIED') {
+        console.error('Google Places API: REQUEST_DENIED. Check your API key and enable Places API in Google Cloud Console.');
+      } else {
+        console.warn('Google Places Autocomplete status:', data.status);
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Error searching places:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene los detalles completos de un lugar por place_id
+   */
+  static async getPlaceDetails(placeId: string): Promise<GooglePlace | null> {
+    try {
+      const url = `${this.BASE_URL}/details/json?place_id=${placeId}&key=${this.API_KEY}&fields=place_id,name,formatted_address,geometry,types,photos,rating,user_ratings_total`;
+
+      const response = await fetch(url);
+      const data: PlaceDetailsResponse = await response.json();
+
+      if (data.status === 'OK') {
+        return data.result;
+      }
+
+      console.warn('Google Places Details status:', data.status);
+      return null;
+    } catch (error) {
+      console.error('Error getting place details:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Busca lugares cercanos a una ubicación
+   */
+  static async searchNearby(
+    location: { latitude: number; longitude: number },
+    radius: number = 5000, // 5km por defecto
+    type?: string
+  ): Promise<GooglePlace[]> {
+    // Verificar que la API key esté configurada
+    if (!this.API_KEY) {
+      console.warn('Google Places API Key not configured. Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env');
+      return [];
+    }
+
+    try {
+      let url = `${this.BASE_URL}/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=${radius}&key=${this.API_KEY}`;
+
+      if (type) {
+        url += `&type=${type}`;
+      }
+
+      // Ordenar por prominencia (popularidad)
+      url += '&rankby=prominence';
+
+      const response = await fetch(url);
+      const data: NearbySearchResponse = await response.json();
+
+      if (data.status === 'OK') {
+        return data.results;
+      }
+
+      if (data.status === 'REQUEST_DENIED') {
+        console.error('Google Places API: REQUEST_DENIED. Check your API key and enable Places API in Google Cloud Console.');
+        console.error('Visit: https://console.cloud.google.com/apis/library/places-backend.googleapis.com');
+      } else {
+        console.warn('Google Places Nearby status:', data.status);
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Error searching nearby places:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene la URL de una foto de Google Places
+   */
+  static getPhotoUrl(
+    photoReference: string,
+    maxWidth: number = 400
+  ): string {
+    return `${this.BASE_URL}/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${this.API_KEY}`;
+  }
+
+  /**
+   * Busca lugares de texto abierto (cuando autocomplete no es suficiente)
+   */
+  static async textSearch(
+    query: string,
+    location?: { latitude: number; longitude: number },
+    radius?: number
+  ): Promise<GooglePlace[]> {
+    try {
+      let url = `${this.BASE_URL}/textsearch/json?query=${encodeURIComponent(query)}&key=${this.API_KEY}`;
+
+      if (location) {
+        url += `&location=${location.latitude},${location.longitude}`;
+        if (radius) {
+          url += `&radius=${radius}`;
+        }
+      }
+
+      const response = await fetch(url);
+      const data: NearbySearchResponse = await response.json();
+
+      if (data.status === 'OK') {
+        return data.results;
+      }
+
+      console.warn('Google Places Text Search status:', data.status);
+      return [];
+    } catch (error) {
+      console.error('Error in text search:', error);
+      return [];
+    }
+  }
+}

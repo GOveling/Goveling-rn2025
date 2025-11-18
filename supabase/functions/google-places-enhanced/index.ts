@@ -136,7 +136,7 @@ async function textSearchGoogle(params: {
   locale?: string;
   maxResultCount?: number;
 }): Promise<any[]> {
-  const { query, includedType, userLocation, locale = 'en', maxResultCount = 8 } = params;
+  const { query, includedType, userLocation, locale = 'en', maxResultCount = 20 } = params;
 
   console.log('[textSearchGoogle] Starting with params:', {
     query,
@@ -163,6 +163,7 @@ async function textSearchGoogle(params: {
     };
   }
 
+  // ✅ Optimización Fase 1: Fields básicos (gratis) + photos (premium pero necesario para UX)
   const fieldMask = [
     'places.id',
     'places.displayName',
@@ -173,9 +174,10 @@ async function textSearchGoogle(params: {
     'places.types',
     'places.priceLevel',
     'places.businessStatus',
-    'places.currentOpeningHours',
-    'places.photos',
-    // Nuevos campos (GRATIS)
+    // ⚠️ Premium fields necesarios para UX
+    'places.photos', // $0.007 - Necesario para mostrar imágenes
+    // 'places.currentOpeningHours',  // $0.003 - Comentado, usamos regularOpeningHours
+    // Campos básicos/avanzados GRATIS
     'places.editorialSummary',
     'places.websiteUri',
     'places.regularOpeningHours.weekdayDescriptions',
@@ -212,6 +214,100 @@ async function textSearchGoogle(params: {
 
   const data = await resp.json();
   console.log('[textSearchGoogle] Response data:', JSON.stringify(data, null, 2));
+
+  return data.places || [];
+}
+
+/**
+ * ✅ Optimización Fase 1: Nearby Search API
+ * Más eficiente para búsquedas basadas en ubicación + tipos
+ */
+async function nearbySearchGoogle(params: {
+  location: { lat: number; lng: number };
+  radius?: number;
+  includedTypes?: string[];
+  locale?: string;
+  maxResultCount?: number;
+}): Promise<any[]> {
+  const {
+    location,
+    radius = 5000,
+    includedTypes = [],
+    locale = 'en',
+    maxResultCount = 20,
+  } = params;
+
+  console.log('[nearbySearchGoogle] Starting with params:', {
+    location,
+    radius,
+    includedTypes,
+    locale,
+    maxResultCount,
+  });
+
+  const body: any = {
+    languageCode: locale,
+    maxResultCount,
+    rankPreference: 'DISTANCE', // ✅ Ordenar por distancia
+    locationRestriction: {
+      circle: {
+        center: { latitude: location.lat, longitude: location.lng },
+        radius,
+      },
+    },
+  };
+
+  // Solo agregar includedTypes si hay tipos especificados
+  if (includedTypes.length > 0) {
+    body.includedTypes = includedTypes;
+  }
+
+  // Mismo fieldMask optimizado que Text Search
+  const fieldMask = [
+    'places.id',
+    'places.displayName',
+    'places.formattedAddress',
+    'places.location',
+    'places.rating',
+    'places.userRatingCount',
+    'places.types',
+    'places.priceLevel',
+    'places.businessStatus',
+    'places.photos', // $0.007 - Necesario para mostrar imágenes
+    'places.editorialSummary',
+    'places.websiteUri',
+    'places.regularOpeningHours.weekdayDescriptions',
+    'places.primaryType',
+    'places.primaryTypeDisplayName',
+    'places.viewport',
+    'places.plusCode',
+    'places.shortFormattedAddress',
+    'places.accessibilityOptions',
+    'places.addressComponents',
+  ].join(',');
+
+  console.log('[nearbySearchGoogle] Request body:', JSON.stringify(body, null, 2));
+
+  const resp = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': GOOGLE_PLACES_KEY || '',
+      'X-Goog-FieldMask': fieldMask,
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log('[nearbySearchGoogle] Response status:', resp.status, resp.statusText);
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    console.error('[nearbySearchGoogle] Google error', resp.status, txt);
+    return [];
+  }
+
+  const data = await resp.json();
+  console.log('[nearbySearchGoogle] Found places:', data.places?.length || 0);
 
   return data.places || [];
 }
@@ -260,14 +356,22 @@ function normalizePlace(
     // Limitar fotos (máx 5) construyendo URL media endpoint
     const photos: string[] = [];
     if (raw.photos && Array.isArray(raw.photos)) {
+      console.log(
+        `[normalizePlace] Processing ${raw.photos.length} photos for place: ${raw.displayName?.text}`
+      );
       for (const p of raw.photos.slice(0, 5)) {
         if (p.name) {
           // p.name ej: "places/XXX/photos/YYY"
-          photos.push(
-            `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&key=${GOOGLE_PLACES_KEY}`
-          );
+          const photoUrl = `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&key=${GOOGLE_PLACES_KEY}`;
+          photos.push(photoUrl);
+          console.log(`[normalizePlace] Added photo: ${p.name}`);
         }
       }
+    } else {
+      console.log(
+        `[normalizePlace] No photos found for place: ${raw.displayName?.text}, raw.photos:`,
+        raw.photos
+      );
     }
 
     return {
@@ -598,7 +702,41 @@ serve(async (req: Request) => {
     }
   }
 
-  if (selectedCategories.length > 0) {
+  // ✅ Optimización Fase 1: Usar Nearby Search cuando es apropiado
+  const isNearbySearch = selectedCategories.length > 0 && userLocation && input.trim().length < 5;
+
+  if (isNearbySearch) {
+    console.log('[google-places-enhanced] ✨ Using optimized Nearby Search API');
+
+    // Mapear categorías a tipos de Google
+    const includedTypes: string[] = [];
+    for (const cat of selectedCategories.slice(0, 5)) {
+      const types = CATEGORY_TO_GOOGLE_TYPES[cat];
+      if (types && types[0]) {
+        includedTypes.push(types[0]);
+      }
+    }
+
+    console.log('[google-places-enhanced] Nearby search types:', includedTypes);
+
+    const nearbyPlaces = await nearbySearchGoogle({
+      location: userLocation,
+      radius: 5000, // 5km
+      includedTypes,
+      locale,
+      maxResultCount: 20,
+    });
+
+    console.log('[google-places-enhanced] Nearby search results:', nearbyPlaces.length);
+
+    for (const p of nearbyPlaces) {
+      const norm = normalizePlace(p, selectedCategories[0], userLocation);
+      if (norm && !seen.has(norm.id)) {
+        seen.add(norm.id);
+        aggregated.push(norm);
+      }
+    }
+  } else if (selectedCategories.length > 0) {
     console.log('[google-places-enhanced] Running category-based search (PARALLEL)');
 
     // Execute all category searches in parallel for better performance
@@ -611,12 +749,12 @@ serve(async (req: Request) => {
     console.log('[google-places-enhanced] All parallel category searches completed');
   } else {
     console.log('[google-places-enhanced] Running general search');
-    // Búsqueda general (sin includedType)
+    // ✅ Optimización Fase 1: Aumentar resultados generales
     const generalPlaces = await textSearchGoogle({
       query: input,
       userLocation,
       locale,
-      maxResultCount: 12,
+      maxResultCount: 20, // ⬆️ De 12 a 20
     });
     console.log('[google-places-enhanced] General search results:', generalPlaces.length);
 
@@ -644,36 +782,59 @@ serve(async (req: Request) => {
         p.coordinates.lng >= -180)
   );
 
-  // Si hay ubicación y distancia, filtrar a <=5 km
+  // ✅ Optimización Fase 1: Filtrar por radio más amplio
   if (userLocation) {
-    results = results.filter((p) =>
-      typeof p.distance_km === 'number' ? (p.distance_km as number) <= 5 : true
+    results = results.filter(
+      (p) => (typeof p.distance_km === 'number' ? (p.distance_km as number) <= 8 : true) // ⬆️ 5km → 8km
     );
   }
 
-  // Ordenamiento: si userLocation => por distancia; sino por rating luego reviews_count
+  // ✅ Optimización Fase 1: Scoring mejorado
   if (userLocation) {
-    // Normalización simple: distancia (0-5km), rating (0-5), reviews_count (log scaled)
+    // Scoring basado en: distancia (30%), rating (40%), reviews (20%), business_status (10%)
     for (const p of results) {
       if (p.source === 'gemini') continue; // sin score para fallback simple
-      const dist = typeof p.distance_km === 'number' ? p.distance_km : 5;
-      const distNorm = 1 - Math.min(dist, 5) / 5; // 1 cercano, 0 lejos
+
+      // Distancia: 0-8km, cercano = mejor score
+      const dist = typeof p.distance_km === 'number' ? p.distance_km : 8;
+      const distNorm = 1 - Math.min(dist, 8) / 8; // 1 muy cercano, 0 muy lejos
+
+      // Rating: 0-5 estrellas
       const rating = p.rating ?? 0;
       const ratingNorm = Math.min(rating, 5) / 5;
+
+      // Reviews: log scale para normalizar (0-1000+)
       const reviews = p.reviews_count ?? 0;
-      const reviewsNorm = Math.log10(1 + reviews) / Math.log10(1 + 1000);
-      const score = 0.45 * ratingNorm + 0.25 * reviewsNorm + 0.3 * distNorm;
-      p.score = Number(score.toFixed(4));
+      const reviewsNorm = Math.min(Math.log10(1 + reviews) / Math.log10(1 + 1000), 1);
+
+      // Business status: operacional = boost
+      const statusBonus = p.business_status === 'OPERATIONAL' ? 0.1 : 0;
+
+      // Cerrado ahora = penalización
+      const openPenalty = p.openNow === false ? -0.15 : 0;
+
+      // Score ponderado
+      const score =
+        0.3 * distNorm + // 30% distancia
+        0.4 * ratingNorm + // 40% rating
+        0.2 * reviewsNorm + // 20% popularidad
+        statusBonus + // 10% operacional
+        openPenalty; // -15% si cerrado
+
+      p.score = Number(Math.max(0, Math.min(1, score)).toFixed(4));
     }
+
+    // Ordenar por score descendente
     results.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   } else {
+    // Sin ubicación: ordenar por rating y reviews
     results.sort(
       (a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (b.reviews_count ?? 0) - (a.reviews_count ?? 0)
     );
   }
 
-  // Limitar a 10
-  results = results.slice(0, 10);
+  // ✅ Optimización Fase 1: Aumentar límite de resultados
+  results = results.slice(0, 15); // ⬆️ De 10 a 15
 
   const durationMs = Date.now() - start;
   const response = {

@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { Tabs } from 'expo-router';
 
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import bookingAnimation from '../../assets/lottie/booking.json';
@@ -22,6 +23,7 @@ export default function TabLayout() {
   // Estados para forzar re-render de cada animación
   const [tabKeys, setTabKeys] = useState({
     home: 0,
+    social: 0,
     explore: 0,
     trips: 0,
     booking: 0,
@@ -78,6 +80,23 @@ export default function TabLayout() {
           }}
           listeners={{
             tabPress: () => incrementTabKey('home'),
+          }}
+        />
+        <Tabs.Screen
+          name="social"
+          options={{
+            title: t('social.title') || 'Social',
+            tabBarIcon: ({ focused }) => (
+              <Ionicons
+                name={focused ? 'people' : 'people-outline'}
+                size={28}
+                color={focused ? theme.colors.social.primary : theme.colors.textMuted}
+                style={{ marginBottom: -3 }}
+              />
+            ),
+          }}
+          listeners={{
+            tabPress: () => incrementTabKey('social'),
           }}
         />
         <Tabs.Screen

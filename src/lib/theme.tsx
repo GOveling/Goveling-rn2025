@@ -21,6 +21,24 @@ export type AppTheme = {
     chipBgActive: string;
     chipText: string;
     chipTextActive: string;
+    // Social colors
+    social: {
+      primary: string;
+      like: string;
+      likeActive: string;
+      comment: string;
+      share: string;
+      save: string;
+      saveActive: string;
+      follow: string;
+      following: string;
+      cardBg: string;
+      divider: string;
+      placeholder: string;
+      error: string;
+      success: string;
+      warning: string;
+    };
   };
   radius: { md: number; lg: number; xl: number };
   spacing: (n: number) => number;
@@ -41,6 +59,24 @@ export const palettes = {
     chipText: '#101114',
     chipTextActive: '#FFFFFF',
     accent: '#4B2A95',
+    // Social colors
+    social: {
+      primary: '#DE3D00',
+      like: '#6B7280',
+      likeActive: '#EF4444',
+      comment: '#6B7280',
+      share: '#6B7280',
+      save: '#6B7280',
+      saveActive: '#101114',
+      follow: '#DE3D00',
+      following: '#E5E7EB',
+      cardBg: '#FFFFFF',
+      divider: '#F3F4F6',
+      placeholder: '#D1D5DB',
+      error: '#EF4444',
+      success: '#10B981',
+      warning: '#F59E0B',
+    },
   },
   dark: {
     background: '#0B0B0E',
@@ -55,6 +91,24 @@ export const palettes = {
     chipText: '#FFFFFF',
     chipTextActive: '#FFFFFF',
     accent: '#6A3CC6',
+    // Social colors
+    social: {
+      primary: '#DE3D00',
+      like: '#A1A1AA',
+      likeActive: '#F87171',
+      comment: '#A1A1AA',
+      share: '#A1A1AA',
+      save: '#A1A1AA',
+      saveActive: '#FFFFFF',
+      follow: '#DE3D00',
+      following: '#374151',
+      cardBg: '#1C1C21',
+      divider: '#27272A',
+      placeholder: '#52525B',
+      error: '#F87171',
+      success: '#34D399',
+      warning: '#FBBF24',
+    },
   },
 };
 
