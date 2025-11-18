@@ -28,7 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/lib/theme';
 import { getCurrentUser } from '@/lib/userUtils';
 import { GlobalPlacesService } from '@/services/globalPlacesService';
-import type { NearbyPlace } from '@/services/googlePlacesService';
+import GooglePlacesService, { type NearbyPlace } from '@/services/googlePlacesService';
 import { ImageService, type ProcessedImage } from '@/services/imageService';
 import { ModerationService, type ModerationResponse } from '@/services/moderationService';
 import type { PhotoLocation } from '@/utils/exifUtils';
@@ -47,6 +47,12 @@ interface SelectedPlace {
   latitude: number;
   longitude: number;
   formatted_address: string;
+  // Datos enriquecidos de Google Places
+  rating?: number;
+  user_ratings_total?: number;
+  photos?: Array<{ photo_reference: string; height: number; width: number }>;
+  types?: string[];
+  price_level?: number;
 }
 
 export const CreatePostScreen: React.FC = () => {
@@ -152,6 +158,7 @@ export const CreatePostScreen: React.FC = () => {
   }, []);
 
   // Extraer ubicación de las fotos cuando se agregan imágenes
+  // Y buscar automáticamente el lugar usando reverse geocoding híbrido
   useEffect(() => {
     const extractLocations = async () => {
       const assets = images
@@ -163,6 +170,7 @@ export const CreatePostScreen: React.FC = () => {
 
       if (assets.length === 0) {
         setPhotoLocation(null);
+        setSelectedPlace(null); // Limpiar lugar seleccionado
         return;
       }
 
@@ -173,9 +181,48 @@ export const CreatePostScreen: React.FC = () => {
         const avgLocation = getAverageLocation(locations);
         console.log('📍 Extract Locations - Average location:', avgLocation);
         setPhotoLocation(avgLocation);
+
+        // 🎯 NUEVO: Buscar automáticamente el lugar usando reverse geocoding híbrido
+        console.log('🎯 Starting hybrid reverse geocoding...');
+        const place = await GooglePlacesService.getPlaceFromCoordinates(
+          avgLocation.latitude,
+          avgLocation.longitude
+        );
+
+        if (place) {
+          console.log('✅ Auto-detected place:', place.name);
+          console.log('📋 Place details:', {
+            place_id: place.place_id,
+            id: place.id,
+            rating: place.rating,
+            photos: place.photos?.length || 0,
+            types: place.types,
+          });
+
+          // Auto-seleccionar el lugar encontrado CON TODOS LOS DATOS ENRIQUECIDOS
+          const placeToSet: SelectedPlace = {
+            place_id: place.place_id || place.id,
+            name: place.name,
+            latitude: place.geometry.location.lat,
+            longitude: place.geometry.location.lng,
+            formatted_address: place.formatted_address || place.vicinity || '',
+            // Datos enriquecidos de Google Places
+            rating: place.rating,
+            user_ratings_total: place.user_ratings_total,
+            photos: place.photos,
+            types: place.types,
+            price_level: place.price_level,
+          };
+
+          console.log('📌 Setting selected place:', placeToSet);
+          setSelectedPlace(placeToSet);
+        } else {
+          console.log('⚠️ Could not find place for coordinates');
+        }
       } else {
         console.log('⚠️ Extract Locations - No GPS data found in any photo');
         setPhotoLocation(null);
+        setSelectedPlace(null);
       }
     };
 
@@ -193,6 +240,12 @@ export const CreatePostScreen: React.FC = () => {
       latitude: place.geometry.location.lat,
       longitude: place.geometry.location.lng,
       formatted_address: place.formatted_address || place.vicinity || '',
+      // Datos enriquecidos de Google Places
+      rating: place.rating,
+      user_ratings_total: place.user_ratings_total,
+      photos: place.photos,
+      types: place.types,
+      price_level: place.price_level,
     });
   }, []);
 
@@ -281,6 +334,14 @@ export const CreatePostScreen: React.FC = () => {
 
       setUploadStage('processing');
 
+      console.log('🏗️ Creating post with selected place:', {
+        name: selectedPlace.name,
+        place_id: selectedPlace.place_id,
+        latitude: selectedPlace.latitude,
+        longitude: selectedPlace.longitude,
+        address: selectedPlace.formatted_address,
+      });
+
       // Primero, crear o encontrar el lugar global
       const globalPlaceId = await GlobalPlacesService.findOrCreatePlace({
         name: selectedPlace.name,
@@ -289,6 +350,8 @@ export const CreatePostScreen: React.FC = () => {
         google_place_id: selectedPlace.place_id,
         address: selectedPlace.formatted_address,
       });
+
+      console.log('✅ Global place ID:', globalPlaceId);
 
       // Mover imágenes a storage permanente
       const permanentUrls: string[] = [];
@@ -513,12 +576,54 @@ export const CreatePostScreen: React.FC = () => {
               onPress={handleSelectPlace}
             >
               {selectedPlace ? (
-                <View style={styles.placeSelected}>
-                  <Ionicons name="location" size={20} color={colors.primary} />
-                  <Text style={[styles.placeText, { color: colors.text }]}>
-                    {selectedPlace.name}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                <View style={styles.placeSelectedContainer}>
+                  <View style={styles.placeMainInfo}>
+                    <Ionicons name="location" size={20} color={colors.primary} />
+                    <View style={styles.placeTextContainer}>
+                      <Text style={[styles.placeText, { color: colors.text }]}>
+                        {selectedPlace.name}
+                      </Text>
+                      {/* Rating y reseñas */}
+                      {selectedPlace.rating && (
+                        <View style={styles.placeMetaContainer}>
+                          <Ionicons name="star" size={12} color="#FFB800" />
+                          <Text style={[styles.placeMetaText, { color: colors.textMuted }]}>
+                            {selectedPlace.rating.toFixed(1)}
+                          </Text>
+                          {selectedPlace.user_ratings_total && (
+                            <Text style={[styles.placeMetaText, { color: colors.textMuted }]}>
+                              ({selectedPlace.user_ratings_total.toLocaleString()})
+                            </Text>
+                          )}
+                        </View>
+                      )}
+                      {/* Dirección */}
+                      {selectedPlace.formatted_address && (
+                        <Text
+                          style={[styles.placeAddress, { color: colors.textMuted }]}
+                          numberOfLines={1}
+                        >
+                          {selectedPlace.formatted_address}
+                        </Text>
+                      )}
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                  </View>
+                  {/* Badges de tipo de lugar */}
+                  {selectedPlace.types && selectedPlace.types.length > 0 && (
+                    <View style={styles.placeTypesContainer}>
+                      {selectedPlace.types.slice(0, 3).map((type, index) => (
+                        <View
+                          key={index}
+                          style={[styles.placeTypeBadge, { backgroundColor: colors.background }]}
+                        >
+                          <Text style={[styles.placeTypeText, { color: colors.textMuted }]}>
+                            {type.replace(/_/g, ' ')}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               ) : (
                 <View style={styles.placeEmpty}>
@@ -666,7 +771,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: '#00000080', // 50% opacity black
     borderRadius: 12,
   },
   imageCount: {
@@ -681,10 +786,43 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  placeSelected: {
+  placeSelectedContainer: {
+    gap: 12,
+  },
+  placeMainInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+  },
+  placeTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  placeMetaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  placeMetaText: {
+    fontSize: 12,
+  },
+  placeAddress: {
+    fontSize: 12,
+  },
+  placeTypesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  placeTypeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  placeTypeText: {
+    fontSize: 10,
+    textTransform: 'capitalize',
   },
   placeEmpty: {
     flexDirection: 'row',

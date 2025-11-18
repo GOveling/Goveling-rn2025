@@ -2,9 +2,13 @@
  * Google Places Service
  * Utiliza Supabase Edge Function - google-places-enhanced
  * Igual que la implementación de Explore
+ *
+ * NUEVO: Integración híbrida con Nominatim para reverse geocoding
  */
 
 import { supabase } from '@/lib/supabase';
+
+import NominatimService from './nominatimService';
 
 // Interfaz compatible con Explore
 export interface NearbyPlace {
@@ -202,6 +206,92 @@ class GooglePlacesService {
     } catch (error) {
       console.error('❌ Error searching places:', error);
       return [];
+    }
+  }
+
+  /**
+   * 🎯 MÉTODO HÍBRIDO: Obtener lugar a partir de coordenadas GPS
+   *
+   * Estrategia:
+   * 1. Usar Nominatim (gratis) para obtener el nombre del lugar
+   * 2. Buscar ese nombre en Google Places para enriquecer con fotos, ratings, etc.
+   * 3. Si Google Places no encuentra nada, devolver resultado básico de Nominatim
+   *
+   * @param latitude - Latitud GPS
+   * @param longitude - Longitud GPS
+   * @returns Lugar enriquecido con datos de Google Places (o básico de Nominatim)
+   */
+  static async getPlaceFromCoordinates(
+    latitude: number,
+    longitude: number
+  ): Promise<NearbyPlace | null> {
+    try {
+      console.log(`🎯 Hybrid reverse geocoding for: ${latitude}, ${longitude}`);
+
+      // PASO 1: Obtener nombre del lugar desde Nominatim (GRATIS)
+      const nominatimResult = await NominatimService.reverseGeocode(latitude, longitude);
+
+      if (!nominatimResult) {
+        console.error('❌ Nominatim reverse geocoding failed');
+        return null;
+      }
+
+      console.log(`📍 Nominatim found: "${nominatimResult.name}"`);
+
+      // PASO 2: Buscar en Google Places usando el nombre de Nominatim
+      // Esto enriquece el resultado con fotos, ratings, etc.
+      const googlePlaces = await this.searchPlaces(
+        nominatimResult.name,
+        { latitude, longitude },
+        500 // Radio pequeño (500m) para asegurar precisión
+      );
+
+      // PASO 3: Si Google Places encuentra resultados, devolver el más cercano
+      if (googlePlaces.length > 0) {
+        // Ordenar por distancia y tomar el primero
+        const sortedPlaces = googlePlaces.sort((a, b) => {
+          const distA = a.distance || 999999;
+          const distB = b.distance || 999999;
+          return distA - distB;
+        });
+
+        const enrichedPlace = sortedPlaces[0];
+        console.log(`✅ Enriched with Google Places: "${enrichedPlace.name}"`);
+        console.log('🔍 Google Place details:', {
+          id: enrichedPlace.id,
+          place_id: enrichedPlace.place_id,
+          rating: enrichedPlace.rating,
+          user_ratings_total: enrichedPlace.user_ratings_total,
+          photos: enrichedPlace.photos?.length || 0,
+          types: enrichedPlace.types?.slice(0, 3), // Primeros 3 tipos
+          formatted_address: enrichedPlace.formatted_address,
+        });
+        return enrichedPlace;
+      }
+
+      // PASO 4: Si Google Places no encuentra nada, devolver resultado básico de Nominatim
+      console.log('ℹ️ Using basic Nominatim result (no Google Places enrichment)');
+
+      const basicPlace: NearbyPlace = {
+        id: `nominatim-${Date.now()}`,
+        place_id: `nominatim-${Date.now()}`,
+        name: nominatimResult.name,
+        vicinity: nominatimResult.displayName,
+        formatted_address: nominatimResult.displayName,
+        geometry: {
+          location: {
+            lat: nominatimResult.latitude,
+            lng: nominatimResult.longitude,
+          },
+        },
+        types: nominatimResult.type ? [nominatimResult.type] : undefined,
+        distance: 0, // Es la ubicación exacta
+      };
+
+      return basicPlace;
+    } catch (error) {
+      console.error('❌ Hybrid reverse geocoding error:', error);
+      return null;
     }
   }
 
