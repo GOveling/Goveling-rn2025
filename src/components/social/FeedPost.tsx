@@ -119,13 +119,13 @@ export const FeedPost: React.FC<FeedPostProps> = ({
             </View>
           )}
           <View style={styles.userTextContainer}>
-            <Text style={[styles.username, { color: colors.text }]} numberOfLines={1}>
-              {post.user.username || 'Unknown User'}
+            <Text style={[styles.username, { color: '#000000' }]} numberOfLines={1}>
+              {post.user.display_name || post.user.username || 'Unknown User'}
             </Text>
             {post.place.name && (
               <TouchableOpacity onPress={handlePlacePress}>
-                <Text style={[styles.place, { color: colors.textMuted }]} numberOfLines={1}>
-                  <Ionicons name="location" size={12} color={colors.textMuted} /> {post.place.name}
+                <Text style={[styles.place, { color: '#666666' }]} numberOfLines={1}>
+                  <Ionicons name="location" size={12} color="#666666" /> {post.place.name}
                 </Text>
               </TouchableOpacity>
             )}
@@ -221,7 +221,9 @@ export const FeedPost: React.FC<FeedPostProps> = ({
         {post.caption && (
           <View style={styles.captionContainer}>
             <Text style={[styles.caption, { color: colors.text }]}>
-              <Text style={styles.captionUsername}>{post.user.username} </Text>
+              <Text style={styles.captionUsername}>
+                {post.user.display_name || post.user.username}{' '}
+              </Text>
               {displayCaption}
             </Text>
             {shouldTruncateCaption && !showFullCaption && (
@@ -296,7 +298,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: IMAGE_SIZE,
-    height: IMAGE_SIZE,
+    aspectRatio: 1,
   },
   imageIndicatorContainer: {
     position: 'absolute',

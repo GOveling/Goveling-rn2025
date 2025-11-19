@@ -12,6 +12,8 @@
  * - Optimized for iOS & Android native
  */
 
+import { Platform } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Coordinates } from './geoUtils';
@@ -843,6 +845,11 @@ class CountryDetectionService {
   private readonly BORDER_BUFFER_KM = 20; // Extra caution within 20km of borders
 
   constructor() {
+    // Skip initialization in web/SSR environments
+    if (typeof window === 'undefined' || Platform.OS === 'web') {
+      this.cacheLoaded = true;
+      return;
+    }
     this.loadCacheFromStorage();
   }
 
@@ -852,6 +859,12 @@ class CountryDetectionService {
    */
   private async loadCacheFromStorage(): Promise<void> {
     if (this.cacheLoaded) return;
+
+    // Guard for web/SSR environments
+    if (typeof window === 'undefined' || Platform.OS === 'web') {
+      this.cacheLoaded = true;
+      return;
+    }
 
     try {
       const cached = await AsyncStorage.getItem(COUNTRY_CACHE_KEY);

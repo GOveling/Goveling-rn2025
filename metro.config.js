@@ -22,8 +22,8 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Configure for web compatibility
-config.resolver.platforms = ['web', 'native', 'ios', 'android'];
+// DISABLE WEB - SOLO iOS/Android
+config.resolver.platforms = ['native', 'ios', 'android'];
 
 // Configure web-specific module resolution
 const isWeb = process.env.EXPO_PLATFORM === 'web' || process.env.PLATFORM === 'web';

@@ -70,62 +70,64 @@ export const SocialFeedScreen: React.FC = () => {
       if (imagesError) throw imagesError;
 
       // Mapear imágenes a posts
-      const postsWithImages: PostWithDetails[] = (feedData || []).map((post: any) => ({
-        id: post.id,
-        user_id: post.user_id,
-        place_id: post.place_id,
-        caption: post.caption,
-        status: post.status,
-        is_moderated: true,
-        moderation_status: 'approved' as const,
-        moderation_reason: null,
-        created_at: post.created_at,
-        updated_at: post.updated_at,
-        published_at: post.published_at,
-        user: {
-          id: post.user_id,
-          username: post.username,
-          display_name: post.display_name,
-          bio: null,
-          avatar_url: post.avatar_url,
-          website: null,
-          posts_count: 0,
-          followers_count: 0,
-          following_count: 0,
-          is_private: false,
-          is_verified: post.is_verified,
-          is_banned: false,
-          ban_reason: null,
-          banned_at: null,
+      const postsWithImages: PostWithDetails[] = (feedData || []).map((post: any) => {
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          place_id: post.place_id,
+          caption: post.caption,
+          status: post.status,
+          is_moderated: true,
+          moderation_status: 'approved' as const,
+          moderation_reason: null,
           created_at: post.created_at,
           updated_at: post.updated_at,
-        },
-        images: (imagesData || [])
-          .filter((img: any) => img.post_id === post.id)
-          .map((img: any) => ({
-            id: img.id,
-            post_id: img.post_id,
-            thumbnail_url: img.thumbnail_url,
-            main_url: img.main_url,
-            blurhash: img.blurhash,
-            width: img.width,
-            height: img.height,
-            order_index: img.order_index,
-            is_moderated: img.is_moderated,
-            moderation_labels: img.moderation_labels,
-            created_at: img.created_at,
-          })),
-        place: {
-          id: post.place_id,
-          name: post.place_name,
-          latitude: post.place_latitude,
-          longitude: post.place_longitude,
-        },
-        likes_count: Number(post.likes_count),
-        comments_count: Number(post.comments_count),
-        user_has_liked: post.user_has_liked,
-        user_has_saved: post.user_has_saved,
-      }));
+          published_at: post.published_at,
+          user: {
+            id: post.user_id,
+            username: post.username,
+            display_name: post.display_name,
+            bio: null,
+            avatar_url: post.avatar_url,
+            website: null,
+            posts_count: 0,
+            followers_count: 0,
+            following_count: 0,
+            is_private: false,
+            is_verified: post.is_verified,
+            is_banned: false,
+            ban_reason: null,
+            banned_at: null,
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+          },
+          images: (imagesData || [])
+            .filter((img: any) => img.post_id === post.id)
+            .map((img: any) => ({
+              id: img.id,
+              post_id: img.post_id,
+              thumbnail_url: img.thumbnail_url,
+              main_url: img.main_url,
+              blurhash: img.blurhash,
+              width: img.width,
+              height: img.height,
+              order_index: img.order_index,
+              is_moderated: img.is_moderated,
+              moderation_labels: img.moderation_labels,
+              created_at: img.created_at,
+            })),
+          place: {
+            id: post.place_id,
+            name: post.place_name,
+            latitude: post.place_latitude,
+            longitude: post.place_longitude,
+          },
+          likes_count: Number(post.likes_count),
+          comments_count: Number(post.comments_count),
+          user_has_liked: post.user_has_liked,
+          user_has_saved: post.user_has_saved,
+        };
+      });
 
       if (isRefreshing) {
         setPosts(postsWithImages);
