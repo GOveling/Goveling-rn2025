@@ -1128,6 +1128,13 @@
       "delete_confirm": "Delete this comment?",
       "report_comment": "Report comment"
     },
+    "myPosts": {
+      "title": "My Posts",
+      "empty": {
+        "title": "No posts yet",
+        "subtitle": "Share your travel experiences and inspire others"
+      }
+    },
     "profile": {
       "posts": "Posts",
       "followers": "Followers",

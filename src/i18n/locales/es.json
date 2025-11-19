@@ -1127,6 +1127,13 @@
       "delete_confirm": "¿Eliminar este comentario?",
       "report_comment": "Reportar comentario"
     },
+    "myPosts": {
+      "title": "Mis Posts",
+      "empty": {
+        "title": "Sin posts todavía",
+        "subtitle": "Comparte tus experiencias de viaje e inspira a otros"
+      }
+    },
     "profile": {
       "posts": "Posts",
       "followers": "Seguidores",

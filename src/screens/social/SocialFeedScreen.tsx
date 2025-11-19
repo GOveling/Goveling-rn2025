@@ -4,7 +4,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
@@ -22,24 +22,88 @@ import { useTheme } from '@/lib/theme';
 import { getCurrentUser } from '@/lib/userUtils';
 import type { PostWithDetails } from '@/types/social.types';
 
-const PAGE_SIZE = 10;
+const MY_POSTS_LIMIT = 3;
+const SOCIAL_POSTS_LIMIT = 5;
+const TOTAL_FEED_LIMIT = 8;
+
+interface FeedSection {
+  title: string;
+  data: PostWithDetails[];
+  showViewAll?: boolean;
+}
 
 export const SocialFeedScreen: React.FC = () => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
 
-  const [posts, setPosts] = useState<PostWithDetails[]>([]);
+  const [sections, setSections] = useState<FeedSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
 
-  const loadPosts = useCallback(async (pageNumber: number, isRefreshing = false) => {
+  const mapPostData = (postData: any, imagesData: any[]) => {
+    return {
+      id: postData.post_id,
+      user_id: postData.user_id,
+      place_id: postData.place_id,
+      caption: postData.caption,
+      status: 'published' as const,
+      is_moderated: true,
+      moderation_status: 'approved' as const,
+      moderation_reason: null,
+      created_at: postData.created_at,
+      updated_at: postData.created_at,
+      published_at: postData.created_at,
+      user: {
+        id: postData.user_id,
+        username: postData.username,
+        display_name: postData.display_name,
+        bio: null,
+        avatar_url: postData.avatar_url,
+        website: null,
+        posts_count: 0,
+        followers_count: 0,
+        following_count: 0,
+        is_private: false,
+        is_verified: false,
+        is_banned: false,
+        ban_reason: null,
+        banned_at: null,
+        created_at: postData.created_at,
+        updated_at: postData.created_at,
+      },
+      images: (imagesData || [])
+        .filter((img: { post_id: string }) => img.post_id === postData.post_id)
+        .map((img: any) => ({
+          id: img.id,
+          post_id: img.post_id,
+          thumbnail_url: img.thumbnail_url,
+          main_url: img.main_url,
+          blurhash: img.blurhash,
+          width: img.width,
+          height: img.height,
+          order_index: img.order_index,
+          is_moderated: img.is_moderated,
+          moderation_labels: img.moderation_labels,
+          created_at: img.created_at,
+        })),
+      place: {
+        id: postData.place_id,
+        name: postData.place_name,
+        latitude: null,
+        longitude: null,
+      },
+      likes_count: Number(postData.likes_count),
+      comments_count: Number(postData.comments_count),
+      user_has_liked: postData.user_has_liked,
+      user_has_saved: false,
+    };
+  };
+
+  const loadPosts = useCallback(async (isRefreshing = false) => {
     try {
-      if (!isRefreshing && pageNumber === 0) {
+      if (!isRefreshing) {
         setLoading(true);
       }
 
@@ -48,125 +112,100 @@ export const SocialFeedScreen: React.FC = () => {
         throw new Error('User not authenticated');
       }
 
-      const offset = pageNumber * PAGE_SIZE;
-
-      // Usar la función SQL optimizada
-      const { data: feedData, error: fetchError } = await supabase.rpc('get_user_feed', {
+      // Cargar MIS POST (primeros 3)
+      const { data: myPostsData, error: myPostsError } = await supabase.rpc('get_my_posts', {
         p_user_id: user.id,
-        p_limit: PAGE_SIZE,
-        p_offset: offset,
+        p_limit: MY_POSTS_LIMIT,
+        p_offset: 0,
       });
 
-      if (fetchError) throw fetchError;
+      if (myPostsError) throw myPostsError;
 
-      // Obtener imágenes de los posts
-      const postIds = (feedData || []).map((post: any) => post.id);
+      // Cargar GOVELING SOCIAL (posts dinámicos)
+      const remainingSlots = TOTAL_FEED_LIMIT - (myPostsData?.length || 0);
+      const { data: socialPostsData, error: socialPostsError } = await supabase.rpc(
+        'get_dynamic_social_feed',
+        {
+          p_user_id: user.id,
+          p_limit: Math.max(remainingSlots, SOCIAL_POSTS_LIMIT),
+          p_offset: 0,
+        }
+      );
+
+      if (socialPostsError) throw socialPostsError;
+
+      // Obtener imágenes de todos los posts
+      const allPostIds = [
+        ...(myPostsData || []).map((p: { post_id: string }) => p.post_id),
+        ...(socialPostsData || []).map((p: { post_id: string }) => p.post_id),
+      ];
+
       const { data: imagesData, error: imagesError } = await supabase
         .from('post_images')
         .select('*')
-        .in('post_id', postIds)
+        .in('post_id', allPostIds)
         .order('order_index', { ascending: true });
 
       if (imagesError) throw imagesError;
 
-      // Mapear imágenes a posts
-      const postsWithImages: PostWithDetails[] = (feedData || []).map((post: any) => {
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          place_id: post.place_id,
-          caption: post.caption,
-          status: post.status,
-          is_moderated: true,
-          moderation_status: 'approved' as const,
-          moderation_reason: null,
-          created_at: post.created_at,
-          updated_at: post.updated_at,
-          published_at: post.published_at,
-          user: {
-            id: post.user_id,
-            username: post.username,
-            display_name: post.display_name,
-            bio: null,
-            avatar_url: post.avatar_url,
-            website: null,
-            posts_count: 0,
-            followers_count: 0,
-            following_count: 0,
-            is_private: false,
-            is_verified: post.is_verified,
-            is_banned: false,
-            ban_reason: null,
-            banned_at: null,
-            created_at: post.created_at,
-            updated_at: post.updated_at,
-          },
-          images: (imagesData || [])
-            .filter((img: any) => img.post_id === post.id)
-            .map((img: any) => ({
-              id: img.id,
-              post_id: img.post_id,
-              thumbnail_url: img.thumbnail_url,
-              main_url: img.main_url,
-              blurhash: img.blurhash,
-              width: img.width,
-              height: img.height,
-              order_index: img.order_index,
-              is_moderated: img.is_moderated,
-              moderation_labels: img.moderation_labels,
-              created_at: img.created_at,
-            })),
-          place: {
-            id: post.place_id,
-            name: post.place_name,
-            latitude: post.place_latitude,
-            longitude: post.place_longitude,
-          },
-          likes_count: Number(post.likes_count),
-          comments_count: Number(post.comments_count),
-          user_has_liked: post.user_has_liked,
-          user_has_saved: post.user_has_saved,
-        };
-      });
+      // Mapear posts a estructura completa
+      const myPosts: PostWithDetails[] = (myPostsData || [])
+        .map((post: any) => mapPostData(post, imagesData))
+        .filter((post: PostWithDetails) => post.images.length > 0);
 
-      if (isRefreshing) {
-        setPosts(postsWithImages);
-        setPage(0);
-      } else if (pageNumber === 0) {
-        setPosts(postsWithImages);
-      } else {
-        setPosts((prev) => [...prev, ...postsWithImages]);
+      const socialPosts: PostWithDetails[] = (socialPostsData || [])
+        .map((post: any) => mapPostData(post, imagesData))
+        .filter(
+          (post: PostWithDetails) =>
+            post.images.length > 0 && !myPosts.find((mp) => mp.id === post.id)
+        )
+        .slice(0, TOTAL_FEED_LIMIT - myPosts.length);
+
+      // Crear secciones
+      const newSections: FeedSection[] = [];
+
+      if (myPosts.length > 0) {
+        newSections.push({
+          title: 'MY_POSTS',
+          data: myPosts,
+          showViewAll: true,
+        });
       }
 
-      setHasMore(postsWithImages.length === PAGE_SIZE);
+      if (socialPosts.length > 0) {
+        newSections.push({
+          title: 'GOVELING_SOCIAL',
+          data: socialPosts,
+          showViewAll: false,
+        });
+      }
+
+      setSections(newSections);
       setError(null);
     } catch (err) {
       console.error('Error loading posts:', err);
+      console.error('Error details:', JSON.stringify(err, null, 2));
+      if (err && typeof err === 'object') {
+        console.error('Error code:', (err as any).code);
+        console.error('Error message:', (err as any).message);
+        console.error('Error details:', (err as any).details);
+        console.error('Error hint:', (err as any).hint);
+      }
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
       setRefreshing(false);
-      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
-    loadPosts(0);
+    loadPosts();
   }, [loadPosts]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadPosts(0, true);
+    await loadPosts(true);
   }, [loadPosts]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!loadingMore && !loading && hasMore) {
-      setLoadingMore(true);
-      const nextPage = page + 1;
-      setPage(nextPage);
-      loadPosts(nextPage);
-    }
-  }, [loadingMore, loading, hasMore, page, loadPosts]);
 
   const handleLike = useCallback(
     async (postId: string) => {
@@ -174,19 +213,24 @@ export const SocialFeedScreen: React.FC = () => {
         const user = await getCurrentUser();
         if (!user) return;
 
-        const post = posts.find((p) => p.id === postId);
-        if (!post) return;
+        // Actualizar optimistamente
+        const updatedSections = sections.map((section) => ({
+          ...section,
+          data: section.data.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  user_has_liked: !p.user_has_liked,
+                  likes_count: p.user_has_liked ? p.likes_count - 1 : p.likes_count + 1,
+                }
+              : p
+          ),
+        }));
+        setSections(updatedSections);
 
-        const optimisticPosts = posts.map((p) =>
-          p.id === postId
-            ? {
-                ...p,
-                user_has_liked: !p.user_has_liked,
-                likes_count: p.user_has_liked ? p.likes_count - 1 : p.likes_count + 1,
-              }
-            : p
-        );
-        setPosts(optimisticPosts);
+        // Encontrar el post
+        const post = sections.flatMap((s) => s.data).find((p) => p.id === postId);
+        if (!post) return;
 
         if (post.user_has_liked) {
           const { error: deleteError } = await supabase
@@ -205,10 +249,10 @@ export const SocialFeedScreen: React.FC = () => {
         }
       } catch (err) {
         console.error('Error toggling like:', err);
-        await loadPosts(0, true);
+        await loadPosts(true);
       }
     },
-    [posts, loadPosts]
+    [sections, loadPosts]
   );
 
   const handleComment = useCallback((postId: string) => {
@@ -225,13 +269,18 @@ export const SocialFeedScreen: React.FC = () => {
         const user = await getCurrentUser();
         if (!user) return;
 
-        const post = posts.find((p) => p.id === postId);
-        if (!post) return;
+        // Actualizar optimistamente
+        const updatedSections = sections.map((section) => ({
+          ...section,
+          data: section.data.map((p) =>
+            p.id === postId ? { ...p, user_has_saved: !p.user_has_saved } : p
+          ),
+        }));
+        setSections(updatedSections);
 
-        const optimisticPosts = posts.map((p) =>
-          p.id === postId ? { ...p, user_has_saved: !p.user_has_saved } : p
-        );
-        setPosts(optimisticPosts);
+        // Encontrar el post
+        const post = sections.flatMap((s) => s.data).find((p) => p.id === postId);
+        if (!post) return;
 
         if (post.user_has_saved) {
           const { error: deleteError } = await supabase
@@ -250,10 +299,10 @@ export const SocialFeedScreen: React.FC = () => {
         }
       } catch (err) {
         console.error('Error toggling save:', err);
-        await loadPosts(0, true);
+        await loadPosts(true);
       }
     },
-    [posts, loadPosts]
+    [sections, loadPosts]
   );
 
   const handleUserPress = useCallback((userId: string) => {
@@ -319,6 +368,40 @@ export const SocialFeedScreen: React.FC = () => {
     );
   }, [loading, colors, t, handleCreatePost]);
 
+  const handleViewAllMyPosts = useCallback(() => {
+    router.push('/my-posts');
+  }, [router]);
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: FeedSection }) => {
+      if (section.title === 'MY_POSTS') {
+        return (
+          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>MIS POST</Text>
+            {section.showViewAll && (
+              <TouchableOpacity onPress={handleViewAllMyPosts}>
+                <Text style={[styles.viewAllButton, { color: colors.social.primary }]}>
+                  Ver todos mis post
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      }
+
+      if (section.title === 'GOVELING_SOCIAL') {
+        return (
+          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>GOVELING SOCIAL</Text>
+          </View>
+        );
+      }
+
+      return null;
+    },
+    [colors, handleViewAllMyPosts]
+  );
+
   const renderError = useCallback(() => {
     if (!error) return null;
 
@@ -329,7 +412,7 @@ export const SocialFeedScreen: React.FC = () => {
         <Text style={[styles.errorMessage, { color: colors.textMuted }]}>{error}</Text>
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: colors.social.primary }]}
-          onPress={() => loadPosts(0)}
+          onPress={() => loadPosts()}
         >
           <Text style={styles.retryButtonText}>{t('home.retry')}</Text>
         </TouchableOpacity>
@@ -337,17 +420,7 @@ export const SocialFeedScreen: React.FC = () => {
     );
   }, [error, colors, t, loadPosts]);
 
-  const renderFooter = useCallback(() => {
-    if (!loadingMore) return null;
-
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={colors.social.primary} />
-      </View>
-    );
-  }, [loadingMore, colors]);
-
-  if (loading && posts.length === 0) {
+  if (loading && sections.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loader}>
@@ -360,7 +433,7 @@ export const SocialFeedScreen: React.FC = () => {
     );
   }
 
-  if (error && posts.length === 0) {
+  if (error && sections.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {renderError()}
@@ -370,12 +443,12 @@ export const SocialFeedScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={posts}
+      <SectionList
+        sections={sections}
         renderItem={renderPost}
+        renderSectionHeader={renderSectionHeader}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={renderEmpty}
-        ListFooterComponent={renderFooter}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -384,9 +457,8 @@ export const SocialFeedScreen: React.FC = () => {
             colors={[colors.social.primary]}
           />
         }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
         removeClippedSubviews={true}
         maxToRenderPerBatch={5}
         updateCellsBatchingPeriod={50}
@@ -397,7 +469,7 @@ export const SocialFeedScreen: React.FC = () => {
         style={[styles.fab, { backgroundColor: colors.social.primary }]}
         onPress={handleCreatePost}
       >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
+        <Ionicons name="add" size={28} color={colors.background} />
       </TouchableOpacity>
     </View>
   );
@@ -475,9 +547,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  footerLoader: {
-    paddingVertical: 20,
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  viewAllButton: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
@@ -489,7 +573,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
