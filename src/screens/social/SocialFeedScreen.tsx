@@ -175,7 +175,7 @@ export const SocialFeedScreen: React.FC = () => {
         newSections.push({
           title: 'MY_POSTS',
           data: myPosts,
-          showViewAll: true,
+          showViewAll: false,
         });
       }
 
@@ -183,7 +183,7 @@ export const SocialFeedScreen: React.FC = () => {
         newSections.push({
           title: 'GOVELING_SOCIAL',
           data: socialPosts,
-          showViewAll: false,
+          showViewAll: myPosts.length > 0,
         });
       }
 
@@ -391,6 +391,13 @@ export const SocialFeedScreen: React.FC = () => {
         return (
           <View style={[styles.myPostsHeader, { backgroundColor: colors.background }]}>
             <Text style={[styles.myPostsTitle, { color: colors.text }]}>MIS POST</Text>
+          </View>
+        );
+      }
+
+      if (section.title === 'GOVELING_SOCIAL') {
+        return (
+          <View style={[styles.govelingHeader, { backgroundColor: colors.background }]}>
             {section.showViewAll && (
               <TouchableOpacity
                 style={[styles.viewAllButton, { backgroundColor: colors.social.primary }]}
@@ -400,13 +407,6 @@ export const SocialFeedScreen: React.FC = () => {
                 <Text style={styles.viewAllButtonText}>Ver todos mis post</Text>
               </TouchableOpacity>
             )}
-          </View>
-        );
-      }
-
-      if (section.title === 'GOVELING_SOCIAL') {
-        return (
-          <View style={[styles.govelingHeader, { backgroundColor: colors.background }]}>
             <Text style={[styles.govelingTitle, { color: colors.text }]}>GOVELING SOCIAL</Text>
           </View>
         );
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 24,
-    marginBottom: 8,
+    marginBottom: 20,
   },
   viewAllButtonText: {
     color: WHITE_COLOR,
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   govelingHeader: {
-    paddingTop: 32,
+    paddingTop: 24,
     paddingBottom: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -598,6 +598,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.5,
     textAlign: 'center',
+    marginTop: 8,
   },
   fab: {
     position: 'absolute',
