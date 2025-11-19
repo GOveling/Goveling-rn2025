@@ -34,11 +34,24 @@ export class GlobalPlacesService {
    * Usa la función SQL find_or_create_global_place
    */
   static async findOrCreatePlace(params: CreateGlobalPlaceParams): Promise<string> {
+    // Asegurarse de que latitude y longitude sean números
+    const latitude =
+      typeof params.latitude === 'string' ? parseFloat(params.latitude) : params.latitude;
+    const longitude =
+      typeof params.longitude === 'string' ? parseFloat(params.longitude) : params.longitude;
+
+    console.log('🔢 GlobalPlacesService - Type check:', {
+      latitude_type: typeof latitude,
+      latitude_value: latitude,
+      longitude_type: typeof longitude,
+      longitude_value: longitude,
+    });
+
     const { data, error } = await supabase.rpc('find_or_create_global_place', {
       p_google_place_id: params.google_place_id || null,
       p_name: params.name,
-      p_latitude: params.latitude,
-      p_longitude: params.longitude,
+      p_latitude: latitude,
+      p_longitude: longitude,
       p_address: params.address || null,
       p_category: params.category || null,
       p_place_types: params.place_types || null,

@@ -1,6 +1,8 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { supabase } from '../lib/supabase';
 
 export interface ImageUploadOptions {
@@ -118,10 +120,12 @@ export class ImageService {
       { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
     );
 
-    // Get file size
-    const response = await fetch(result.uri);
-    const blob = await response.blob();
-    const size = blob.size;
+    // Get file size using FileSystem (React Native compatible)
+    const fileInfo = await FileSystem.getInfoAsync(result.uri);
+    if (!fileInfo.exists) {
+      throw new Error('Processed image file not found');
+    }
+    const size = fileInfo.size || 0;
 
     if (size > MAX_FILE_SIZE) {
       throw new Error('Image size exceeds maximum allowed (5MB)');
@@ -153,14 +157,19 @@ export class ImageService {
     const random = Math.random().toString(36).substring(7);
     const filename = `${userId}/${timestamp}-${random}.jpg`;
 
-    // Convert URI to blob
-    const response = await fetch(image.uri);
-    const blob = await response.blob();
+    // Convert URI to ArrayBuffer (React Native compatible)
+    // Read file as base64, then convert to ArrayBuffer
+    const base64 = await FileSystem.readAsStringAsync(image.uri, {
+      encoding: 'base64',
+    });
+
+    // Convert base64 to ArrayBuffer
+    const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)).buffer;
 
     // Upload to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(filename, blob, {
+      .upload(filename, arrayBuffer, {
         contentType: 'image/jpeg',
         cacheControl: '3600',
         upsert: false,
@@ -252,6 +261,14 @@ export class ImageService {
       throw new Error(`Download failed: ${downloadError?.message}`);
     }
 
+    // Convert Blob to ArrayBuffer (React Native compatible)
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(fileData);
+    });
+
     // Generate new filename
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(7);
@@ -260,7 +277,7 @@ export class ImageService {
     // Upload to social-media
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('social-media')
-      .upload(newPath, fileData, {
+      .upload(newPath, arrayBuffer, {
         contentType: 'image/jpeg',
         cacheControl: '3600',
       });
