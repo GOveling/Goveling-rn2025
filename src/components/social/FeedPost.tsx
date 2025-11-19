@@ -18,6 +18,8 @@ import type { PostWithDetails } from '@/types/social.types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_SIZE = SCREEN_WIDTH;
+const BLACK_COLOR = '#000000';
+const WHITE_COLOR = '#FFFFFF';
 
 interface FeedPostProps {
   post: PostWithDetails;
@@ -143,7 +145,7 @@ export const FeedPost: React.FC<FeedPostProps> = ({
             <Image
               source={{ uri: post.images[currentImageIndex].main_url }}
               style={styles.image}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           </Pressable>
 
@@ -295,10 +297,12 @@ const styles = StyleSheet.create({
   },
   imagesContainer: {
     position: 'relative',
+    width: IMAGE_SIZE,
+    backgroundColor: BLACK_COLOR,
   },
   image: {
     width: IMAGE_SIZE,
-    aspectRatio: 1,
+    height: IMAGE_SIZE,
   },
   imageIndicatorContainer: {
     position: 'absolute',
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   imageIndicatorText: {
-    color: '#FFFFFF',
+    color: WHITE_COLOR,
     fontSize: 12,
     fontWeight: '600',
   },

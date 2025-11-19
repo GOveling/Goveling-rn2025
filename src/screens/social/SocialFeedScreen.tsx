@@ -171,6 +171,7 @@ export const SocialFeedScreen: React.FC = () => {
         socialPostsDataLength: socialPostsData?.length || 0,
       });
 
+      // Sección MIS POST (si el usuario tiene posts)
       if (myPosts.length > 0) {
         newSections.push({
           title: 'MY_POSTS',
@@ -179,11 +180,16 @@ export const SocialFeedScreen: React.FC = () => {
         });
       }
 
-      if (socialPosts.length > 0) {
+      // Sección GOVELING SOCIAL (siempre se muestra)
+      // Si no hay posts de otros, se muestran posts propios
+      const govelingPosts =
+        socialPosts.length > 0 ? socialPosts : myPosts.length > 0 ? myPosts : [];
+
+      if (govelingPosts.length > 0) {
         newSections.push({
           title: 'GOVELING_SOCIAL',
-          data: socialPosts,
-          showViewAll: myPosts.length > 0,
+          data: govelingPosts,
+          showViewAll: myPosts.length > 0, // Mostrar botón solo si hay posts propios
         });
       }
 
