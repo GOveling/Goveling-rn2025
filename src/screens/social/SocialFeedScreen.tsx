@@ -8,7 +8,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
@@ -25,6 +24,7 @@ import type { PostWithDetails } from '@/types/social.types';
 const MY_POSTS_LIMIT = 3;
 const SOCIAL_POSTS_LIMIT = 5;
 const TOTAL_FEED_LIMIT = 8;
+const WHITE_COLOR = '#FFFFFF';
 
 interface FeedSection {
   title: string;
@@ -164,6 +164,13 @@ export const SocialFeedScreen: React.FC = () => {
       // Crear secciones
       const newSections: FeedSection[] = [];
 
+      console.log('Feed Debug:', {
+        myPostsCount: myPosts.length,
+        socialPostsCount: socialPosts.length,
+        myPostsDataLength: myPostsData?.length || 0,
+        socialPostsDataLength: socialPostsData?.length || 0,
+      });
+
       if (myPosts.length > 0) {
         newSections.push({
           title: 'MY_POSTS',
@@ -179,6 +186,12 @@ export const SocialFeedScreen: React.FC = () => {
           showViewAll: false,
         });
       }
+
+      console.log(
+        'Sections created:',
+        newSections.length,
+        newSections.map((s) => s.title)
+      );
 
       setSections(newSections);
       setError(null);
@@ -376,13 +389,15 @@ export const SocialFeedScreen: React.FC = () => {
     ({ section }: { section: FeedSection }) => {
       if (section.title === 'MY_POSTS') {
         return (
-          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>MIS POST</Text>
+          <View style={[styles.myPostsHeader, { backgroundColor: colors.background }]}>
+            <Text style={[styles.myPostsTitle, { color: colors.text }]}>MIS POST</Text>
             {section.showViewAll && (
-              <TouchableOpacity onPress={handleViewAllMyPosts}>
-                <Text style={[styles.viewAllButton, { color: colors.social.primary }]}>
-                  Ver todos mis post
-                </Text>
+              <TouchableOpacity
+                style={[styles.viewAllButton, { backgroundColor: colors.social.primary }]}
+                onPress={handleViewAllMyPosts}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.viewAllButtonText}>Ver todos mis post</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -391,8 +406,8 @@ export const SocialFeedScreen: React.FC = () => {
 
       if (section.title === 'GOVELING_SOCIAL') {
         return (
-          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>GOVELING SOCIAL</Text>
+          <View style={[styles.govelingHeader, { backgroundColor: colors.background }]}>
+            <Text style={[styles.govelingTitle, { color: colors.text }]}>GOVELING SOCIAL</Text>
           </View>
         );
       }
@@ -514,7 +529,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   createButtonText: {
-    color: '#FFFFFF',
+    color: WHITE_COLOR,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -543,25 +558,46 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: WHITE_COLOR,
     fontSize: 16,
     fontWeight: '600',
   },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  myPostsHeader: {
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  myPostsTitle: {
+    fontSize: 32,
+    fontWeight: '900',
     letterSpacing: 0.5,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   viewAllButton: {
-    fontSize: 14,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginBottom: 8,
+  },
+  viewAllButtonText: {
+    color: WHITE_COLOR,
+    fontSize: 15,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  govelingHeader: {
+    paddingTop: 32,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  govelingTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',
