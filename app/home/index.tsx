@@ -7,9 +7,9 @@ import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
 
 import { useTranslation } from 'react-i18next';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import CurrentTripCard from '~/components/home/CurrentTripCard';
 import NearbyAlerts from '~/components/home/NearbyAlerts';

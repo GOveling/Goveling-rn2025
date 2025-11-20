@@ -995,6 +995,7 @@
       "hours_ago": "il y a {{count}}h",
       "days_ago": "il y a {{count}}j",
       "weeks_ago": "il y a {{count}}sem",
+      "edited": "modifié",
       "show_more": "voir plus",
       "report": "Signaler",
       "delete": "Supprimer",

@@ -53,7 +53,7 @@ export const SocialFeedScreen: React.FC = () => {
       moderation_status: 'approved' as const,
       moderation_reason: null,
       created_at: postData.created_at,
-      updated_at: postData.created_at,
+      updated_at: postData.updated_at || postData.created_at,
       published_at: postData.created_at,
       user: {
         id: postData.user_id,

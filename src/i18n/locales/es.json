@@ -1061,6 +1061,7 @@
       "hours_ago": "hace {{count}}h",
       "days_ago": "hace {{count}}d",
       "weeks_ago": "hace {{count}}sem",
+      "edited": "editado",
       "show_more": "ver más",
       "report": "Reportar",
       "delete": "Eliminar",
@@ -1132,6 +1133,28 @@
       "empty": {
         "title": "Sin posts todavía",
         "subtitle": "Comparte tus experiencias de viaje e inspira a otros"
+      },
+      "edit": {
+        "title": "Editar Post",
+        "photo": "Foto",
+        "photos": "Fotos",
+        "reorder": "Reordenar",
+        "caption": "Descripción",
+        "captionPlaceholder": "Escribe una descripción...",
+        "reorderPhotos": "Reordenar Fotos",
+        "reorderInstructions": "Arrastra las imágenes para reordenar. Establece la portada y elimina fotos no deseadas.",
+        "deletePost": "Eliminar Post",
+        "success": "Post actualizado exitosamente"
+      },
+      "delete": {
+        "title": "Eliminar Post",
+        "message": "¿Estás seguro de que deseas eliminar este post? Esta acción no se puede deshacer.",
+        "success": "Post eliminado exitosamente"
+      },
+      "errors": {
+        "loadFailed": "Error al cargar detalles del post",
+        "saveFailed": "Error al guardar cambios",
+        "deleteFailed": "Error al eliminar post"
       }
     },
     "profile": {

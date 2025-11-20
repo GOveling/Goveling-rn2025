@@ -82,18 +82,41 @@ export const FeedPost: React.FC<FeedPostProps> = ({
   const timeAgo = useMemo(() => {
     const now = new Date();
     const postDate = new Date(post.created_at);
+    const updatedDate = new Date(post.updated_at);
     const diffInMinutes = Math.floor((now.getTime() - postDate.getTime()) / 60000);
 
-    if (diffInMinutes < 1) return t('social.post.just_now');
-    if (diffInMinutes < 60) return t('social.post.minutes_ago', { count: diffInMinutes });
-    if (diffInMinutes < 1440) {
-      return t('social.post.hours_ago', { count: Math.floor(diffInMinutes / 60) });
+    let timeText = '';
+    if (diffInMinutes < 1) timeText = t('social.post.just_now');
+    else if (diffInMinutes < 60) timeText = t('social.post.minutes_ago', { count: diffInMinutes });
+    else if (diffInMinutes < 1440) {
+      timeText = t('social.post.hours_ago', { count: Math.floor(diffInMinutes / 60) });
+    } else if (diffInMinutes < 10080) {
+      timeText = t('social.post.days_ago', { count: Math.floor(diffInMinutes / 1440) });
+    } else {
+      timeText = t('social.post.weeks_ago', { count: Math.floor(diffInMinutes / 10080) });
     }
-    if (diffInMinutes < 10080) {
-      return t('social.post.days_ago', { count: Math.floor(diffInMinutes / 1440) });
+
+    const isEdited = Math.abs(updatedDate.getTime() - postDate.getTime()) > 60000;
+    if (isEdited) {
+      const editDiffInMinutes = Math.floor((now.getTime() - updatedDate.getTime()) / 60000);
+      let editTimeText = '';
+
+      if (editDiffInMinutes < 1) editTimeText = t('social.post.just_now');
+      else if (editDiffInMinutes < 60)
+        editTimeText = t('social.post.minutes_ago', { count: editDiffInMinutes });
+      else if (editDiffInMinutes < 1440) {
+        editTimeText = t('social.post.hours_ago', { count: Math.floor(editDiffInMinutes / 60) });
+      } else if (editDiffInMinutes < 10080) {
+        editTimeText = t('social.post.days_ago', { count: Math.floor(editDiffInMinutes / 1440) });
+      } else {
+        editTimeText = t('social.post.weeks_ago', { count: Math.floor(editDiffInMinutes / 10080) });
+      }
+
+      return `${timeText} (${t('social.post.edited')} ${editTimeText})`;
     }
-    return t('social.post.weeks_ago', { count: Math.floor(diffInMinutes / 10080) });
-  }, [post.created_at, t]);
+
+    return timeText;
+  }, [post.created_at, post.updated_at, t]);
 
   const shouldTruncateCaption = useMemo(() => {
     return post.caption && post.caption.length > 150;

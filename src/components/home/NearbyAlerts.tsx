@@ -2,9 +2,9 @@ import React from 'react';
 
 import { View, Text, StyleSheet } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { COLORS } from '~/constants/colors';

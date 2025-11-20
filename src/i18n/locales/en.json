@@ -1062,6 +1062,7 @@
       "hours_ago": "{{count}}h ago",
       "days_ago": "{{count}}d ago",
       "weeks_ago": "{{count}}w ago",
+      "edited": "edited",
       "show_more": "show more",
       "report": "Report",
       "delete": "Delete",
@@ -1133,6 +1134,28 @@
       "empty": {
         "title": "No posts yet",
         "subtitle": "Share your travel experiences and inspire others"
+      },
+      "edit": {
+        "title": "Edit Post",
+        "photo": "Photo",
+        "photos": "Photos",
+        "reorder": "Reorder",
+        "caption": "Caption",
+        "captionPlaceholder": "Write a caption...",
+        "reorderPhotos": "Reorder Photos",
+        "reorderInstructions": "Drag tiles to reorder. Set cover and remove unwanted shots.",
+        "deletePost": "Delete Post",
+        "success": "Post updated successfully"
+      },
+      "delete": {
+        "title": "Delete Post",
+        "message": "Are you sure you want to delete this post? This action cannot be undone.",
+        "success": "Post deleted successfully"
+      },
+      "errors": {
+        "loadFailed": "Failed to load post details",
+        "saveFailed": "Failed to save changes",
+        "deleteFailed": "Failed to delete post"
       }
     },
     "profile": {
