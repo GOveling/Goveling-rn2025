@@ -966,5 +966,86 @@
   "placeInfo": {
     "savedAs": "保存済み",
     "yourNote": "あなたのメモ"
+  },
+  "social": {
+    "follow": "フォロー",
+    "following": "フォロー中",
+    "likes": "いいね",
+    "reply": "返信",
+    "view_all_comments": "{{count}}件のコメントをすべて表示",
+    "add_comment": "コメントを追加...",
+    "post": {
+      "just_now": "たった今",
+      "minutes_ago": "{{count}}分前",
+      "hours_ago": "{{count}}時間前",
+      "days_ago": "{{count}}日前",
+      "weeks_ago": "{{count}}週間前",
+      "edited": "編集済み"
+    },
+    "create": {
+      "permission_required": "許可が必要です",
+      "library_permission": "写真を選択するには、ギャラリーへのアクセスが必要です。",
+      "grant_permission": "許可を与える",
+      "title": "新しい投稿",
+      "next": "次へ",
+      "share": "共有",
+      "write_caption": "キャプションを書く...",
+      "add_location": "場所を追加",
+      "location_required": "場所が必要です",
+      "location_required_msg": "投稿の場所を選択してください。",
+      "discard_changes": "変更を破棄しますか？",
+      "discard_msg": "今終了すると、変更が失われます。",
+      "discard": "破棄",
+      "keep_editing": "編集を続ける",
+      "uploading": "アップロード中...",
+      "moderating": "コンテンツを確認中...",
+      "success": "投稿しました！",
+      "error": "投稿エラー"
+    },
+    "moderation": {
+      "rejected_title": "コンテンツが許可されていません",
+      "rejected_msg": "あなたの投稿はコミュニティガイドラインに準拠していません。",
+      "reason": "理由：{{reason}}",
+      "edit": "編集",
+      "cancel": "キャンセル",
+      "comment_rejected": "コメントに不適切な言葉が含まれています"
+    },
+    "comments": {
+      "title": "コメント ({{count}})",
+      "no_comments": "まだコメントがありません",
+      "be_first": "最初にコメントしましょう",
+      "error_adding": "コメント追加エラー",
+      "error_deleting": "コメント削除エラー",
+      "delete_title": "コメントを削除",
+      "delete_message": "このコメントを削除してもよろしいですか？"
+    },
+    "profile": {
+      "posts": "投稿",
+      "followers": "フォロワー",
+      "following": "フォロー中",
+      "no_posts": "まだ投稿がありません",
+      "error_loading": "プロフィールの読み込みエラー"
+    },
+    "share": {
+      "title": "共有",
+      "share": "共有",
+      "copy_link": "リンクをコピー",
+      "check_out_post": "Govelingでこの投稿をチェック",
+      "link_copied_title": "リンクをコピーしました",
+      "link_copied_message": "リンクがクリップボードにコピーされました",
+      "error": "共有エラー"
+    },
+    "maps": {
+      "view_on_map": "地図で見る",
+      "add_to_trip": "旅行に追加",
+      "select_trip": "旅行を選択",
+      "added_to_trip_success": "{{trip}}に正常に追加されました",
+      "error_adding_to_trip": "場所を旅行に追加できませんでした",
+      "error_loading_trips": "旅行を読み込めませんでした",
+      "no_trips": "旅行がありません",
+      "create_trip_first": "場所を追加するには、まず旅行を作成してください",
+      "already_added_title": "すでに追加済み",
+      "already_added_message": "この場所は選択した旅行にすでにあります"
+    }
   }
 }

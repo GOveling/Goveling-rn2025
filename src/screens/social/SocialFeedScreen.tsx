@@ -1,18 +1,19 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 
 import {
   View,
   Text,
   StyleSheet,
-  SectionList,
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
 
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList } from '@shopify/flash-list';
 import { useTranslation } from 'react-i18next';
 
 import { FeedPost } from '@/components/social';
@@ -32,6 +33,21 @@ interface FeedSection {
   showViewAll?: boolean;
 }
 
+interface FeedHeaderItem {
+  type: 'header';
+  id: string;
+  sectionTitle: string;
+  showViewAll?: boolean;
+}
+
+interface FeedPostItem {
+  type: 'post';
+  id: string;
+  post: PostWithDetails;
+}
+
+type FeedItem = FeedHeaderItem | FeedPostItem;
+
 export const SocialFeedScreen: React.FC = () => {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -41,6 +57,32 @@ export const SocialFeedScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Convertir secciones a lista plana para FlashList
+  const feedItems = useMemo<FeedItem[]>(() => {
+    const items: FeedItem[] = [];
+
+    sections.forEach((section) => {
+      // Agregar header
+      items.push({
+        type: 'header',
+        id: `header-${section.title}`,
+        sectionTitle: section.title,
+        showViewAll: section.showViewAll,
+      });
+
+      // Agregar posts de la sección
+      section.data.forEach((post) => {
+        items.push({
+          type: 'post',
+          id: `post-${post.id}`,
+          post,
+        });
+      });
+    });
+
+    return items;
+  }, [sections]);
 
   const mapPostData = (postData: any, imagesData: any[]) => {
     return {
@@ -324,9 +366,12 @@ export const SocialFeedScreen: React.FC = () => {
     [sections, loadPosts]
   );
 
-  const handleUserPress = useCallback((userId: string) => {
-    console.log('Navigate to user profile:', userId);
-  }, []);
+  const handleUserPress = useCallback(
+    (userId: string) => {
+      router.push(`/user-profile?userId=${userId}`);
+    },
+    [router]
+  );
 
   const handlePlacePress = useCallback((placeId: string) => {
     console.log('Navigate to place:', placeId);
@@ -336,24 +381,66 @@ export const SocialFeedScreen: React.FC = () => {
     console.log('Open image viewer:', postId, index);
   }, []);
 
-  const handleCreatePost = useCallback(() => {
+  const handleCreatePost = useCallback(async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (error) {
+      // Haptics might not be available
+    }
     router.push('/create-post');
   }, [router]);
 
-  const renderPost = useCallback(
-    ({ item }: { item: PostWithDetails }) => (
-      <FeedPost
-        post={item}
-        onLike={handleLike}
-        onComment={handleComment}
-        onShare={handleShare}
-        onSave={handleSave}
-        onUserPress={handleUserPress}
-        onPlacePress={handlePlacePress}
-        onImagePress={handleImagePress}
-      />
-    ),
+  const handleViewAllMyPosts = useCallback(() => {
+    router.push('/my-posts');
+  }, [router]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: FeedItem }) => {
+      if (item.type === 'header') {
+        if (item.sectionTitle === 'MY_POSTS') {
+          return (
+            <View style={[styles.myPostsHeader, { backgroundColor: colors.background }]}>
+              <Text style={[styles.myPostsTitle, { color: colors.text }]}>MIS POST</Text>
+            </View>
+          );
+        }
+
+        if (item.sectionTitle === 'GOVELING_SOCIAL') {
+          return (
+            <View style={[styles.govelingHeader, { backgroundColor: colors.background }]}>
+              {item.showViewAll && (
+                <TouchableOpacity
+                  style={[styles.viewAllButton, { backgroundColor: colors.social.primary }]}
+                  onPress={handleViewAllMyPosts}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.viewAllButtonText}>Ver todos mis post</Text>
+                </TouchableOpacity>
+              )}
+              <Text style={[styles.govelingTitle, { color: colors.text }]}>GOVELING SOCIAL</Text>
+            </View>
+          );
+        }
+
+        return null;
+      }
+
+      // item.type === 'post'
+      return (
+        <FeedPost
+          post={item.post}
+          onLike={handleLike}
+          onComment={handleComment}
+          onShare={handleShare}
+          onSave={handleSave}
+          onUserPress={handleUserPress}
+          onPlacePress={handlePlacePress}
+          onImagePress={handleImagePress}
+        />
+      );
+    },
     [
+      colors,
       handleLike,
       handleComment,
       handleShare,
@@ -361,6 +448,7 @@ export const SocialFeedScreen: React.FC = () => {
       handleUserPress,
       handlePlacePress,
       handleImagePress,
+      handleViewAllMyPosts,
     ]
   );
 
@@ -386,42 +474,6 @@ export const SocialFeedScreen: React.FC = () => {
       </View>
     );
   }, [loading, colors, t, handleCreatePost]);
-
-  const handleViewAllMyPosts = useCallback(() => {
-    router.push('/my-posts');
-  }, [router]);
-
-  const renderSectionHeader = useCallback(
-    ({ section }: { section: FeedSection }) => {
-      if (section.title === 'MY_POSTS') {
-        return (
-          <View style={[styles.myPostsHeader, { backgroundColor: colors.background }]}>
-            <Text style={[styles.myPostsTitle, { color: colors.text }]}>MIS POST</Text>
-          </View>
-        );
-      }
-
-      if (section.title === 'GOVELING_SOCIAL') {
-        return (
-          <View style={[styles.govelingHeader, { backgroundColor: colors.background }]}>
-            {section.showViewAll && (
-              <TouchableOpacity
-                style={[styles.viewAllButton, { backgroundColor: colors.social.primary }]}
-                onPress={handleViewAllMyPosts}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.viewAllButtonText}>Ver todos mis post</Text>
-              </TouchableOpacity>
-            )}
-            <Text style={[styles.govelingTitle, { color: colors.text }]}>GOVELING SOCIAL</Text>
-          </View>
-        );
-      }
-
-      return null;
-    },
-    [colors, handleViewAllMyPosts]
-  );
 
   const renderError = useCallback(() => {
     if (!error) return null;
@@ -464,10 +516,9 @@ export const SocialFeedScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <SectionList
-        sections={sections}
-        renderItem={renderPost}
-        renderSectionHeader={renderSectionHeader}
+      <FlashList
+        data={feedItems}
+        renderItem={renderItem}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={renderEmpty}
         refreshControl={
@@ -479,16 +530,15 @@ export const SocialFeedScreen: React.FC = () => {
           />
         }
         showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={5}
-        updateCellsBatchingPeriod={50}
-        windowSize={10}
+        getItemType={(item) => item.type}
       />
 
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.social.primary }]}
         onPress={handleCreatePost}
+        accessibilityRole="button"
+        accessibilityLabel="Create new post"
+        accessibilityHint="Opens the create post screen"
       >
         <Ionicons name="add" size={28} color={colors.background} />
       </TouchableOpacity>

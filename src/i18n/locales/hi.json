@@ -906,5 +906,86 @@
   "placeInfo": {
     "savedAs": "इस रूप में सहेजा गया",
     "yourNote": "आपका नोट"
+  },
+  "social": {
+    "follow": "फॉलो करें",
+    "following": "फॉलो किया",
+    "likes": "पसंद",
+    "reply": "जवाब दें",
+    "view_all_comments": "सभी {{count}} टिप्पणियाँ देखें",
+    "add_comment": "एक टिप्पणी जोड़ें...",
+    "post": {
+      "just_now": "अभी",
+      "minutes_ago": "{{count}} मिनट पहले",
+      "hours_ago": "{{count}} घंटे पहले",
+      "days_ago": "{{count}} दिन पहले",
+      "weeks_ago": "{{count}} सप्ताह पहले",
+      "edited": "संपादित"
+    },
+    "create": {
+      "permission_required": "अनुमति आवश्यक",
+      "library_permission": "फोटो चुनने के लिए हमें आपकी गैलरी तक पहुंच की आवश्यकता है।",
+      "grant_permission": "अनुमति दें",
+      "title": "नई पोस्ट",
+      "next": "अगला",
+      "share": "साझा करें",
+      "write_caption": "कैप्शन लिखें...",
+      "add_location": "स्थान जोड़ें",
+      "location_required": "स्थान आवश्यक",
+      "location_required_msg": "कृपया अपनी पोस्ट के लिए एक स्थान चुनें।",
+      "discard_changes": "परिवर्तन रद्द करें?",
+      "discard_msg": "यदि आप अभी छोड़ते हैं, तो आप अपने परिवर्तन खो देंगे।",
+      "discard": "रद्द करें",
+      "keep_editing": "संपादन जारी रखें",
+      "uploading": "अपलोड हो रहा है...",
+      "moderating": "सामग्री की समीक्षा...",
+      "success": "पोस्ट किया!",
+      "error": "पोस्ट करने में त्रुटि"
+    },
+    "moderation": {
+      "rejected_title": "सामग्री की अनुमति नहीं",
+      "rejected_msg": "आपकी पोस्ट हमारे समुदाय दिशानिर्देशों को पूरा नहीं करती है।",
+      "reason": "कारण: {{reason}}",
+      "edit": "संपादित करें",
+      "cancel": "रद्द करें",
+      "comment_rejected": "आपकी टिप्पणी में अनुचित भाषा है"
+    },
+    "comments": {
+      "title": "टिप्पणियाँ ({{count}})",
+      "no_comments": "अभी तक कोई टिप्पणी नहीं",
+      "be_first": "टिप्पणी करने वाले पहले बनें",
+      "error_adding": "टिप्पणी जोड़ने में त्रुटि",
+      "error_deleting": "टिप्पणी हटाने में त्रुटि",
+      "delete_title": "टिप्पणी हटाएं",
+      "delete_message": "क्या आप वाकई इस टिप्पणी को हटाना चाहते हैं?"
+    },
+    "profile": {
+      "posts": "पोस्ट",
+      "followers": "फॉलोअर्स",
+      "following": "फॉलोइंग",
+      "no_posts": "अभी तक कोई पोस्ट नहीं",
+      "error_loading": "प्रोफ़ाइल लोड करने में त्रुटि"
+    },
+    "share": {
+      "title": "साझा करें",
+      "share": "साझा करें",
+      "copy_link": "लिंक कॉपी करें",
+      "check_out_post": "Goveling पर यह पोस्ट देखें",
+      "link_copied_title": "लिंक कॉपी हो गया",
+      "link_copied_message": "लिंक क्लिपबोर्ड पर कॉपी हो गया है",
+      "error": "साझा करने में त्रुटि"
+    },
+    "maps": {
+      "view_on_map": "मानचित्र पर देखें",
+      "add_to_trip": "यात्रा में जोड़ें",
+      "select_trip": "यात्रा चुनें",
+      "added_to_trip_success": "{{trip}} में सफलतापूर्वक जोड़ा गया",
+      "error_adding_to_trip": "स्थान को यात्रा में नहीं जोड़ा जा सका",
+      "error_loading_trips": "यात्राएं लोड नहीं की जा सकीं",
+      "no_trips": "आपकी कोई यात्रा नहीं है",
+      "create_trip_first": "स्थान जोड़ने के लिए पहले एक यात्रा बनाएं",
+      "already_added_title": "पहले से जोड़ा गया",
+      "already_added_message": "यह स्थान पहले से चयनित यात्रा में है"
+    }
   }
 }

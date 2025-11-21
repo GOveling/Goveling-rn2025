@@ -14,7 +14,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/lib/theme';
+import { SocialInteractionService } from '@/services/socialInteractionService';
 import type { PostWithDetails } from '@/types/social.types';
+
+import { AddToTripModal } from './AddToTripModal';
+import { CommentsSheet } from './CommentsSheet';
+import { FollowButton } from './FollowButton';
+import { LikeButton } from './LikeButton';
+import { PlaceMiniMap } from './PlaceMiniMap';
+import { ShareSheet } from './ShareSheet';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_SIZE = SCREEN_WIDTH;
@@ -46,18 +54,71 @@ export const FeedPost: React.FC<FeedPostProps> = ({
   const { colors } = useTheme();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showFullCaption, setShowFullCaption] = useState(false);
+  const [isLiked, setIsLiked] = useState(post.user_has_liked);
+  const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
+  const [showComments, setShowComments] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showAddToTrip, setShowAddToTrip] = useState(false);
 
-  const handleLike = useCallback(() => {
-    onLike(post.id);
-  }, [post.id, onLike]);
+  const handleLike = useCallback(async () => {
+    // Optimistic update
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setLikesCount((prev) => (newIsLiked ? prev + 1 : prev - 1));
+
+    const { success, isLiked: serverIsLiked } = await SocialInteractionService.toggleLike(post.id);
+
+    if (!success) {
+      // Revert on failure
+      setIsLiked(!newIsLiked);
+      setLikesCount((prev) => (!newIsLiked ? prev + 1 : prev - 1));
+    } else {
+      // Sync with server state just in case
+      setIsLiked(serverIsLiked);
+      onLike(post.id); // Notify parent if needed
+    }
+  }, [post.id, isLiked, onLike]);
+
+  const handleFollow = useCallback(async () => {
+    const { success, isFollowing: serverIsFollowing } = await SocialInteractionService.toggleFollow(
+      post.user_id
+    );
+    if (success) {
+      setIsFollowing(serverIsFollowing);
+    }
+  }, [post.user_id]);
 
   const handleComment = useCallback(() => {
+    setShowComments(true);
     onComment(post.id);
   }, [post.id, onComment]);
 
+  const handleCloseComments = useCallback(() => {
+    setShowComments(false);
+  }, []);
+
+  const handleCommentAdded = useCallback(() => {
+    setCommentsCount((prev) => prev + 1);
+  }, []);
+
   const handleShare = useCallback(() => {
+    setShowShare(true);
     onShare(post.id);
   }, [post.id, onShare]);
+
+  const handleCloseShare = useCallback(() => {
+    setShowShare(false);
+  }, []);
+
+  const handleAddToTrip = useCallback(() => {
+    setShowAddToTrip(true);
+  }, []);
+
+  const handleCloseAddToTrip = useCallback(() => {
+    setShowAddToTrip(false);
+  }, []);
 
   const handleSave = useCallback(() => {
     onSave(post.id);
@@ -79,45 +140,6 @@ export const FeedPost: React.FC<FeedPostProps> = ({
     }
   }, [post.id, currentImageIndex, onImagePress]);
 
-  const timeAgo = useMemo(() => {
-    const now = new Date();
-    const postDate = new Date(post.created_at);
-    const updatedDate = new Date(post.updated_at);
-    const diffInMinutes = Math.floor((now.getTime() - postDate.getTime()) / 60000);
-
-    let timeText = '';
-    if (diffInMinutes < 1) timeText = t('social.post.just_now');
-    else if (diffInMinutes < 60) timeText = t('social.post.minutes_ago', { count: diffInMinutes });
-    else if (diffInMinutes < 1440) {
-      timeText = t('social.post.hours_ago', { count: Math.floor(diffInMinutes / 60) });
-    } else if (diffInMinutes < 10080) {
-      timeText = t('social.post.days_ago', { count: Math.floor(diffInMinutes / 1440) });
-    } else {
-      timeText = t('social.post.weeks_ago', { count: Math.floor(diffInMinutes / 10080) });
-    }
-
-    const isEdited = Math.abs(updatedDate.getTime() - postDate.getTime()) > 60000;
-    if (isEdited) {
-      const editDiffInMinutes = Math.floor((now.getTime() - updatedDate.getTime()) / 60000);
-      let editTimeText = '';
-
-      if (editDiffInMinutes < 1) editTimeText = t('social.post.just_now');
-      else if (editDiffInMinutes < 60)
-        editTimeText = t('social.post.minutes_ago', { count: editDiffInMinutes });
-      else if (editDiffInMinutes < 1440) {
-        editTimeText = t('social.post.hours_ago', { count: Math.floor(editDiffInMinutes / 60) });
-      } else if (editDiffInMinutes < 10080) {
-        editTimeText = t('social.post.days_ago', { count: Math.floor(editDiffInMinutes / 1440) });
-      } else {
-        editTimeText = t('social.post.weeks_ago', { count: Math.floor(editDiffInMinutes / 10080) });
-      }
-
-      return `${timeText} (${t('social.post.edited')} ${editTimeText})`;
-    }
-
-    return timeText;
-  }, [post.created_at, post.updated_at, t]);
-
   const shouldTruncateCaption = useMemo(() => {
     return post.caption && post.caption.length > 150;
   }, [post.caption]);
@@ -128,8 +150,6 @@ export const FeedPost: React.FC<FeedPostProps> = ({
     return post.caption.substring(0, 150) + '...';
   }, [post.caption, shouldTruncateCaption, showFullCaption]);
 
-  const likeCount = post.likes_count || 0;
-  const commentCount = post.comments_count || 0;
   const hasImages = post.images && post.images.length > 0;
 
   return (
@@ -158,7 +178,7 @@ export const FeedPost: React.FC<FeedPostProps> = ({
         </TouchableOpacity>
 
         <View style={styles.headerRight}>
-          <Text style={[styles.timeAgo, { color: colors.textMuted }]}>{timeAgo}</Text>
+          <FollowButton isFollowing={isFollowing} onPress={handleFollow} compact />
         </View>
       </View>
 
@@ -206,15 +226,22 @@ export const FeedPost: React.FC<FeedPostProps> = ({
         </View>
       )}
 
+      {post.place.latitude && post.place.longitude && (
+        <PlaceMiniMap
+          placeId={post.place_id}
+          placeName={post.place.name}
+          latitude={post.place.latitude}
+          longitude={post.place.longitude}
+          onPress={handlePlacePress}
+          onAddToTrip={handleAddToTrip}
+        />
+      )}
+
       <View style={styles.actionsContainer}>
         <View style={styles.actionsLeft}>
-          <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
-            <Ionicons
-              name={post.user_has_liked ? 'heart' : 'heart-outline'}
-              size={28}
-              color={post.user_has_liked ? colors.social.like : colors.text}
-            />
-          </TouchableOpacity>
+          <View style={styles.actionButton}>
+            <LikeButton isLiked={isLiked} onPress={handleLike} size={28} />
+          </View>
 
           <TouchableOpacity onPress={handleComment} style={styles.actionButton}>
             <Ionicons name="chatbubble-outline" size={26} color={colors.text} />
@@ -235,10 +262,10 @@ export const FeedPost: React.FC<FeedPostProps> = ({
       </View>
 
       <View style={styles.contentContainer}>
-        {likeCount > 0 && (
+        {likesCount > 0 && (
           <TouchableOpacity onPress={handleComment}>
             <Text style={[styles.likes, { color: colors.text }]}>
-              {t('social.post.likes_count', { count: likeCount })}
+              {t('social.post.likes_count', { count: likesCount })}
             </Text>
           </TouchableOpacity>
         )}
@@ -261,14 +288,34 @@ export const FeedPost: React.FC<FeedPostProps> = ({
           </View>
         )}
 
-        {commentCount > 0 && (
+        {commentsCount > 0 && (
           <TouchableOpacity onPress={handleComment}>
             <Text style={[styles.viewComments, { color: colors.textMuted }]}>
-              {t('social.post.view_all_comments', { count: commentCount })}
+              {t('social.post.view_all_comments', { count: commentsCount })}
             </Text>
           </TouchableOpacity>
         )}
       </View>
+
+      <CommentsSheet
+        postId={post.id}
+        isVisible={showComments}
+        onClose={handleCloseComments}
+        onCommentAdded={handleCommentAdded}
+      />
+
+      <ShareSheet visible={showShare} onClose={handleCloseShare} postId={post.id} />
+
+      {post.place.latitude && post.place.longitude && (
+        <AddToTripModal
+          visible={showAddToTrip}
+          onClose={handleCloseAddToTrip}
+          placeId={post.place_id}
+          placeName={post.place.name}
+          latitude={post.place.latitude}
+          longitude={post.place.longitude}
+        />
+      )}
     </View>
   );
 };
@@ -314,9 +361,6 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     marginLeft: 8,
-  },
-  timeAgo: {
-    fontSize: 12,
   },
   imagesContainer: {
     position: 'relative',

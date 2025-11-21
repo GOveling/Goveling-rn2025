@@ -966,5 +966,86 @@
   "placeInfo": {
     "savedAs": "保存为",
     "yourNote": "您的备注"
+  },
+  "social": {
+    "follow": "关注",
+    "following": "已关注",
+    "likes": "点赞",
+    "reply": "回复",
+    "view_all_comments": "查看全部{{count}}条评论",
+    "add_comment": "添加评论...",
+    "post": {
+      "just_now": "刚刚",
+      "minutes_ago": "{{count}}分钟前",
+      "hours_ago": "{{count}}小时前",
+      "days_ago": "{{count}}天前",
+      "weeks_ago": "{{count}}周前",
+      "edited": "已编辑"
+    },
+    "create": {
+      "permission_required": "需要权限",
+      "library_permission": "我们需要访问您的相册来选择照片。",
+      "grant_permission": "授予权限",
+      "title": "新帖子",
+      "next": "下一步",
+      "share": "分享",
+      "write_caption": "写说明...",
+      "add_location": "添加位置",
+      "location_required": "需要位置",
+      "location_required_msg": "请为您的帖子选择一个位置。",
+      "discard_changes": "放弃更改？",
+      "discard_msg": "如果现在离开，您将丢失更改。",
+      "discard": "放弃",
+      "keep_editing": "继续编辑",
+      "uploading": "上传中...",
+      "moderating": "审核内容中...",
+      "success": "已发布！",
+      "error": "发布错误"
+    },
+    "moderation": {
+      "rejected_title": "内容不被允许",
+      "rejected_msg": "您的帖子不符合我们的社区准则。",
+      "reason": "原因：{{reason}}",
+      "edit": "编辑",
+      "cancel": "取消",
+      "comment_rejected": "您的评论包含不当语言"
+    },
+    "comments": {
+      "title": "评论 ({{count}})",
+      "no_comments": "还没有评论",
+      "be_first": "成为第一个评论的人",
+      "error_adding": "添加评论时出错",
+      "error_deleting": "删除评论时出错",
+      "delete_title": "删除评论",
+      "delete_message": "您确定要删除此评论吗？"
+    },
+    "profile": {
+      "posts": "帖子",
+      "followers": "粉丝",
+      "following": "关注",
+      "no_posts": "还没有帖子",
+      "error_loading": "加载个人资料出错"
+    },
+    "share": {
+      "title": "分享",
+      "share": "分享",
+      "copy_link": "复制链接",
+      "check_out_post": "在Goveling上查看这篇帖子",
+      "link_copied_title": "链接已复制",
+      "link_copied_message": "链接已复制到剪贴板",
+      "error": "分享出错"
+    },
+    "maps": {
+      "view_on_map": "在地图上查看",
+      "add_to_trip": "添加到行程",
+      "select_trip": "选择行程",
+      "added_to_trip_success": "已成功添加到 {{trip}}",
+      "error_adding_to_trip": "无法将地点添加到行程",
+      "error_loading_trips": "无法加载行程",
+      "no_trips": "您没有行程",
+      "create_trip_first": "请先创建行程以添加地点",
+      "already_added_title": "已添加",
+      "already_added_message": "此地点已在所选行程中"
+    }
   }
 }

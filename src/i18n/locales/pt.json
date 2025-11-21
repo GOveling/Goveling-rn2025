@@ -966,5 +966,86 @@
   "placeInfo": {
     "savedAs": "Salvo como",
     "yourNote": "Sua nota"
+  },
+  "social": {
+    "follow": "Seguir",
+    "following": "Seguindo",
+    "likes": "Curtidas",
+    "reply": "Responder",
+    "view_all_comments": "Ver todos os {{count}} comentários",
+    "add_comment": "Adicionar um comentário...",
+    "post": {
+      "just_now": "Agora",
+      "minutes_ago": "{{count}} min atrás",
+      "hours_ago": "{{count}} h atrás",
+      "days_ago": "{{count}} d atrás",
+      "weeks_ago": "{{count}} sem atrás",
+      "edited": "editado"
+    },
+    "create": {
+      "permission_required": "Permissão necessária",
+      "library_permission": "Precisamos acessar sua galeria para selecionar fotos.",
+      "grant_permission": "Conceder permissão",
+      "title": "Nova Publicação",
+      "next": "Próximo",
+      "share": "Compartilhar",
+      "write_caption": "Escreva uma legenda...",
+      "add_location": "Adicionar localização",
+      "location_required": "Localização obrigatória",
+      "location_required_msg": "Por favor, selecione uma localização para sua publicação.",
+      "discard_changes": "Descartar alterações?",
+      "discard_msg": "Se sair agora, você perderá as alterações.",
+      "discard": "Descartar",
+      "keep_editing": "Continuar editando",
+      "uploading": "Enviando...",
+      "moderating": "Revisando conteúdo...",
+      "success": "Publicado!",
+      "error": "Erro ao publicar"
+    },
+    "moderation": {
+      "rejected_title": "Conteúdo não permitido",
+      "rejected_msg": "Sua publicação não atende às nossas diretrizes da comunidade.",
+      "reason": "Motivo: {{reason}}",
+      "edit": "Editar",
+      "cancel": "Cancelar",
+      "comment_rejected": "Seu comentário contém linguagem inapropriada"
+    },
+    "comments": {
+      "title": "Comentários ({{count}})",
+      "no_comments": "Ainda sem comentários",
+      "be_first": "Seja o primeiro a comentar",
+      "error_adding": "Erro ao adicionar comentário",
+      "error_deleting": "Erro ao excluir comentário",
+      "delete_title": "Excluir comentário",
+      "delete_message": "Tem certeza de que deseja excluir este comentário?"
+    },
+    "profile": {
+      "posts": "Posts",
+      "followers": "Seguidores",
+      "following": "Seguindo",
+      "no_posts": "Ainda não há posts",
+      "error_loading": "Erro ao carregar o perfil"
+    },
+    "share": {
+      "title": "Compartilhar",
+      "share": "Compartilhar",
+      "copy_link": "Copiar link",
+      "check_out_post": "Confira este post no Goveling",
+      "link_copied_title": "Link copiado",
+      "link_copied_message": "O link foi copiado para a área de transferência",
+      "error": "Erro ao compartilhar"
+    },
+    "maps": {
+      "view_on_map": "Ver no mapa",
+      "add_to_trip": "Adicionar à viagem",
+      "select_trip": "Selecionar viagem",
+      "added_to_trip_success": "Adicionado com sucesso a {{trip}}",
+      "error_adding_to_trip": "Não foi possível adicionar o local à viagem",
+      "error_loading_trips": "Não foi possível carregar as viagens",
+      "no_trips": "Você não tem viagens",
+      "create_trip_first": "Crie primeiro uma viagem para adicionar locais",
+      "already_added_title": "Já adicionado",
+      "already_added_message": "Este local já está na viagem selecionada"
+    }
   }
 }

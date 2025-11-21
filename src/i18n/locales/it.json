@@ -966,5 +966,86 @@
   "placeInfo": {
     "savedAs": "Salvato come",
     "yourNote": "La tua nota"
+  },
+  "social": {
+    "follow": "Segui",
+    "following": "Seguendo",
+    "likes": "Mi piace",
+    "reply": "Rispondi",
+    "view_all_comments": "Visualizza tutti i {{count}} commenti",
+    "add_comment": "Aggiungi un commento...",
+    "post": {
+      "just_now": "Adesso",
+      "minutes_ago": "{{count}} min fa",
+      "hours_ago": "{{count}} h fa",
+      "days_ago": "{{count}} g fa",
+      "weeks_ago": "{{count}} sett fa",
+      "edited": "modificato"
+    },
+    "create": {
+      "permission_required": "Permesso richiesto",
+      "library_permission": "Abbiamo bisogno di accedere alla tua galleria per selezionare le foto.",
+      "grant_permission": "Concedi permesso",
+      "title": "Nuovo Post",
+      "next": "Avanti",
+      "share": "Condividi",
+      "write_caption": "Scrivi una didascalia...",
+      "add_location": "Aggiungi posizione",
+      "location_required": "Posizione obbligatoria",
+      "location_required_msg": "Seleziona una posizione per il tuo post.",
+      "discard_changes": "Scartare le modifiche?",
+      "discard_msg": "Se esci ora, perderai le modifiche.",
+      "discard": "Scarta",
+      "keep_editing": "Continua a modificare",
+      "uploading": "Caricamento...",
+      "moderating": "Revisione contenuto...",
+      "success": "Pubblicato!",
+      "error": "Errore nella pubblicazione"
+    },
+    "moderation": {
+      "rejected_title": "Contenuto non consentito",
+      "rejected_msg": "Il tuo post non rispetta le nostre linee guida della community.",
+      "reason": "Motivo: {{reason}}",
+      "edit": "Modifica",
+      "cancel": "Annulla",
+      "comment_rejected": "Il tuo commento contiene linguaggio inappropriato"
+    },
+    "comments": {
+      "title": "Commenti ({{count}})",
+      "no_comments": "Nessun commento ancora",
+      "be_first": "Sii il primo a commentare",
+      "error_adding": "Errore nell'aggiunta del commento",
+      "error_deleting": "Errore nella cancellazione del commento",
+      "delete_title": "Elimina commento",
+      "delete_message": "Sei sicuro di voler eliminare questo commento?"
+    },
+    "profile": {
+      "posts": "Post",
+      "followers": "Follower",
+      "following": "Seguiti",
+      "no_posts": "Nessun post ancora",
+      "error_loading": "Errore durante il caricamento del profilo"
+    },
+    "share": {
+      "title": "Condividi",
+      "share": "Condividi",
+      "copy_link": "Copia link",
+      "check_out_post": "Guarda questo post su Goveling",
+      "link_copied_title": "Link copiato",
+      "link_copied_message": "Il link è stato copiato negli appunti",
+      "error": "Errore nella condivisione"
+    },
+    "maps": {
+      "view_on_map": "Visualizza sulla mappa",
+      "add_to_trip": "Aggiungi al viaggio",
+      "select_trip": "Seleziona viaggio",
+      "added_to_trip_success": "Aggiunto con successo a {{trip}}",
+      "error_adding_to_trip": "Impossibile aggiungere il luogo al viaggio",
+      "error_loading_trips": "Impossibile caricare i viaggi",
+      "no_trips": "Non hai viaggi",
+      "create_trip_first": "Crea prima un viaggio per aggiungere luoghi",
+      "already_added_title": "Già aggiunto",
+      "already_added_message": "Questo luogo è già nel viaggio selezionato"
+    }
   }
 }

@@ -3,7 +3,6 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'react-native-worklets/plugin',
       [
         'module-resolver',
         {
@@ -15,6 +14,8 @@ module.exports = function (api) {
       ],
       // Transform import.meta for all platforms
       './babel-plugin-transform-import-meta-custom.js',
+      // Reanimated plugin MUST be listed last
+      'react-native-reanimated/plugin',
     ],
     env: {
       web: {
